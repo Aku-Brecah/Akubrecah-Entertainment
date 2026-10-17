@@ -157,11 +157,35 @@ export async function GET(req: NextRequest) {
       }
     } catch {}
 
+// 4. Evolution WhatsApp Gateway check
+async function pingEvolutionWhatsApp(): Promise<{ status: string; latency: number; state: string }> {
+  const start = Date.now();
+  try {
+    const res = await fetch("https://wa.akubrecah.com/instance/connectionState/akubrecah-kra", {
+      headers: {
+        apikey: process.env.EVOLUTION_API_KEY || "akubrecah_secret_whatsapp_key_2026",
+      },
+      signal: AbortSignal.timeout(3500),
+    });
+    const latency = Date.now() - start;
+    if (res.ok) {
+      const data = await res.json();
+      const state = data?.instance?.state || "unknown";
+      const status = state === "open" ? "Operational" : state === "connecting" ? "Awaiting QR Scan" : "Degraded";
+      return { status, latency, state };
+    }
+    return { status: "Outage", latency: Date.now() - start, state: "not_found" };
+  } catch {
+    return { status: "Outage", latency: Date.now() - start, state: "error" };
+  }
+}
+
     // Perform concurrent checks
-    const [dbLatency, clerkRes, kraRes] = await Promise.all([
+    const [dbLatency, clerkRes, kraRes, waRes] = await Promise.all([
       pingDatabase(dbHost, dbPort),
       pingClerk(clerkSecret),
       pingKRA(proxyUrl),
+      pingEvolutionWhatsApp(),
     ]);
 
     // Calculate OS metrics
@@ -196,6 +220,11 @@ export async function GET(req: NextRequest) {
         name: "Taxpayer Filing API (KRA Portal)", 
         status: kraRes.status, 
         latency: kraRes.latency > 0 ? `${kraRes.latency}ms` : "N/A" 
+      },
+      {
+        name: "Evolution WhatsApp Bot Gateway",
+        status: waRes.status,
+        latency: `${waRes.latency}ms (${waRes.state})`,
       },
     ];
 

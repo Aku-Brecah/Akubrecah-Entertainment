@@ -5,23 +5,32 @@
 
 export function getEvolutionApiUrl(): string {
   let envUrl = (process.env.EVOLUTION_API_URL || '').trim();
-  // If undefined, empty, localhost/127.0.0.1, or placeholder from setup script, use production VPS IP
+
+  // 1. If running inside docker container network where 'evolution' service is specified, preserve internal port 8080
+  if (envUrl.includes('evolution:') || envUrl === 'http://evolution:8080') {
+    return 'http://evolution:8080';
+  }
+
+  // 2. If empty or local, use the public HTTPS gateway (routed to evolution:8080 via Caddy)
   if (
     !envUrl ||
     envUrl.includes('localhost') ||
     envUrl.includes('127.0.0.1') ||
     envUrl.includes('<YOUR_VPS_IP>')
   ) {
-    return 'http://169.58.96.131:8085';
+    return 'https://wa.akubrecah.com';
   }
-  // Host port on VPS is 8085 (mapped to internal container 8080)
-  if (envUrl.includes(':8080')) {
+
+  // 3. Only remap :8080 to :8085 if accessing raw VPS host IP from outside docker
+  if (envUrl.includes(':8080') && envUrl.includes('169.58.96.131')) {
     envUrl = envUrl.replace(':8080', ':8085');
   }
-  // Raw IP does not have TLS certificate, must use http
+
+  // 4. Raw IP does not have TLS certificate, must use http
   if (envUrl.startsWith('https://169.58.96.131')) {
     envUrl = envUrl.replace('https://', 'http://');
   }
+
   return envUrl;
 }
 
