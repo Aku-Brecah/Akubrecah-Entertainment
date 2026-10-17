@@ -1,24 +1,28 @@
 {
-    "mcpServers": {
-        "context7": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "@upstash/context7-mcp",
-                "--api-key",
-                "YOUR_API_KEY"
-            ]
-        },
-        "shadcn": {
-            "command": "npx",
-            "args": [
-                "shadcn@latest",
-                "mcp"
-            ]
-        }
-        //other mcp servers
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp",
+        "--api-key",
+        "YOUR_API_KEY"
+      ]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ]
+    },
+    "n8n-mcp": {
+      "type": "http",
+      "url": "https://n8n.akubrecah.com/mcp-server/http",
+      "serverUrl": "https://n8n.akubrecah.com/mcp-server/http",
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZjYxOGM1Zi1iMDAzLTRhNTQtYWE0OC1hM2E5NjZhNzVmMmYiLCJpc3MiOiJuOG4iLCJhdWQiOiJtY3Atc2VydmVyLWFwaSIsImp0aSI6IjVkOGY2YjBlLWE3NjgtNGY5Mi04NDMyLWU4NDU0YjVlYjExOCIsImlhdCI6MTc5MjI3OTMzMn0.omMlsdlfwSZmETKa84CGYdxE8OWUe5P1j36vNLn7iLw"
+      }
     }
+  }
 }
-
-// setup mcp server in  ~/.gemini\antigravity\mcp_config.json
-
