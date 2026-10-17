@@ -68,13 +68,18 @@ export async function GET(req: NextRequest) {
   // Create response redirecting to /admin with magic auth cookies
   const response = NextResponse.redirect(`${appUrl}/admin`);
 
+  const host = req.headers.get('host') || '';
+  const isProdDomain = host.includes('akubrecah.com');
+  const cookieDomain = process.env.NODE_ENV === 'production' && isProdDomain ? '.akubrecah.com' : undefined;
+
   // Server-side secure token cookie (HTTP-only)
   response.cookies.set('admin_magic_auth', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 14400, // 4 hours
+    maxAge: 86400, // 24 hours
+    domain: cookieDomain,
   });
 
   // Client-accessible indicator cookie
@@ -83,7 +88,8 @@ export async function GET(req: NextRequest) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 14400, // 4 hours
+    maxAge: 86400, // 24 hours
+    domain: cookieDomain,
   });
 
   return response;
@@ -115,13 +121,18 @@ export async function POST(req: NextRequest) {
       role: 'Super Admin',
     });
 
+    const host = req.headers.get('host') || '';
+    const isProdDomain = host.includes('akubrecah.com');
+    const cookieDomain = process.env.NODE_ENV === 'production' && isProdDomain ? '.akubrecah.com' : undefined;
+
     // Set HTTP-only secure cookie for API calls
     response.cookies.set('admin_magic_auth', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 14400, // 4 hours
+      maxAge: 86400, // 24 hours
+      domain: cookieDomain,
     });
 
     // Set client-accessible indicator cookie for client components
@@ -130,7 +141,8 @@ export async function POST(req: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 14400,
+      maxAge: 86400, // 24 hours
+      domain: cookieDomain,
     });
 
     return response;

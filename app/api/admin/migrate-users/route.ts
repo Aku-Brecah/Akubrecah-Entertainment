@@ -1,155 +1,333 @@
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { clerkClient } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { createSystemLog } from "@/lib/prisma";
+import { verifyAdminCaller } from "@/lib/admin-auth";
 
-// Verify that the current user is the super admin or has admin role configuration
-async function verifySuperAdmin() {
-  const { userId } = await auth();
-  if (!userId) return null;
+export const maxDuration = 60; // Allow sufficient time for batch user migration
 
-  const client = await clerkClient();
-  const currentUser = await client.users.getUser(userId);
-  const email = currentUser.primaryEmailAddress?.emailAddress?.toLowerCase();
-  const role = currentUser.publicMetadata?.role as string;
-  const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || "poweldayck@gmail.com").toLowerCase();
-  const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || "poweldayck@gmail.com").toLowerCase();
-
-  if (
-    email === "poweldayck@gmail.com" ||
-    email === configAdminEmail ||
-    email === configPublicAdminEmail ||
-    role === "Super Admin" ||
-    role === "Admin" ||
-    process.env.NODE_ENV === "development" // Bypass auth checks in local development for convenience
-  ) {
-    return client;
-  }
-  return null;
+interface MigrationResults {
+  total: number;
+  success: string[];
+  skipped: string[];
+  failed: { email: string; error: string }[];
 }
 
-export async function GET() {
+/**
+ * Helper to parse CSV rows into key-value objects
+ */
+function parseCsv(content: string): any[] {
+  const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
+  if (lines.length < 2) return [];
+
+  // Parse header line handling potential quotes
+  const headers = lines[0].split(",").map(h => h.trim().replace(/^["']|["']$/g, ""));
+  const rows: any[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    // Simple CSV parser that handles commas inside quotes
+    const values: string[] = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let char of line) {
+      if (char === '"' || char === "'") {
+        inQuotes = !inQuotes;
+      } else if (char === "," && !inQuotes) {
+        values.push(current.trim().replace(/^["']|["']$/g, ""));
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim().replace(/^["']|["']$/g, ""));
+
+    const rowObj: Record<string, string> = {};
+    headers.forEach((header, idx) => {
+      rowObj[header] = values[idx] || "";
+    });
+    rows.push(rowObj);
+  }
+
+  return rows;
+}
+
+/**
+ * POST /api/admin/migrate-users
+ * Supports:
+ * 1. Direct Clerk API sync (devSecretKey: "sk_test_...")
+ * 2. Raw CSV content upload/paste (csvContent: "...")
+ */
+export async function POST(req: NextRequest) {
   try {
-    const client = await verifySuperAdmin();
-    if (!client) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
+    const admin = await verifyAdminCaller(req);
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized: Admin privileges required." },
+        { status: 403 }
+      );
     }
 
-    const CSV_PATH = path.resolve(process.cwd(), "old clerk.csv");
-    if (!fs.existsSync(CSV_PATH)) {
-      return NextResponse.json({ success: false, error: `CSV file not found at ${CSV_PATH}` }, { status: 404 });
+    const body = await req.json().catch(() => ({}));
+    const devSecretKey = (body.devSecretKey || process.env.DEV_CLERK_SECRET_KEY || process.env.CLERK_DEV_SECRET_KEY || "").trim();
+    const csvContent = (body.csvContent || "").trim();
+    const defaultPassword = body.defaultPassword || "Akubrecah2026!#";
+
+    if (!devSecretKey && !csvContent) {
+      // Check if old clerk.csv exists on server filesystem as fallback
+      const fallbackPath = path.resolve(process.cwd(), "old clerk.csv");
+      if (!fs.existsSync(fallbackPath)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Please provide your Clerk Development Secret Key (sk_test_...) or upload a Clerk CSV export.",
+          },
+          { status: 400 }
+        );
+      }
     }
 
-    // 1. Parse CSV
-    const content = fs.readFileSync(CSV_PATH, "utf8");
-    const lines = content.split(/\r?\n/);
-    const headers = lines[0].split(",").map(h => h.trim());
-    const usersToMigrate: any[] = [];
+    const client = await clerkClient();
 
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-      const parts = line.split(",");
-      const user: any = {};
-      headers.forEach((header, index) => {
-        user[header] = parts[index] ? parts[index].trim() : "";
-      });
-      usersToMigrate.push(user);
-    }
-
-    console.log(`[API Migration] Parsed ${usersToMigrate.length} users from old clerk.csv`);
-
-    // 2. Fetch existing users in target instance to prevent duplicates
-    const existingUsersList = await client.users.getUserList({ limit: 100 });
-    const existingUsers = Array.isArray(existingUsersList) 
-      ? existingUsersList 
+    // 1. Fetch existing production users to avoid duplicates
+    const existingUsersList = await client.users.getUserList({ limit: 500 });
+    const existingUsers = Array.isArray(existingUsersList)
+      ? existingUsersList
       : ((existingUsersList as any).data || []);
-      
+
     const targetEmails = new Set<string>();
-    existingUsers.forEach((user: { emailAddresses: { emailAddress: string }[] }) => {
-      user.emailAddresses.forEach((e: { emailAddress: string }) => {
-        targetEmails.add(e.emailAddress.toLowerCase());
+    existingUsers.forEach((u: any) => {
+      (u.emailAddresses || []).forEach((e: any) => {
+        if (e.emailAddress) targetEmails.add(e.emailAddress.toLowerCase());
       });
     });
 
-    const results = {
-      total: usersToMigrate.length,
-      success: [] as string[],
-      skipped: [] as string[],
-      failed: [] as { email: string; error: string }[],
+    const results: MigrationResults = {
+      total: 0,
+      success: [],
+      skipped: [],
+      failed: [],
     };
 
-    // 3. Migrate users
-    for (const user of usersToMigrate) {
-      const email = user.primary_email_address;
-      if (!email) {
-        results.skipped.push(`Missing email for user: ${user.first_name || "unknown"}`);
-        continue;
+    // =========================================================
+    // METHOD 1: Direct Clerk Dev API Sync
+    // =========================================================
+    if (devSecretKey) {
+      console.log("[User Migration] Initiating direct Clerk API migration with dev secret key...");
+      const devRes = await fetch("https://api.clerk.com/v1/users?limit=500&order_by=-created_at", {
+        headers: {
+          Authorization: `Bearer ${devSecretKey}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!devRes.ok) {
+        const errorText = await devRes.text();
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Failed to fetch users from Clerk Dev instance (${devRes.status}): ${errorText}`,
+          },
+          { status: 400 }
+        );
       }
 
-      if (targetEmails.has(email.toLowerCase())) {
-        results.skipped.push(`${email} (already exists)`);
-        continue;
-      }
+      const devUsers: any[] = await devRes.json();
+      results.total = devUsers.length;
 
-      const payload: any = {
-        emailAddress: [email],
-        firstName: user.first_name || undefined,
-        lastName: user.last_name || undefined,
-        username: user.username || undefined,
-        skipPasswordChecks: true,
-      };
+      for (const devUser of devUsers) {
+        const email =
+          devUser.email_addresses?.find((e: any) => e.id === devUser.primary_email_address_id)?.email_address ||
+          devUser.email_addresses?.[0]?.email_address;
 
-      if (user.password_digest && user.password_hasher) {
-        payload.passwordDigest = user.password_digest;
-        payload.passwordHasher = user.password_hasher;
-      } else {
-        payload.password = "Password2026!";
-      }
-
-      try {
-        const created = await client.users.createUser(payload);
-        results.success.push(`${email} -> ID: ${created.id}`);
-      } catch (err: any) {
-        console.error(`[API Migration] Failed to migrate ${email}:`, err);
-        
-        let errorMsg = err.message || JSON.stringify(err);
-        if (err.errors && Array.isArray(err.errors)) {
-          errorMsg = err.errors.map((e: any) => `${e.code}: ${e.message} ${e.longMessage || ""}`).join(" | ");
+        if (!email) {
+          results.skipped.push(`User ${devUser.id} skipped (no email address found)`);
+          continue;
         }
-        
-        results.failed.push({
-          email,
-          error: errorMsg,
-        });
+
+        if (targetEmails.has(email.toLowerCase())) {
+          results.skipped.push(`${email} (already exists in production)`);
+          continue;
+        }
+
+        const payload: any = {
+          emailAddress: [email],
+          firstName: devUser.first_name || undefined,
+          lastName: devUser.last_name || undefined,
+          username: devUser.username || undefined,
+          password: defaultPassword,
+          skipPasswordChecks: true,
+          publicMetadata: {
+            ...(devUser.public_metadata || {}),
+            migrated_from_dev: true,
+            migrated_at: new Date().toISOString(),
+          },
+        };
+
+        // Attach phone if present and valid E.164
+        const primaryPhone =
+          devUser.phone_numbers?.find((p: any) => p.id === devUser.primary_phone_number_id)?.phone_number ||
+          devUser.phone_numbers?.[0]?.phone_number;
+
+        if (primaryPhone && primaryPhone.startsWith("+")) {
+          payload.phoneNumber = [primaryPhone];
+        }
+
+        try {
+          const created = await client.users.createUser(payload);
+          results.success.push(`${email} (${created.id})`);
+          targetEmails.add(email.toLowerCase());
+        } catch (err: any) {
+          console.error(`[User Migration] Failed to create ${email}:`, err);
+          let errorMsg = err.message || "Failed to create user in production";
+          if (err.errors && Array.isArray(err.errors)) {
+            errorMsg = err.errors.map((e: any) => `${e.code}: ${e.message}`).join(" | ");
+          }
+          results.failed.push({ email, error: errorMsg });
+        }
+
+        // Rate limit courtesy delay
+        await new Promise((r) => setTimeout(r, 60));
+      }
+    }
+    // =========================================================
+    // METHOD 2: Clerk CSV Export Sync
+    // =========================================================
+    else {
+      let rawContent = csvContent;
+      if (!rawContent) {
+        const fallbackPath = path.resolve(process.cwd(), "old clerk.csv");
+        rawContent = fs.readFileSync(fallbackPath, "utf8");
       }
 
-      // Small delay to respect rate limit
-      await new Promise(resolve => setTimeout(resolve, 100));
+      const parsedUsers = parseCsv(rawContent);
+      results.total = parsedUsers.length;
+
+      for (const u of parsedUsers) {
+        const email =
+          u.primary_email_address ||
+          u.email_address ||
+          u.email ||
+          u["Primary Email Address"];
+
+        if (!email) {
+          results.skipped.push(`Row skipped: missing email address (${u.first_name || "Unknown"})`);
+          continue;
+        }
+
+        if (targetEmails.has(email.toLowerCase())) {
+          results.skipped.push(`${email} (already exists in production)`);
+          continue;
+        }
+
+        const payload: any = {
+          emailAddress: [email],
+          firstName: u.first_name || u["First Name"] || undefined,
+          lastName: u.last_name || u["Last Name"] || undefined,
+          username: u.username || u["Username"] || undefined,
+          skipPasswordChecks: true,
+          publicMetadata: {
+            role: u.role || u["Role"] || "Registered Taxpayer",
+            migrated_from_csv: true,
+            migrated_at: new Date().toISOString(),
+          },
+        };
+
+        // If Clerk CSV included password hash digests, retain exact password credentials
+        const passwordDigest = u.password_digest || u["Password Digest"];
+        const passwordHasher = u.password_hasher || u["Password Hasher"];
+
+        if (passwordDigest && passwordHasher) {
+          payload.passwordDigest = passwordDigest;
+          payload.passwordHasher = passwordHasher;
+        } else {
+          payload.password = defaultPassword;
+        }
+
+        const phone = u.phone_number || u["Phone Number"];
+        if (phone && phone.startsWith("+")) {
+          payload.phoneNumber = [phone];
+        }
+
+        try {
+          const created = await client.users.createUser(payload);
+          results.success.push(`${email} (${created.id})`);
+          targetEmails.add(email.toLowerCase());
+        } catch (err: any) {
+          console.error(`[User Migration CSV] Failed to create ${email}:`, err);
+          let errorMsg = err.message || "Failed to create user in production";
+          if (err.errors && Array.isArray(err.errors)) {
+            errorMsg = err.errors.map((e: any) => `${e.code}: ${e.message}`).join(" | ");
+          }
+          results.failed.push({ email, error: errorMsg });
+        }
+
+        // Rate limit courtesy delay
+        await new Promise((r) => setTimeout(r, 60));
+      }
     }
 
-    // Log the user migration summary and any failure diagnostics to Neon Database system_logs
-    await createSystemLog({
-      level: results.failed.length > 0 ? "warning" : "info",
-      service: "UserMigration",
-      message: `User migration from old clerk.csv completed: ${results.success.length} succeeded, ${results.skipped.length} skipped, ${results.failed.length} failed.`,
-      actor: "SystemAdmin",
-      details: {
-        successCount: results.success.length,
-        skippedCount: results.skipped.length,
-        failedCount: results.failed.length,
-        failedUsers: results.failed,
-      }
-    });
+    // Record audit log to Neon database
+    try {
+      await createSystemLog({
+        level: results.failed.length > 0 ? "warning" : "info",
+        service: "UserMigration",
+        message: `User migration executed by ${admin.email}: ${results.success.length} succeeded, ${results.skipped.length} skipped, ${results.failed.length} failed out of ${results.total} total.`,
+        actor: admin.email || "SystemAdmin",
+        details: {
+          total: results.total,
+          successCount: results.success.length,
+          skippedCount: results.skipped.length,
+          failedCount: results.failed.length,
+          failedUsers: results.failed,
+        },
+      });
+    } catch (logErr) {
+      console.warn("[User Migration] Failed to write database log:", logErr);
+    }
 
     return NextResponse.json({
       success: true,
-      message: "Migration completed",
+      message: `Migration completed: ${results.success.length} imported, ${results.skipped.length} skipped, ${results.failed.length} failed.`,
       results,
     });
   } catch (error: any) {
-    console.error("[API Migration Error]:", error);
-    return NextResponse.json({ success: false, error: error.message || "Internal server error" }, { status: 500 });
+    console.error("[User Migration Error]:", error);
+    return NextResponse.json(
+      { success: false, error: error.message || "Internal server error during migration." },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET /api/admin/migrate-users
+ * Returns diagnostic migration readiness status
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const admin = await verifyAdminCaller(req);
+    if (!admin) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
+    }
+
+    const fallbackPath = path.resolve(process.cwd(), "old clerk.csv");
+    const hasLocalCsv = fs.existsSync(fallbackPath);
+    const hasEnvDevKey = Boolean(process.env.DEV_CLERK_SECRET_KEY || process.env.CLERK_DEV_SECRET_KEY);
+
+    return NextResponse.json({
+      success: true,
+      ready: true,
+      hasLocalCsv,
+      hasEnvDevKey,
+      methods: ["api", "csv"],
+      message: "User migration engine is ready. You can sync via Clerk Dev Secret Key or CSV upload.",
+    });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

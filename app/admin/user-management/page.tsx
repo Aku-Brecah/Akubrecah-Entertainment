@@ -20,17 +20,27 @@ const ROLES = [
   "Registered Taxpayer"
 ];
 
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+function Modal({
+  title,
+  onClose,
+  children,
+  maxWidth = "max-w-md",
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  maxWidth?: string;
+}) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="w-full max-w-md bg-surface-container-lowest rounded-2xl shadow-2xl border border-outline-variant overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant bg-surface-container-low">
+      <div className={`w-full ${maxWidth} bg-surface-container-lowest rounded-2xl shadow-2xl border border-outline-variant overflow-hidden max-h-[92vh] flex flex-col`}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant bg-surface-container-low shrink-0">
           <h2 className="font-bold text-on-surface text-lg">{title}</h2>
           <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-surface-container transition-colors text-on-surface-variant">
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-6 overflow-y-auto">{children}</div>
       </div>
     </div>
   );
@@ -43,9 +53,24 @@ export default function UserManagementPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All Roles");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [modal, setModal] = useState<null | "edit" | "resetPw">(null);
+  const [modal, setModal] = useState<null | "edit" | "resetPw" | "migrate">(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  // Migration states
+  const [migrationTab, setMigrationTab] = useState<"api" | "csv">("api");
+  const [devSecretKey, setDevSecretKey] = useState("");
+  const [showDevKey, setShowDevKey] = useState(false);
+  const [csvContent, setCsvContent] = useState("");
+  const [csvFileName, setCsvFileName] = useState("");
+  const [defaultPassword, setDefaultPassword] = useState("Akubrecah2026!#");
+  const [migrationResults, setMigrationResults] = useState<{
+    total: number;
+    success: string[];
+    skipped: string[];
+    failed: { email: string; error: string }[];
+  } | null>(null);
+  const [migrationError, setMigrationError] = useState<string | null>(null);
 
   // Form edit states
   const [formRole, setFormRole] = useState("Registered Taxpayer");
@@ -154,23 +179,58 @@ export default function UserManagementPage() {
     setConfirmDeactivate(null);
   };
 
-  const handleMigrateUsers = async () => {
+  const handleCsvFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCsvFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      setCsvContent(text || "");
+    };
+    reader.readAsText(file);
+  };
+
+  const handleStartMigration = async () => {
     setIsMigrating(true);
+    setMigrationError(null);
+    setMigrationResults(null);
+
     try {
-      const res = await fetch("/api/admin/migrate-users");
+      const payload: any = { defaultPassword };
+
+      if (migrationTab === "api") {
+        if (!devSecretKey.trim()) {
+          setMigrationError("Please enter your Clerk Development Secret Key (sk_test_...).");
+          setIsMigrating(false);
+          return;
+        }
+        payload.devSecretKey = devSecretKey.trim();
+      } else {
+        if (!csvContent.trim()) {
+          setMigrationError("Please upload or paste your Clerk user export CSV.");
+          setIsMigrating(false);
+          return;
+        }
+        payload.csvContent = csvContent.trim();
+      }
+
+      const res = await fetch("/api/admin/migrate-users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
       const data = await res.json();
-      if (data.success) {
-        const migratedCount = data.results?.success?.length || 0;
-        const skippedCount = data.results?.skipped?.length || 0;
-        const failedCount = data.results?.failed?.length || 0;
-        showToast(`Migration complete! Migrated: ${migratedCount}, Skipped: ${skippedCount}, Failed: ${failedCount}`);
+      if (data.success && data.results) {
+        setMigrationResults(data.results);
+        showToast(`Migration finished! Imported: ${data.results.success.length}, Skipped: ${data.results.skipped.length}`);
         fetchUsers();
       } else {
-        showToast(`Migration error: ${data.error || "Unknown error"}`);
+        setMigrationError(data.error || "Failed to execute user migration.");
       }
-    } catch (e) {
-      console.error(e);
-      showToast("Network error executing user migration.");
+    } catch (e: any) {
+      setMigrationError(e.message || "Network error executing user migration.");
     } finally {
       setIsMigrating(false);
     }
@@ -195,21 +255,15 @@ export default function UserManagementPage() {
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <button
-            onClick={handleMigrateUsers}
-            disabled={isMigrating}
-            className="border border-outline-variant bg-surface hover:bg-surface-container text-on-surface text-sm font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 whitespace-nowrap disabled:opacity-50"
+            onClick={() => {
+              setModal("migrate");
+              setMigrationResults(null);
+              setMigrationError(null);
+            }}
+            className="border border-outline-variant bg-surface hover:bg-surface-container text-on-surface text-sm font-bold px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 whitespace-nowrap"
           >
-            {isMigrating ? (
-              <>
-                <div className="w-4 h-4 rounded-full border-2 border-on-surface border-t-transparent animate-spin" />
-                Migrating...
-              </>
-            ) : (
-              <>
-                <span className="material-symbols-outlined text-[20px]">sync</span>
-                Migrate Old Users
-              </>
-            )}
+            <span className="material-symbols-outlined text-[20px]">sync</span>
+            Migrate Old Users
           </button>
           <button
             onClick={openCreate}
@@ -392,6 +446,226 @@ export default function UserManagementPage() {
           <div className="flex gap-3">
             <button onClick={() => setConfirmDeactivate(null)} className="flex-1 py-2.5 border border-outline-variant rounded-xl text-on-surface font-bold hover:bg-surface-container text-sm">Cancel</button>
             <button onClick={() => handleToggleStatus(confirmDeactivate.id, confirmDeactivate.status)} className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 text-sm">Deactivate Account</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* User Migration Modal (Dev to Prod) */}
+      {modal === "migrate" && (
+        <Modal title="Migrate Users from Development to Production" onClose={() => setModal(null)} maxWidth="max-w-2xl">
+          <div className="space-y-5">
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              Import registered users from your Clerk Development instance directly into the Clerk Production instance. Existing accounts with matching emails will be automatically skipped to prevent duplicates.
+            </p>
+
+            {/* Mode Tabs */}
+            <div className="flex border-b border-outline-variant">
+              <button
+                type="button"
+                onClick={() => setMigrationTab("api")}
+                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+                  migrationTab === "api"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">bolt</span>
+                Direct Clerk Dev API (Recommended)
+              </button>
+              <button
+                type="button"
+                onClick={() => setMigrationTab("csv")}
+                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+                  migrationTab === "csv"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[18px]">description</span>
+                Clerk CSV Export Import
+              </button>
+            </div>
+
+            {/* Tab 1: API Direct Sync */}
+            {migrationTab === "api" && (
+              <div className="space-y-4 pt-1">
+                <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-700 dark:text-blue-300 flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">info</span>
+                  <div className="space-y-1">
+                    <p className="font-semibold">Zero-file direct transfer</p>
+                    <p className="opacity-90">
+                      Enter your Clerk Development Secret Key (<code className="font-mono bg-blue-500/20 px-1 py-0.5 rounded">sk_test_...</code>). This connects directly to your dev instance and replicates all accounts into production.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-on-surface uppercase tracking-wider">
+                    Clerk Development Secret Key
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showDevKey ? "text" : "password"}
+                      value={devSecretKey}
+                      onChange={(e) => setDevSecretKey(e.target.value)}
+                      placeholder="sk_test_..."
+                      className="w-full font-mono text-xs rounded-xl border border-outline-variant bg-surface px-4 py-2.5 pr-10 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowDevKey(!showDevKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">
+                        {showDevKey ? "visibility_off" : "visibility"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: CSV Sync */}
+            {migrationTab === "csv" && (
+              <div className="space-y-4 pt-1">
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2.5">
+                  <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">key</span>
+                  <div className="space-y-1">
+                    <p className="font-semibold">Password Hashes Supported</p>
+                    <p className="opacity-90">
+                      If you export your users from Clerk Dashboard (Users → Export), the CSV contains hashed passwords (<code className="font-mono">password_digest</code>) so users can sign in immediately with existing passwords!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-on-surface uppercase tracking-wider block">
+                    Upload Clerk CSV Export
+                  </label>
+                  <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-outline-variant rounded-2xl cursor-pointer hover:border-primary transition-all bg-surface-container-low">
+                    <span className="material-symbols-outlined text-3xl text-primary mb-1">upload_file</span>
+                    <span className="text-xs font-bold text-on-surface">
+                      {csvFileName ? `Selected: ${csvFileName}` : "Click to browse .csv file from your computer"}
+                    </span>
+                    <span className="text-[11px] text-on-surface-variant mt-0.5">Standard Clerk user export format</span>
+                    <input type="file" accept=".csv" onChange={handleCsvFileUpload} className="hidden" />
+                  </label>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold text-on-surface-variant">
+                    Or paste raw CSV text:
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={csvContent}
+                    onChange={(e) => setCsvContent(e.target.value)}
+                    placeholder="id,first_name,last_name,email_address,role..."
+                    className="w-full font-mono text-[11px] rounded-xl border border-outline-variant bg-surface p-3 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Default Password setting */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-semibold text-on-surface-variant">
+                Default Password (for accounts without password digests):
+              </label>
+              <input
+                type="text"
+                value={defaultPassword}
+                onChange={(e) => setDefaultPassword(e.target.value)}
+                className="w-full font-mono text-xs rounded-xl border border-outline-variant bg-surface px-4 py-2 text-on-surface"
+              />
+            </div>
+
+            {/* Error Message */}
+            {migrationError && (
+              <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-600 dark:text-red-400 flex items-start gap-2">
+                <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">error</span>
+                <span className="font-medium break-all">{migrationError}</span>
+              </div>
+            )}
+
+            {/* Migration Results Report */}
+            {migrationResults && (
+              <div className="p-4 rounded-2xl bg-surface-container border border-outline-variant space-y-3">
+                <div className="flex items-center justify-between border-b border-outline-variant/60 pb-2">
+                  <span className="text-xs font-bold text-on-surface uppercase tracking-wider">Migration Summary</span>
+                  <span className="text-xs font-mono font-semibold text-on-surface-variant">
+                    Total: {migrationResults.total}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+                    <span className="text-lg font-black text-emerald-600 dark:text-emerald-400 block">
+                      {migrationResults.success.length}
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
+                      Imported
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
+                    <span className="text-lg font-black text-amber-600 dark:text-amber-400 block">
+                      {migrationResults.skipped.length}
+                    </span>
+                    <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase">
+                      Skipped (Existing)
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
+                    <span className="text-lg font-black text-red-600 dark:text-red-400 block">
+                      {migrationResults.failed.length}
+                    </span>
+                    <span className="text-[10px] font-bold text-red-700 dark:text-red-300 uppercase">
+                      Failed
+                    </span>
+                  </div>
+                </div>
+
+                {migrationResults.failed.length > 0 && (
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto pt-2">
+                    <p className="text-[11px] font-bold text-red-600">Failed records:</p>
+                    {migrationResults.failed.map((f, i) => (
+                      <div key={i} className="text-[10px] text-red-500 font-mono bg-red-500/5 p-1.5 rounded">
+                        <strong>{f.email}:</strong> {f.error}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-3 border-t border-outline-variant">
+              <button
+                type="button"
+                onClick={() => setModal(null)}
+                className="flex-1 py-2.5 border border-outline-variant rounded-xl text-on-surface font-bold hover:bg-surface-container text-xs transition-colors"
+              >
+                {migrationResults ? "Close" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={handleStartMigration}
+                disabled={isMigrating}
+                className="flex-1 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isMigrating ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Processing Migration...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[18px]">cloud_sync</span>
+                    <span>Start Migration</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </Modal>
       )}

@@ -48,8 +48,8 @@ export default async function RootLayout({
           {/* SiteHeader is managed within AdminLayoutWrapper */}
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
-            enableSystem
+            defaultTheme="light"
+            enableSystem={false}
           >
             <TooltipProviderWrapper>
               <div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-hidden bg-background">                

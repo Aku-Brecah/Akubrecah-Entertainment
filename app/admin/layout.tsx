@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs";
 import {
   LayoutDashboard,
   Mail,
@@ -98,6 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -109,6 +110,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [pinError, setPinError] = useState("");
   const [isVerifyingPin, setIsVerifyingPin] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
+    if (typeof document !== "undefined") {
+      document.cookie = "admin_magic_client=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "admin_magic_auth=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    }
+    setHasMagicAuth(false);
+    try {
+      await signOut();
+    } catch {
+      // Ignored if not signed in via Clerk
+    }
+    router.push("/admin");
+    router.refresh();
+    setIsSigningOut(false);
+  };
 
   // Close mobile drawer on route change
   useEffect(() => {
@@ -595,16 +619,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {!isCollapsed && <span>Back to Portal</span>}
           </Link>
 
-          <Link
-            href="/sign-out"
-            className={`flex items-center rounded-xl text-xs font-medium text-on-surface-variant hover:text-red-600 hover:bg-red-500/10 transition-colors ${
+          <button
+            onClick={handleSignOut}
+            disabled={isSigningOut}
+            className={`w-full flex items-center rounded-xl text-xs font-medium text-on-surface-variant hover:text-red-600 hover:bg-red-500/10 transition-colors ${
               isCollapsed ? "justify-center p-3" : "gap-3 px-3 py-2"
-            }`}
+            } disabled:opacity-50`}
             title="Sign Out"
           >
             <LogOut className="w-4 h-4 shrink-0" />
-            {!isCollapsed && <span>Sign Out</span>}
-          </Link>
+            {!isCollapsed && <span>{isSigningOut ? "Signing Out..." : "Sign Out"}</span>}
+          </button>
         </div>
       </aside>
 
@@ -716,14 +741,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <ArrowLeft className="w-4 h-4" />
                 <span>Return to Portal</span>
               </Link>
-              <Link
-                href="/sign-out"
-                onClick={() => setMobileDrawerOpen(false)}
-                className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors"
+              <button
+                onClick={() => {
+                  setMobileDrawerOpen(false);
+                  handleSignOut();
+                }}
+                disabled={isSigningOut}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-red-600 hover:bg-red-500/10 transition-colors disabled:opacity-50"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
-              </Link>
+                <span>{isSigningOut ? "Signing Out..." : "Sign Out"}</span>
+              </button>
             </div>
           </div>
         </div>
