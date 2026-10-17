@@ -6,13 +6,22 @@ import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { useUser } from '@clerk/nextjs'
 
-export function AdminLayoutWrapper({ children }: { children: React.ReactNode }) {
+export function AdminLayoutWrapper({ 
+  children, 
+  hostname = "" 
+}: { 
+  children: React.ReactNode
+  hostname?: string 
+}) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, isLoaded } = useUser()
 
-  const [isKraDomain, setIsKraDomain] = useState(false)
-  const [isAdminDomain, setIsAdminDomain] = useState(false)
+  const initialIsKra = hostname.toLowerCase().startsWith("kra.") || hostname.toLowerCase().includes("kra.akubrecah.com")
+  const initialIsAdmin = hostname.toLowerCase().startsWith("admin.") || hostname.toLowerCase().includes("admin.akubrecah.com")
+
+  const [isKraDomain, setIsKraDomain] = useState(initialIsKra)
+  const [isAdminDomain, setIsAdminDomain] = useState(initialIsAdmin)
 
   useEffect(() => {
     if (typeof window !== "undefined") {

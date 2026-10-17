@@ -28,7 +28,7 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const headersList = await headers()
-  const hostname = headersList.get('host') || ''
+  const hostname = headersList.get('x-forwarded-host') || headersList.get('host') || ''
   const theme = getDomainTheme(hostname)
 
   return (
@@ -54,7 +54,7 @@ export default async function RootLayout({
             <TooltipProviderWrapper>
               <div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-hidden bg-background">                
                 <KRAAnnouncementBanner />
-                <AdminLayoutWrapper>
+                <AdminLayoutWrapper hostname={hostname}>
                   {children}
                 </AdminLayoutWrapper>
               </div>

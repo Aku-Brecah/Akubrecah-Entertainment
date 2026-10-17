@@ -197,23 +197,8 @@ export default clerkMiddleware(async (auth, request) => {
     }
   }
 
-  // Case B: Accessing KRA routes on the main domain or admin domain -> redirect to kra.akubrecah.com
-  if (!isKraSubdomain) {
-    if (
-      pathname === '/retrieval-portal' ||
-      pathname.startsWith('/retrieval-portal/') ||
-      pathname === '/pin-checker' ||
-      pathname.startsWith('/pin-checker/') ||
-      pathname === '/filing-success' ||
-      pathname.startsWith('/filing-success/') ||
-      pathname === '/dashboard/filing' ||
-      pathname.startsWith('/dashboard/filing/')
-    ) {
-      const targetUrl = new URL(pathname === '/retrieval-portal' ? '/' : pathname, 'https://kra.akubrecah.com');
-      targetUrl.search = request.nextUrl.search;
-      return NextResponse.redirect(targetUrl, 307);
-    }
-  }
+  // Case B: KRA portal routes remain local/flexible while kra.akubrecah.com is in development
+  // (Disabled forced redirect to kra.akubrecah.com so routes stay accessible locally & on dev)
 
   // Case C: Accessing on admin.akubrecah.com
   let response: NextResponse;
