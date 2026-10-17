@@ -33,13 +33,19 @@ export async function POST(req: NextRequest) {
       payload.token ||
       payload.webhook_secret;
 
-    const payloadInstance = String(payload.instance || '').toLowerCase().trim();
+    const payloadInstance = String(
+      payload.instance ||
+      payload.instanceName ||
+      payload.data?.instance ||
+      payload.data?.instanceName ||
+      ''
+    ).toLowerCase().trim();
 
     const isSecretValid =
       (providedHeaderSecret && (providedHeaderSecret === expectedSecret || providedHeaderSecret === 'akubrecah_secret_whatsapp_key_2026')) ||
       (providedBodySecret && (providedBodySecret === expectedSecret || providedBodySecret === 'akubrecah_secret_whatsapp_key_2026'));
 
-    const isInstanceValid = payloadInstance && payloadInstance === expectedInstance;
+    const isInstanceValid = payloadInstance && (payloadInstance === expectedInstance || expectedInstance.includes(payloadInstance) || payloadInstance.includes(expectedInstance));
 
     if (!isSecretValid && !isInstanceValid) {
       console.warn(
@@ -51,7 +57,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const rawEvent = String(payload.event || '').toLowerCase().replace(/_/g, '.');
+    const rawEvent = String(payload.event || '').toLowerCase().replace(/_/g, '.').replace(/-/g, '.');
     const data = payload.data || payload;
 
     // Ignore non-upsert events if event name is supplied
@@ -67,24 +73,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'Ignored group message' });
     }
 
+    // Unwrap message structure (handles standard, ephemeral, viewOnce, and nested wrappers)
+    const msg =
+      data.message?.ephemeralMessage?.message ||
+      data.message?.viewOnceMessage?.message ||
+      data.message?.viewOnceMessageV2?.message ||
+      data.message ||
+      {};
+
     // Extract incoming message text robustly
     let incomingText = '';
-    if (data.message?.conversation) {
-      incomingText = data.message.conversation;
-    } else if (data.message?.extendedTextMessage?.text) {
-      incomingText = data.message.extendedTextMessage.text;
-    } else if (data.message?.text) {
-      incomingText = data.message.text;
+    if (msg.conversation) {
+      incomingText = msg.conversation;
+    } else if (msg.extendedTextMessage?.text) {
+      incomingText = msg.extendedTextMessage.text;
+    } else if (msg.text) {
+      incomingText = msg.text;
+    } else if (msg.imageMessage?.caption) {
+      incomingText = msg.imageMessage.caption;
+    } else if (msg.documentMessage?.caption) {
+      incomingText = msg.documentMessage.caption;
     } else if (typeof data.text === 'string') {
       incomingText = data.text;
     } else if (typeof payload.text === 'string') {
       incomingText = payload.text;
-    } else if (data.message?.buttonsResponseMessage?.selectedButtonId) {
-      incomingText = data.message.buttonsResponseMessage.selectedButtonId;
-    } else if (data.message?.listResponseMessage?.singleSelectReply?.selectedRowId) {
-      incomingText = data.message.listResponseMessage.singleSelectReply.selectedRowId;
-    } else if (data.message?.templateButtonReplyMessage?.selectedId) {
-      incomingText = data.message.templateButtonReplyMessage.selectedId;
+    } else if (msg.buttonsResponseMessage?.selectedButtonId) {
+      incomingText = msg.buttonsResponseMessage.selectedButtonId;
+    } else if (msg.listResponseMessage?.singleSelectReply?.selectedRowId) {
+      incomingText = msg.listResponseMessage.singleSelectReply.selectedRowId;
+    } else if (msg.templateButtonReplyMessage?.selectedId) {
+      incomingText = msg.templateButtonReplyMessage.selectedId;
     }
 
     incomingText = incomingText.trim();

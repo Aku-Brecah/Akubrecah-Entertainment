@@ -76,6 +76,7 @@ export async function sendEvolutionTextMessage(
         number: formattedPhone,
         text: text,
       }),
+      signal: AbortSignal.timeout(15000),
     });
 
     if (!response.ok) {
@@ -120,6 +121,7 @@ export async function markEvolutionMessageRead({
           },
         ],
       }),
+      signal: AbortSignal.timeout(6000),
     });
   } catch (err: any) {
     console.error('[Evolution API] markEvolutionMessageRead error:', err.message);
