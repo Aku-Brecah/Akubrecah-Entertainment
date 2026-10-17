@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { useSignUp } from "@clerk/nextjs/legacy"
+import { useSignUp, useSignIn } from "@clerk/nextjs/legacy"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -26,6 +26,7 @@ import { Logo } from "@/components/logo"
 
 export function CustomSignUp() {
   const { isLoaded, signUp, setActive } = useSignUp()
+  const { isLoaded: isSignInLoaded, signIn } = useSignIn()
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -57,6 +58,7 @@ export function CustomSignUp() {
   const [verifying, setVerifying] = useState(false)
   const [code, setCode] = useState("")
   const [verifyLoading, setVerifyLoading] = useState(false)
+  const [resendStatus, setResendStatus] = useState<string | null>(null)
 
   // Handle Sign Up initiation
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,6 +67,7 @@ export function CustomSignUp() {
 
     setLoading(true)
     setError(null)
+    setResendStatus(null)
 
     try {
       await signUp.create({
@@ -93,24 +96,117 @@ export function CustomSignUp() {
 
     setVerifyLoading(true)
     setError(null)
+    setResendStatus(null)
 
     try {
-      const completeSignUp = await signUp.attemptEmailAddressVerification({
+      let currentSignUp = await signUp.attemptEmailAddressVerification({
         code: code.trim(),
       })
 
-      if (completeSignUp.status === "complete") {
-        await setActive({ session: completeSignUp.createdSessionId })
+      // 1. Direct completion check
+      if (currentSignUp.status === "complete" && currentSignUp.createdSessionId) {
+        await setActive({ session: currentSignUp.createdSessionId })
         window.location.href = redirectUrl || "/onboarding"
-      } else {
-        setError("Verification was not completed. Please try again.")
+        return
       }
+
+      // 2. Handle missing requirements (e.g. username, legal agreement)
+      if (currentSignUp.status === "missing_requirements") {
+        console.warn("[CustomSignUp] missing_requirements:", currentSignUp.missingFields, currentSignUp.unverifiedFields)
+
+        // Auto-fulfill username if Clerk requires it
+        if (currentSignUp.missingFields?.includes("username" as any)) {
+          const autoUsername = (emailAddress.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "") + "_" + Math.floor(1000 + Math.random() * 9000)).toLowerCase()
+          try {
+            currentSignUp = await signUp.update({ username: autoUsername })
+          } catch (uErr) {
+            console.warn("[CustomSignUp] Auto-username update attempt:", uErr)
+          }
+        }
+
+        // Auto-fulfill legal acceptance if required
+        if (currentSignUp.missingFields?.includes("legal_accepted" as any)) {
+          try {
+            currentSignUp = await signUp.update({ legalAccepted: true } as any)
+          } catch (lErr) {
+            console.warn("[CustomSignUp] Auto-legalAccepted update attempt:", lErr)
+          }
+        }
+
+        // Auto-fulfill names if required
+        if (currentSignUp.missingFields?.includes("first_name" as any) && firstName) {
+          try {
+            currentSignUp = await signUp.update({ firstName: firstName.trim() })
+          } catch (nErr) {
+            console.warn("[CustomSignUp] Name update attempt:", nErr)
+          }
+        }
+        if (currentSignUp.missingFields?.includes("last_name" as any) && lastName) {
+          try {
+            currentSignUp = await signUp.update({ lastName: lastName.trim() })
+          } catch (nErr) {
+            console.warn("[CustomSignUp] Name update attempt:", nErr)
+          }
+        }
+
+        // Check if now complete after fulfilling
+        if (currentSignUp.status === "complete" && currentSignUp.createdSessionId) {
+          await setActive({ session: currentSignUp.createdSessionId })
+          window.location.href = redirectUrl || "/onboarding"
+          return
+        }
+      }
+
+      // 3. Fallback: If session ID was already created on the resource
+      if (currentSignUp.createdSessionId) {
+        await setActive({ session: currentSignUp.createdSessionId })
+        window.location.href = redirectUrl || "/onboarding"
+        return
+      }
+
+      // 4. Fallback: Since the email is verified, authenticate directly via signIn
+      if (isSignInLoaded && signIn) {
+        try {
+          const signInAttempt = await signIn.create({
+            identifier: emailAddress.trim(),
+            password: password,
+          })
+          if (signInAttempt.status === "complete" && signInAttempt.createdSessionId) {
+            await setActive({ session: signInAttempt.createdSessionId })
+            window.location.href = redirectUrl || "/onboarding"
+            return
+          }
+        } catch (signInErr) {
+          console.warn("[CustomSignUp] Fallback sign-in attempt:", signInErr)
+        }
+      }
+
+      // 5. If still missing fields, report precise details
+      const missing = currentSignUp.missingFields?.length ? currentSignUp.missingFields.join(", ") : null
+      const unverified = currentSignUp.unverifiedFields?.length ? currentSignUp.unverifiedFields.join(", ") : null
+      const details = [missing ? `Missing fields: ${missing}` : null, unverified ? `Unverified: ${unverified}` : null].filter(Boolean).join(". ")
+      setError(details ? `Account created but additional details are required: ${details}` : "Verification was not completed. Please try signing in.")
     } catch (err: any) {
       console.error("[CustomSignUp] Verification error:", err)
       const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Invalid verification code."
       setError(msg)
     } finally {
       setVerifyLoading(false)
+    }
+  }
+
+  // Handle resending email OTP
+  const handleResendCode = async () => {
+    if (!isLoaded || !signUp) return
+    setError(null)
+    setResendStatus(null)
+
+    try {
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" })
+      setResendStatus("A new verification code was sent to your email.")
+    } catch (err: any) {
+      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Could not resend code. Please wait a moment."
+      setError(msg)
     }
   }
 
@@ -408,6 +504,10 @@ export function CustomSignUp() {
                 />
               </div>
 
+              {resendStatus && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold text-center">{resendStatus}</p>
+              )}
+
               <Button
                 type="submit"
                 disabled={verifyLoading || code.length < 6}
@@ -416,13 +516,22 @@ export function CustomSignUp() {
                 {verifyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Complete Registration"}
               </Button>
 
-              <button
-                type="button"
-                onClick={() => setVerifying(false)}
-                className="w-full text-center text-xs text-muted-foreground hover:text-foreground pt-2"
-              >
-                ← Back to edit email
-              </button>
+              <div className="flex items-center justify-between text-xs pt-2">
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  className="text-primary hover:underline font-semibold"
+                >
+                  Resend Code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVerifying(false)}
+                  className="text-muted-foreground hover:text-foreground ml-auto"
+                >
+                  ← Back to edit email
+                </button>
+              </div>
             </form>
           )}
 
