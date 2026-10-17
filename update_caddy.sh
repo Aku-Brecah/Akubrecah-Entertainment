@@ -6,6 +6,10 @@ if [ -f "/var/www/akubrecah/deploy/certs/origin.pem" ] && [ -f "/var/www/akubrec
     echo "Writing Cloudflare Origin Certificates into Caddy container..."
     docker exec -i n8n-caddy-1 sh -c 'cat > /etc/caddy/origin.pem' < /var/www/akubrecah/deploy/certs/origin.pem
     docker exec -i n8n-caddy-1 sh -c 'cat > /etc/caddy/origin.key' < /var/www/akubrecah/deploy/certs/origin.key
+    if [ -d "/root/n8n" ]; then
+        cp -f /var/www/akubrecah/deploy/certs/origin.pem /root/n8n/origin.pem 2>/dev/null || true
+        cp -f /var/www/akubrecah/deploy/certs/origin.key /root/n8n/origin.key 2>/dev/null || true
+    fi
 else
     echo "Origin certs already present in Caddy container or stored in Caddy volumes."
 fi
@@ -92,11 +96,15 @@ wa.akubrecah.com {
 }
 CADDY_CONFIG
 
-echo "=== 3. Reloading Caddy in n8n-caddy-1 ==="
+echo "=== 3. Restarting Caddy in n8n-caddy-1 to load new certificates ==="
 docker exec -i n8n-caddy-1 sh -c 'cat > /etc/caddy/Caddyfile' < /root/n8n/Caddyfile
-docker exec n8n-caddy-1 caddy reload -c /etc/caddy/Caddyfile
+docker restart n8n-caddy-1
+sleep 3
 
-echo "=== 4. Testing local HTTPS handshakes ==="
+echo "=== 4. Testing local HTTPS handshakes & TLS Certificate ==="
+echo -n "Active TLS Issuer: "
+openssl s_client -connect 127.0.0.1:443 -servername admin.akubrecah.com </dev/null 2>/dev/null | openssl x509 -noout -issuer || true
+
 echo -n "akubrecah.com: "
 curl -k -I -s -o /dev/null -w "%{http_code}\n" --resolve akubrecah.com:443:127.0.0.1 https://akubrecah.com || true
 echo -n "kra.akubrecah.com: "
