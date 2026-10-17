@@ -27,7 +27,10 @@ export function CustomSignIn() {
   const { isLoaded, signIn, setActive } = useSignIn()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectUrl = searchParams.get("redirect_url") || "/dashboard"
+  const isHostAdmin = typeof window !== "undefined" && window.location.hostname.startsWith("admin.")
+  const isHostKra = typeof window !== "undefined" && (window.location.hostname.startsWith("kra.") || searchParams.get("portal") === "kra")
+  const defaultRedirect = isHostAdmin || isHostKra ? "/" : "/dashboard"
+  const redirectUrl = searchParams.get("redirect_url") || defaultRedirect
 
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")

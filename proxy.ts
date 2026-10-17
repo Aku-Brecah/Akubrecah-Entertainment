@@ -5,6 +5,7 @@ const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
+  '/sso-callback(.*)',
   '/security',
   '/blog(.*)',
   '/articles(.*)',
@@ -222,7 +223,7 @@ export default clerkMiddleware(async (auth, request) => {
       response = NextResponse.rewrite(new URL('/admin', request.url));
     }
     // 2. Clean URL: redirect '/admin' to root '/' on admin subdomain
-    else if (pathname === '/admin' || pathname === '/admin/') {
+    else if (pathname === '/admin' || pathname === '/admin/' || pathname === '/dashboard' || pathname === '/dashboard/') {
       const cleanUrl = new URL('/', request.url);
       cleanUrl.search = request.nextUrl.search;
       return NextResponse.redirect(cleanUrl, 307);
@@ -262,6 +263,7 @@ export default clerkMiddleware(async (auth, request) => {
     const isPublicAuthRoute =
       pathname.startsWith('/sign-in') ||
       pathname.startsWith('/sign-up') ||
+      pathname.startsWith('/sso-callback') ||
       pathname.startsWith('/api/') ||
       pathname.startsWith('/session-tasks') ||
       pathname.startsWith('/legal/') ||
