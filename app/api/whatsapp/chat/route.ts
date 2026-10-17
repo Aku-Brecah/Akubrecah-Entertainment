@@ -186,35 +186,6 @@ async function handleAdminBotCommand({
   const expectedPin = process.env.ADMIN_BOT_PIN || '8426';
   const hasPinInText = clean.includes(expectedPin) || clean.includes('8426');
 
-  // Check if this message is intended for admin bot
-  const adminCmds = [
-    'admin',
-    'stats',
-    'kpi',
-    'revenue',
-    'rev',
-    'logs',
-    'tx',
-    'transactions',
-    'bot',
-    'whatsapp',
-    'link',
-    'magic',
-    'web',
-    'lock',
-    'logout',
-    'help',
-    'menu',
-  ];
-
-  const isAdminTrigger =
-    trimmed.startsWith('!') ||
-    (trimmed.startsWith('/') && adminCmds.includes(rawCmd)) ||
-    adminCmds.includes(rawCmd) ||
-    hasPinInText;
-
-  if (!isAdminTrigger) return null;
-
   const BOT_NUMBER = '254791497858';
   const effectivePhone = authorPhone || userPhone;
   const isOwner = Boolean(
@@ -237,6 +208,36 @@ async function handleAdminBotCommand({
   const hasActivePinSession = Boolean(
     metadata.isAdminAuthenticated && metadata.adminAuthExpiry && Date.now() < metadata.adminAuthExpiry
   );
+
+  // Check if this message is intended for admin bot
+  const adminCmds = [
+    'admin',
+    'stats',
+    'kpi',
+    'revenue',
+    'rev',
+    'logs',
+    'tx',
+    'transactions',
+    'bot',
+    'link',
+    'magic',
+    'lock',
+    'logout',
+  ];
+
+  // Admin trigger should ONLY activate if:
+  // 1. Explicit '!' prefix (e.g. !admin, !stats, !revenue, !link, !lock)
+  // 2. Starts with explicit word 'admin' (e.g. 'admin 8426', 'admin stats')
+  // 3. Message contains the secret admin PIN (e.g. '8426')
+  // 4. User already has an authenticated active admin session and issues an admin command
+  const isAdminTrigger =
+    trimmed.startsWith('!') ||
+    clean.toLowerCase().startsWith('admin') ||
+    hasPinInText ||
+    (hasActivePinSession && adminCmds.includes(rawCmd));
+
+  if (!isAdminTrigger) return null;
 
   // Authenticate if owner, whitelisted, active session, OR if message contains the master PIN!
   let isAdminAuthenticated = isWhitelisted || hasActivePinSession || hasPinInText;
@@ -641,37 +642,59 @@ export async function handleWhatsAppChat(params: {
       };
     }
 
+    const trimmedInput = incomingText.trim();
     const isSlashCommand = incomingText.startsWith('/');
     const cleanCmdText = incomingText.replace(/^[\!\/]/, '').trim().toLowerCase();
     const cleanCmdWord = cleanCmdText.split(/\s+/)[0] || '';
 
-    // 2. Normal Message Filter:
-    // • If user is an active Cyber Cafe subscriber and sends a National ID number or KRA PIN, process it directly!
+    // 2. Normal Message Filter & Auto-Initiation:
+    // • If user sends a National ID number or KRA PIN, process it directly!
     // • If user sends keywords like "renew", "cyber", "status", "days", "invoice", "subscribe", let it through!
-    const isPotentialIdOrPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(incomingText) || /^\d{6,9}$/.test(incomingText);
-    const isCyberKeyword = ['renew', 'cyber', 'status', 'days', 'subscribe', 'package', 'invoice', 'sub'].includes(cleanCmdWord);
+    const isPotentialIdOrPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(trimmedInput) || /^\d{6,9}$/.test(trimmedInput);
+    const isCyberKeyword = ['renew', 'cyber', 'status', 'days', 'subscribe', 'package', 'invoice', 'sub', 'receipt', 'invoices'].includes(cleanCmdWord);
 
-    if (!isSlashCommand && !isSessionActive) {
-      if (isPotentialIdOrPin) {
-        const cyberCheck = await getCyberCafeStatus(userPhone);
-        if (cyberCheck.isActive) {
-          isSessionActive = true;
-          currentStep = 'AWAITING_INPUT';
-        }
-      } else if (isCyberKeyword) {
-        isSessionActive = true;
-      }
+    if (isPotentialIdOrPin) {
+      isSessionActive = true;
+      currentStep = 'AWAITING_INPUT';
+    } else if (isCyberKeyword) {
+      isSessionActive = true;
     }
 
     if (!isSlashCommand && !isSessionActive && !isCyberKeyword) {
-      console.log(`[WhatsApp Chat] Ignored normal message from ${userPhone} (no active bot session).`);
+      const cyberCheck = await getCyberCafeStatus(userPhone);
+
+      await saveConversationState('AWAITING_INPUT', {
+        activeSession: true,
+        pin: null,
+        idNumber: null,
+        taxpayerDetails: null,
+        paymentPhone: null,
+        suggestedPhone: null,
+      });
+
+      const welcomeReply =
+        `🇰🇪 *Welcome to Akubrecah KRA Portal*${cyberCheck.isActive ? `\n🏢 *${cyberCheck.cafe?.cafeName}* (${cyberCheck.daysRemaining} days active)` : ''}\n\n` +
+        `Reprint your official KRA PIN Certificate directly on WhatsApp in seconds!\n\n` +
+        `📄 *To get your Certificate:*\n` +
+        `Send your *National ID Number* (e.g. \`12345678\`) or *KRA PIN* (e.g. \`A012345678Z\`).\n\n` +
+        `🏢 *Cyber Cafe Unlimited Plan (KES 500/Month):*\n` +
+        `• Reply */cyber* to register or renew\n` +
+        `• Reply */status* to check remaining days & daily count\n` +
+        `• Reply */invoice* to receive your official tax invoice PDF\n\n` +
+        `_Reply 0 or /cancel anytime to reset._`;
+
+      let sendResult = null;
+      if (sendDirect) {
+        sendResult = await sendEvolutionTextMessage(userPhone, welcomeReply);
+      }
+
       return {
         success: true,
         userPhone,
-        step: currentStep,
-        reply: null,
-        ignored: true,
-        message: 'Normal message ignored. Bot is only triggered by "/" commands until initiated.',
+        step: 'AWAITING_INPUT',
+        reply: welcomeReply,
+        metadata,
+        sendResult,
       };
     }
 
@@ -904,10 +927,11 @@ export async function handleWhatsAppChat(params: {
           `• */cyber* (KES 500/mo) | */status* | */cancel*`;
       }
     }
-    // 4. Step AWAITING_INPUT: User entered bot mode via /kra or /menu and sends their National ID or PIN without slashes
+    // 4. Step AWAITING_INPUT: User entered bot mode and sends their National ID or PIN
     else if (currentStep === 'AWAITING_INPUT') {
-      const isPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(incomingText);
-      const isId = /^\d{6,9}$/.test(incomingText);
+      const cleanInput = incomingText.trim();
+      const isPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(cleanInput);
+      const isId = /^\d{6,9}$/.test(cleanInput);
 
       if (lowerText === '0' || lowerText === 'cancel' || lowerText === 'exit') {
         await saveConversationState('IDLE', {
@@ -918,7 +942,16 @@ export async function handleWhatsAppChat(params: {
           paymentPhone: null,
           suggestedPhone: null,
         });
-        replyText = `✅ *Session Cancelled*\n\nThe KRA bot is now idle. Send */kra* to start again.`;
+        replyText = `✅ *Session Cancelled*\n\nThe KRA bot is now idle. Send */kra* or your ID/PIN to start again.`;
+      } else if (['hi', 'hello', 'hey', 'habari', 'mambo', 'menu', 'help', 'start', 'kra'].includes(cleanCmdWord)) {
+        const cyberCheck = await getCyberCafeStatus(userPhone);
+        replyText =
+          `🇰🇪 *Akubrecah KRA Portal*${cyberCheck.isActive ? `\n🏢 *${cyberCheck.cafe?.cafeName}* (${cyberCheck.daysRemaining} days active)` : ''}\n\n` +
+          `• Send your *National ID Number* or *KRA PIN* to reprint certificate.\n` +
+          `• Reply */cyber* for Cyber Cafe package (KES 500/Month unlimited).\n` +
+          `• Reply */status* to check subscription status.\n` +
+          `• Reply */invoice* to get official tax invoice PDF.\n` +
+          `• Reply *0* to cancel.`;
       } else if (!isPin && !isId) {
         await saveConversationState('AWAITING_INPUT', { activeSession: true });
         replyText =
@@ -928,9 +961,9 @@ export async function handleWhatsAppChat(params: {
         let taxpayer: any = null;
         try {
           if (isPin) {
-            taxpayer = await fetchTaxpayerByPin(incomingText.toUpperCase());
+            taxpayer = await fetchTaxpayerByPin(cleanInput.toUpperCase());
           } else {
-            taxpayer = await fetchTaxpayerById(incomingText);
+            taxpayer = await fetchTaxpayerById(cleanInput);
           }
         } catch (kraError: any) {
           console.warn('[WhatsApp KRA Lookup Notice]:', kraError.message);
@@ -939,14 +972,14 @@ export async function handleWhatsAppChat(params: {
         if (!taxpayer || !taxpayer.taxpayerName) {
           await saveConversationState('AWAITING_INPUT', { activeSession: true });
           replyText =
-            `❌ No record found on KRA database for \`${incomingText}\`.\n` +
+            `❌ No record found on KRA database for \`${cleanInput}\`.\n` +
             `Send another ID/PIN or reply 0 to cancel.`;
         } else {
           // Fulfill instantly if Cyber Cafe subscriber, else prompt KES 20
           replyText = await handleTaxpayerFoundFulfillment({
             userPhone,
             taxpayer,
-            idOrPinInput: incomingText,
+            idOrPinInput: cleanInput,
             saveConversationState,
           });
         }
