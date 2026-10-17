@@ -34,7 +34,7 @@ function parseCsv(content: string): any[] {
     let current = "";
     let inQuotes = false;
 
-    for (let char of line) {
+    for (const char of line) {
       if (char === '"' || char === "'") {
         inQuotes = !inQuotes;
       } else if (char === "," && !inQuotes) {

@@ -250,7 +250,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Optional secondary n8n Workflow trigger
-        const n8nWebhookUrl = process.env.N8N_KRA_DELIVERY_WEBHOOK || 'https://n8n.vybeafrica.org/webhook/kra-delivery';
+        const n8nWebhookUrl = process.env.N8N_KRA_DELIVERY_WEBHOOK || 'https://n8n.akubrecah.com/webhook/kra-delivery';
         try {
           await fetch(n8nWebhookUrl, {
             method: 'POST',
@@ -263,7 +263,7 @@ export async function POST(req: NextRequest) {
               pin: resolvedPin,
               downloadId,
               taxpayerName,
-              evolutionUrl: 'http://169.58.96.131:8085',
+              evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
             }),
           });
         } catch {}

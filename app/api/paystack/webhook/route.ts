@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
                 console.error('[Paystack Webhook] Direct fulfillment error:', fulErr.message);
               }
               // Optional secondary n8n trigger
-              const n8nWebhookUrl = process.env.N8N_KRA_DELIVERY_WEBHOOK || 'https://n8n.vybeafrica.org/webhook/kra-delivery';
+              const n8nWebhookUrl = process.env.N8N_KRA_DELIVERY_WEBHOOK || 'https://n8n.akubrecah.com/webhook/kra-delivery';
               try {
                 await fetch(n8nWebhookUrl, {
                   method: 'POST',
@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
                     pin: targetPin,
                     downloadId: existingDownload?.id || 'dl_' + Date.now(),
                     taxpayerName,
-                    evolutionUrl: 'http://169.58.96.131:8085',
+                    evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
                   }),
                 });
               } catch {}

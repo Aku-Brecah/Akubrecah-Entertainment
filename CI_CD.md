@@ -59,7 +59,7 @@ To connect GitHub Actions with your Vercel deployment and WhatsApp notification 
 | `EVOLUTION_API_URL` | Evolution API server URL | `http://169.58.96.131:8085` |
 | `EVOLUTION_API_KEY` | Evolution API access token | `akubrecah_secret_whatsapp_key_2026` |
 | `ADMIN_WHATSAPP_PHONE` | Admin mobile number to receive alerts | `254791497858` |
-| `WHATSAPP_NOTIFICATION_WEBHOOK` | (Optional) Generic webhook endpoint for Discord/Slack/n8n | `https://n8n.vybeafrica.org/webhook/...` |
+| `WHATSAPP_NOTIFICATION_WEBHOOK` | (Optional) Generic webhook endpoint for Discord/Slack/n8n | `https://n8n.akubrecah.com/webhook/...` |
 
 ---
 
