@@ -271,7 +271,7 @@ export function CustomSignIn() {
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
                       placeholder="name@example.com"
-                      className="pl-10 h-11 bg-surface-container-low border-outline-variant rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-primary/40"
+                      className="pl-10 h-11 bg-surface-container-low border-outline-variant rounded-lg text-sm text-foreground font-medium focus-visible:ring-2 focus-visible:ring-primary/40"
                     />
                   </div>
                 </div>
@@ -295,7 +295,7 @@ export function CustomSignIn() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="pl-10 pr-10 h-11 bg-surface-container-low border-outline-variant rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-primary/40"
+                      className="pl-10 pr-10 h-11 bg-surface-container-low border-outline-variant rounded-lg text-sm text-foreground font-medium focus-visible:ring-2 focus-visible:ring-primary/40"
                     />
                     <button
                       type="button"

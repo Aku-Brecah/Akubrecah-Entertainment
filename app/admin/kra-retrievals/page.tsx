@@ -417,7 +417,7 @@ export default function KraRetrievalsAdminPage() {
               fetchData(e.target.value);
             }}
             placeholder="Search PIN, ID, Name, Station, Phone..."
-            className="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-container text-xs text-on-surface placeholder:text-on-surface-variant/60 border border-outline-variant focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-container text-xs text-on-surface placeholder:text-muted-foreground border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs"
           />
         </div>
       </div>

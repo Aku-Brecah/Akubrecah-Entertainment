@@ -364,7 +364,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 }}
                 placeholder="Enter 4-digit PIN (default: 8426)"
                 autoFocus
-                className="w-full h-12 px-4 rounded-xl bg-surface-container text-center font-mono text-lg font-black tracking-widest text-on-surface placeholder:text-on-surface-variant/40 border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full h-12 px-4 rounded-xl bg-surface-container text-center font-mono text-lg font-black tracking-widest text-on-surface placeholder:text-muted-foreground border-2 border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary shadow-xs"
               />
               {pinError && (
                 <p className="text-xs font-bold text-red-600 dark:text-red-400 mt-2 text-center">{pinError}</p>

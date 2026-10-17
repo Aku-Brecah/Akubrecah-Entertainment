@@ -204,44 +204,44 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6">
       {/* Top Header Navigation Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-card text-card-foreground p-4 rounded-2xl border border-border shadow-xs">
         <Button
           onClick={onBackToSelection}
           variant="outline"
           size="sm"
-          className="border-slate-300 hover:bg-slate-100 text-slate-800 font-bold text-xs rounded-xl flex items-center gap-1.5"
+          className="border-border hover:bg-accent text-foreground font-bold text-xs rounded-xl flex items-center gap-1.5"
         >
-          <ArrowLeft className="w-4 h-4 text-[#BA1A1A]" />
+          <ArrowLeft className="w-4 h-4 text-primary" />
           <span>Back to Services</span>
         </Button>
 
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-bold text-slate-700">
+          <span className="text-xs font-bold text-muted-foreground">
             KRA Filing Gateway Online (2025/2024 Tax Season)
           </span>
         </div>
       </div>
 
       {/* Main Filing Container */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+      <div className="bg-card text-card-foreground rounded-3xl border border-border shadow-xs p-6 sm:p-8 space-y-6">
         {/* Title & Badge */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 text-[#BA1A1A] text-xs font-bold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
               <FileSpreadsheet className="w-3.5 h-3.5" />
               Official Tax Returns Gateway
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
               KRA Tax Returns Filing
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Select your return type to begin automated submission directly to Kenya Revenue Authority.
             </p>
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
+          <div className="flex items-center bg-muted p-1 rounded-xl border border-border shrink-0">
             <button
               onClick={() => {
                 setActiveTab("nil")
@@ -250,8 +250,8 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
               }}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                 activeTab === "nil"
-                  ? "bg-white text-slate-900 shadow-xs border border-slate-200"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-background text-foreground shadow-xs border border-border"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Nil Returns (Fast)
@@ -264,8 +264,8 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
               }}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                 activeTab === "income"
-                  ? "bg-white text-slate-900 shadow-xs border border-slate-200"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-background text-foreground shadow-xs border border-border"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Income Tax Return (P9)
@@ -295,24 +295,24 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
             </div>
 
             {/* Official KRA Acknowledgment Card */}
-            <div className="border border-slate-300 rounded-2xl p-6 sm:p-8 bg-slate-50 space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+            <div className="border border-border rounded-2xl p-6 sm:p-8 bg-muted/40 space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-border">
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-xl bg-[#BA1A1A] text-white flex items-center justify-center font-black text-sm">
+                  <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-black text-sm">
                     KRA
                   </div>
                   <div>
-                    <h4 className="text-sm font-black text-slate-900 uppercase">
+                    <h4 className="text-sm font-black text-foreground uppercase">
                       KENYA REVENUE AUTHORITY
                     </h4>
-                    <p className="text-[11px] text-slate-500 font-medium">
+                    <p className="text-[11px] text-muted-foreground font-medium">
                       E-Return Acknowledgment Receipt
                     </p>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     ACCEPTED
                   </span>
@@ -320,36 +320,36 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-1">
-                  <p className="text-[11px] text-slate-500 font-bold uppercase">Acknowledgment Number</p>
-                  <p className="font-mono text-sm font-black text-slate-900">
+                <div className="p-3.5 rounded-xl bg-card border border-border space-y-1">
+                  <p className="text-[11px] text-muted-foreground font-bold uppercase">Acknowledgment Number</p>
+                  <p className="font-mono text-sm font-black text-foreground">
                     {receiptData.acknowledgmentNo}
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-1">
-                  <p className="text-[11px] text-slate-500 font-bold uppercase">Taxpayer KRA PIN</p>
-                  <p className="font-mono text-sm font-black text-[#BA1A1A]">
+                <div className="p-3.5 rounded-xl bg-card border border-border space-y-1">
+                  <p className="text-[11px] text-muted-foreground font-bold uppercase">Taxpayer KRA PIN</p>
+                  <p className="font-mono text-sm font-black text-primary">
                     {receiptData.pin}
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-1">
-                  <p className="text-[11px] text-slate-500 font-bold uppercase">Obligation</p>
-                  <p className="font-bold text-slate-900">{receiptData.obligation}</p>
+                <div className="p-3.5 rounded-xl bg-card border border-border space-y-1">
+                  <p className="text-[11px] text-muted-foreground font-bold uppercase">Obligation</p>
+                  <p className="font-bold text-foreground">{receiptData.obligation}</p>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-1">
-                  <p className="text-[11px] text-slate-500 font-bold uppercase">Filing Period</p>
-                  <p className="font-bold text-slate-900">{receiptData.taxPeriod}</p>
+                <div className="p-3.5 rounded-xl bg-card border border-border space-y-1">
+                  <p className="text-[11px] text-muted-foreground font-bold uppercase">Filing Period</p>
+                  <p className="font-bold text-foreground">{receiptData.taxPeriod}</p>
                 </div>
 
-                <div className="sm:col-span-2 p-3.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between">
+                <div className="sm:col-span-2 p-3.5 rounded-xl bg-card border border-border flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] text-slate-500 font-bold uppercase">Timestamp of Submission</p>
-                    <p className="font-bold text-slate-800">{receiptData.submittedAt}</p>
+                    <p className="text-[11px] text-muted-foreground font-bold uppercase">Timestamp of Submission</p>
+                    <p className="font-bold text-foreground">{receiptData.submittedAt}</p>
                   </div>
-                  <div className="text-[10px] text-slate-500 text-right">
+                  <div className="text-[10px] text-muted-foreground text-right">
                     Verified Digital Hash
                   </div>
                 </div>
@@ -361,7 +361,7 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                   onClick={() => {
                     window.print()
                   }}
-                  className="w-full sm:w-auto bg-[#BA1A1A] hover:bg-[#9C1414] text-white font-bold text-xs h-11 px-6 rounded-xl flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs h-11 px-6 rounded-xl flex items-center justify-center gap-2"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Print / Save Official Receipt</span>
@@ -374,7 +374,7 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                     setIncomeStage("idle")
                     setReceiptData(null)
                   }}
-                  className="w-full sm:w-auto border-slate-300 text-slate-800 font-bold text-xs h-11 px-6 rounded-xl hover:bg-slate-100"
+                  className="w-full sm:w-auto border-border text-foreground font-bold text-xs h-11 px-6 rounded-xl hover:bg-accent"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   <span>File Another Return</span>
@@ -387,10 +387,10 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
           /* NIL RETURN FORM */
           /* ------------------------------------------------------------- */
           <form onSubmit={handleNilSubmit} className="space-y-6">
-            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-              <div className="text-xs text-amber-900 leading-relaxed">
-                <p className="font-bold text-amber-950">Who qualifies for Nil Returns?</p>
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="text-xs text-amber-950 dark:text-amber-200 leading-relaxed">
+                <p className="font-bold text-amber-950 dark:text-amber-100">Who qualifies for Nil Returns?</p>
                 Individuals with zero employment or business income during the tax year (e.g. students, unemployed persons, or inactive PIN holders) are legally required by KRA to file Nil Returns to maintain compliance standing and avoid statutory penalties.
               </div>
             </div>
@@ -398,8 +398,8 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {/* KRA PIN */}
               <div className="space-y-2">
-                <Label htmlFor="nil-pin" className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  KRA PIN or National ID <span className="text-[#BA1A1A]">*</span>
+                <Label htmlFor="nil-pin" className="text-xs font-bold text-foreground uppercase tracking-wider">
+                  KRA PIN or National ID <span className="text-primary">*</span>
                 </Label>
                 <Input
                   id="nil-pin"
@@ -408,13 +408,13 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                   onChange={(e) => setNilForm({ ...nilForm, pin: e.target.value.toUpperCase() })}
                   required
                   disabled={nilStage !== "idle"}
-                  className="h-11 bg-white border-slate-300 text-slate-900 font-mono text-sm rounded-xl focus:border-[#BA1A1A] focus:ring-1 focus:ring-[#BA1A1A]"
+                  className="h-11 bg-background border-input text-foreground font-mono text-sm rounded-xl focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               {/* Obligation */}
               <div className="space-y-2">
-                <Label htmlFor="nil-ob" className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <Label htmlFor="nil-ob" className="text-xs font-bold text-foreground uppercase tracking-wider">
                   Tax Obligation
                 </Label>
                 <select
@@ -422,7 +422,7 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                   value={nilForm.obligation}
                   onChange={(e) => setNilForm({ ...nilForm, obligation: e.target.value })}
                   disabled={nilStage !== "idle"}
-                  className="w-full h-11 px-3 bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-medium rounded-xl focus:outline-none focus:border-[#BA1A1A] focus:ring-1 focus:ring-[#BA1A1A]"
+                  className="w-full h-11 px-3 bg-background border border-input text-foreground text-xs sm:text-sm font-medium rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 >
                   <option value="Income Tax - Resident Individual">Income Tax - Resident Individual</option>
                   <option value="Value Added Tax (VAT)">Value Added Tax (VAT)</option>
@@ -433,7 +433,7 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
 
               {/* Tax Year */}
               <div className="space-y-2">
-                <Label htmlFor="nil-year" className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <Label htmlFor="nil-year" className="text-xs font-bold text-foreground uppercase tracking-wider">
                   Return Year
                 </Label>
                 <select
@@ -441,7 +441,7 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                   value={nilForm.taxYear}
                   onChange={(e) => setNilForm({ ...nilForm, taxYear: e.target.value })}
                   disabled={nilStage !== "idle"}
-                  className="w-full h-11 px-3 bg-white border border-slate-300 text-slate-900 text-xs sm:text-sm font-medium rounded-xl focus:outline-none focus:border-[#BA1A1A] focus:ring-1 focus:ring-[#BA1A1A]"
+                  className="w-full h-11 px-3 bg-background border border-input text-foreground text-xs sm:text-sm font-medium rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 >
                   <option value="2025">Year 2025 (01/01/2025 - 31/12/2025)</option>
                   <option value="2024">Year 2024 (01/01/2024 - 31/12/2024)</option>
@@ -451,7 +451,7 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
 
               {/* Phone for SMS notification */}
               <div className="space-y-2">
-                <Label htmlFor="nil-phone" className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <Label htmlFor="nil-phone" className="text-xs font-bold text-foreground uppercase tracking-wider">
                   M-Pesa / Notification Phone Number
                 </Label>
                 <Input
@@ -460,22 +460,22 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                   value={nilForm.phone}
                   onChange={(e) => setNilForm({ ...nilForm, phone: e.target.value })}
                   disabled={nilStage !== "idle"}
-                  className="h-11 bg-white border-slate-300 text-slate-900 text-sm rounded-xl focus:border-[#BA1A1A] focus:ring-1 focus:ring-[#BA1A1A]"
+                  className="h-11 bg-background border-input text-foreground text-sm rounded-xl focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
 
             {/* Statutory Declaration Checkbox */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <div className="p-4 rounded-2xl bg-muted/50 border border-border">
               <label className="flex items-start gap-3 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={nilForm.declaredNil}
                   onChange={(e) => setNilForm({ ...nilForm, declaredNil: e.target.checked })}
                   disabled={nilStage !== "idle"}
-                  className="mt-1 h-4 w-4 rounded border-slate-300 text-[#BA1A1A] focus:ring-[#BA1A1A]"
+                  className="mt-1 h-4 w-4 rounded border-input text-primary focus:ring-primary"
                 />
-                <span className="text-xs text-slate-700 leading-relaxed font-medium">
+                <span className="text-xs text-foreground leading-relaxed font-medium">
                   <strong>Statutory Declaration:</strong> I certify that I did not receive any taxable income, salary, or commercial turnover during the selected tax year and that all information provided is accurate under the Laws of Kenya.
                 </span>
               </label>
@@ -483,13 +483,13 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
 
             {/* Submission / Progress Bar */}
             {nilStage !== "idle" && (
-              <div className="p-4 rounded-2xl bg-red-50 border border-red-200 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-[#BA1A1A]">
-                  <Loader2 className="w-4 h-4 animate-spin text-[#BA1A1A]" />
+              <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-primary">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
                   <span>{stageProgressText}</span>
                 </div>
-                <div className="w-full bg-red-200 h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-[#BA1A1A] h-full w-2/3 animate-pulse rounded-full" />
+                <div className="w-full bg-primary/20 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-primary h-full w-2/3 animate-pulse rounded-full" />
                 </div>
               </div>
             )}
@@ -498,7 +498,7 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
             <Button
               type="submit"
               disabled={nilStage !== "idle" || !nilForm.declaredNil}
-              className="w-full h-12 bg-[#BA1A1A] hover:bg-[#9C1414] text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
             >
               {nilStage !== "idle" ? (
                 <>
@@ -518,16 +518,16 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
           /* INDIVIDUAL INCOME TAX RETURN FORM (P9 WIZARD) */
           /* ------------------------------------------------------------- */
           <form onSubmit={handleIncomeSubmit} className="space-y-6">
-            <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900 leading-relaxed">
-              <p className="font-bold text-blue-950">P9 Form Declaration Guidance</p>
+            <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-xs text-blue-950 dark:text-blue-200 leading-relaxed">
+              <p className="font-bold text-blue-950 dark:text-blue-100">P9 Form Declaration Guidance</p>
               Use the values from your official employer P9 form. Our computation engine automatically calculates standard statutory tax bands, the 15% insurance/NHIF relief, and the annual personal relief of KES 28,800.
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {/* Taxpayer PIN */}
               <div className="space-y-2">
-                <Label htmlFor="inc-pin" className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Your KRA PIN <span className="text-[#BA1A1A]">*</span>
+                <Label htmlFor="inc-pin" className="text-xs font-bold text-foreground uppercase tracking-wider">
+                  Your KRA PIN <span className="text-primary">*</span>
                 </Label>
                 <Input
                   id="inc-pin"
@@ -535,13 +535,13 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                   value={incomeForm.pin}
                   onChange={(e) => setIncomeForm({ ...incomeForm, pin: e.target.value.toUpperCase() })}
                   required
-                  className="h-11 bg-white border-slate-300 text-slate-900 font-mono text-sm rounded-xl focus:border-[#BA1A1A]"
+                  className="h-11 bg-background border-input text-foreground font-mono text-sm rounded-xl focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               {/* Employer PIN */}
               <div className="space-y-2">
-                <Label htmlFor="inc-emp-pin" className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <Label htmlFor="inc-emp-pin" className="text-xs font-bold text-foreground uppercase tracking-wider">
                   Employer PIN (From P9)
                 </Label>
                 <Input
@@ -549,14 +549,14 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                   placeholder="e.g. P051234567Z"
                   value={incomeForm.employerPin}
                   onChange={(e) => setIncomeForm({ ...incomeForm, employerPin: e.target.value.toUpperCase() })}
-                  className="h-11 bg-white border-slate-300 text-slate-900 font-mono text-sm rounded-xl focus:border-[#BA1A1A]"
+                  className="h-11 bg-background border-input text-foreground font-mono text-sm rounded-xl focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               {/* Basic Salary */}
               <div className="space-y-2">
-                <Label htmlFor="inc-basic" className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Basic Salary (Annual KES) <span className="text-[#BA1A1A]">*</span>
+                <Label htmlFor="inc-basic" className="text-xs font-bold text-foreground uppercase tracking-wider">
+                  Basic Salary (Annual KES) <span className="text-primary">*</span>
                 </Label>
                 <Input
                   id="inc-basic"
@@ -565,13 +565,13 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                   value={incomeForm.basicSalary}
                   onChange={(e) => setIncomeForm({ ...incomeForm, basicSalary: e.target.value })}
                   required
-                  className="h-11 bg-white border-slate-300 text-slate-900 text-sm rounded-xl focus:border-[#BA1A1A]"
+                  className="h-11 bg-background border-input text-foreground text-sm rounded-xl focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               {/* Housing & Other Benefits */}
               <div className="space-y-2">
-                <Label htmlFor="inc-house" className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <Label htmlFor="inc-house" className="text-xs font-bold text-foreground uppercase tracking-wider">
                   Housing / Other Allowances (Annual KES)
                 </Label>
                 <Input
@@ -580,13 +580,13 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                   placeholder="e.g. 120000"
                   value={incomeForm.housingAllowance}
                   onChange={(e) => setIncomeForm({ ...incomeForm, housingAllowance: e.target.value })}
-                  className="h-11 bg-white border-slate-300 text-slate-900 text-sm rounded-xl focus:border-[#BA1A1A]"
+                  className="h-11 bg-background border-input text-foreground text-sm rounded-xl focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               {/* Pension / NSSF */}
               <div className="space-y-2">
-                <Label htmlFor="inc-nssf" className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <Label htmlFor="inc-nssf" className="text-xs font-bold text-foreground uppercase tracking-wider">
                   Pension / NSSF Contribution (Max KES 20,000/mo)
                 </Label>
                 <Input
@@ -595,13 +595,13 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                   placeholder="e.g. 24000"
                   value={incomeForm.pensionNssf}
                   onChange={(e) => setIncomeForm({ ...incomeForm, pensionNssf: e.target.value })}
-                  className="h-11 bg-white border-slate-300 text-slate-900 text-sm rounded-xl focus:border-[#BA1A1A]"
+                  className="h-11 bg-background border-input text-foreground text-sm rounded-xl focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
 
               {/* PAYE Deducted */}
               <div className="space-y-2">
-                <Label htmlFor="inc-paye" className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <Label htmlFor="inc-paye" className="text-xs font-bold text-foreground uppercase tracking-wider">
                   Total PAYE Deducted by Employer (KES)
                 </Label>
                 <Input
@@ -610,40 +610,40 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                   placeholder="e.g. 85000"
                   value={incomeForm.payeDeducted}
                   onChange={(e) => setIncomeForm({ ...incomeForm, payeDeducted: e.target.value })}
-                  className="h-11 bg-white border-slate-300 text-slate-900 text-sm rounded-xl focus:border-[#BA1A1A]"
+                  className="h-11 bg-background border-input text-foreground text-sm rounded-xl focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
 
             {/* Live Calculation Preview Card */}
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-300 space-y-3">
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+            <div className="p-5 rounded-2xl bg-muted/50 border border-border space-y-3">
+              <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
                 Live Tax Computation Summary (Kenya P9 Standard)
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-white border border-slate-200">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Gross Income</p>
-                  <p className="font-mono text-sm font-black text-slate-900">
+                <div className="p-3 rounded-xl bg-card border border-border">
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase">Gross Income</p>
+                  <p className="font-mono text-sm font-black text-foreground">
                     KES {grossIncome.toLocaleString()}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-white border border-slate-200">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Taxable Pay</p>
-                  <p className="font-mono text-sm font-black text-slate-900">
+                <div className="p-3 rounded-xl bg-card border border-border">
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase">Taxable Pay</p>
+                  <p className="font-mono text-sm font-black text-foreground">
                     KES {taxablePay.toLocaleString()}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-white border border-slate-200">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Net Tax Payable</p>
-                  <p className="font-mono text-sm font-black text-[#BA1A1A]">
+                <div className="p-3 rounded-xl bg-card border border-border">
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase">Net Tax Payable</p>
+                  <p className="font-mono text-sm font-black text-primary">
                     KES {Math.round(netTaxPayable).toLocaleString()}
                   </p>
                 </div>
-                <div className="p-3 rounded-xl bg-white border border-slate-200">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Tax Balance / (Refund)</p>
+                <div className="p-3 rounded-xl bg-card border border-border">
+                  <p className="text-[10px] text-muted-foreground font-bold uppercase">Tax Balance / (Refund)</p>
                   <p
                     className={`font-mono text-sm font-black ${
-                      balanceTax <= 0 ? "text-emerald-600" : "text-[#BA1A1A]"
+                      balanceTax <= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-primary"
                     }`}
                   >
                     KES {Math.round(balanceTax).toLocaleString()}
@@ -656,7 +656,7 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
             <Button
               type="submit"
               disabled={incomeStage !== "idle"}
-              className="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
             >
               {incomeStage !== "idle" ? (
                 <>

@@ -224,7 +224,7 @@ export function KRASignIn() {
                       required
                       autoComplete="username"
                       disabled={loading || googleLoading}
-                      className="pl-10 h-11 text-xs sm:text-sm bg-background border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-primary"
+                      className="pl-10 h-11 text-xs sm:text-sm bg-background text-foreground font-medium border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-primary"
                     />
                   </div>
                 </div>
@@ -251,7 +251,7 @@ export function KRASignIn() {
                       required
                       autoComplete="current-password"
                       disabled={loading || googleLoading}
-                      className="pl-10 pr-10 h-11 text-xs sm:text-sm bg-background border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-primary"
+                      className="pl-10 pr-10 h-11 text-xs sm:text-sm bg-background text-foreground font-medium border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-primary"
                     />
                     <button
                       type="button"

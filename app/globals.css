@@ -2,138 +2,138 @@
 @tailwind components;
 @tailwind utilities;
 
-/* KRA Red Design System - Minimalist Premium Theme */
+/* KRA Red Design System - GovTech Crisp Prestige Theme */
 :root {
-/* Stitch Tokens Light Mode */
-  --secondary-fixed-dim: #c8c6c6;
-  --on-surface-variant: #59413f;
+  /* Clean GovTech Crisp Tokens Light Mode */
+  --secondary-fixed-dim: #cbd5e1;
+  --on-surface-variant: #334155;
   --on-secondary: #ffffff;
-  --tertiary-fixed: #e1e3e4;
-  --on-primary-container: #ff7f77;
-  --surface-variant: #f6ddda;
-  --success-green: #166534;
-  --inverse-surface: #3c2d2b;
-  --error-container: #ffdad6;
-  --primary-fixed: #ffdad7;
-  --surface-container-high: #fce2e0;
-  --primary-container: #7d000e;
-  --surface-container-highest: #f6ddda;
-  --on-secondary-container: #636262;
-  --primary-fixed-dim: #ffb3ad;
-  --on-tertiary-container: #a4a6a7;
+  --tertiary-fixed: #e2e8f0;
+  --on-primary-container: #ffffff;
+  --surface-variant: #f1f5f9;
+  --success-green: #15803d;
+  --inverse-surface: #0f172a;
+  --error-container: #fee2e2;
+  --primary-fixed: #fee2e2;
+  --surface-container-high: #e2e8f0;
+  --primary-container: #ba1a1a;
+  --surface-container-highest: #cbd5e1;
+  --on-secondary-container: #1e293b;
+  --primary-fixed-dim: #fca5a5;
+  --on-tertiary-container: #1e293b;
   --error: #ba1a1a;
   --on-tertiary: #ffffff;
-  --on-tertiary-fixed: #191c1d;
-  --surface-dim: #edd4d2;
-  --on-primary-fixed: #410004;
-  --outline-muted: #e5e7eb;
-  --on-tertiary-fixed-variant: #444748;
-  --surface-bright: #fff8f7;
-  --outline-variant: #e1bfbb;
-  --tertiary-container: #393c3d;
-  --on-primary-fixed-variant: #8e1118;
-  --inverse-primary: #ffb3ad;
+  --on-tertiary-fixed: #0f172a;
+  --surface-dim: #f8fafc;
+  --on-primary-fixed: #450a0a;
+  --outline-muted: #e2e8f0;
+  --on-tertiary-fixed-variant: #475569;
+  --surface-bright: #ffffff;
+  --outline-variant: #cbd5e1;
+  --tertiary-container: #f1f5f9;
+  --on-primary-fixed-variant: #991b1b;
+  --inverse-primary: #fca5a5;
   --success-bg: #dcfce7;
   --on-error: #ffffff;
-  --outline: #8d706e;
+  --outline: #94a3b8;
   --on-primary: #ffffff;
-  --tertiary: #232627;
-  --on-secondary-fixed: #1c1b1c;
-  --secondary-fixed: #e5e2e1;
-  --surface-container-low: #fff0ef;
-  --surface-tint: #b2292a;
-  --surface-container: #ffe9e7;
-  --on-background: #261817;
+  --tertiary: #0f172a;
+  --on-secondary-fixed: #0f172a;
+  --secondary-fixed: #f1f5f9;
+  --surface-container-low: #f8fafc;
+  --surface-tint: #ba1a1a;
+  --surface-container: #f1f5f9;
+  --on-background: #0f172a;
   --surface-container-lowest: #ffffff;
-  --on-surface: #261817;
-  --surface: #fff8f7;
-  --on-error-container: #93000a;
-  --secondary-container: #e2dfdf;
-  --on-secondary-fixed-variant: #474647;
-  --inverse-on-surface: #ffedeb;
+  --on-surface: #0f172a;
+  --surface: #ffffff;
+  --on-error-container: #7f1d1d;
+  --secondary-container: #e2e8f0;
+  --on-secondary-fixed-variant: #334155;
+  --inverse-on-surface: #f8fafc;
 
   --background: 0 0% 100%;
-  --foreground: 0 0% 10%;
-  --primary: 358 70% 37%; /* KRA Red */
+  --foreground: 222.2 84% 4.9%;
+  --primary: 358 70% 37%; /* KRA Crimson Red */
   --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 96%;
-  --secondary-foreground: 0 0% 15%;
-  --accent: 358 10% 96%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --accent: 210 40% 96.1%;
   --accent-foreground: 358 70% 37%;
-  --muted: 0 0% 96%;
-  --muted-foreground: 0 0% 45%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 40%;
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 10%;
-  --border: 0 0% 90%;
-  --input: 0 0% 90%;
+  --card-foreground: 222.2 84% 4.9%;
+  --border: 214.3 31.8% 90%;
+  --input: 214.3 31.8% 90%;
   --ring: 358 70% 37%;
-  --radius: 1.5rem; /* Large pill-like rounding globally */
+  --radius: 0.75rem; /* Ergonomic 12px default */
   scroll-behavior: smooth;
 }
 
 .dark {
-  /* Stitch Tokens Dark Mode */
-  --secondary-fixed-dim: #3f3f46;
-  --on-surface-variant: #a1a1aa;
+  /* GovTech High-Contrast Dark Mode */
+  --secondary-fixed-dim: #334155;
+  --on-surface-variant: #cbd5e1;
   --on-secondary: #ffffff;
-  --tertiary-fixed: #27272a;
+  --tertiary-fixed: #1e293b;
   --on-primary-container: #ffffff;
-  --surface-variant: #27272a;
-  --success-green: #4ade80;
-  --inverse-surface: #fafafa;
+  --surface-variant: #1e293b;
+  --success-green: #22c55e;
+  --inverse-surface: #f8fafc;
   --error-container: #7f1d1d;
   --primary-fixed: #7f1d1d;
   --surface-container-high: #27272a;
-  --primary-container: #ef4444;
-  --surface-container-highest: #27272a;
-  --on-secondary-container: #fafafa;
+  --primary-container: #ba1a1a;
+  --surface-container-highest: #3f3f46;
+  --on-secondary-container: #f8fafc;
   --primary-fixed-dim: #991b1b;
-  --on-tertiary-container: #fafafa;
+  --on-tertiary-container: #f8fafc;
   --error: #ef4444;
   --on-tertiary: #ffffff;
-  --on-tertiary-fixed: #fafafa;
-  --surface-dim: #18181b;
+  --on-tertiary-fixed: #f8fafc;
+  --surface-dim: #121215;
   --on-primary-fixed: #ffffff;
-  --outline-muted: #a1a1aa;
-  --on-tertiary-fixed-variant: #d4d4d8;
+  --outline-muted: #3f3f46;
+  --on-tertiary-fixed-variant: #cbd5e1;
   --surface-bright: #09090b;
-  --outline-variant: #52525b;
+  --outline-variant: #334155;
   --tertiary-container: #18181b;
   --on-primary-fixed-variant: #ffffff;
   --inverse-primary: #fca5a5;
   --success-bg: #064e3b;
   --on-error: #ffffff;
-  --outline: #52525b;
+  --outline: #64748b;
   --on-primary: #ffffff;
-  --tertiary: #27272a;
-  --on-secondary-fixed: #fafafa;
+  --tertiary: #18181b;
+  --on-secondary-fixed: #f8fafc;
   --secondary-fixed: #27272a;
-  --surface-container-low: #18181b;
-  --surface-tint: #ef4444;
-  --surface-container: #27272a;
-  --on-background: #fafafa;
+  --surface-container-low: #121215;
+  --surface-tint: #ba1a1a;
+  --surface-container: #18181b;
+  --on-background: #f8fafc;
   --surface-container-lowest: #09090b;
-  --on-surface: #fafafa;
-  --surface: #18181b;
+  --on-surface: #f8fafc;
+  --surface: #121215;
   --on-error-container: #fca5a5;
-  --secondary-container: #3f3f46;
-  --on-secondary-fixed-variant: #d4d4d8;
+  --secondary-container: #27272a;
+  --on-secondary-fixed-variant: #cbd5e1;
   --inverse-on-surface: #09090b;
 
-  --background: 0 0% 4%;
-  --foreground: 0 0% 98%;
+  --background: 224 71% 4%;
+  --foreground: 210 40% 98%;
   --primary: 358 70% 45%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 15%;
-  --secondary-foreground: 0 0% 98%;
-  --accent: 358 30% 15%;
+  --secondary: 215 27.9% 16.9%;
+  --secondary-foreground: 210 40% 98%;
+  --accent: 215 27.9% 16.9%;
   --accent-foreground: 358 70% 60%;
-  --muted: 0 0% 12%;
-  --muted-foreground: 0 0% 65%;
-  --card: 0 0% 6%;
-  --card-foreground: 0 0% 98%;
-  --border: 0 0% 15%;
-  --input: 0 0% 15%;
+  --muted: 215 27.9% 14%;
+  --muted-foreground: 215 20.2% 70%;
+  --card: 224 71% 5%;
+  --card-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 22%;
   --ring: 358 70% 45%;
 }
 
@@ -148,12 +148,17 @@
     line-height: 1.5;
   }
   input, textarea, select {
-    @apply rounded-lg border border-input bg-background px-4 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20;
+    @apply rounded-lg border border-input bg-background text-foreground px-4 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground;
+    color: hsl(var(--foreground));
+  }
+  select option {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
   }
   button { @apply rounded-lg transition-all active:scale-[0.98]; }
-  h1 { @apply text-4xl font-bold tracking-tight; }
-  h2 { @apply text-2xl font-bold tracking-tight; }
-  h3 { @apply text-xl font-semibold tracking-tight; }
+  h1 { @apply text-4xl font-bold tracking-tight text-on-surface; }
+  h2 { @apply text-2xl font-bold tracking-tight text-on-surface; }
+  h3 { @apply text-xl font-semibold tracking-tight text-on-surface; }
   h4 { @apply text-sm font-semibold tracking-wider uppercase text-muted-foreground; }
 }
 

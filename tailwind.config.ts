@@ -129,13 +129,15 @@
 				"headline-lg-mobile": ["Inter"]
 			},
 			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'var(--radius)',
-				sm: 'var(--radius)',
+				none: '0',
+				sm: '6px',
+				md: '10px',
+				lg: '16px',
+				xl: '24px',
+				'2xl': '32px',
+				'3xl': '40px',
+				full: '9999px',
 				DEFAULT: 'var(--radius)',
-				xl: 'var(--radius)',
-				'2xl': 'var(--radius)',
-				'3xl': 'var(--radius)'
 			},
 			spacing: {
 				"stack-lg": "24px",
