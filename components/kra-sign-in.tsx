@@ -15,7 +15,8 @@ import {
   AlertCircle, 
   ShieldCheck, 
   FileCheck2,
-  ExternalLink
+  ExternalLink,
+  KeyRound
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,10 +34,13 @@ export function KRASignIn() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 2FA state
-  const [requiresSecondFactor, setRequiresSecondFactor] = useState(false)
-  const [secondFactorCode, setSecondFactorCode] = useState("")
-  const [secondFactorLoading, setSecondFactorLoading] = useState(false)
+  // Verification & OTP state (First & Second factor)
+  const [requiresVerification, setRequiresVerification] = useState(false)
+  const [verificationMode, setVerificationMode] = useState<"first_factor" | "second_factor">("second_factor")
+  const [verificationStrategy, setVerificationStrategy] = useState<string>("email_code")
+  const [verificationCode, setVerificationCode] = useState("")
+  const [verificationLoading, setVerificationLoading] = useState(false)
+  const [resendStatus, setResendStatus] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,6 +48,7 @@ export function KRASignIn() {
 
     setLoading(true)
     setError(null)
+    setResendStatus(null)
 
     try {
       const result = await signIn.create({
@@ -53,12 +58,54 @@ export function KRASignIn() {
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId })
-        router.push(redirectUrl)
-      } else if (result.status === "needs_second_factor") {
-        setRequiresSecondFactor(true)
-      } else {
-        setError("Additional verification required. Please check your account.")
+        window.location.href = redirectUrl
+        return
       }
+
+      if (result.status === "needs_first_factor") {
+        const factors = result.supportedFirstFactors as any[]
+        const emailFactor = factors?.find((f) => f.strategy === "email_code")
+        const phoneFactor = factors?.find((f) => f.strategy === "phone_code")
+
+        if (emailFactor) {
+          await signIn.prepareFirstFactor({
+            strategy: "email_code",
+            emailAddressId: emailFactor.emailAddressId,
+          })
+          setVerificationStrategy("email_code")
+        } else if (phoneFactor) {
+          await signIn.prepareFirstFactor({
+            strategy: "phone_code",
+            phoneNumberId: phoneFactor.phoneNumberId,
+          })
+          setVerificationStrategy("phone_code")
+        }
+        setVerificationMode("first_factor")
+        setRequiresVerification(true)
+        return
+      }
+
+      if (result.status === "needs_second_factor") {
+        const factors = result.supportedSecondFactors as any[]
+        const emailFactor = factors?.find((f) => f.strategy === "email_code")
+        const phoneFactor = factors?.find((f) => f.strategy === "phone_code")
+        const totpFactor = factors?.find((f) => f.strategy === "totp")
+
+        if (emailFactor) {
+          await signIn.prepareSecondFactor({ strategy: "email_code" })
+          setVerificationStrategy("email_code")
+        } else if (phoneFactor) {
+          await signIn.prepareSecondFactor({ strategy: "phone_code" })
+          setVerificationStrategy("phone_code")
+        } else if (totpFactor) {
+          setVerificationStrategy("totp")
+        }
+        setVerificationMode("second_factor")
+        setRequiresVerification(true)
+        return
+      }
+
+      setError("Additional verification required. Please try another sign-in method.")
     } catch (err: any) {
       const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Invalid email or password. Please try again."
       setError(msg)
@@ -67,30 +114,75 @@ export function KRASignIn() {
     }
   }
 
-  const handleSecondFactorSubmit = async (e: React.FormEvent) => {
+  const handleVerificationSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isLoaded || !signIn) return
 
-    setSecondFactorLoading(true)
+    setVerificationLoading(true)
     setError(null)
 
     try {
-      const result = await signIn.attemptSecondFactor({
-        strategy: "totp",
-        code: secondFactorCode.trim(),
-      })
+      let result: any
+      if (verificationMode === "first_factor") {
+        result = await signIn.attemptFirstFactor({
+          strategy: verificationStrategy as any,
+          code: verificationCode.trim(),
+        })
+      } else {
+        result = await signIn.attemptSecondFactor({
+          strategy: verificationStrategy as any,
+          code: verificationCode.trim(),
+        })
+      }
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId })
-        router.push(redirectUrl)
+        window.location.href = redirectUrl
       } else {
-        setError("Invalid verification code. Please check and try again.")
+        setError("Verification code accepted, but additional verification is needed.")
       }
     } catch (err: any) {
-      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Verification code failed."
+      console.error("[KRASignIn] Verification error:", err)
+      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Invalid verification code. Please check and try again."
       setError(msg)
     } finally {
-      setSecondFactorLoading(false)
+      setVerificationLoading(false)
+    }
+  }
+
+  const handleResendCode = async () => {
+    if (!isLoaded || !signIn) return
+    setError(null)
+    setResendStatus(null)
+
+    try {
+      if (verificationMode === "first_factor") {
+        const factors = signIn.supportedFirstFactors as any[]
+        const emailFactor = factors?.find((f) => f.strategy === "email_code")
+        const phoneFactor = factors?.find((f) => f.strategy === "phone_code")
+
+        if (emailFactor && verificationStrategy === "email_code") {
+          await signIn.prepareFirstFactor({
+            strategy: "email_code",
+            emailAddressId: emailFactor.emailAddressId,
+          })
+          setResendStatus("A new verification code was sent to your email.")
+        } else if (phoneFactor && verificationStrategy === "phone_code") {
+          await signIn.prepareFirstFactor({
+            strategy: "phone_code",
+            phoneNumberId: phoneFactor.phoneNumberId,
+          })
+          setResendStatus("A new verification code was sent via SMS.")
+        }
+      } else {
+        if (verificationStrategy === "email_code" || verificationStrategy === "phone_code") {
+          await signIn.prepareSecondFactor({ strategy: verificationStrategy as any })
+          setResendStatus("A new security code has been sent.")
+        }
+      }
+    } catch (err: any) {
+      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Could not resend code. Please wait a moment."
+      setError(msg)
     }
   }
 
@@ -161,7 +253,7 @@ export function KRASignIn() {
             )}
           </AnimatePresence>
 
-          {!requiresSecondFactor ? (
+          {!requiresVerification ? (
             <div className="space-y-4">
               {/* Google 1-Click Login */}
               <Button
@@ -284,38 +376,79 @@ export function KRASignIn() {
               </form>
             </div>
           ) : (
-            /* 2FA Form */
-            <form onSubmit={handleSecondFactorSubmit} className="space-y-4">
-              <div className="space-y-1.5 text-center">
-                <p className="text-xs text-muted-foreground">
-                  Enter the 6-digit verification code from your authenticator application.
-                </p>
+            /* OTP / 2FA Verification Form */
+            <form onSubmit={handleVerificationSubmit} className="space-y-4">
+              <div className="p-3.5 bg-primary/10 border border-primary/20 rounded-xl text-xs text-primary font-medium flex items-start gap-2.5">
+                <KeyRound className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">
+                  {verificationStrategy === "email_code"
+                    ? "We sent a 6-digit verification code to your email. Enter it below to complete sign-in."
+                    : verificationStrategy === "phone_code"
+                    ? "We sent a 6-digit verification code via SMS. Enter it below to complete sign-in."
+                    : "Enter the 6-digit verification code from your authenticator app."}
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  6-Digit Verification Code
+                </label>
                 <Input
                   type="text"
                   maxLength={6}
                   placeholder="123456"
-                  value={secondFactorCode}
-                  onChange={(e) => setSecondFactorCode(e.target.value)}
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
                   required
                   autoFocus
                   className="text-center text-lg tracking-widest font-mono h-12 bg-background border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
 
+              {resendStatus && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold text-center">
+                  {resendStatus}
+                </p>
+              )}
+
               <Button
                 type="submit"
-                disabled={secondFactorLoading}
-                className="w-full h-11 bg-primary hover:bg-primary-hover text-white font-bold text-xs sm:text-sm rounded-xl"
+                disabled={verificationLoading || verificationCode.length < 6}
+                className="w-full h-11 bg-primary hover:bg-primary-hover text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
               >
-                {secondFactorLoading ? (
+                {verificationLoading ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Verifying Code...</span>
                   </>
                 ) : (
-                  <span>Verify Code</span>
+                  <span>Verify & Sign In</span>
                 )}
               </Button>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                {verificationStrategy !== "totp" && (
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    className="text-primary hover:underline font-semibold"
+                  >
+                    Resend Code
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRequiresVerification(false)
+                    setVerificationCode("")
+                    setError(null)
+                    setResendStatus(null)
+                  }}
+                  className="text-muted-foreground hover:text-foreground ml-auto"
+                >
+                  ← Back to sign in
+                </button>
+              </div>
             </form>
           )}
 

@@ -39,10 +39,13 @@ export function CustomSignIn() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 2FA / Verification code state
-  const [requiresSecondFactor, setRequiresSecondFactor] = useState(false)
-  const [secondFactorCode, setSecondFactorCode] = useState("")
-  const [secondFactorLoading, setSecondFactorLoading] = useState(false)
+  // Verification & OTP state
+  const [requiresVerification, setRequiresVerification] = useState(false)
+  const [verificationMode, setVerificationMode] = useState<"first_factor" | "second_factor">("second_factor")
+  const [verificationStrategy, setVerificationStrategy] = useState<string>("email_code")
+  const [verificationCode, setVerificationCode] = useState("")
+  const [verificationLoading, setVerificationLoading] = useState(false)
+  const [resendStatus, setResendStatus] = useState<string | null>(null)
 
   // Handle standard email/password sign-in
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,6 +54,7 @@ export function CustomSignIn() {
 
     setLoading(true)
     setError(null)
+    setResendStatus(null)
 
     try {
       const result = await signIn.create({
@@ -60,13 +64,55 @@ export function CustomSignIn() {
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId })
-        router.push(redirectUrl)
-      } else if (result.status === "needs_second_factor") {
-        setRequiresSecondFactor(true)
-      } else {
-        console.log("[CustomSignIn] Unhandled status:", result.status)
-        setError("Additional verification required. Please try another sign-in method.")
+        window.location.href = redirectUrl
+        return
       }
+
+      if (result.status === "needs_first_factor") {
+        const factors = result.supportedFirstFactors as any[]
+        const emailFactor = factors?.find((f) => f.strategy === "email_code")
+        const phoneFactor = factors?.find((f) => f.strategy === "phone_code")
+
+        if (emailFactor) {
+          await signIn.prepareFirstFactor({
+            strategy: "email_code",
+            emailAddressId: emailFactor.emailAddressId,
+          })
+          setVerificationStrategy("email_code")
+        } else if (phoneFactor) {
+          await signIn.prepareFirstFactor({
+            strategy: "phone_code",
+            phoneNumberId: phoneFactor.phoneNumberId,
+          })
+          setVerificationStrategy("phone_code")
+        }
+        setVerificationMode("first_factor")
+        setRequiresVerification(true)
+        return
+      }
+
+      if (result.status === "needs_second_factor") {
+        const factors = result.supportedSecondFactors as any[]
+        const emailFactor = factors?.find((f) => f.strategy === "email_code")
+        const phoneFactor = factors?.find((f) => f.strategy === "phone_code")
+        const totpFactor = factors?.find((f) => f.strategy === "totp")
+
+        if (emailFactor) {
+          await signIn.prepareSecondFactor({ strategy: "email_code" })
+          setVerificationStrategy("email_code")
+        } else if (phoneFactor) {
+          await signIn.prepareSecondFactor({ strategy: "phone_code" })
+          setVerificationStrategy("phone_code")
+        } else if (totpFactor) {
+          setVerificationStrategy("totp")
+        }
+        setVerificationMode("second_factor")
+        setRequiresVerification(true)
+        return
+      }
+
+      console.log("[CustomSignIn] Unhandled status:", result.status)
+      setError("Additional verification required. Please try another sign-in method.")
     } catch (err: any) {
       console.error("[CustomSignIn] Error:", err)
       const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Invalid email or password. Please try again."
@@ -76,31 +122,68 @@ export function CustomSignIn() {
     }
   }
 
-  // Handle 2FA verification
-  const handleSecondFactorSubmit = async (e: React.FormEvent) => {
+  // Handle OTP / 2FA verification submission
+  const handleVerificationSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isLoaded || !signIn) return
 
-    setSecondFactorLoading(true)
+    setVerificationLoading(true)
     setError(null)
 
     try {
-      const result = await signIn.attemptSecondFactor({
-        strategy: "totp",
-        code: secondFactorCode.trim(),
-      })
+      let result: any
+      if (verificationMode === "first_factor") {
+        result = await signIn.attemptFirstFactor({
+          strategy: verificationStrategy as any,
+          code: verificationCode.trim(),
+        })
+      } else {
+        result = await signIn.attemptSecondFactor({
+          strategy: verificationStrategy as any,
+          code: verificationCode.trim(),
+        })
+      }
 
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId })
-        router.push(redirectUrl)
+        window.location.href = redirectUrl
       } else {
-        setError("Invalid code. Please check and try again.")
+        setError("Verification code accepted, but additional verification is needed.")
       }
     } catch (err: any) {
-      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Verification code failed."
+      console.error("[CustomSignIn] Verification error:", err)
+      const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Invalid verification code. Please check and try again."
       setError(msg)
     } finally {
-      setSecondFactorLoading(false)
+      setVerificationLoading(false)
+    }
+  }
+
+  // Handle resending OTP code
+  const handleResendCode = async () => {
+    if (!isLoaded || !signIn) return
+    setError(null)
+    setResendStatus("Resending code...")
+    try {
+      if (verificationMode === "first_factor") {
+        const factors = signIn.supportedFirstFactors as any[]
+        const factor = factors?.find((f) => f.strategy === verificationStrategy)
+        if (factor) {
+          await signIn.prepareFirstFactor({
+            strategy: verificationStrategy as any,
+            emailAddressId: factor.emailAddressId,
+            phoneNumberId: factor.phoneNumberId,
+          })
+        }
+      } else {
+        if (verificationStrategy === "email_code" || verificationStrategy === "phone_code") {
+          await signIn.prepareSecondFactor({ strategy: verificationStrategy as any })
+        }
+      }
+      setResendStatus("New code sent! Please check your inbox.")
+    } catch (err: any) {
+      setResendStatus(null)
+      setError(err.errors?.[0]?.message || "Failed to resend code.")
     }
   }
 
@@ -220,7 +303,7 @@ export function CustomSignIn() {
             )}
           </AnimatePresence>
 
-          {!requiresSecondFactor ? (
+          {!requiresVerification ? (
             <div className="space-y-4">
               {/* Google Social Button */}
               <button
@@ -331,11 +414,17 @@ export function CustomSignIn() {
               </form>
             </div>
           ) : (
-            /* 2FA Verification View */
-            <form onSubmit={handleSecondFactorSubmit} className="space-y-4">
-              <div className="p-3 bg-primary/10 rounded-lg text-xs text-primary font-medium flex items-center gap-2">
-                <KeyRound className="w-4 h-4 shrink-0" />
-                <span>Enter the 2-step verification code from your authenticator app.</span>
+            /* OTP / 2FA Verification View */
+            <form onSubmit={handleVerificationSubmit} className="space-y-4">
+              <div className="p-3.5 bg-primary/10 border border-primary/20 rounded-xl text-xs text-primary font-medium flex items-start gap-2.5">
+                <KeyRound className="w-4 h-4 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">
+                  {verificationStrategy === "email_code"
+                    ? "We sent a 6-digit security code to your email address. Enter it below to complete sign-in."
+                    : verificationStrategy === "phone_code"
+                    ? "We sent a 6-digit security code to your phone via SMS. Enter it below to complete sign-in."
+                    : "Enter the 6-digit verification code from your authenticator app."}
+                </span>
               </div>
 
               <div className="space-y-1.5">
@@ -344,28 +433,49 @@ export function CustomSignIn() {
                   type="text"
                   required
                   maxLength={6}
-                  value={secondFactorCode}
-                  onChange={(e) => setSecondFactorCode(e.target.value)}
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
                   placeholder="123456"
+                  autoFocus
                   className="h-11 text-center font-mono tracking-widest text-lg bg-surface-container-low border-outline-variant rounded-lg"
                 />
               </div>
 
+              {resendStatus && (
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold text-center">{resendStatus}</p>
+              )}
+
               <Button
                 type="submit"
-                disabled={secondFactorLoading || secondFactorCode.length < 6}
+                disabled={verificationLoading || verificationCode.length < 6}
                 className="w-full h-11 bg-primary text-white font-bold text-sm rounded-lg shadow-md flex items-center justify-center gap-2"
               >
-                {secondFactorLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify & Continue"}
+                {verificationLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify & Sign In"}
               </Button>
 
-              <button
-                type="button"
-                onClick={() => setRequiresSecondFactor(false)}
-                className="w-full text-center text-xs text-muted-foreground hover:text-foreground pt-2"
-              >
-                ← Back to standard sign in
-              </button>
+              <div className="flex items-center justify-between text-xs pt-2">
+                {verificationStrategy !== "totp" && (
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    className="text-primary hover:underline font-semibold"
+                  >
+                    Resend Code
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRequiresVerification(false)
+                    setVerificationCode("")
+                    setError(null)
+                    setResendStatus(null)
+                  }}
+                  className="text-muted-foreground hover:text-foreground ml-auto"
+                >
+                  ← Back to standard sign in
+                </button>
+              </div>
             </form>
           )}
 

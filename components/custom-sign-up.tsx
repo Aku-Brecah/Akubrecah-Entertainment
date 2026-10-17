@@ -101,7 +101,7 @@ export function CustomSignUp() {
 
       if (completeSignUp.status === "complete") {
         await setActive({ session: completeSignUp.createdSessionId })
-        router.push("/onboarding")
+        window.location.href = redirectUrl || "/onboarding"
       } else {
         setError("Verification was not completed. Please try again.")
       }

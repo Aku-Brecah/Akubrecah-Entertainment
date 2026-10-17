@@ -83,7 +83,7 @@ export function KRASignUp() {
 
       if (completeSignUp.status === "complete") {
         await setActive({ session: completeSignUp.createdSessionId })
-        router.push(redirectUrl)
+        window.location.href = redirectUrl
       } else {
         setError("Verification incomplete. Please check your email code.")
       }
