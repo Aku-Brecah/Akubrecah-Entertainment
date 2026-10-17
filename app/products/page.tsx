@@ -24,11 +24,6 @@ const products = [
       "Zero-downtime hot reload configuration",
       "Real-time Prometheus & OpenTelemetry metric exports",
     ],
-    stats: [
-      { label: "Requests Handled", value: "10M+" },
-      { label: "Avg Latency", value: "< 8ms" },
-      { label: "Uptime SLA", value: "99.99%" },
-    ],
   },
 
   {
@@ -49,11 +44,6 @@ const products = [
       "Automated incident alert notifications via WhatsApp & Email",
       "Encrypted credential & secret rotation manager",
       "Comprehensive API request logs and error tracking",
-    ],
-    stats: [
-      { label: "Managed Nodes", value: "120+" },
-      { label: "Deployment Speed", value: "< 2 min" },
-      { label: "Alert Latency", value: "< 1s" },
     ],
   },
 ]
@@ -105,67 +95,58 @@ export default function ProductsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 space-y-20">
 
         {/* Products */}
-        {products.map((product, idx) => {
-          const Icon = product.icon
-          const isEven = idx % 2 === 0
-          return (
-            <div key={product.id} id={product.id} className="grid grid-cols-1 lg:grid-cols-5 gap-10 items-start">
-              
-              {/* Main Content */}
-              <div className={`lg:col-span-3 space-y-6 ${isEven ? "lg:order-1" : "lg:order-2"}`}>
-                <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-2xl ${product.bgColor} ${product.color}`}>
-                    <Icon className="h-7 w-7" />
+        <div className="space-y-10">
+          {products.map((product) => {
+            const Icon = product.icon
+            return (
+              <div
+                key={product.id}
+                id={product.id}
+                className="p-8 sm:p-10 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-6"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-3 rounded-2xl ${product.bgColor} ${product.color}`}>
+                      <Icon className="h-7 w-7" />
+                    </div>
+                    <div>
+                      <span className={`text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${product.bgColor} ${product.color} border border-current/20`}>
+                        {product.tag}
+                      </span>
+                      <h2 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight mt-1.5">
+                        {product.title}
+                      </h2>
+                    </div>
                   </div>
-                  <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full ${product.bgColor} ${product.color} border border-current/20`}>
-                    {product.tag}
-                  </span>
+                  <p className={`text-xs sm:text-sm font-bold ${product.color}`}>
+                    {product.subtitle}
+                  </p>
                 </div>
 
-                <div>
-                  <h2 className="text-3xl sm:text-4xl font-black text-on-surface tracking-tight">{product.title}</h2>
-                  <p className={`text-sm font-bold mt-1 ${product.color}`}>{product.subtitle}</p>
-                  <p className="text-sm text-on-surface-variant mt-3 leading-relaxed">{product.description}</p>
-                </div>
+                <p className="text-sm text-on-surface-variant leading-relaxed max-w-4xl">
+                  {product.description}
+                </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-4 border-t border-outline-variant/60">
                   {product.features.map((feat) => (
-                    <div key={feat} className="flex items-start gap-2.5 text-sm text-on-surface">
+                    <div key={feat} className="flex items-start gap-2.5 text-xs sm:text-sm text-on-surface">
                       <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                       <span>{feat}</span>
                     </div>
                   ))}
                 </div>
 
-                <Link href={product.href}>
-                  <Button className="h-12 px-7 rounded-xl bg-primary text-white font-bold text-sm flex items-center gap-2 group w-fit">
-                    {product.ctaText} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Stats Card */}
-              <div className={`lg:col-span-2 ${isEven ? "lg:order-2" : "lg:order-1"}`}>
-                <div className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-5 sticky top-24">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Live Performance</h4>
-                  <div className="space-y-4">
-                    {product.stats.map((stat) => (
-                      <div key={stat.label} className="flex items-center justify-between p-4 rounded-2xl bg-surface-container">
-                        <span className="text-xs text-on-surface-variant font-semibold">{stat.label}</span>
-                        <span className="text-lg font-black text-on-surface">{stat.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-bold pt-1">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                    System Operational
-                  </div>
+                <div className="pt-2">
+                  <Link href={product.href}>
+                    <Button className="h-11 px-7 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm flex items-center gap-2 group w-fit hover:bg-primary/90">
+                      {product.ctaText} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
                 </div>
               </div>
-
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
 
         {/* Tech Highlights */}
         <div className="space-y-8">
