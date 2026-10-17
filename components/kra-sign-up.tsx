@@ -230,7 +230,7 @@ export function KRASignUp() {
           <div className="text-center space-y-3 mb-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold tracking-wide uppercase">
               <ShieldCheck className="w-4 h-4 text-primary" />
-              <span>KRA Statutory Gateway</span>
+              <span>Akubrecah Compliance Hub</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground font-sans">
@@ -239,8 +239,13 @@ export function KRASignUp() {
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
               {verifying
                 ? `Enter the 6-digit verification code sent to ${emailAddress}`
-                : "Register for the official KRA automated compliance & returns filing portal."}
+                : "Register for Akubrecah's automated compliance assistance & returns filing portal."}
             </p>
+
+            {/* Google Safe Browsing / Phishing Prevention Disclaimer */}
+            <div className="p-2.5 rounded-lg bg-muted/60 border border-border text-[11px] text-muted-foreground leading-normal text-left">
+              <span className="font-semibold text-foreground">Independent Service:</span> Akubrecah Technologies is an independent cyber services agency. We are not affiliated with the Kenya Revenue Authority (KRA). Official free services can be accessed directly at <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="text-primary underline">itax.kra.go.ke</a>.
+            </div>
           </div>
 
           {/* Error Message */}

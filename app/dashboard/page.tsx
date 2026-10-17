@@ -135,7 +135,7 @@ export default async function TaxpayerDashboard(props: DashboardPageProps) {
             Welcome back, {firstName}
           </h1>
           <p className="text-on-surface-variant mt-1 text-sm md:text-base">
-            Access statutory compliance tools and retrieve official KRA PIN certificates instantly.
+            Access statutory compliance tools and retrieve verified KRA PIN certificates instantly.
           </p>
         </div>
 
@@ -196,7 +196,7 @@ export default async function TaxpayerDashboard(props: DashboardPageProps) {
               KRA Certificate Retrieval
             </CardTitle>
             <CardDescription className="text-xs text-on-surface-variant leading-relaxed mt-1">
-              Instant official KRA PIN compliance document retrieval by National ID or PIN with verified QR code and direct PDF download.
+              Instant KRA PIN compliance document retrieval by National ID or PIN with verified QR code and direct PDF download.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-2">

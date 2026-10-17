@@ -22,7 +22,7 @@ export default function KRAAnnouncementBanner() {
     
     if (currentDate < marchDeadline) {
       setAnnouncement(
-        "Notice: NIL returns for the 2025 tax year can be filed starting April 1st, 2026. You can still file for previous years now."
+        "Cyber Café Assistance Notice: NIL returns for the 2025 tax year can be filed starting April 1st, 2026. Official free government portal: itax.kra.go.ke."
       )
     }
   }, [])

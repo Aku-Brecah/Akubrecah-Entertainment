@@ -188,7 +188,7 @@ function FlagshipPortalContent() {
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Official KRA e-return acknowledgment receipt download</span>
+                        <span>Verified KRA e-return acknowledgment receipt download</span>
                       </li>
                     </ul>
                   </div>

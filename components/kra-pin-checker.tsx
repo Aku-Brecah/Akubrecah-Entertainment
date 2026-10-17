@@ -209,7 +209,7 @@ export function KraPinChecker() {
         <div className="relative z-10 space-y-1.5">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[10px] font-semibold uppercase tracking-wider text-red-100">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            Official KRA Live Verification Gateway & DWR Engine
+            Akubrecah Live Verification Gateway & DWR Engine
           </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
             KRA PIN & Taxpayer Status Checker

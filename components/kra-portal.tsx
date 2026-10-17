@@ -638,7 +638,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         <div className="mb-4 flex flex-col items-center justify-center text-center space-y-1.5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-[11px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest shadow-2xs">
             <ShieldCheck className="w-3.5 h-3.5 text-red-600" />
-            Official KRA Statutory Verification Engine
+            Akubrecah Statutory Verification Engine
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">
             Retrieve Tax Compliance Certificate
@@ -1431,7 +1431,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                   <div>
                     <h4 className="font-bold text-on-surface text-lg">Payment Confirmed & Verified!</h4>
                     <p className="text-xs text-on-surface-variant mt-1 max-w-sm mx-auto">
-                      Your official KRA compliance certificate has been compiled and is ready for download.
+                      Your KRA compliance certificate has been compiled and is ready for download.
                     </p>
                   </div>
 
