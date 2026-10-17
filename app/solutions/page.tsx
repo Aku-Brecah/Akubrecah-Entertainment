@@ -22,11 +22,6 @@ const solutions = [
       "Real-time financial dashboards & cashflow telemetry",
       "Fraud detection signals & risk scoring algorithms",
     ],
-    stats: [
-      { label: "M-Pesa Uptime", value: "99.9%" },
-      { label: "Settlement Speed", value: "Real-time" },
-      { label: "Compliance", value: "PCI-DSS" },
-    ],
   },
   {
     id: "govtech",
@@ -44,11 +39,6 @@ const solutions = [
       "Role-based citizen portal access control & audit trails",
       "Government API integrations (KRA, NTSA, eCitizen)",
       "PDPA & data protection compliance architecture",
-    ],
-    stats: [
-      { label: "Validations Daily", value: "10,000+" },
-      { label: "Certificate Time", value: "< 30s" },
-      { label: "PDPA Compliance", value: "100%" },
     ],
   },
   {
@@ -68,11 +58,6 @@ const solutions = [
       "Real-time business intelligence telemetry dashboards",
       "Automated multi-channel notification pipelines (SMS/Email)",
     ],
-    stats: [
-      { label: "Paperwork Reduced", value: "85%" },
-      { label: "Process Velocity", value: "4x Faster" },
-      { label: "Audit Accuracy", value: "99.9%" },
-    ],
   },
   {
     id: "saas",
@@ -90,11 +75,6 @@ const solutions = [
       "Usage metering and real-time product analytics",
       "Public API design, rate-limiting & developer documentation",
       "Cloud-native auto-scaling architecture from Day 1",
-    ],
-    stats: [
-      { label: "Time-to-Market", value: "6-8 Weeks" },
-      { label: "Architecture", value: "Multi-tenant" },
-      { label: "Scalability", value: "100K+ Users" },
     ],
   },
 ]
@@ -194,19 +174,9 @@ export default function SolutionsPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-outline-variant space-y-4">
-                  {/* Stats Mini Row */}
-                  <div className="grid grid-cols-3 gap-2">
-                    {sol.stats.map((stat) => (
-                      <div key={stat.label} className="p-2.5 rounded-xl bg-surface-container text-center">
-                        <span className="block text-[10px] text-on-surface-variant font-medium">{stat.label}</span>
-                        <span className="block text-xs font-black text-on-surface mt-0.5">{stat.value}</span>
-                      </div>
-                    ))}
-                  </div>
-
+                <div className="pt-4 border-t border-outline-variant">
                   <Link href={`/contact?solution=${sol.id}`} className="block">
-                    <Button className="w-full h-11 rounded-xl bg-primary text-white font-bold text-xs flex items-center justify-center gap-2 group">
+                    <Button className="w-full h-11 rounded-xl bg-primary text-white font-bold text-xs flex items-center justify-center gap-2 group hover:bg-primary/90">
                       Consult on {sol.title} <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </Link>
