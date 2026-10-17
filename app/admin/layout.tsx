@@ -88,7 +88,7 @@ const navSections: NavSection[] = [
     items: [
       { href: "https://mail.akubrecah.com", label: "Mailcow Webmail", icon: Mail, isExternal: true },
       { href: "https://wa.akubrecah.com", label: "WhatsApp Gateway", icon: Smartphone, isExternal: true },
-      { href: "https://kra.akubrecah.com", label: "KRA Taxpayer Hub", icon: Building2, isExternal: true },
+      { href: "/retrieval-portal", label: "KRA Taxpayer Hub (Dev)", icon: Building2 },
       { href: "https://akubrecah.com", label: "Main Agency Website", icon: Globe, isExternal: true },
     ],
   },
