@@ -136,4 +136,16 @@
   - [x] `npx tsc --noEmit` passed with 0 compile errors.
   - [x] `npm run lint` passed with 0 errors.
 
-
+## Feature 7: WhatsApp Message Deduplication & Webhook Redundancy Fix
+- [x] **Task 29: In-Memory TTL Message Deduplication Engine**
+  - [x] Created `lib/whatsapp-dedup.ts` with global TTL cache preventing duplicate message processing within 120 seconds.
+  - [x] Integrated `isDuplicateWhatsAppMessage` in `app/api/whatsapp/webhook/route.ts` to drop repeated incoming webhooks.
+  - [x] Integrated `messageId` check in `app/api/whatsapp/chat/route.ts` (`handleWhatsAppChat`) returning empty string reply on duplicate.
+- [x] **Task 30: n8n Router Workflow Deduplication Sync**
+  - [x] Updated n8n workflow `mGDFTPrBjWOI5wvS` node `Route to Chat State Engine` to forward `messageId`.
+  - [x] Published active version `a2623a86-4044-497c-a7df-7f4a7f5c536c` on n8n production.
+- [x] **Task 31: Docker Webhook Redundancy Elimination**
+  - [x] Set `WEBHOOK_GLOBAL_ENABLED=false` in `deploy/docker-compose.yml` and `docker-compose.yml` so Evolution API dispatches solely to the designated instance webhook.
+- [x] **Task 32: Verification & Testing**
+  - [x] Executed TypeScript typecheck (`npm run typecheck` passed with code 0).
+  - [x] Executed automated deduplication simulation via tsx verifying duplicate suppression.

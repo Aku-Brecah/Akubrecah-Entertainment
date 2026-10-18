@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { sanitizeWhatsAppPhone, markEvolutionMessageRead, getEvolutionInstanceName } from '@/lib/evolution';
 import { handleWhatsAppChat } from '@/app/api/whatsapp/chat/route';
+import { isDuplicateWhatsAppMessage } from '@/lib/whatsapp-dedup';
 
 export const maxDuration = 60;
 
@@ -71,6 +72,13 @@ export async function POST(req: NextRequest) {
     if (rawRemoteJid && rawRemoteJid.includes('@g.us')) {
       // Ignore group messages
       return NextResponse.json({ success: true, message: 'Ignored group message' });
+    }
+
+    // Deduplication check: Discard duplicated webhook dispatches for the same WhatsApp message
+    const messageId = String(key.id || data.id || payload.id || '').trim();
+    if (messageId && isDuplicateWhatsAppMessage(messageId)) {
+      console.log(`[WhatsApp Webhook] Duplicate message ${messageId} ignored.`);
+      return NextResponse.json({ success: true, message: 'Duplicate message already handled' });
     }
 
     // Unwrap message structure (handles standard, ephemeral, viewOnce, and nested wrappers)
@@ -168,6 +176,7 @@ export async function POST(req: NextRequest) {
     const chatResult = await handleWhatsAppChat({
       phone: userPhone,
       message: incomingText,
+      messageId,
       sendDirect: true,
       authorPhone: key.fromMe ? BOT_OWNER_NUMBER : userPhone,
       isFromBotOwner: Boolean(key.fromMe || userPhone === BOT_OWNER_NUMBER || rawRemoteJid.includes(BOT_OWNER_NUMBER)),

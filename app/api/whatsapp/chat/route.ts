@@ -16,6 +16,7 @@ import {
   displayPhone,
   formatKenyaPhone,
 } from '@/lib/cyber-subscription';
+import { isDuplicateWhatsAppMessage } from '@/lib/whatsapp-dedup';
 
 export const maxDuration = 60;
 
@@ -561,22 +562,34 @@ async function handleTaxpayerFoundFulfillment({
 export async function handleWhatsAppChat(params: {
   phone: string;
   message: string;
+  messageId?: string;
   sendDirect?: boolean;
   authorPhone?: string;
   isFromBotOwner?: boolean;
 }) {
-  const { phone: rawPhone, message: rawMessage, sendDirect = true, authorPhone, isFromBotOwner } = params;
+  const { phone: rawPhone, message: rawMessage, messageId, sendDirect = true, authorPhone, isFromBotOwner } = params;
 
   if (!rawPhone || !rawMessage) {
     return { success: false, error: 'Both phone and message are required.' };
   }
 
   try {
-
     const userPhone = sanitizeWhatsAppPhone(rawPhone);
     const incomingText = String(rawMessage).trim();
     const lowerText = incomingText.toLowerCase();
     const db = prisma as any;
+
+    // Deduplication check: If this exact message ID was already processed, ignore to prevent duplicate responses
+    if (messageId && isDuplicateWhatsAppMessage(messageId)) {
+      console.log(`[WhatsApp Chat] Duplicate message ${messageId} from ${userPhone} ignored.`);
+      return {
+        success: true,
+        userPhone,
+        step: 'DUPLICATE',
+        reply: '',
+        isDuplicate: true,
+      };
+    }
 
     // 1. Fetch or initialize conversation state in Prisma
     let conversation = await db.ai_conversations?.findFirst({
