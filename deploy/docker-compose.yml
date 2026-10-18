@@ -47,7 +47,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - EVOLUTION_API_URL=http://evolution:8080
       - EVOLUTION_API_KEY=${EVOLUTION_API_KEY:-akubrecah_secret_whatsapp_key_2026}
-      - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME:-Akubrecah Entertainment}
+      - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME:-akubrecah-portal}
       - REDIS_URL=redis://redis:6379
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - JWT_SECRET=${JWT_SECRET}

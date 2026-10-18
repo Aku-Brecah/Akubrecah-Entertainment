@@ -30,7 +30,7 @@ docker compose -f deploy/docker-compose.yml up -d evolution
 echo "5. Waiting 6 seconds for Evolution API to initialize..."
 sleep 6
 
-INSTANCE_NAME="${EVOLUTION_INSTANCE_NAME:-Akubrecah Entertainment}"
+INSTANCE_NAME="${EVOLUTION_INSTANCE_NAME:-akubrecah-portal}"
 ENCODED_INSTANCE=$(echo "$INSTANCE_NAME" | sed 's/ /%20/g')
 
 echo "6. Creating fresh instance ${INSTANCE_NAME}..."
