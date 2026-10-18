@@ -155,7 +155,7 @@ export default function ContactPage() {
               </div>
 
               <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-bold pt-1">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
                 Engineering Availability: Open for New Projects
               </div>
             </div>

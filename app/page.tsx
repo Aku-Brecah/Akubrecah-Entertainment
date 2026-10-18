@@ -70,7 +70,7 @@ export default function Home() {
             className="flex-1 space-y-7"
           >
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-high border border-outline-variant text-xs font-semibold shadow-xs">
-              <span className="flex h-2 w-2 rounded-full bg-primary animate-ping" />
+              <span className="flex h-2 w-2 rounded-full bg-primary" />
               <span className="font-black text-primary">Akubrecah Technologies</span>
               <span className="text-outline-muted">·</span>
               <span className="text-on-surface-variant">Nairobi, Kenya</span>

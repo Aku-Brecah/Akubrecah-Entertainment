@@ -696,11 +696,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     <div className="py-8 px-4 flex flex-col items-center justify-center text-center space-y-6">
                       {/* High-Tech Statutory Radar Scanner HUD */}
                       <div className="relative w-24 h-24 flex items-center justify-center">
-                        <div className="absolute inset-0 rounded-full bg-red-600/10 animate-ping" />
+                        <div className="absolute inset-0 rounded-full bg-red-600/10" />
                         <div className="absolute inset-2 rounded-full border-2 border-dashed border-red-600/40 animate-spin [animation-duration:8s]" />
-                        <div className="absolute inset-4 rounded-full bg-red-600/15 animate-pulse" />
+                        <div className="absolute inset-4 rounded-full bg-red-600/15" />
                         <div className="relative z-10 w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-600/30">
-                          <ShieldCheck className="w-6 h-6 animate-pulse" />
+                          <ShieldCheck className="w-6 h-6" />
                         </div>
                       </div>
 
@@ -716,7 +716,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       {/* Live Verification Step HUD */}
                       <div className="w-full max-w-sm bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-2xl p-4 text-left space-y-2.5">
                         <div className="flex items-center gap-2.5 text-xs">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                           <span className="font-bold text-zinc-900 dark:text-zinc-100">GavaConnect Gateway Protocol</span>
                           <span className="ml-auto text-[10px] font-mono font-bold text-emerald-600">LINKED</span>
                         </div>
