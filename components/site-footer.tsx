@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { Logo } from "@/components/logo"
+import { GooglePreferredSourceButton } from "@/components/google-preferred-source-button"
 import { Code2, Laptop, Smartphone, Cloud, FileCheck2, ShieldCheck, Mail, MapPin } from "lucide-react"
 
 export function SiteFooter(): JSX.Element {
@@ -23,8 +24,16 @@ export function SiteFooter(): JSX.Element {
           
           {/* Col 1 & 2: Brand Information */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-block hover:opacity-90 transition-opacity" aria-label="Akubrecah Technologies">
-              <Logo width={150} height={42} />
+            <Link href="/" className="inline-flex items-center gap-2.5 hover:opacity-90 transition-opacity" aria-label="Akubrecah Technologies">
+              <Logo badgeOnly width={36} height={36} className="w-9 h-9" />
+              <div className="flex flex-col">
+                <span className="text-sm font-black tracking-tight text-on-surface uppercase">
+                  Akubrecah
+                </span>
+                <span className="text-[10px] text-on-surface-variant font-medium leading-none">
+                  Technologies
+                </span>
+              </div>
             </Link>
             <p className="text-xs text-on-surface-variant leading-relaxed max-w-sm">
               Akubrecah Technologies is a full-cycle software engineering and digital innovation company. 
@@ -40,6 +49,14 @@ export function SiteFooter(): JSX.Element {
                 <Mail className="h-3.5 w-3.5 text-primary" />
                 engineering@akubrecah.com
               </span>
+            </div>
+
+            {/* Google Search Preferred Source Integration */}
+            <div className="pt-2">
+              <span className="text-[11px] font-semibold text-on-surface block mb-1.5">
+                Discover in Google Search:
+              </span>
+              <GooglePreferredSourceButton siteDomain="akubrecah.com" />
             </div>
           </div>
 

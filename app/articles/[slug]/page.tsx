@@ -4,6 +4,7 @@ import { getArticleBySlug } from '@/lib/cms';
 import { ArrowLeft, Clock, Calendar, BookOpen, Share2, Tag, CheckCircle2, User } from 'lucide-react';
 import { Metadata } from 'next';
 import { MarkdownContent } from '@/components/markdown-content';
+import { GooglePreferredSourceButton } from '@/components/google-preferred-source-button';
 
 import { ArticleSchema, BreadcrumbSchema } from '@/components/seo/site-schema';
 
@@ -127,6 +128,19 @@ export default async function ArticleDetailPage({ params }: Props) {
         {/* Rich Markdown Reader Component */}
         <div className="p-6 sm:p-10 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft">
           <MarkdownContent content={article.content} />
+        </div>
+
+        {/* Google Preferred Source Follow Bar */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-surface-container border border-outline-variant/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="space-y-0.5">
+            <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+              Follow Akubrecah on Google Search
+            </span>
+            <p className="text-[11px] text-on-surface-variant">
+              Get our engineering articles, tech insights, and compliance guides in your Google Top Stories & AI Overviews.
+            </p>
+          </div>
+          <GooglePreferredSourceButton siteDomain="akubrecah.com" />
         </div>
 
         {/* Tags */}

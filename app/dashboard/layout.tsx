@@ -67,8 +67,16 @@ export default function DashboardLayout({
           
           {/* Brand + Portal Badge */}
           <div className="flex items-center gap-3 shrink-0">
-            <Link href="/dashboard" className="flex items-center gap-2.5 group">
-              <Logo width={120} height={34} className="h-7 sm:h-8 w-auto transition-transform group-hover:scale-[1.02]" />
+            <Link href="/dashboard" className="flex items-center gap-2 group">
+              <Logo badgeOnly width={34} height={34} className="h-7 sm:h-8 w-7 sm:w-8 transition-transform group-hover:scale-105" />
+              <div className="flex flex-col">
+                <span className="text-xs sm:text-sm font-black tracking-tight text-on-surface uppercase">
+                  Akubrecah
+                </span>
+                <span className="text-[9px] text-on-surface-variant font-medium leading-none">
+                  Console
+                </span>
+              </div>
             </Link>
             <div className="hidden sm:flex items-center">
               <span className="h-4 w-px bg-outline-variant mx-2" />

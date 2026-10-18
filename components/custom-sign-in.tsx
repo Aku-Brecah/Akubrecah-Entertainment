@@ -217,8 +217,16 @@ export function CustomSignIn() {
 
         {/* Brand Logo */}
         <div className="relative z-10">
-          <Link href="/" className="inline-block transition-transform hover:scale-105">
-            <Logo width={180} height={54} className="h-10 w-auto brightness-200" />
+          <Link href="/" className="inline-flex items-center gap-2.5 transition-transform hover:scale-105">
+            <Logo badgeOnly width={36} height={36} className="w-9 h-9" />
+            <div className="flex flex-col">
+              <span className="text-sm font-black tracking-tight text-white uppercase">
+                Akubrecah
+              </span>
+              <span className="text-[10px] text-zinc-400 font-medium leading-none">
+                Technologies
+              </span>
+            </div>
           </Link>
         </div>
 
@@ -277,8 +285,16 @@ export function CustomSignIn() {
       <div className="w-full lg:w-1/2 min-h-screen flex flex-col justify-center items-center p-4 sm:p-8 lg:p-12 relative bg-surface-container-lowest">
         {/* Mobile Logo */}
         <div className="lg:hidden mb-8 text-center flex flex-col items-center">
-          <Link href="/">
-            <Logo width={160} height={48} className="mb-2" />
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <Logo badgeOnly width={40} height={40} className="w-10 h-10 mb-1" />
+            <div className="flex flex-col text-left">
+              <span className="text-sm font-black tracking-tight text-on-surface uppercase">
+                Akubrecah
+              </span>
+              <span className="text-[10px] text-on-surface-variant font-medium leading-none">
+                Technologies
+              </span>
+            </div>
           </Link>
         </div>
 

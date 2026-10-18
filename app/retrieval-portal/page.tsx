@@ -19,6 +19,7 @@ import { useUser, UserButton } from "@clerk/nextjs"
 import { KRAPortal } from "@/components/kra-portal"
 import { KRAFilingPortal } from "@/components/kra-filing-portal"
 import { CyberSubscriptionCard } from "@/components/cyber-subscription-card"
+import { GooglePreferredSourceButton } from "@/components/google-preferred-source-button"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -314,6 +315,7 @@ function FlagshipPortalContent() {
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[11px]">
+            <GooglePreferredSourceButton siteDomain="akubrecah.com" />
             <Link href="/legal/disclaimer" className="text-primary font-medium hover:underline underline-offset-4">
               Disclaimer
             </Link>
