@@ -9,6 +9,7 @@ import { AdminLayoutWrapper } from "@/components/admin-layout-wrapper"
 import { getDomainTheme } from '@/lib/utils'
 import KRAAnnouncementBanner from '@/components/KRAAnnouncementBanner'
 import { Analytics } from "@vercel/analytics/next"
+import Script from 'next/script'
 
 import "./globals.css"
 
@@ -118,14 +119,24 @@ export default async function RootLayout({
   const hostname = headersList.get('x-forwarded-host') || headersList.get('host') || ''
   const theme = getDomainTheme(hostname)
 
+  const isVercel = Boolean(
+    process.env.VERCEL || 
+    process.env.NEXT_PUBLIC_VERCEL_ENV || 
+    hostname.includes('vercel.app')
+  );
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <SiteSchema />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
-        <script async src="https://news.google.com/swg/js/v1/publisher.js" />
+        {/* Preconnect to Clerk edge to accelerate auth components */}
+        <link rel="preconnect" href="https://clerk.akubrecah.com" />
+        <link rel="dns-prefetch" href="https://clerk.akubrecah.com" />
+        {/* Lazy load third-party Google Publisher SDK to eliminate critical-path render blocking */}
+        <Script 
+          src="https://news.google.com/swg/js/v1/publisher.js" 
+          strategy="lazyOnload" 
+        />
       </head>
       <body className={`${inter.variable} ${plusJakarta.variable} ${alfa.variable} ${satisfy.variable} font-sans`} data-theme={theme} suppressHydrationWarning={true}>
         <ClerkProvider 
@@ -173,7 +184,7 @@ export default async function RootLayout({
                 },
               }}
             />
-            <Analytics />
+            {isVercel && <Analytics />}
           </ThemeProvider>
         </ClerkProvider>
       </body>

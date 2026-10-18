@@ -62,6 +62,7 @@ export function Logo({
         src={logoSrc}
         alt={altText}
         fill
+        sizes={`${Math.max(width, 160)}px`}
         priority
         className="object-contain"
       />

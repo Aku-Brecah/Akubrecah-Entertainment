@@ -175,9 +175,11 @@ export default function Home() {
                           target="_blank"
                           rel="noreferrer"
                           className="text-on-surface-variant hover:text-primary transition-colors p-1"
-                          title="Open Live System"
+                          aria-label={`Open live system for ${proj.title}`}
+                          title={`Open live system for ${proj.title}`}
                         >
-                          <ExternalLink className="w-3.5 h-3.5" />
+                          <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span className="sr-only">Open live system for {proj.title}</span>
                         </a>
                       )}
                     </div>
@@ -289,7 +291,7 @@ export default function Home() {
         <section className="p-10 sm:p-14 rounded-3xl bg-on-surface text-background dark:bg-surface-container-lowest dark:text-on-surface space-y-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-primary">Engineering Capabilities</span>
+              <span className="text-xs font-black uppercase tracking-widest text-red-400 dark:text-red-400">Engineering Capabilities</span>
               <h2 className="text-3xl sm:text-4xl font-black leading-tight">
                 Built for Complexity.<br />Delivered with Precision.
               </h2>

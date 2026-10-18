@@ -54,9 +54,9 @@ export function SiteFooter(): JSX.Element {
 
           {/* Col 3: Engineering Services */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-on-surface uppercase tracking-wider">
               Engineering Services
-            </h4>
+            </h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/services#web" className="hover:text-primary transition-colors flex items-center gap-1.5">
@@ -88,9 +88,9 @@ export function SiteFooter(): JSX.Element {
 
           {/* Col 4: Enterprise Platforms & Tools */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-on-surface uppercase tracking-wider">
               Platforms & Tools
-            </h4>
+            </h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/products" className="hover:text-primary transition-colors flex items-center gap-1.5">
@@ -114,9 +114,9 @@ export function SiteFooter(): JSX.Element {
 
           {/* Col 5: Company & Quick Links */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-on-surface uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-on-surface uppercase tracking-wider">
               Company
-            </h4>
+            </h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/about" className="hover:text-primary transition-colors">

@@ -113,6 +113,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [unreadInquiriesCount, setUnreadInquiriesCount] = useState<number>(0);
 
+  // Dynamically load Material Symbols only in Admin view to keep public pages ultra-fast
+  useEffect(() => {
+    const linkId = "material-symbols-font";
+    if (!document.getElementById(linkId)) {
+      const link = document.createElement("link");
+      link.id = linkId;
+      link.rel = "stylesheet";
+      link.href = "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap";
+      document.head.appendChild(link);
+    }
+  }, []);
+
   useEffect(() => {
     let active = true;
     const fetchUnread = async () => {
