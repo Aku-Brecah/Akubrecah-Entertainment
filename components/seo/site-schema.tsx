@@ -16,8 +16,8 @@ export function SiteSchema(): JSX.Element {
     url: 'https://akubrecah.com',
     logo: {
       '@type': 'ImageObject',
-      url: 'https://akubrecah.com/logo.png',
-      caption: 'Akubrecah Technologies',
+      url: 'https://akubrecah.com/logo-circle.png',
+      caption: 'Akubrecah Technologies - Design Print Brand',
     },
     image: 'https://akubrecah.com/og-image.jpg',
     description:
@@ -258,7 +258,7 @@ export function ArticleSchema({
       url: 'https://akubrecah.com',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://akubrecah.com/logo.png',
+        url: 'https://akubrecah.com/logo-circle.png',
       },
     },
     image: imageUrl || 'https://akubrecah.com/og-image.jpg',
