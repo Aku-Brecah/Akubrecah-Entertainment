@@ -101,7 +101,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    google: process.env.GOOGLE_SITE_VERIFICATION || 'google41e64c96aba6d4b0',
     yandex: process.env.YANDEX_VERIFICATION || undefined,
     other: {
       'msvalidate.01': process.env.BING_SITE_VERIFICATION || '',
