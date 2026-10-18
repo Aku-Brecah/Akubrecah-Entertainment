@@ -26,12 +26,14 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and npm configuration
 COPY package*.json ./
+COPY .npmrc* ./
 COPY prisma ./prisma/
 
 # Install full dependencies (including devDependencies required for Next.js and Prisma compilation)
-RUN npm ci || npm install
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
 
 # Copy application source code
 COPY . .
