@@ -60,7 +60,7 @@ services:
       - CLEAN_STORE_CONTACTS=true
       - CLEAN_STORE_CHATS=true
       - DATABASE_ENABLED=false
-      - REDIS_ENABLED=true
+      - REDIS_ENABLED=false
       - REDIS_URI=redis://redis:6379
       - WEBHOOK_GLOBAL_URL=${NEXT_PUBLIC_APP_URL:-http://akubrecah-app:3000}/api/whatsapp/webhook
       - WEBHOOK_GLOBAL_ENABLED=true
