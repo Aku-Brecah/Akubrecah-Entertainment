@@ -72,7 +72,17 @@ curl -s -X POST "https://wa.akubrecah.com/webhook/set/${ENCODED_INSTANCE}" \
       },
       "byEvents": false,
       "base64": false,
-      "events": ["MESSAGES_UPSERT"]
+      "events": [
+        "MESSAGES_UPSERT",
+        "MESSAGES_UPDATE",
+        "CHATS_SET",
+        "CHATS_UPSERT",
+        "CHATS_UPDATE",
+        "CONTACTS_SET",
+        "CONTACTS_UPSERT",
+        "CONTACTS_UPDATE",
+        "CONNECTION_UPDATE"
+      ]
     }
   }' > /dev/null || true
 
@@ -80,4 +90,4 @@ echo ""
 echo "✅ Evolution API is completely clean and ready!"
 echo "👉 Open https://wa.akubrecah.com/manager/ in your browser"
 echo "👉 Enter API Key: akubrecah_secret_whatsapp_key_2026"
-echo "👉 Click on 'akubrecah-kra' and scan the fresh QR code!"
+echo "👉 Click on '${INSTANCE_NAME}' and scan the fresh QR code!"
