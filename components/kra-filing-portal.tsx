@@ -230,13 +230,13 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
               <FileSpreadsheet className="w-3.5 h-3.5" />
-              Official Tax Returns Gateway
+              Tax Filing Facilitation
             </div>
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-foreground tracking-tight">
-              KRA Tax Returns Filing
+              Assisted Tax Returns Filing
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              Select your return type to begin automated submission directly to Kenya Revenue Authority.
+              Select your return type to begin guided preparation and submission.
             </p>
           </div>
 
@@ -271,6 +271,14 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
               Income Tax (P9)
             </button>
           </div>
+        </div>
+
+        {/* Third-Party Service Disclaimer Banner */}
+        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-xs leading-relaxed">
+          <strong className="font-semibold">Notice:</strong> Akubrecah Technologies is an independent cyber facilitation service and is not affiliated with the Kenya Revenue Authority (KRA). Free official tax filing services are available directly on{" "}
+          <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline font-semibold hover:text-amber-950 dark:hover:text-white">
+            itax.kra.go.ke
+          </a>.
         </div>
 
         {/* ------------------------------------------------------------- */}

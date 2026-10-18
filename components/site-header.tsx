@@ -550,13 +550,13 @@ export function SiteHeader() {
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs sm:text-sm font-black tracking-wide text-on-surface uppercase">
-                    KRA Portal
+                    Cyber Portal
                   </span>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
-                    Statutory
+                    Independent
                   </span>
                 </div>
-                <span className="text-[10px] text-on-surface-variant font-medium">Akubrecah Compliance</span>
+                <span className="text-[10px] text-on-surface-variant font-medium">Akubrecah Assistance</span>
               </div>
             </Link>
           ) : (

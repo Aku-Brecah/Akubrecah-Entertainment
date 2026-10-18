@@ -224,42 +224,51 @@ export function CustomSignIn() {
 
         {/* Feature List & Headline */}
         <div className="relative z-10 space-y-8 max-w-lg my-auto py-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold">
-            <ShieldCheck className="w-4 h-4 text-red-400" />
-            <span>KRA Direct Remoting & GavaConnect Gateway</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-semibold">
+            <ShieldCheck className="w-4 h-4 text-primary" />
+            <span>Akubrecah Technologies Client Portal</span>
           </div>
 
           <div className="space-y-4">
             <h1 className="text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-              Sign In to Your KRA Portal.
+              Sign In to Your Akubrecah Account.
             </h1>
             <p className="text-zinc-400 text-base leading-relaxed">
-              Instant access to National ID & PIN unmasking, live certificate stamping, Nil return automation, and ATS resume tools.
+              Access your digital tools, cyber service orders, verified certificate downloads, and client dashboard.
             </p>
           </div>
 
           <div className="space-y-3.5 pt-2">
             {[
-              { text: "Real-Time KRA Production API & DWR Integration", icon: Zap },
-              { text: "Instant PDF Certificate Stamping & Custom Editing", icon: CheckCircle2 },
-              { text: "Secure Citizen Session & AES-256 Encryption", icon: Lock },
+              { text: "Fast & Secure Client Account Access", icon: Zap },
+              { text: "Encrypted Document & Certificate Management", icon: CheckCircle2 },
+              { text: "Compliant with Kenya Data Protection Act 2019", icon: Lock },
             ].map((feature, idx) => (
               <div key={idx} className="flex items-center gap-3 text-sm text-zinc-300">
-                <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 shrink-0">
+                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
                   <feature.icon className="w-3.5 h-3.5" />
                 </div>
                 <span>{feature.text}</span>
               </div>
             ))}
           </div>
+
+          {/* Third party non-government notice */}
+          <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs text-zinc-400 leading-relaxed">
+            <strong className="text-zinc-200">Notice:</strong> This is a private Akubrecah Technologies account portal. Do not enter your official Government KRA iTax passwords here. Official tax filing is available directly at{" "}
+            <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+              itax.kra.go.ke
+            </a>.
+          </div>
         </div>
 
         {/* Footer info */}
         <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-zinc-400">
-          <span>© {new Date().getFullYear()} KRA Certificate Portal</span>
+          <span>© {new Date().getFullYear()} Akubrecah Technologies. All rights reserved.</span>
           <div className="flex items-center gap-4">
             <Link href="/legal/privacy" className="hover:text-white transition-colors">Privacy</Link>
             <Link href="/legal/terms" className="hover:text-white transition-colors">Terms</Link>
+            <Link href="/legal/disclaimer" className="hover:text-white transition-colors">Disclaimer</Link>
           </div>
         </div>
       </div>
@@ -284,8 +293,11 @@ export function CustomSignIn() {
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-3">
               <Fingerprint className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-bold text-on-surface tracking-tight">Sign In to Your Account</h2>
-            <p className="text-sm text-on-surface-variant mt-1">Enter your credentials to continue</p>
+            <h2 className="text-2xl font-bold text-on-surface tracking-tight">Sign In to Akubrecah</h2>
+            <p className="text-sm text-on-surface-variant mt-1">Enter your Akubrecah account credentials to continue</p>
+            <div className="mt-3 p-2 rounded-lg bg-surface-container border border-outline-variant/60 text-[11px] text-on-surface-variant text-center font-medium">
+              Private client account • Not affiliated with Government KRA
+            </div>
           </div>
 
           {/* Error Banner */}

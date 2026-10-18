@@ -20,6 +20,7 @@ import { KRAPortal } from "@/components/kra-portal"
 import { KRAFilingPortal } from "@/components/kra-filing-portal"
 import { CyberSubscriptionCard } from "@/components/cyber-subscription-card"
 import Link from "next/link"
+import Image from "next/image"
 
 type ServiceMode = "retrieval" | "filing"
 
@@ -61,20 +62,20 @@ function FlagshipPortalContent() {
           
           {/* Brand Mark & Identity */}
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-90 shrink-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black text-xs sm:text-sm shadow-xs group-hover:scale-105 transition-transform">
-              KRA
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center p-1 shadow-xs group-hover:scale-105 transition-transform">
+              <Image src="/logo-circle.png" alt="Akubrecah" width={36} height={36} className="object-contain" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1 sm:gap-1.5">
                 <span className="text-[11px] sm:text-sm font-black tracking-tight text-on-surface uppercase">
-                  Compliance<span className="hidden sm:inline"> Portal</span>
+                  Akubrecah<span className="hidden sm:inline"> Cyber Portal</span>
                 </span>
                 <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                  GovTech
+                  Independent
                 </span>
               </div>
               <span className="text-[10px] text-on-surface-variant font-medium hidden md:inline">
-                Republic of Kenya · Statutory Compliance Engine
+                Akubrecah Technologies · Cyber Services & Document Retrieval
               </span>
             </div>
           </Link>
@@ -135,25 +136,25 @@ function FlagshipPortalContent() {
         <div className="text-center space-y-1.5 sm:space-y-2 max-w-2xl mx-auto px-1">
           <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-primary/10 text-primary text-[10px] sm:text-xs font-bold uppercase tracking-wider border border-primary/20">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Statutory Verification Engine</span>
+            <span>Cyber Facilitation Desk</span>
           </div>
 
           <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-on-surface tracking-tight">
             {mode === "retrieval" ? (
               <>
-                Instant KRA <span className="text-primary">Certificate Retrieval</span>
+                Fast KRA <span className="text-primary">Certificate Retrieval</span>
               </>
             ) : (
               <>
-                Automated Tax Returns <span className="text-primary">Filing Gateway</span>
+                Assisted Tax Returns <span className="text-primary">Filing Gateway</span>
               </>
             )}
           </h1>
 
           <p className="text-[11px] sm:text-xs md:text-sm text-on-surface-variant max-w-xl mx-auto leading-relaxed">
             {mode === "retrieval"
-              ? "Enter your National ID or KRA PIN below to generate and download your official cryptographically verified document in seconds."
-              : "File your Nil Returns or guided declarations directly to the statutory registry with verified e-acknowledgment receipts."}
+              ? "Enter your National ID or KRA PIN below to generate and download your verified compliance document in seconds."
+              : "Prepare and submit your Nil Returns with verified electronic acknowledgment receipts."}
           </p>
         </div>
 
@@ -252,7 +253,7 @@ function FlagshipPortalContent() {
                   </div>
                   <div className="flex items-start gap-2 text-xs">
                     <span className="font-mono font-black text-primary px-1.5 py-0.5 rounded bg-primary/10 text-[10px]">03</span>
-                    <span className="text-on-surface-variant text-[11px]">Download your official certificate with live QR-code verification stamp.</span>
+                    <span className="text-on-surface-variant text-[11px]">Download your certificate with live QR-code verification stamp.</span>
                   </div>
                 </motion.div>
               )}
@@ -309,10 +310,13 @@ function FlagshipPortalContent() {
       <footer className="mt-auto border-t border-outline-variant/60 bg-surface-container-lowest/80 py-5 sm:py-6 text-xs text-on-surface-variant">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
           <p className="text-[11px] text-on-surface-variant">
-            &copy; {new Date().getFullYear()} Akubrecah Technologies. Republic of Kenya Statutory Compliance Gateway.
+            &copy; {new Date().getFullYear()} Akubrecah Technologies. Independent third-party cyber assistance provider. Not affiliated with the Kenya Revenue Authority (KRA).
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[11px]">
+            <Link href="/legal/disclaimer" className="text-primary font-medium hover:underline underline-offset-4">
+              Disclaimer
+            </Link>
             <Link href="/legal/privacy" className="hover:text-primary transition-colors underline-offset-4 hover:underline">
               Privacy Policy
             </Link>

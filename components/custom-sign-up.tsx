@@ -247,51 +247,51 @@ export function CustomSignUp() {
 
         {/* Feature List & Headline */}
         <div className="relative z-10 space-y-8 max-w-lg my-auto py-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold">
-            <UserPlus className="w-4 h-4 text-red-400" />
-            <span>{isKra ? "Fast & Secure Citizen Registration" : "Developer & Client Registration"}</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-semibold">
+            <UserPlus className="w-4 h-4 text-primary" />
+            <span>Fast & Secure Account Registration</span>
           </div>
 
           <div className="space-y-4">
             <h1 className="text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-              {isKra ? "Create Your KRA Portal Account." : "Create Your Akubrecah Account."}
+              Create Your Akubrecah Account.
             </h1>
             <p className="text-zinc-400 text-base leading-relaxed">
-              {isKra
-                ? "Join thousands of Kenyan citizens automating their compliance certificates, filing Nil returns, and verifying taxpayer records."
-                : "Join engineering teams and clients building full-scale web platforms, mobile apps, and enterprise automated systems."}
+              Join clients and businesses using Akubrecah Technologies for digital services, cyber assistance, and document workflow automation.
             </p>
           </div>
 
           <div className="space-y-3.5 pt-2">
-            {(isKra
-              ? [
-                  { text: "Instant PIN & Compliance Certificate Downloads", icon: Zap },
-                  { text: "Compliant with Kenya Data Protection Act 2019", icon: ShieldCheck },
-                  { text: "Automated Nil & Income Tax Returns Filing", icon: CheckCircle2 },
-                ]
-              : [
-                  { text: "Full-Stack Web & Mobile Engineering Platforms", icon: Zap },
-                  { text: "Enterprise Cloud & Microservices Infrastructure", icon: ShieldCheck },
-                  { text: "Engineering Observability & Client Consoles", icon: CheckCircle2 },
-                ]
-            ).map((feature, idx) => (
+            {[
+              { text: "Fast Access to Document Tools & Certificate Orders", icon: Zap },
+              { text: "Compliant with Kenya Data Protection Act 2019", icon: ShieldCheck },
+              { text: "Automated Workflow Notifications & Order Tracking", icon: CheckCircle2 },
+            ].map((feature, idx) => (
               <div key={idx} className="flex items-center gap-3 text-sm text-zinc-300">
-                <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 shrink-0">
+                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
                   <feature.icon className="w-3.5 h-3.5" />
                 </div>
                 <span>{feature.text}</span>
               </div>
             ))}
           </div>
+
+          {/* Third party non-government notice */}
+          <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs text-zinc-400 leading-relaxed">
+            <strong className="text-zinc-200">Notice:</strong> This creates a private Akubrecah account. We are an independent facilitation provider and are not affiliated with the Kenya Revenue Authority (KRA). Official free tax services are at{" "}
+            <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+              itax.kra.go.ke
+            </a>.
+          </div>
         </div>
 
         {/* Footer info */}
         <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-zinc-400">
-          <span>© {new Date().getFullYear()} {isKra ? "KRA Certificate Portal" : "Akubrecah Technologies"}</span>
+          <span>© {new Date().getFullYear()} Akubrecah Technologies. All rights reserved.</span>
           <div className="flex items-center gap-4">
             <Link href="/legal/privacy" className="hover:text-white transition-colors">Privacy</Link>
             <Link href="/legal/terms" className="hover:text-white transition-colors">Terms</Link>
+            <Link href="/legal/disclaimer" className="hover:text-white transition-colors">Disclaimer</Link>
           </div>
         </div>
       </div>
@@ -322,8 +322,11 @@ export function CustomSignUp() {
             <p className="text-sm text-on-surface-variant mt-1">
               {verifying 
                 ? `We sent a 6-digit code to ${emailAddress}` 
-                : "Get started with your automated tax portal"}
+                : "Get started with your Akubrecah service account"}
             </p>
+            <div className="mt-3 p-2 rounded-lg bg-surface-container border border-outline-variant/60 text-[11px] text-on-surface-variant text-center font-medium">
+              Private client account • Not affiliated with Government KRA
+            </div>
           </div>
 
           {/* Error Banner */}

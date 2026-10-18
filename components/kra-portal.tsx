@@ -462,7 +462,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     }
 
     setIsDownloadingPdf(true)
-    const loadingToast = toast.loading("Securely generating your official certificate...")
+    const loadingToast = toast.loading("Securely generating your compliance certificate...")
     try {
       let activeForm = { ...formData }
       if ((!activeForm.pin || !activeForm.fullName) && typeof window !== "undefined") {
@@ -654,7 +654,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           <Alert className="bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 rounded-2xl flex items-center gap-3 py-3 px-4 shadow-sm">
             <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
             <AlertDescription className="text-xs font-semibold">
-              Taxpayer compliance record retrieved successfully. Review details below and download your official certificate.
+              Taxpayer compliance record retrieved successfully. Review details below and proceed to download your certificate.
             </AlertDescription>
           </Alert>
         </div>
@@ -708,10 +708,10 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
                       <div className="space-y-1.5 max-w-sm">
                         <h3 className="font-extrabold text-base sm:text-lg text-zinc-900 dark:text-zinc-50">
-                          Connecting to KRA Database
+                          Connecting to Tax Records Service
                         </h3>
                         <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
-                          Secure statutory handshake in progress. Verifying taxpayer identity credentials...
+                          Secure verification in progress. Querying taxpayer identity records...
                         </p>
                       </div>
 
@@ -719,8 +719,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       <div className="w-full max-w-sm bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-2xl p-4 text-left space-y-2.5">
                         <div className="flex items-center gap-2.5 text-xs">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                          <span className="font-bold text-zinc-900 dark:text-zinc-100">GavaConnect Gateway Protocol</span>
-                          <span className="ml-auto text-[10px] font-mono font-bold text-emerald-600">LINKED</span>
+                          <span className="font-bold text-zinc-900 dark:text-zinc-100">Akubrecah Verification Gateway</span>
+                          <span className="ml-auto text-[10px] font-mono font-bold text-emerald-600">ONLINE</span>
                         </div>
                         <div className="flex items-center gap-2.5 text-xs">
                           <Loader2 className="w-3.5 h-3.5 text-red-600 animate-spin shrink-0" />
@@ -735,6 +735,14 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                   ) : (
                     <motion.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
                       
+                      {/* Third-Party Service Disclaimer Banner */}
+                      <div className="max-w-md mx-auto p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-[11px] leading-relaxed text-center">
+                        <span className="font-bold">Third-Party Cyber Facilitation:</span> Akubrecah Technologies is an independent digital service provider and is not affiliated with the Kenya Revenue Authority (KRA). Free official services are available at{" "}
+                        <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline font-semibold hover:text-amber-950 dark:hover:text-white">
+                          itax.kra.go.ke
+                        </a>.
+                      </div>
+
                       {/* Lookup Type Segmented Switcher */}
                       <div className="flex p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl sm:rounded-2xl mb-4 border border-zinc-200 dark:border-zinc-700 max-w-sm mx-auto shadow-2xs">
                           <button 
@@ -1096,7 +1104,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                 {isSubscribed 
                                   ? "Active Cyber Cafe Subscription. Full statutory details unmasked with zero per-certificate download fee."
                                   : isRecordUnlocked 
-                                  ? "Payment verified. Your official certificate is compiled and full taxpayer details are unmasked below." 
+                                  ? "Payment verified. Your certificate is compiled and full taxpayer details are unmasked below." 
                                   : <>Taxpayer record matched directly with government registries. Confidential fields remain masked until you pay strictly <strong>KES 20 (20 bob)</strong> to unmask and download your official tamper-proof PDF.</>}
                               </p>
                             </div>
@@ -1241,7 +1249,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                 ) : (
                                   <>
                                     <Lock className="w-3.5 h-3.5 text-primary" />
-                                    <span className="text-on-surface-variant">•••••••••••• (Secured — Pay KES 20 to unmask and download official certificate)</span>
+                                    <span className="text-on-surface-variant">•••••••••••• (Secured — Pay KES 20 to unmask and download certificate)</span>
                                   </>
                                 )}
                               </p>
@@ -1303,10 +1311,10 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                   </div>
                   <div>
                     <h3 className="font-bold text-on-surface text-lg sm:text-xl tracking-tight">
-                      {paymentStep === 'done' ? 'Certificate Ready' : 'Official Certificate Checkout'}
+                      {paymentStep === 'done' ? 'Certificate Ready' : 'Document Retrieval Checkout'}
                     </h3>
                     <p className="text-xs text-on-surface-variant flex items-center gap-1.5 mt-0.5">
-                      Republic of Kenya • Official Tax Compliance Portal
+                      Akubrecah Technologies • Independent Cyber Facilitation Service
                     </p>
                   </div>
                 </div>
