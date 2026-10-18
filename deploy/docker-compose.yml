@@ -90,7 +90,7 @@ services:
       - SERVER_URL=${SERVER_URL:-https://wa.akubrecah.com}
       - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-akubrecah_secret_whatsapp_key_2026}
       - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
-      - DEL_INSTANCE=false
+      - DEL_INSTANCE=true
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgresql://evolution:evolution_secret_password@evolution_postgres:5432/evolution?schema=public
