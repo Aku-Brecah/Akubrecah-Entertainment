@@ -6,6 +6,13 @@ import prisma, { createSystemLog } from '@/lib/prisma';
 import { getOrCreateDbUser } from '@/lib/subscription';
 import { sanitizeWhatsAppPhone, sendEvolutionDocument, sendEvolutionImage, sendEvolutionTextMessage } from '@/lib/evolution';
 
+try {
+  const dns = require('dns');
+  dns.setDefaultResultOrder?.('ipv4first');
+  const { setGlobalDispatcher, Agent } = require('undici');
+  setGlobalDispatcher(new Agent({ connect: { autoSelectFamily: false, family: 4 } }));
+} catch {}
+
 export interface TaxpayerPdfData {
   pin: string;
   name?: string;
@@ -546,7 +553,10 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
   const { phone, pin, checkoutId, amount = 20, isCyberSubscription = false, daysRemaining } = opts;
   const db = prisma as any;
   const userPhone = sanitizeWhatsAppPhone(phone);
-  const cleanPin = pin ? pin.toUpperCase().trim() : 'KRA_CERT';
+  const rawPin = pin ? pin.toUpperCase().trim() : 'KRA_CERT';
+  const cleanPin = /^[A-Z]\d{9}[A-Z]/i.test(rawPin)
+    ? rawPin.match(/^[A-Z]\d{9}[A-Z]/i)![0].toUpperCase()
+    : rawPin.split('-')[0].trim();
   const receiptNum = opts.mpesaReceipt || (isCyberSubscription ? 'CYBER-SUB-ACTIVE' : `REC-${Date.now().toString(36).toUpperCase()}`);
 
   console.log(`[Fulfillment] Initiating WhatsApp document delivery for PIN ${cleanPin} to ${userPhone}`);

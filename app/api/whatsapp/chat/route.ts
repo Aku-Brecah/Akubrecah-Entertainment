@@ -3,7 +3,12 @@ import prisma from '@/lib/prisma';
 import { sanitizeWhatsAppPhone, sendEvolutionTextMessage, sendEvolutionDocument } from '@/lib/evolution';
 import { fetchTaxpayerById, fetchTaxpayerByPin } from '@/lib/kra-api';
 import { maskTaxpayerData } from '@/lib/masking';
-import { initializePaystackTransaction } from '@/lib/paystack';
+import {
+  initializePaystackTransaction,
+  verifyPaystackTransaction,
+  getPaystackLiveTransactions,
+  findRecentSuccessfulPaystackPayment,
+} from '@/lib/paystack';
 import { dispatchMpesaStkPush, normalizePhoneNumber } from '@/app/api/mpesa/stkpush/route';
 import { createAdminMagicToken } from '@/lib/magic-token';
 import { getPublicAppUrl } from '@/lib/utils';
@@ -225,6 +230,15 @@ async function handleAdminBotCommand({
     'magic',
     'lock',
     'logout',
+    'failed',
+    'pending',
+    'issues',
+    'recheck',
+    'check',
+    'verify',
+    'deliver',
+    'fulfill',
+    'send',
   ];
 
   // Admin trigger should ONLY activate if:
@@ -425,26 +439,289 @@ async function handleAdminBotCommand({
     const conversionRate = totalBotUsers > 0 ? ((waDownloads / totalBotUsers) * 100).toFixed(1) : '0.0';
 
     return (
-      `🤖 *WHATSAPP BOT PERFORMANCE*\n\n` +
-      `• *Total Bot Users:* ${totalBotUsers} unique numbers\n` +
+      `🤖 *WHATSAPP BOT ADOPTION & PERFORMANCE*\n\n` +
+      `• *Unique Users:* ${totalBotUsers}\n` +
       `• *Total Conversations:* ${totalConversations}\n` +
-      `• *Certificates Downloaded:* ${waDownloads}\n` +
-      `• *Bot-Driven Revenue:* KES ${waRevenue.toLocaleString()}\n` +
-      `• *Bot Conversion Rate:* ${conversionRate}%\n\n` +
-      `_Commands: !stats, !revenue, !logs, !link, !lock_`
+      `• *Certificates Delivered via Bot:* ${waDownloads}\n` +
+      `• *Bot Revenue Generated:* KES ${waRevenue.toLocaleString()}\n` +
+      `• *Conversion Rate:* ${conversionRate}%\n\n` +
+      `_Reply *!stats* for global metrics or *!logs* for recent receipts._`
     );
   }
 
-  // 7. Menu / Help / Default
+  // 7. !failed or !pending or !issues
+  if (cmd === 'failed' || cmd === 'pending' || cmd === 'issues') {
+    let recentTx: any[] = [];
+    try {
+      const txRes = await getPaystackLiveTransactions(30, 1);
+      if (txRes.success && Array.isArray(txRes.items)) {
+        recentTx = txRes.items.filter((t: any) => t.status !== 'success').slice(0, 5);
+      }
+    } catch (err: any) {
+      console.warn('[Admin !failed] Paystack live fetch notice:', err.message);
+    }
+
+    let awaitingConvs: any[] = [];
+    try {
+      const convs = await db.ai_conversations?.findMany({
+        where: {
+          channel: 'whatsapp',
+          status: 'active',
+        },
+        orderBy: { updated_at: 'desc' },
+        take: 10,
+      });
+      awaitingConvs = (convs || []).filter((c: any) => {
+        const step = c.metadata?.step;
+        return step === 'AWAITING_PAYMENT' || step === 'CYBER_AWAITING_PAYMENT';
+      }).slice(0, 5);
+    } catch (err: any) {
+      console.warn('[Admin !failed] DB conversations lookup notice:', err.message);
+    }
+
+    let report = `⚠️ *DIAGNOSTIC: FAILED & PENDING SESSIONS*\n─────────────────────────\n`;
+
+    if (awaitingConvs.length > 0) {
+      report += `⏳ *ACTIVE SESSIONS AWAITING PAYMENT (${awaitingConvs.length}):*\n`;
+      awaitingConvs.forEach((c: any, i: number) => {
+        const m = c.metadata || {};
+        const phone = c.user_phone;
+        const payPhone = m.paymentPhone || phone;
+        const pin = m.pin || 'Unknown PIN';
+        const ref = m.checkoutId || 'None';
+        const time = new Date(c.updated_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' });
+
+        report +=
+          `*${i + 1}. Phone:* \`${formatDisplayPhone(payPhone)}\`\n` +
+          `   • PIN: \`${pin}\`\n` +
+          `   • Ref: \`${ref}\`\n` +
+          `   • Updated: ${time}\n` +
+          `   • 👉 *!recheck ${payPhone}* or *!deliver ${payPhone}*\n\n`;
+      });
+    }
+
+    if (recentTx.length > 0) {
+      report += `❌ *RECENT GATEWAY FAILURES (${recentTx.length}):*\n`;
+      recentTx.forEach((t: any, i: number) => {
+        const phone = t.customerPhone || 'Unknown Phone';
+        const pin = t.pin || 'KRA';
+        const time = new Date(t.createdAt).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' });
+
+        report +=
+          `*${i + 1}. Phone:* \`${formatDisplayPhone(phone)}\`\n` +
+          `   • Amount: KES ${t.amountKes}.00\n` +
+          `   • PIN: \`${pin}\`\n` +
+          `   • Gateway Status: _${t.status}_\n` +
+          `   • Ref: \`${t.reference}\`\n` +
+          `   • Time: ${time}\n\n`;
+      });
+    }
+
+    if (awaitingConvs.length === 0 && recentTx.length === 0) {
+      report += `✅ All systems green! No pending sessions or gateway failures in the last 24 hours.\n\n`;
+    }
+
+    report += `─────────────────────────\n_Commands: *!recheck <phone/PIN>* | *!deliver <phone>*_`;
+    return report;
+  }
+
+  // 8. !recheck <phone, PIN, or reference>
+  if (cmd === 'recheck' || cmd === 'check' || cmd === 'verify') {
+    const query = (arg || '').trim();
+    if (!query) {
+      return (
+        `⚠️ *Please provide a target to recheck:*\n` +
+        `• Example: *!recheck 0719299900*\n` +
+        `• Example: *!recheck A016881319Q*\n` +
+        `• Example: *!recheck PSTK-MPESA-...*`
+      );
+    }
+
+    const cleanQuery = query.replace(/[^0-9a-zA-Z]/g, '');
+
+    // 1. Search for successful payment on Paystack
+    const payment = await findRecentSuccessfulPaystackPayment({
+      phone: query,
+      pin: query,
+      reference: query,
+      maxAgeMinutes: 180, // last 3 hours
+      skipCache: true,
+    });
+
+    // 2. Lookup conversation in DB
+    let conv: any = null;
+    try {
+      conv = await db.ai_conversations?.findFirst({
+        where: {
+          channel: 'whatsapp',
+          OR: [
+            { user_phone: { contains: cleanQuery } },
+            { user_phone: query },
+          ],
+        },
+        orderBy: { updated_at: 'desc' },
+      });
+    } catch {}
+
+    if (payment.found && payment.reference) {
+      const rawPin = payment.pin || conv?.metadata?.pin || 'KRA_CERT';
+      const pin = /^[A-Z]\d{9}[A-Z]/i.test(rawPin)
+        ? rawPin.match(/^[A-Z]\d{9}[A-Z]/i)![0].toUpperCase()
+        : rawPin.split('-')[0].trim().toUpperCase();
+      const phone = conv?.user_phone || payment.customerPhone || query;
+      const name = conv?.metadata?.taxpayerName || 'Registered Taxpayer';
+
+      // Auto-trigger delivery!
+      try {
+        const { fulfillWhatsAppCertificateDelivery } = await import('@/lib/certificate-fulfillment');
+        await fulfillWhatsAppCertificateDelivery({
+          phone,
+          pin,
+          checkoutId: payment.reference,
+          mpesaReceipt: payment.reference,
+          amount: payment.amountKes || 20,
+          taxpayerName: name,
+          skipDirectWhatsAppDocument: false,
+        });
+
+        if (conv) {
+          const meta = conv.metadata || {};
+          meta.step = 'COMPLETED';
+          meta.activeSession = false;
+          meta.mpesaReceipt = payment.reference;
+          await db.ai_conversations.update({
+            where: { id: conv.id },
+            data: { metadata: meta },
+          }).catch(() => {});
+        }
+      } catch (delErr: any) {
+        console.error('[Admin !recheck] Delivery error:', delErr.message);
+      }
+
+      return (
+        `✅ *PAYMENT CONFIRMED & AUTO-DELIVERED!*\n` +
+        `─────────────────────────\n` +
+        `• *Customer Handset:* \`${formatDisplayPhone(phone)}\`\n` +
+        `• *Taxpayer:* *${name}*\n` +
+        `• *KRA PIN:* \`${pin}\`\n` +
+        `• *Amount Paid:* KES ${payment.amountKes || 20}.00\n` +
+        `• *Receipt Reference:* \`${payment.reference}\`\n` +
+        `• *Fulfillment Status:* 🟢 DELIVERED\n` +
+        `─────────────────────────\n` +
+        `📄 Certificate PDF and fiscal receipt have been generated and dispatched directly to the customer's WhatsApp chat.`
+      );
+    } else {
+      // Fetch last attempt from Paystack
+      let lastAttempt: any = null;
+      try {
+        const txList = await getPaystackLiveTransactions(30, 1);
+        lastAttempt = (txList.items || []).find((t: any) => {
+          const ph = String(t.customerPhone || '').replace(/[^0-9]/g, '');
+          const cleanQ = query.replace(/[^0-9]/g, '');
+          return (cleanQ && ph.includes(cleanQ)) || (t.reference && t.reference.includes(query)) || (t.pin && t.pin.includes(query.toUpperCase()));
+        });
+      } catch {}
+
+      return (
+        `⏳ *PAYMENT NOT VERIFIED FOR \`${query}\`*\n` +
+        `─────────────────────────\n` +
+        `• *Gateway Status:* ${lastAttempt ? `❌ ${lastAttempt.status}` : 'No matching payment record'}\n` +
+        `• *Last Reference:* \`${lastAttempt?.reference || 'N/A'}\`\n` +
+        `• *Time:* ${lastAttempt?.createdAt ? new Date(lastAttempt.createdAt).toLocaleTimeString('en-KE') : 'N/A'}\n` +
+        `─────────────────────────\n` +
+        `👉 If client claims they paid, reply *!deliver ${query}* to force-fulfill.`
+      );
+    }
+  }
+
+  // 9. !deliver <phone or PIN>
+  if (cmd === 'deliver' || cmd === 'fulfill' || cmd === 'send') {
+    const target = (arg || '').trim();
+    if (!target) {
+      return (
+        `⚠️ *Please specify phone or PIN to deliver to:*\n` +
+        `• Example: *!deliver 0719299900*\n` +
+        `• Example: *!deliver A016881319Q*`
+      );
+    }
+
+    const cleanTarget = target.replace(/[^0-9]/g, '');
+    let conv: any = null;
+    try {
+      conv = await db.ai_conversations?.findFirst({
+        where: {
+          channel: 'whatsapp',
+          OR: [
+            { user_phone: { contains: cleanTarget } },
+            { user_phone: target },
+          ],
+        },
+        orderBy: { updated_at: 'desc' },
+      });
+    } catch {}
+
+    const isPinArg = /^[A-Z]\d{9}[A-Z]$/i.test(target);
+    const pin = conv?.metadata?.pin || (isPinArg ? target.toUpperCase() : null);
+    const phone = conv?.user_phone || target;
+    const name = conv?.metadata?.taxpayerName || 'Registered Taxpayer';
+
+    if (!pin) {
+      return `⚠️ Could not resolve KRA PIN for *${target}*. Please ensure the customer has initiated a lookup or specify their PIN.`;
+    }
+
+    const manualReceipt = `ADMIN-MANUAL-${Date.now().toString(36).toUpperCase()}`;
+    try {
+      const { fulfillWhatsAppCertificateDelivery } = await import('@/lib/certificate-fulfillment');
+      await fulfillWhatsAppCertificateDelivery({
+        phone,
+        pin,
+        checkoutId: manualReceipt,
+        mpesaReceipt: manualReceipt,
+        amount: 20,
+        taxpayerName: name,
+        taxpayerDetails: conv?.metadata?.taxpayerDetails,
+        skipDirectWhatsAppDocument: false,
+      });
+
+      if (conv) {
+        const meta = conv.metadata || {};
+        meta.step = 'COMPLETED';
+        meta.activeSession = false;
+        meta.mpesaReceipt = manualReceipt;
+        await db.ai_conversations.update({
+          where: { id: conv.id },
+          data: { metadata: meta },
+        }).catch(() => {});
+      }
+
+      return (
+        `🚀 *MANUAL DELIVERY EXECUTED!*\n` +
+        `─────────────────────────\n` +
+        `• *Recipient:* \`${formatDisplayPhone(phone)}\`\n` +
+        `• *KRA PIN:* \`${pin}\`\n` +
+        `• *Taxpayer:* *${name}*\n` +
+        `• *Manual Ref:* \`${manualReceipt}\`\n` +
+        `─────────────────────────\n` +
+        `📄 Official KRA PIN Certificate and fiscal receipt have been generated and dispatched directly to the customer's WhatsApp chat.`
+      );
+    } catch (err: any) {
+      return `❌ *Delivery failed:* ${err.message}`;
+    }
+  }
+
+  // 10. Menu / Help / Default
   return (
     `👑 *AKUBRECAH KRA — ADMIN COMMAND CENTER*\n\n` +
     `• *!stats* — Real-time Executive KPIs (Revenue, Users, PC vs Mobile)\n` +
     `• *!revenue* — Revenue Breakdown (Today, 7d, Gateways)\n` +
     `• *!logs* — Last 5 Transactions & Receipts\n` +
+    `• *!failed* — View Failed/Pending Client Sessions & Gateway Errors\n` +
+    `• *!recheck <target>* — Verify Client Payment & Auto-Deliver\n` +
+    `• *!deliver <phone>* — Force-Deliver KRA Certificate to Client\n` +
     `• *!bot* — WhatsApp Bot Adoption & Stats\n` +
     `• *!link* — 1-Click Web Dashboard Login Link\n` +
     `• *!lock* — Lock session\n\n` +
-    `_Reply with any command (e.g. *!stats* or *!link*) to run immediately._`
+    `_Reply with any command (e.g. *!failed* or *!recheck 0719299900*) to run immediately._`
   );
 }
 
@@ -507,6 +784,50 @@ async function handleTaxpayerFoundFulfillment({
 
   // 2. Regular pay-per-download flow (KES 20 STK push)
   const downloadFee = Number(process.env.PAYSTACK_DOWNLOAD_FEE_KES || 20);
+
+  // Check if client already paid (e.g. recent approved payment or retry)
+  try {
+    const { findRecentSuccessfulPaystackPayment } = await import('@/lib/paystack');
+    const existingPayment = await findRecentSuccessfulPaystackPayment({
+      phone: userPhone,
+      pin: cleanPin,
+      maxAgeMinutes: 90,
+      skipCache: true,
+    });
+
+    if (existingPayment.found && existingPayment.reference) {
+      const { fulfillWhatsAppCertificateDelivery } = await import('@/lib/certificate-fulfillment');
+      await fulfillWhatsAppCertificateDelivery({
+        phone: userPhone,
+        pin: cleanPin,
+        checkoutId: existingPayment.reference,
+        mpesaReceipt: existingPayment.reference,
+        amount: existingPayment.amountKes || downloadFee,
+        taxpayerName: taxpayer.taxpayerName,
+        taxpayerDetails: taxpayer,
+        skipDirectWhatsAppDocument: false,
+      });
+
+      await saveConversationState('COMPLETED', {
+        activeSession: false,
+        mpesaReceipt: existingPayment.reference,
+      });
+
+      return (
+        `✅ *PAYMENT CONFIRMED & CERTIFICATE DELIVERED!* 🎉\n` +
+        `─────────────────────────\n` +
+        `👤 *Taxpayer:* *${masked.taxpayerName}*\n` +
+        `🆔 *KRA PIN:* \`${masked.pin}\`\n` +
+        `🧾 *Receipt / Ref:* \`${existingPayment.reference}\`\n` +
+        `💰 *Amount Paid:* KES ${(existingPayment.amountKes || downloadFee).toFixed(2)}\n\n` +
+        `📄 Official KRA PIN Certificate and fiscal receipt have been generated and sent above!\n\n` +
+        `🌐 *Web Portal:* https://kra.akubrecah.com`
+      );
+    }
+  } catch (err: any) {
+    console.warn('[Fulfillment Existing Payment Check Notice]:', err.message);
+  }
+
   const stkRes = await triggerInAppMpesaPayment({
     targetPhone: userPhone,
     whatsappUserPhone: userPhone,
@@ -715,6 +1036,156 @@ export async function handleWhatsAppChat(params: {
         metadata,
         sendResult,
       };
+    }
+
+    // Universal Payment Recheck Trigger: "paid", "nimepay", "confirm", "recheck", or pasting M-Pesa receipt / Paystack ref
+    const isPaymentRecheckTrigger =
+      ['paid', 'nimepay', 'nimelipa', 'confirm', 'recheck', 'verify', 'payment', 'lipa', 'done'].includes(cleanCmdWord) ||
+      ['paid', 'nimepay', 'nimelipa', 'confirm', 'recheck', 'verify', 'payment', 'lipa', 'done'].includes(lowerText) ||
+      lowerText.startsWith('paid') ||
+      lowerText.startsWith('nimepay') ||
+      lowerText.startsWith('recheck') ||
+      cleanCmdText.startsWith('paid') ||
+      cleanCmdText.startsWith('recheck') ||
+      /^PSTK-[A-Z0-9\-]+$/i.test(trimmedInput) ||
+      /^[A-Z0-9]{10}$/.test(trimmedInput);
+
+    if (isPaymentRecheckTrigger && currentStep !== 'AWAITING_PAYMENT' && currentStep !== 'CYBER_AWAITING_PAYMENT') {
+      const targetArg = cleanCmdArgs || trimmedInput.split(/\s+/).slice(1).join(' ').trim();
+      const extractedPhone = extractKenyanPhone(targetArg);
+      const queryPhone = extractedPhone || metadata.paymentPhone || userPhone;
+
+      const isPinArg = /^[A-Z]\d{9}[A-Z]$/i.test(targetArg);
+      const isRefArg = targetArg.startsWith('PSTK-') || /^[A-Z0-9]{10}$/.test(targetArg);
+      const queryPin = (isPinArg ? targetArg.toUpperCase() : null) || metadata.pin;
+      const queryRef = (isRefArg ? targetArg : null) || metadata.checkoutId;
+
+      const { findRecentSuccessfulPaystackPayment } = await import('@/lib/paystack');
+      const payment = await findRecentSuccessfulPaystackPayment({
+        phone: queryPhone,
+        pin: queryPin,
+        reference: queryRef,
+        maxAgeMinutes: 180,
+        skipCache: true,
+      });
+
+      // Also check DB for recent download record or pin lookup
+      let dlRecord: any = null;
+      try {
+        if (typeof db.certificateDownload?.findFirst === 'function') {
+          dlRecord = await db.certificateDownload.findFirst({
+            where: {
+              OR: [
+                ...(payment.reference ? [{ mpesaReceipt: payment.reference }, { checkoutId: payment.reference }] : []),
+                { clerkId: `wa_${userPhone.replace(/[^a-zA-Z0-9]/g, '')}` },
+              ],
+            },
+            orderBy: { createdAt: 'desc' },
+          });
+        }
+      } catch (err: any) {
+        console.warn('[Payment Recheck Trigger] DB lookup notice:', err.message);
+      }
+
+      if (payment.found && payment.reference) {
+        const rawPin = payment.pin || queryPin || dlRecord?.pin || metadata.pin;
+        const resolvedPin = rawPin
+          ? (/^[A-Z]\d{9}[A-Z]/i.test(rawPin)
+              ? rawPin.match(/^[A-Z]\d{9}[A-Z]/i)![0].toUpperCase()
+              : rawPin.split('-')[0].trim().toUpperCase())
+          : null;
+        const resolvedFee = payment.amountKes || 20;
+
+        if (resolvedPin) {
+          const { fulfillWhatsAppCertificateDelivery } = await import('@/lib/certificate-fulfillment');
+          await fulfillWhatsAppCertificateDelivery({
+            phone: userPhone,
+            pin: resolvedPin,
+            checkoutId: payment.reference,
+            mpesaReceipt: payment.reference,
+            amount: resolvedFee,
+            taxpayerName: metadata.taxpayerName,
+            taxpayerDetails: metadata.taxpayerDetails,
+            skipDirectWhatsAppDocument: false,
+          });
+
+          await saveConversationState('COMPLETED', {
+            activeSession: false,
+            mpesaReceipt: payment.reference,
+          });
+
+          const successReply =
+            `✅ *PAYMENT CONFIRMED & DELIVERED!* 🎉\n` +
+            `─────────────────────────\n` +
+            `• *Receipt / Ref:* \`${payment.reference}\`\n` +
+            `• *KRA PIN:* \`${resolvedPin}\`\n` +
+            `• *Amount Paid:* KES ${resolvedFee}.00\n\n` +
+            `📄 Official KRA PIN Certificate and fiscal receipt have been generated and dispatched above!\n\n` +
+            `🌐 *Self-Service Web Portal:* https://kra.akubrecah.com`;
+
+          let sendRes = null;
+          if (sendDirect) {
+            sendRes = await sendEvolutionTextMessage(userPhone, successReply);
+          }
+          return {
+            success: true,
+            userPhone,
+            step: 'COMPLETED',
+            reply: successReply,
+            metadata,
+            sendResult: sendRes,
+          };
+        } else {
+          // Payment found but we don't know which PIN they want yet!
+          await saveConversationState('AWAITING_INPUT', {
+            activeSession: true,
+            isPrepaid: true,
+            checkoutId: payment.reference,
+            mpesaReceipt: payment.reference,
+          });
+
+          const needPinReply =
+            `✅ *Payment Confirmed!* (Ref: \`${payment.reference}\`)\n` +
+            `─────────────────────────\n` +
+            `We verified your payment of *KES ${resolvedFee}.00*.\n\n` +
+            `👉 Reply with your *National ID Number* or *KRA PIN* (e.g. *A012345678Z*) to generate and download your certificate immediately!`;
+
+          let sendRes = null;
+          if (sendDirect) {
+            sendRes = await sendEvolutionTextMessage(userPhone, needPinReply);
+          }
+          return {
+            success: true,
+            userPhone,
+            step: 'AWAITING_INPUT',
+            reply: needPinReply,
+            metadata,
+            sendResult: sendRes,
+          };
+        }
+      } else {
+        const notFoundReply =
+          `⏳ *No Approved Payment Found Yet*\n` +
+          `─────────────────────────\n` +
+          `We checked recent payments for \`${formatDisplayPhone(queryPhone)}\`, but did not find an approved transaction in the last 2 hours.\n\n` +
+          `• *Just paid on your phone?* Wait 5–10 seconds and reply *PAID* again.\n` +
+          `• *Paid with another number?* Reply *PAID <phone>* (e.g. *PAID 0712345678*).\n` +
+          `• *Need to start a new lookup?* Send *.kra <ID or PIN>* to begin.\n\n` +
+          `🌐 *Self-Service Web Portal:* https://kra.akubrecah.com`;
+
+        let sendRes = null;
+        if (sendDirect) {
+          sendRes = await sendEvolutionTextMessage(userPhone, notFoundReply);
+        }
+        return {
+          success: true,
+          userPhone,
+          step: metadata.step || 'IDLE',
+          reply: notFoundReply,
+          metadata,
+          sendResult: sendRes,
+        };
+      }
     }
 
     // If NO trigger prefix (not starting with '.' or '/') AND NO active session:
@@ -1278,9 +1749,10 @@ export async function handleWhatsAppChat(params: {
         let verifiedReceipt = '';
 
         if (metadata.checkoutId) {
-          // Check global mpesaCallbacks
+          // Check global mpesaCallbacks (safe object/map check)
           if (typeof (global as any).mpesaCallbacks !== 'undefined') {
-            const cb = (global as any).mpesaCallbacks?.get(metadata.checkoutId);
+            const rawCb = (global as any).mpesaCallbacks;
+            const cb = rawCb?.[metadata.checkoutId] || (typeof rawCb?.get === 'function' ? rawCb.get(metadata.checkoutId) : undefined);
             if (cb && cb.ResultCode === 0) {
               isPaid = true;
               verifiedReceipt = cb.MpesaReceiptNumber || metadata.checkoutId;
@@ -1301,6 +1773,25 @@ export async function handleWhatsAppChat(params: {
               isPaid = true;
               verifiedReceipt = inv.mpesaReceipt || metadata.checkoutId;
             }
+          }
+        }
+
+        // Check Paystack for Cyber Cafe subscription payment
+        if (!isPaid) {
+          try {
+            const { findRecentSuccessfulPaystackPayment } = await import('@/lib/paystack');
+            const foundPaystack = await findRecentSuccessfulPaystackPayment({
+              phone: activePayPhone || userPhone,
+              reference: metadata.checkoutId,
+              maxAgeMinutes: 90,
+              skipCache: true,
+            });
+            if (foundPaystack.found && (foundPaystack.amountKes || 0) >= 490) {
+              isPaid = true;
+              verifiedReceipt = foundPaystack.reference || metadata.checkoutId;
+            }
+          } catch (err: any) {
+            console.warn('[Cyber Paystack Verify Notice]:', err.message);
           }
         }
 
@@ -1330,13 +1821,21 @@ export async function handleWhatsAppChat(params: {
             });
           }
 
-          replyText = '';
+          replyText =
+            `🎉 *CYBER CAFE PACKAGE ACTIVATED!*\n` +
+            `─────────────────────────\n` +
+            `• *Cyber Cafe:* *${cafeName}*\n` +
+            `• *M-Pesa Receipt:* \`${verifiedReceipt}\`\n` +
+            `• *Package:* Unlimited 30-Day Pass (KES 500.00)\n\n` +
+            `📄 Official Tax Invoice has been delivered directly to your chat above!\n` +
+            `⚡ You can now retrieve unlimited KRA PIN Certificates with zero payment prompts.\n\n` +
+            `👉 Try sending a National ID (e.g. *28374619*) or KRA PIN anytime.`;
         } else {
           await saveConversationState('CYBER_AWAITING_PAYMENT', { activeSession: true });
           replyText =
             `⏳ *Waiting for M-Pesa PIN (KES 500) on \`${formatDisplayPhone(activePayPhone)}\`*\n` +
-            `• Entered PIN? Wait 3-5s then reply *PAID*.\n` +
-            `• No prompt? Reply *1* to resend, or send another number.\n` +
+            `• Entered PIN? Wait 3–5 seconds then reply *PAID*.\n` +
+            `• No prompt received? Reply *1* to resend, or send another number.\n` +
             `• Reply *0* to cancel.`;
         }
       }
@@ -1447,49 +1946,59 @@ export async function handleWhatsAppChat(params: {
         let isPaid = false;
         let verifiedReceipt = '';
 
-        if (metadata.checkoutId) {
-          // 1. Check DB for recorded download
-          try {
-            if (typeof db.certificateDownload?.findFirst === 'function') {
-              const dl = await db.certificateDownload.findFirst({
-                where: {
-                  OR: [
-                    { mpesaReceipt: metadata.checkoutId },
-                    { clerkId: `wa_${userPhone.replace(/[^a-zA-Z0-9]/g, '')}` },
-                  ],
-                },
-                orderBy: { createdAt: 'desc' },
-              });
-              if (dl && (dl.mpesaReceipt === metadata.checkoutId || (dl.pin === pinToDownload && Date.now() - new Date(dl.createdAt).getTime() < 300000))) {
-                isPaid = true;
-                verifiedReceipt = dl.mpesaReceipt || metadata.checkoutId;
-              }
-            }
-          } catch (dbErr: any) {
-            console.warn('[WhatsApp Chat] DB payment check notice:', dbErr.message);
-          }
-
-          // 2. Check global mpesaCallbacks (Daraja in-memory)
-          if (!isPaid && typeof (global as any).mpesaCallbacks !== 'undefined') {
-            const cb = (global as any).mpesaCallbacks?.get(metadata.checkoutId);
-            if (cb && cb.ResultCode === 0) {
+        // 1. Check DB for recorded download
+        try {
+          if (typeof db.certificateDownload?.findFirst === 'function') {
+            const dl = await db.certificateDownload.findFirst({
+              where: {
+                OR: [
+                  ...(metadata.checkoutId ? [{ mpesaReceipt: metadata.checkoutId }, { checkoutId: metadata.checkoutId }] : []),
+                  { clerkId: `wa_${userPhone.replace(/[^a-zA-Z0-9]/g, '')}` },
+                ],
+              },
+              orderBy: { createdAt: 'desc' },
+            });
+            if (
+              dl &&
+              (dl.mpesaReceipt === metadata.checkoutId ||
+                dl.checkoutId === metadata.checkoutId ||
+                (dl.pin === pinToDownload && Date.now() - new Date(dl.createdAt).getTime() < 3600000))
+            ) {
               isPaid = true;
-              verifiedReceipt = cb.MpesaReceiptNumber || metadata.checkoutId;
+              verifiedReceipt = dl.mpesaReceipt || dl.checkoutId || metadata.checkoutId;
             }
           }
+        } catch (dbErr: any) {
+          console.warn('[WhatsApp Chat] DB payment check notice:', dbErr.message);
+        }
 
-          // 3. Check Paystack transaction status
-          if (!isPaid && metadata.checkoutId.startsWith('PSTK-')) {
-            try {
-              const { verifyPaystackTransaction } = await import('@/lib/paystack');
-              const paystackTx = await verifyPaystackTransaction(metadata.checkoutId);
-              if (paystackTx && paystackTx.status === 'success') {
-                isPaid = true;
-                verifiedReceipt = paystackTx.reference;
-              }
-            } catch (err: any) {
-              console.warn('[WhatsApp Chat] Paystack verify notice:', err.message);
+        // 2. Check global mpesaCallbacks (Daraja in-memory safe access)
+        if (!isPaid && metadata.checkoutId && typeof (global as any).mpesaCallbacks !== 'undefined') {
+          const rawCb = (global as any).mpesaCallbacks;
+          const cb = rawCb?.[metadata.checkoutId] || (typeof rawCb?.get === 'function' ? rawCb.get(metadata.checkoutId) : undefined);
+          if (cb && cb.ResultCode === 0) {
+            isPaid = true;
+            verifiedReceipt = cb.MpesaReceiptNumber || metadata.checkoutId;
+          }
+        }
+
+        // 3. Check Paystack: verify direct checkoutId or search recent successful payment for phone/PIN
+        if (!isPaid) {
+          try {
+            const { findRecentSuccessfulPaystackPayment } = await import('@/lib/paystack');
+            const foundPaystack = await findRecentSuccessfulPaystackPayment({
+              phone: activePayPhone || userPhone,
+              pin: pinToDownload,
+              reference: metadata.checkoutId,
+              maxAgeMinutes: 90,
+              skipCache: true,
+            });
+            if (foundPaystack.found && foundPaystack.reference) {
+              isPaid = true;
+              verifiedReceipt = foundPaystack.reference;
             }
+          } catch (err: any) {
+            console.warn('[WhatsApp Chat] Paystack verify notice:', err.message);
           }
         }
 
@@ -1503,27 +2012,39 @@ export async function handleWhatsAppChat(params: {
           await fulfillWhatsAppCertificateDelivery({
             phone: userPhone,
             pin: pinToDownload,
-            checkoutId: metadata.checkoutId,
+            checkoutId: metadata.checkoutId || verifiedReceipt,
             mpesaReceipt: verifiedReceipt || `REC-${Date.now()}`,
             amount: downloadFee,
             taxpayerName: metadata.taxpayerName,
             taxpayerDetails: metadata.taxpayerDetails,
-            skipDirectWhatsAppDocument: true, // Delivered cleanly via n8n workflow
+            skipDirectWhatsAppDocument: false, // Ensure direct document dispatch + n8n webhook redundancy
           });
 
-          replyText = '';
+          replyText =
+            `✅ *PAYMENT CONFIRMED!* 🎉\n` +
+            `─────────────────────────\n` +
+            `• *Receipt / Ref:* \`${verifiedReceipt || metadata.checkoutId || 'APPROVED'}\`\n` +
+            `• *KRA PIN:* \`${pinToDownload}\`\n` +
+            `• *Amount Paid:* KES ${downloadFee}.00\n\n` +
+            `📄 Official KRA PIN Certificate and fiscal receipt are being delivered directly to your chat below...\n\n` +
+            `🌐 *Web Portal:* https://kra.akubrecah.com`;
         } else {
           await saveConversationState('AWAITING_PAYMENT', { activeSession: true });
 
+          const isExplicitPaid =
+            ['paid', 'nimepay', 'nimelipa', 'done', 'confirm', 'verify', 'yes', 'check'].includes(lowerText) ||
+            lowerText.includes('paid');
+
           replyText =
-            `⏳ *Awaiting Payment Confirmation*\n` +
+            `⏳ *${isExplicitPaid ? 'Payment Not Yet Detected' : 'Awaiting Payment Confirmation'}*\n` +
             `─────────────────────────\n` +
             `• *Amount:* KES ${downloadFee}.00\n` +
-            `• *Target Number:* \`${formatDisplayPhone(activePayPhone)}\`\n\n` +
-            `• Entered PIN? Wait 3–5 seconds then reply *PAID*.\n` +
-            `• No prompt received? Reply *1* to resend.\n` +
-            `• Want to pay with another phone? Send it (e.g. *0712345678*).\n` +
-            `• Reply *0* to cancel.\n\n` +
+            `• *Target Number:* \`${formatDisplayPhone(activePayPhone)}\`\n` +
+            (metadata.checkoutId ? `• *Last Checkout Ref:* \`${metadata.checkoutId}\`\n\n` : `\n`) +
+            `• *Already paid on your phone?* Wait 5–10 seconds and reply *PAID* again.\n` +
+            `• *No M-Pesa prompt on your phone?* Reply *1* to resend prompt immediately.\n` +
+            `• *Paying with another number?* Send that phone number (e.g. *0712345678*).\n` +
+            `• *Cancel:* Reply *0* to cancel.\n\n` +
             `🌐 *Self-Service Web Portal:* https://kra.akubrecah.com`;
         }
       }

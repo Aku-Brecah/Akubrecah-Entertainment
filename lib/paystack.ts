@@ -348,7 +348,7 @@ export async function getPaystackBalances(): Promise<{
 /**
  * Fetches real-time transaction list from Paystack API with in-memory caching.
  */
-export async function getPaystackLiveTransactions(limit = 50, page = 1): Promise<{
+export async function getPaystackLiveTransactions(limit = 50, page = 1, skipCache = false): Promise<{
   success: boolean;
   total: number;
   items: any[];
@@ -356,7 +356,7 @@ export async function getPaystackLiveTransactions(limit = 50, page = 1): Promise
 }> {
   const cacheKey = `transactions_${limit}_${page}`;
   const cached = paystackMemoryCache[cacheKey];
-  if (cached && Date.now() - cached.timestamp < PAYSTACK_CACHE_TTL_MS) {
+  if (!skipCache && cached && Date.now() - cached.timestamp < PAYSTACK_CACHE_TTL_MS) {
     return cached.data;
   }
 
@@ -505,5 +505,92 @@ export async function getPaystackPayouts(limit = 50, page = 1): Promise<{
     if (cached) return cached.data;
     return { success: false, total: 0, items: [], error: err.message };
   }
+}
+
+/**
+ * Searches recent Paystack transactions for a successful payment by phone or KRA PIN.
+ * Useful for self-healing payment verification when checkout ID might have changed or been replaced.
+ */
+export async function findRecentSuccessfulPaystackPayment(opts: {
+  phone?: string;
+  pin?: string;
+  reference?: string;
+  maxAgeMinutes?: number;
+  skipCache?: boolean;
+}): Promise<{
+  found: boolean;
+  reference?: string;
+  amountKes?: number;
+  paidAt?: string;
+  pin?: string;
+  customerPhone?: string;
+  rawTransaction?: any;
+}> {
+  const maxAge = (opts.maxAgeMinutes || 30) * 60 * 1000;
+  const now = Date.now();
+
+  // 1. If explicit reference provided, verify it first
+  if (opts.reference) {
+    try {
+      const direct = await verifyPaystackTransaction(opts.reference);
+      if (direct.success && direct.status === 'success') {
+        return {
+          found: true,
+          reference: direct.reference,
+          amountKes: direct.amountKes,
+          paidAt: direct.paidAt,
+          pin: direct.metadata?.pin,
+          customerPhone: direct.metadata?.phone,
+        };
+      }
+    } catch {}
+  }
+
+  // 2. Fetch recent transactions
+  const txList = await getPaystackLiveTransactions(40, 1, Boolean(opts.skipCache));
+  if (!txList.success || !Array.isArray(txList.items)) {
+    return { found: false };
+  }
+
+  const cleanPhone = opts.phone ? opts.phone.replace(/[^0-9]/g, '') : '';
+  const cleanPin = opts.pin ? opts.pin.trim().toUpperCase() : '';
+
+  for (const item of txList.items) {
+    if (item.status !== 'success') continue;
+
+    const itemTime = new Date(item.paidAt || item.createdAt).getTime();
+    if (now - itemTime > maxAge) continue;
+
+    const itemPhone = String(item.customerPhone || '').replace(/[^0-9]/g, '');
+    const itemEmail = String(item.customerEmail || '').toLowerCase();
+    const itemPin = String(item.pin || '').trim().toUpperCase();
+
+    const matchesPhone = Boolean(
+      cleanPhone &&
+      (itemPhone.includes(cleanPhone) ||
+        cleanPhone.includes(itemPhone) ||
+        itemEmail.includes(cleanPhone) ||
+        (cleanPhone.length >= 9 && itemPhone.endsWith(cleanPhone.slice(-9))))
+    );
+
+    const matchesPin = Boolean(
+      cleanPin &&
+      (itemPin.includes(cleanPin) || cleanPin.includes(itemPin))
+    );
+
+    if (matchesPhone || matchesPin) {
+      return {
+        found: true,
+        reference: item.reference,
+        amountKes: item.amountKes,
+        paidAt: item.paidAt,
+        pin: item.pin,
+        customerPhone: item.customerPhone,
+        rawTransaction: item,
+      };
+    }
+  }
+
+  return { found: false };
 }
 
