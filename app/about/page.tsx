@@ -1,11 +1,26 @@
-"use client"
-
-import Link from "next/link"
+import Link from "next/link";
+import { Metadata } from "next";
 import { 
   ShieldCheck, Zap, Lock, Users, Target, ArrowRight, CheckCircle2, 
   MapPin, Code2, Smartphone, Cloud, FileCheck2, ArrowUpRight
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BreadcrumbSchema } from "@/components/seo/site-schema";
+
+export const metadata: Metadata = {
+  title: "About Akubrecah Technologies | Software Engineering & Innovation",
+  description:
+    "Learn about Akubrecah Technologies — full-cycle software engineering and digital innovation firm headquartered in Nairobi, Kenya. Powering enterprise platforms, cloud systems, and government statutory automation.",
+  alternates: {
+    canonical: "/about",
+  },
+  openGraph: {
+    title: "About Akubrecah Technologies | Software Engineering Excellence",
+    description:
+      "Full-cycle software engineering firm in Nairobi, Kenya. Resilient web apps, native mobile, cloud infrastructure, and GovTech platforms.",
+    url: "https://akubrecah.com/about",
+  },
+};
 
 const principles = [
   {
@@ -85,6 +100,12 @@ const companyStats = [
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background text-on-background">
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", url: "https://akubrecah.com" },
+          { name: "About", url: "https://akubrecah.com/about" },
+        ]}
+      />
 
       {/* Page Hero - Matching Products Design */}
       <div className="bg-surface-container-lowest border-b border-outline-variant">

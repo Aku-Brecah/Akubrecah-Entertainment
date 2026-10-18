@@ -12,15 +12,91 @@ import { Analytics } from "@vercel/analytics/next"
 
 import "./globals.css"
 
+import { Metadata } from 'next';
+import { SiteSchema } from '@/components/seo/site-schema';
+
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 const plusJakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-plus-jakarta" })
 const alfa = Alfa_Slab_One({ weight: "400", subsets: ["latin"], variable: "--font-alfa" })
 const satisfy = Satisfy({ weight: "400", subsets: ["latin"], variable: "--font-satisfy" })
 
-export const metadata = {
-  title: "Akubrecah Technologies | Premier Software Engineering & Digital Solutions",
-  description: "Bespoke full-stack web platforms, iOS & Android mobile ecosystems, cloud infrastructure, and enterprise automation systems. Home of the Akubrecah KRA Compliance & Document Suite.",
-}
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://akubrecah.com';
+
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'Akubrecah Technologies | Premier Software Engineering & GovTech Solutions',
+    template: '%s | Akubrecah Technologies',
+  },
+  description:
+    'Bespoke full-stack web platforms, iOS & Android mobile ecosystems, cloud infrastructure, and enterprise automation systems. Home of the Akubrecah KRA Compliance & Statutory Document Suite.',
+  keywords: [
+    'Software Engineering Kenya',
+    'Next.js Development Company Nairobi',
+    'KRA Compliance Portal',
+    'KRA PIN Certificate Retrieval',
+    'Tax Compliance Certificate Kenya',
+    'Nil Returns Filing Automation',
+    'Enterprise Mobile Applications Kenya',
+    'Fintech Daraja M-Pesa API Architecture',
+    'GovTech Automation East Africa',
+  ],
+  authors: [{ name: 'Akubrecah Technologies', url: siteUrl }],
+  creator: 'Akubrecah Technologies',
+  publisher: 'Akubrecah Technologies',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_KE',
+    url: siteUrl,
+    siteName: 'Akubrecah Technologies',
+    title: 'Akubrecah Technologies | Premier Software Engineering & GovTech Solutions',
+    description:
+      'Architecting resilient software systems, cloud automation, and statutory tax compliance portals. High-impact engineering made in Nairobi, Kenya.',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Akubrecah Technologies - Engineering Excellence',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Akubrecah Technologies | Software Engineering & GovTech',
+    description:
+      'Premier software engineering company in Nairobi, Kenya. Full-stack web, mobile, cloud infrastructure, and automated statutory gateways.',
+    images: ['/og-image.jpg'],
+    creator: '@akubrecah',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    yandex: process.env.YANDEX_VERIFICATION || undefined,
+    other: {
+      'msvalidate.01': process.env.BING_SITE_VERIFICATION || '',
+    },
+  },
+};
 
 export default async function RootLayout({
   children,
@@ -34,6 +110,9 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <SiteSchema />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
       </head>
       <body className={`${inter.variable} ${plusJakarta.variable} ${alfa.variable} ${satisfy.variable} font-sans`} data-theme={theme} suppressHydrationWarning={true}>

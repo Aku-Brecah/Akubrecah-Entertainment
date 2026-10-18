@@ -1,8 +1,22 @@
-"use client"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "In-House Products & Statutory Software Tools",
+  description: "Explore Akubrecah Technologies' battle-tested software products: Akubrecah API Gateway, high-throughput financial routing, and automated compliance tools built for East African enterprises.",
+  alternates: {
+    canonical: "/products",
+  },
+  openGraph: {
+    title: "In-House Products & Developer Tools | Akubrecah Technologies",
+    description: "Explore battle-tested software products, distributed API gateways, and tax compliance automation tools.",
+    url: "https://akubrecah.com/products",
+  },
+}
 
 import Link from "next/link"
 import { FileCheck2, ShieldCheck, Send, ArrowRight, CheckCircle2, Lock, Zap, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BreadcrumbSchema } from "@/components/seo/site-schema"
 
 const products = [
   {
@@ -69,6 +83,12 @@ const techHighlights = [
 export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-background text-on-background">
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", url: "https://akubrecah.com" },
+          { name: "Products", url: "https://akubrecah.com/products" },
+        ]}
+      />
 
       {/* Page Hero */}
       <div className="bg-surface-container-lowest border-b border-outline-variant">

@@ -1,12 +1,22 @@
 import Link from 'next/link';
+import { Metadata } from 'next';
 import { getPublishedArticles } from '@/lib/cms';
 import { BookOpen, Clock, ArrowRight, Tag, Sparkles, Calendar } from 'lucide-react';
+import { BreadcrumbSchema } from '@/components/seo/site-schema';
 
 export const revalidate = 60;
 
-export const metadata = {
-  title: 'Engineering Articles & Technical Tutorials | Akubrecah',
-  description: 'Deep dives on software architecture, mobility platforms, AI audio pipelines, and statutory compliance automation by Akubrecah.',
+export const metadata: Metadata = {
+  title: 'Engineering Articles & Technical Tutorials',
+  description: 'Deep dives on software architecture, mobility platforms, AI audio pipelines, and statutory compliance automation by Akubrecah Technologies in Nairobi, Kenya.',
+  alternates: {
+    canonical: '/articles',
+  },
+  openGraph: {
+    title: 'Engineering Articles & Technical Tutorials | Akubrecah Technologies',
+    description: 'Deep dives on software architecture, distributed systems, and statutory compliance automation.',
+    url: 'https://akubrecah.com/articles',
+  },
 };
 
 export default async function ArticlesPage() {
@@ -14,6 +24,12 @@ export default async function ArticlesPage() {
 
   return (
     <div className="min-h-screen bg-background text-on-background">
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', url: 'https://akubrecah.com' },
+          { name: 'Technical Writing', url: 'https://akubrecah.com/articles' },
+        ]}
+      />
       {/* Header */}
       <div className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none" />

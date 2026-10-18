@@ -1,8 +1,22 @@
-"use client"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Software Solutions & Industry Specializations",
+  description: "Enterprise software solutions across FinTech, GovTech, automated statutory compliance, ERP systems, and cloud-native SaaS engineering in Nairobi, Kenya.",
+  alternates: {
+    canonical: "/solutions",
+  },
+  openGraph: {
+    title: "Enterprise Software Solutions | Akubrecah Technologies",
+    description: "Tailored software solutions for FinTech payments, GovTech statutory automation, ERP, and cloud-native SaaS systems.",
+    url: "https://akubrecah.com/solutions",
+  },
+}
 
 import Link from "next/link"
 import { CheckCircle2, ArrowRight, Globe, Zap, Shield, Users, Laptop, Smartphone, Cloud, ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { BreadcrumbSchema } from "@/components/seo/site-schema"
 
 const solutions = [
   {
@@ -105,6 +119,12 @@ const processSteps = [
 export default function SolutionsPage() {
   return (
     <div className="min-h-screen bg-background text-on-background">
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", url: "https://akubrecah.com" },
+          { name: "Solutions", url: "https://akubrecah.com/solutions" },
+        ]}
+      />
 
       {/* Page Hero - Matching Products Design */}
       <div className="bg-surface-container-lowest border-b border-outline-variant">

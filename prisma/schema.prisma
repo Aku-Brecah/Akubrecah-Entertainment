@@ -396,22 +396,26 @@ model Article {
 }
 
 model Inquiry {
-  id          String        @id @default(uuid())
+  id          String         @id @default(uuid())
   name        String
   email       String
   phone       String?
   company     String?
   projectType String
   budget      String?
-  message     String        @db.Text
-  status      String        @default("new") // "new", "contacted", "qualified", "proposal_sent", "won", "lost", "archived"
-  source      String        @default("website_contact")
+  subject     String?
+  message     String         @db.Text
+  status      String         @default("new") // "new", "contacted", "qualified", "proposal_sent", "won", "lost", "archived", "spam"
+  source      String         @default("website_contact")
+  isRead      Boolean        @default(false)
   ipAddress   String?
   notes       InquiryNote[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  replies     InquiryReply[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   @@index([status])
+  @@index([isRead])
   @@index([createdAt])
   @@map("inquiries")
 }
@@ -426,6 +430,24 @@ model InquiryNote {
 
   @@index([inquiryId])
   @@map("inquiry_notes")
+}
+
+model InquiryReply {
+  id             String    @id @default(uuid())
+  inquiryId      String
+  senderEmail    String
+  recipientEmail String
+  subject        String
+  body           String    @db.Text
+  deliveryStatus String    @default("sent") // "sent", "failed", "draft"
+  providerId     String?
+  errorMessage   String?
+  createdAt      DateTime  @default(now())
+  inquiry        Inquiry   @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+
+  @@index([inquiryId])
+  @@index([createdAt])
+  @@map("inquiry_replies")
 }
 
 model SkillCategory {

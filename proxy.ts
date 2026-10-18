@@ -47,75 +47,10 @@ const isProtectedRoute = createRouteMatcher([
   '/api/user(.*)'
 ]);
 
+import { checkRateLimit, extractClientIp } from '@/lib/rate-limit';
+
 const BLOCKED_SCANNERS = [/sqlmap/i, /nikto/i, /nessus/i, /dirbuster/i, /acunetix/i, /havij/i];
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'poweldayck@gmail.com';
-
-// Memory-safe bounded LRU rate limiter with automatic TTL pruning
-interface RateBucket {
-  count: number;
-  resetAt: number;
-}
-
-const MAX_BUCKETS = 5000;
-const rateBuckets = new Map<string, RateBucket>();
-
-function getTierLimit(pathname: string): { limit: number; windowMs: number; tierKey: string } {
-  // Health checks: internal monitoring and load balancers
-  if (pathname.startsWith('/api/health')) {
-    return { limit: 1200, windowMs: 60 * 1000, tierKey: 'health' };
-  }
-  // Strictest tier: Financial triggers, browser automation, and file uploads
-  if (
-    pathname.startsWith('/api/mpesa/stkpush') ||
-    pathname.startsWith('/api/kra/nil-return') ||
-    pathname.startsWith('/api/kra/upload-id')
-  ) {
-    return { limit: 10, windowMs: 60 * 1000, tierKey: 'strict' };
-  }
-  // Lookup / verification tier: 30 requests/minute
-  if (
-    pathname.startsWith('/api/kra/retrieve') ||
-    pathname.startsWith('/api/kra/live-verify') ||
-    pathname.startsWith('/api/kra/captcha')
-  ) {
-    return { limit: 30, windowMs: 60 * 1000, tierKey: 'lookup' };
-  }
-  // General API tier: 100 requests/minute
-  return { limit: 100, windowMs: 60 * 1000, tierKey: 'general' };
-}
-
-function checkRateLimit(ip: string, pathname: string): { allowed: boolean; limit: number; remaining: number; resetSec: number } {
-  const now = Date.now();
-  const { limit, windowMs, tierKey } = getTierLimit(pathname);
-  const key = `${ip}:${tierKey}`;
-
-  // Periodic pruning of expired entries to prevent monotonic memory leaks
-  if (rateBuckets.size > 1000) {
-    for (const [k, b] of rateBuckets.entries()) {
-      if (now > b.resetAt) {
-        rateBuckets.delete(k);
-      }
-    }
-  }
-
-  // Bounded LRU eviction: strictly enforce upper memory bound
-  if (rateBuckets.size >= MAX_BUCKETS) {
-    const oldestKey = rateBuckets.keys().next().value;
-    if (oldestKey) rateBuckets.delete(oldestKey);
-  }
-
-  const bucket = rateBuckets.get(key);
-  if (!bucket || now > bucket.resetAt) {
-    const resetAt = now + windowMs;
-    rateBuckets.set(key, { count: 1, resetAt });
-    return { allowed: true, limit, remaining: limit - 1, resetSec: Math.ceil(windowMs / 1000) };
-  }
-
-  bucket.count++;
-  const remaining = Math.max(0, limit - bucket.count);
-  const resetSec = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
-  return { allowed: bucket.count <= limit, limit, remaining, resetSec };
-}
 
 export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
@@ -141,8 +76,7 @@ export default clerkMiddleware(async (auth, request) => {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    request.headers.get('x-real-ip') || 'unknown';
+  const ip = extractClientIp(request);
   const userAgent = request.headers.get('user-agent') || '';
 
   // 3. Block known vulnerability scanners
@@ -153,11 +87,12 @@ export default clerkMiddleware(async (auth, request) => {
   // 4. Rate limiting for API routes with standard headers
   let rateLimitHeaders: Record<string, string> | null = null;
   if (pathname.startsWith('/api/')) {
-    const rate = checkRateLimit(ip, pathname);
+    const rate = await checkRateLimit(ip, pathname);
     rateLimitHeaders = {
       'X-RateLimit-Limit': String(rate.limit),
       'X-RateLimit-Remaining': String(rate.remaining),
       'X-RateLimit-Reset': String(rate.resetSec),
+      'X-RateLimit-Engine': rate.engine,
     };
 
     if (!rate.allowed) {

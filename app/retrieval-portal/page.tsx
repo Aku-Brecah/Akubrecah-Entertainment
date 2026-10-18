@@ -1,352 +1,325 @@
 "use client"
 
 import React, { useState, useEffect, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-  FileSpreadsheet,
   FileCheck2,
+  FileSpreadsheet,
   ShieldCheck,
-  ArrowRight,
-  Zap,
   Lock,
-  ArrowLeft,
-  CheckCircle2,
+  Zap,
   Sparkles,
-  Building2,
-  Printer,
-  ChevronRight
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  CheckCircle2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useUser, UserButton } from "@clerk/nextjs"
 import { KRAPortal } from "@/components/kra-portal"
 import { KRAFilingPortal } from "@/components/kra-filing-portal"
 import { CyberSubscriptionCard } from "@/components/cyber-subscription-card"
+import Link from "next/link"
 
-type PortalView = "selection" | "retrieval" | "filing"
+type ServiceMode = "retrieval" | "filing"
 
 function FlagshipPortalContent() {
   const searchParams = useSearchParams()
-  const { user, isLoaded } = useUser()
+  const router = useRouter()
+  const { user } = useUser()
 
   const requestedView = searchParams.get("view")
-  const initialView: PortalView =
-    requestedView === "retrieval" || requestedView === "filing"
-      ? requestedView
-      : "selection"
-
-  const [view, setView] = useState<PortalView>(initialView)
+  const [mode, setMode] = useState<ServiceMode>(
+    requestedView === "filing" ? "filing" : "retrieval"
+  )
+  const [showCyberModal, setShowCyberModal] = useState(false)
+  const [showHowItWorks, setShowHowItWorks] = useState(false)
 
   useEffect(() => {
-    if (requestedView === "retrieval" || requestedView === "filing") {
-      setView(requestedView)
+    if (requestedView === "filing") {
+      setMode("filing")
+    } else if (requestedView === "retrieval") {
+      setMode("retrieval")
     }
   }, [requestedView])
 
-  const userName = user?.firstName || user?.fullName?.split(" ")[0] || "Taxpayer"
+  const handleModeChange = (newMode: ServiceMode) => {
+    setMode(newMode)
+    const params = new URLSearchParams(window.location.search)
+    params.set("view", newMode)
+    router.replace(`/retrieval-portal?${params.toString()}`, { scroll: false })
+  }
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 selection:text-primary">
+    <div className="min-h-screen bg-surface-bright text-on-surface font-sans selection:bg-primary/20 selection:text-primary flex flex-col">
+      
       {/* ============================================================== */}
       {/* 1. MINIMAL GOVTECH TOP NAVIGATION BAR */}
       {/* ============================================================== */}
-      <header className="sticky top-0 z-50 bg-background/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-outline-variant">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          {/* Brand Logo & Statutory Identity */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setView("selection")}
-              className="flex items-center gap-2.5 text-left group transition-opacity hover:opacity-90"
-            >
-              <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black text-sm shadow-sm group-hover:scale-105 transition-transform">
-                KRA
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs sm:text-sm font-black tracking-wide text-on-surface uppercase">
-                    KRA Flagship Portal
-                  </span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                    GovTech
-                  </span>
-                </div>
-                <span className="text-[10px] text-on-surface-variant font-medium">
-                  Republic of Kenya · Online Compliance Gateway
+      <header className="sticky top-0 z-50 bg-surface/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-outline-variant/80">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+          
+          {/* Brand Mark & Identity */}
+          <Link href="/" className="flex items-center gap-3 group transition-opacity hover:opacity-90">
+            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black text-sm shadow-xs group-hover:scale-105 transition-transform">
+              KRA
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs sm:text-sm font-black tracking-tight text-on-surface uppercase">
+                  Compliance Portal
+                </span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  GovTech
                 </span>
               </div>
+              <span className="text-[10px] text-on-surface-variant font-medium hidden sm:inline">
+                Republic of Kenya · Statutory Compliance Engine
+              </span>
+            </div>
+          </Link>
+
+          {/* Center: Sleek Service Mode Segmented Control */}
+          <div className="flex items-center p-1 rounded-2xl bg-surface-container border border-outline-variant/80 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => handleModeChange("retrieval")}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                mode === "retrieval"
+                  ? "bg-primary text-white shadow-xs"
+                  : "text-on-surface-variant hover:text-on-surface"
+              }`}
+            >
+              <FileCheck2 className="w-3.5 h-3.5" />
+              <span>Certificate Retrieval</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeChange("filing")}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                mode === "filing"
+                  ? "bg-primary text-white shadow-xs"
+                  : "text-on-surface-variant hover:text-on-surface"
+              }`}
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>Returns Filing</span>
             </button>
           </div>
 
-          {/* Right Controls: Live Badge, Switch Service, User Profile */}
+          {/* Right Header Status & Profile */}
           <div className="flex items-center gap-3">
-            {view !== "selection" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setView("selection")}
-                className="hidden sm:flex border-outline-variant hover:bg-surface-container text-on-surface text-xs font-bold rounded-xl h-9 px-3 items-center gap-1.5"
-              >
-                <ArrowLeft className="w-3.5 h-3.5 text-primary" />
-                <span>Switch Service</span>
-              </Button>
-            )}
-
-            <div className="hidden md:inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 shadow-2xs">
+            <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Statutory Gateway Live
+              <span>Gateway Live</span>
             </div>
 
-            {/* Clerk User Button */}
-            <div className="pl-1">
-              <UserButton
-                appearance={{
-                  elements: {
-                    userButtonAvatarBox: "w-9 h-9 border border-outline-variant rounded-full",
-                  },
-                }}
-              />
-            </div>
+            <UserButton
+              appearance={{
+                elements: {
+                  userButtonAvatarBox: "w-8 h-8 border border-outline-variant rounded-full",
+                },
+              }}
+            />
           </div>
+
         </div>
       </header>
 
       {/* ============================================================== */}
-      {/* 2. MAIN WORKSPACE */}
+      {/* 2. FOCUSED HERO WORKSPACE (ZERO SCROLL ARCHITECTURE) */}
       {/* ============================================================== */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-        <AnimatePresence mode="wait">
-          {/* ----------------------------------------------------------- */}
-          {/* VIEW: 2-CHOICE SELECTION HUB */}
-          {/* ----------------------------------------------------------- */}
-          {view === "selection" && (
-            <motion.div
-              key="selection"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="max-w-5xl mx-auto space-y-8"
-            >
-              {/* Welcoming Header */}
-              <div className="text-center space-y-3 pt-2 pb-2">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider border border-primary/20">
-                  <ShieldCheck className="w-4 h-4 text-primary" />
-                  <span>Authorized Compliance Services</span>
-                </div>
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+        
+        {/* Compact, Focused Title Banner */}
+        <div className="text-center space-y-2 max-w-2xl mx-auto">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider border border-primary/20">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Statutory Verification Engine</span>
+          </div>
 
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-on-surface tracking-tight">
-                  Welcome, <span className="text-primary">{userName}</span>
-                </h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
+            {mode === "retrieval" ? (
+              <>
+                Instant KRA <span className="text-primary">Certificate Retrieval</span>
+              </>
+            ) : (
+              <>
+                Automated Tax Returns <span className="text-primary">Filing Gateway</span>
+              </>
+            )}
+          </h1>
 
-                <p className="text-sm sm:text-base text-on-surface-variant max-w-xl mx-auto font-medium">
-                  Select the statutory tax service you wish to access today. You can toggle between returns filing and certificate retrieval at any time.
-                </p>
-              </div>
+          <p className="text-xs sm:text-sm text-on-surface-variant max-w-xl mx-auto leading-relaxed">
+            {mode === "retrieval"
+              ? "Enter your National ID or KRA PIN below to generate and download your official cryptographically verified document in seconds."
+              : "File your Nil Returns or guided declarations directly to the statutory registry with verified e-acknowledgment receipts."}
+          </p>
+        </div>
 
-              {/* Cyber Subscription Status Bar */}
-              <CyberSubscriptionCard compact={true} />
-
-              {/* 2 Primary Service Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                {/* ─────────────────────────────────────────────────── */}
-                {/* CARD 1: TAX RETURNS FILING */}
-                {/* ─────────────────────────────────────────────────── */}
-                <div
-                  onClick={() => setView("filing")}
-                  className="group relative bg-surface-container-lowest border-2 border-outline-variant hover:border-primary rounded-3xl p-7 sm:p-8 shadow-xs hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-6 text-left"
-                >
-                  <div className="space-y-5">
-                    {/* Icon & Badge */}
-                    <div className="flex items-center justify-between">
-                      <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all">
-                        <FileSpreadsheet className="w-7 h-7" />
-                      </div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-                        Annual & Monthly
-                      </span>
-                    </div>
-
-                    {/* Titles */}
-                    <div className="space-y-2">
-                      <h3 className="text-2xl font-black text-on-surface group-hover:text-primary transition-colors">
-                        Filing Tax Returns
-                      </h3>
-                      <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-                        Automate your statutory returns submission directly to the KRA gateway. Includes fast-track Nil Returns and guided Individual Income Tax (P9) declarations.
-                      </p>
-                    </div>
-
-                    {/* Feature Highlights */}
-                    <ul className="space-y-2.5 text-xs text-on-surface font-medium pt-2">
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Instant Nil Returns submission in &lt;60 seconds</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Support for students, unemployed & inactive PINs</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Verified KRA e-return acknowledgment receipt download</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  {/* CTA Button */}
-                  <Button
-                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm group-hover:shadow-md transition-all"
-                  >
-                    <span>Launch Returns Filing</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
-
-                {/* ─────────────────────────────────────────────────── */}
-                {/* CARD 2: KRA CERTIFICATE RETRIEVAL */}
-                {/* ─────────────────────────────────────────────────── */}
-                <div
-                  onClick={() => setView("retrieval")}
-                  className="group relative bg-surface-container-lowest border-2 border-outline-variant hover:border-primary rounded-3xl p-7 sm:p-8 shadow-xs hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-6 text-left"
-                >
-                  <div className="space-y-5">
-                    {/* Icon & Badge */}
-                    <div className="flex items-center justify-between">
-                      <div className="w-14 h-14 rounded-2xl bg-surface-container border border-outline-variant flex items-center justify-center text-on-surface group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all">
-                        <FileCheck2 className="w-7 h-7" />
-                      </div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-surface-container text-on-surface border border-outline-variant">
-                        Instant PDF Search
-                      </span>
-                    </div>
-
-                    {/* Titles */}
-                    <div className="space-y-2">
-                      <h3 className="text-2xl font-black text-on-surface group-hover:text-primary transition-colors">
-                        KRA Certificate Retrieval
-                      </h3>
-                      <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-                        Instant statutory search and official PDF document generation. Retrieve Tax Compliance Certificates (TCC) or KRA PIN Certificates using your National ID or PIN.
-                      </p>
-                    </div>
-
-                    {/* Feature Highlights */}
-                    <ul className="space-y-2.5 text-xs text-on-surface font-medium pt-2">
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Reverse National ID lookup (no PIN needed)</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Cryptographically signed PDF with authentic QR code</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>KES 20 instant M-Pesa download or Cyber Cafe pass</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  {/* CTA Button */}
-                  <Button
-                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm group-hover:shadow-md transition-all"
-                  >
-                    <span>Launch Certificate Retrieval</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Institutional Trust Indicators */}
-              <div className="pt-6 border-t border-outline-variant flex flex-wrap items-center justify-center gap-6 text-xs text-on-surface-variant font-medium">
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>KDPA 2019 Compliant</span>
-                </span>
-                <span>•</span>
-                <span className="flex items-center gap-1.5">
-                  <Lock className="w-4 h-4 text-on-surface-variant" />
-                  <span>TLS 1.3 Bank-Grade Encryption</span>
-                </span>
-                <span>•</span>
-                <span className="flex items-center gap-1.5">
-                  <Zap className="w-4 h-4 text-primary" />
-                  <span>Direct Statutory Registry Sync</span>
-                </span>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ----------------------------------------------------------- */}
-          {/* VIEW: TAX RETURNS FILING GATEWAY */}
-          {/* ----------------------------------------------------------- */}
-          {view === "filing" && (
-            <motion.div
-              key="filing"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-            >
-              <KRAFilingPortal onBackToSelection={() => setView("selection")} />
-            </motion.div>
-          )}
-
-          {/* ----------------------------------------------------------- */}
-          {/* VIEW: KRA CERTIFICATE RETRIEVAL ENGINE */}
-          {/* ----------------------------------------------------------- */}
-          {view === "retrieval" && (
-            <motion.div
-              key="retrieval"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              {/* Back Bar */}
-              <div className="flex items-center justify-between bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant shadow-sm">
-                <Button
-                  onClick={() => setView("selection")}
-                  variant="outline"
-                  size="sm"
-                  className="border-outline-variant hover:bg-surface-container text-on-surface font-bold text-xs rounded-xl flex items-center gap-1.5"
-                >
-                  <ArrowLeft className="w-4 h-4 text-primary" />
-                  <span>Back to Services</span>
-                </Button>
-
-                <div className="flex items-center gap-2 text-xs font-bold text-on-surface">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Instant Statutory Certificate Engine</span>
-                </div>
-              </div>
-
-              {/* Embedded Retrieval Engine */}
-              <div className="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-sm p-4 sm:p-6 lg:p-8">
+        {/* PRIMARY ENGINE: FRONT AND CENTER (ABOVE THE FOLD) */}
+        <div className="w-full">
+          <AnimatePresence mode="wait">
+            {mode === "retrieval" ? (
+              <motion.div
+                key="retrieval-engine"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+              >
                 <KRAPortal hideHeader={true} />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="filing-engine"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+              >
+                <KRAFilingPortal onBackToSelection={() => handleModeChange("retrieval")} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* COMPACT INSTITUTIONAL TRUST STRIP */}
+        <div className="p-3.5 rounded-2xl bg-surface-container border border-outline-variant/60 flex flex-wrap items-center justify-around gap-3 text-center text-[11px] text-on-surface-variant font-medium">
+          <div className="flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>KDPA 2019 Certified</span>
+          </div>
+          <div className="hidden sm:block h-4 w-px bg-outline-variant/80" />
+          <div className="flex items-center gap-1.5">
+            <Lock className="w-4 h-4 text-on-surface shrink-0" />
+            <span>256-Bit TLS Bank Security</span>
+          </div>
+          <div className="hidden sm:block h-4 w-px bg-outline-variant/80" />
+          <div className="flex items-center gap-1.5">
+            <Zap className="w-4 h-4 text-primary shrink-0" />
+            <span>2.4s Avg Retrieval</span>
+          </div>
+          <div className="hidden sm:block h-4 w-px bg-outline-variant/80" />
+          <div className="flex items-center gap-1.5">
+            <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>Authentic QR Seal</span>
+          </div>
+        </div>
+
+        {/* SECONDARY UTILITIES: HOW IT WORKS & CYBER PASS (BELOW THE CORE WORKSPACE) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          
+          {/* How It Works Card */}
+          <div className="p-5 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft flex flex-col justify-between space-y-3">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-on-surface uppercase tracking-wider">
+                  How It Works
+                </span>
+                <span className="text-[10px] font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">
+                  Instant Process
+                </span>
               </div>
+              <p className="text-[11px] text-on-surface-variant leading-snug">
+                1. Enter National ID or PIN · 2. Automated Registry Lookup · 3. Download Cryptographically Signed PDF.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowHowItWorks(!showHowItWorks)}
+              className="text-xs font-bold text-primary hover:underline flex items-center gap-1 self-start cursor-pointer"
+            >
+              <span>{showHowItWorks ? "Hide Details" : "View Step-by-Step"}</span>
+              {showHowItWorks ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+
+            <AnimatePresence>
+              {showHowItWorks && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-2 pt-2 border-t border-outline-variant/60"
+                >
+                  <div className="flex items-start gap-2 text-xs">
+                    <span className="font-mono font-black text-primary px-1.5 py-0.5 rounded bg-primary/10 text-[10px]">01</span>
+                    <span className="text-on-surface-variant text-[11px]">Reverse National ID lookup means you don't even need your PIN or iTax password.</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-xs">
+                    <span className="font-mono font-black text-primary px-1.5 py-0.5 rounded bg-primary/10 text-[10px]">02</span>
+                    <span className="text-on-surface-variant text-[11px]">Instant handshake queries the statutory registry to confirm official names, station, and date.</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-xs">
+                    <span className="font-mono font-black text-primary px-1.5 py-0.5 rounded bg-primary/10 text-[10px]">03</span>
+                    <span className="text-on-surface-variant text-[11px]">Download your official certificate with live QR-code verification stamp.</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Cyber Cafe & Pro Pass Card */}
+          <div className="p-5 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft flex flex-col justify-between space-y-3">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="text-xs font-black text-on-surface">Cyber Cafe & Pro Plan</span>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10">
+                  KES 500 / mo
+                </span>
+              </div>
+              <p className="text-[11px] text-on-surface-variant leading-snug">
+                Cyber cafe operator or high-volume agent? Unlock unlimited instant downloads without paying per retrieval.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCyberModal(!showCyberModal)}
+              className="h-8 px-3 rounded-xl border-outline-variant text-xs font-bold text-primary hover:bg-primary/5 self-start"
+            >
+              {showCyberModal ? "Hide Pass Details" : "View Unlimited Pass"}
+            </Button>
+          </div>
+
+        </div>
+
+        {/* Expandable Cyber Subscription View */}
+        <AnimatePresence>
+          {showCyberModal && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <CyberSubscriptionCard compact={false} />
             </motion.div>
           )}
         </AnimatePresence>
+
       </main>
 
       {/* ============================================================== */}
       {/* 3. MINIMAL GOVTECH FOOTER */}
       {/* ============================================================== */}
-      <footer className="mt-16 border-t border-outline-variant bg-surface-container-lowest py-8 text-xs text-on-surface-variant">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+      <footer className="mt-auto border-t border-outline-variant/60 bg-surface-container-lowest/80 py-6 text-xs text-on-surface-variant">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <p className="text-[11px] text-on-surface-variant">
             &copy; {new Date().getFullYear()} Akubrecah Technologies. Republic of Kenya Statutory Compliance Gateway.
           </p>
 
           <div className="flex items-center gap-4 text-[11px]">
-            <a href="/legal/privacy" className="hover:text-primary transition-colors underline-offset-4 hover:underline">
+            <Link href="/legal/privacy" className="hover:text-primary transition-colors underline-offset-4 hover:underline">
               Privacy Policy
-            </a>
-            <a href="/legal/terms" className="hover:text-primary transition-colors underline-offset-4 hover:underline">
+            </Link>
+            <Link href="/legal/terms" className="hover:text-primary transition-colors underline-offset-4 hover:underline">
               Terms of Service
-            </a>
+            </Link>
             <a
               href="https://itax.kra.go.ke"
               target="_blank"
@@ -358,6 +331,7 @@ function FlagshipPortalContent() {
           </div>
         </div>
       </footer>
+
     </div>
   )
 }
@@ -366,8 +340,8 @@ export default function RetrievalPortalPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-          <div className="w-8 h-8 rounded-full border-2 border-[#BA1A1A] border-t-transparent animate-spin" />
+        <div className="min-h-screen bg-surface-bright flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
         </div>
       }
     >

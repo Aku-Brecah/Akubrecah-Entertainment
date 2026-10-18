@@ -149,3 +149,38 @@
 - [x] **Task 32: Verification & Testing**
   - [x] Executed TypeScript typecheck (`npm run typecheck` passed with code 0).
   - [x] Executed automated deduplication simulation via tsx verifying duplicate suppression.
+
+## Feature 8: Production Infrastructure, Observability, Rate Limiting & Staging Workflow
+- [x] **Task 33: Architecture Audit & Strategy Blueprint**
+  - [x] Conducted comprehensive deep-dive codebase audit of frameworks, runtime, build tools, database models, payment pipelines, bot automations, and security controls.
+  - [x] Published executive architectural audit blueprint artifact.
+- [x] **Task 34: Environment & Secrets Governance (`lib/config/env.ts`)**
+  - [x] Created Zod schema validating runtime environments (`development`, `staging`, `production`, `test`), database URLs, Clerk keys, Sentry DSN, PostHog, and payment gateways with safe non-crashing fallbacks.
+- [x] **Task 35: Distributed Dual-Engine Rate Limiter (`lib/rate-limit/`)**
+  - [x] Implemented Redis-backed sliding-window rate limiter via `ioredis` with automatic bounded in-memory LRU fallback.
+  - [x] Defined 4 endpoint abuse tiers (Strict financial 10/min, KRA lookup 30/min, General 100/min, Health 1200/min).
+  - [x] Added robust client IP extraction supporting Cloudflare, Vercel, Nginx, Caddy, and IPv6 normalization.
+  - [x] Connected directly into `proxy.ts` middleware with RFC 6585 headers (`X-RateLimit-*`, `Retry-After`) and JSON 429 responses.
+- [x] **Task 36: Centralized Crash Reporting & Error Monitoring (`lib/monitoring/`)**
+  - [x] Integrated `@sentry/nextjs` with automatic sourcemaps, release tagging, and environment separation (`sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`).
+  - [x] Created structured Pino JSON logger (`lib/monitoring/logger.ts`) with automatic PII and secrets redaction.
+  - [x] Created universal `captureError()` with diagnostic breadcrumbs, user context, and database `SystemLog` persistence.
+  - [x] Built React `ErrorBoundary` component for client UI crash isolation.
+  - [x] Configured `instrumentation.ts` to register Sentry hooks across edge and node runtimes.
+- [x] **Task 37: Privacy-Conscious Telemetry & Analytics Facade (`lib/telemetry/`)**
+  - [x] Built KDPA-compliant PII sanitizer scrubbing passwords, authentication tokens, full national IDs, raw card numbers, and phone numbers.
+  - [x] Created vendor-agnostic analytics interface supporting PostgreSQL in-house database tracking + optional PostHog adapter.
+  - [x] Updated `lib/analytics.ts` to wrap new telemetry layer preserving backward compatibility.
+- [x] **Task 38: Centralized Feature Flags & Controlled Rollouts (`lib/feature-flags/`)**
+  - [x] Authored typed feature flag registry with default values (`enable_paystack_gateway`, `enable_mpesa_stk_push`, `enable_cyber_cafe_subscription`, `enable_nil_tax_filing`, `enable_whatsapp_bot_ai`, `maintenance_mode`).
+  - [x] Implemented evaluation engine with environment overrides and PostgreSQL `service_settings` persistence with 60s in-memory TTL caching.
+  - [x] Created `useFeatureFlag` React hook, `/api/public/flags` endpoint, and `/api/admin/feature-flags` admin management route.
+- [x] **Task 39: Staging Environment, Sandbox & Release Workflow (`STAGING.md`)**
+  - [x] Documented staging isolation topology, database branching, Paystack test sandbox credentials, and release promotion runbooks.
+  - [x] Updated `.env.example` with complete configuration options.
+- [x] **Task 40: Automated Test Suite with Vitest & Quality Gate Hardening**
+  - [x] Configured Vitest (`vitest.config.mjs`) and created 18 unit & integration tests across 4 test suites (`tests/rate-limit.test.ts`, `tests/telemetry.test.ts`, `tests/feature-flags.test.ts`, `tests/env-config.test.ts`).
+  - [x] Added `npm test` script to `package.json`.
+  - [x] Hardened GitHub Actions CI/CD pipelines (`.github/workflows/ci.yml` and `deploy.yml`) with automated `npm test` gate.
+  - [x] Verified 100% test pass rate, 0 type errors, 0 lint warnings, and successful production build.
+

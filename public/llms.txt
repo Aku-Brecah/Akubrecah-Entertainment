@@ -1,0 +1,21 @@
+# Akubrecah Technologies
+
+> Akubrecah Technologies is a premier software engineering company and GovTech innovation hub headquartered in Nairobi, Kenya. We engineer high-performance web applications, native mobile apps, cloud infrastructure, and mission-critical statutory compliance portals.
+
+## Core Offerings
+
+- [Retrieval Portal](https://akubrecah.com/retrieval-portal): Instant Kenya Revenue Authority (KRA) PIN certificate retrieval and automated nil tax returns filing.
+- [Engineering Services](https://akubrecah.com/services): Full-stack web engineering (Next.js/React), iOS & Android mobile development, cloud DevOps (AWS/GCP), and statutory compliance integrations.
+- [Industry Solutions](https://akubrecah.com/solutions): Tailored enterprise software systems across FinTech (M-Pesa Daraja, multi-currency ledgers), GovTech, ERP, and SaaS product engineering.
+- [In-House Products](https://akubrecah.com/products): Akubrecah API Gateway, distributed microservice routing, client telemetry consoles, and tax compliance automation tools.
+
+## Technical Writing & Deep Dives
+
+- [Technical Writing Hub](https://akubrecah.com/articles): Architectural case studies, system design notes, and software engineering tutorials.
+- [Engineered Systems Portfolio](https://akubrecah.com/projects): Production case studies covering real-world mobility, GovTech, and financial platforms.
+
+## Corporate & Contact
+
+- [About Akubrecah](https://akubrecah.com/about): Engineering philosophy, company background, and technical leadership in Nairobi, Kenya.
+- [Contact Engineering](https://akubrecah.com/contact): Direct consultation with senior software architects for enterprise and government projects.
+- [Legal & Compliance Center](https://akubrecah.com/legal): Privacy policy (Kenya Data Protection Act 2019), terms of service, and acceptable use policies.

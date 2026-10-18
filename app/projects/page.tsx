@@ -1,14 +1,24 @@
 import Link from 'next/link';
+import { Metadata } from 'next';
 import { getPublishedProjects } from '@/lib/cms';
 import { ProjectsExplorer } from '@/components/projects-explorer';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BreadcrumbSchema } from '@/components/seo/site-schema';
 
 export const revalidate = 60;
 
-export const metadata = {
-  title: 'Engineering Projects & Architectures | Akubrecah',
-  description: 'Explore verified GovTech compliance portals, enterprise software, and fintech architectures engineered by Akubrecah.',
+export const metadata: Metadata = {
+  title: 'Engineering Projects & Case Studies',
+  description: 'Explore verified GovTech compliance portals, enterprise software platforms, and fintech payment architectures engineered by Akubrecah Technologies in Nairobi, Kenya.',
+  alternates: {
+    canonical: '/projects',
+  },
+  openGraph: {
+    title: 'Engineering Projects & Case Studies | Akubrecah Technologies',
+    description: 'Explore verified GovTech compliance portals, enterprise software platforms, and fintech architectures.',
+    url: 'https://akubrecah.com/projects',
+  },
 };
 
 export default async function ProjectsPage() {
@@ -16,6 +26,12 @@ export default async function ProjectsPage() {
 
   return (
     <div className="min-h-screen bg-background text-on-background">
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', url: 'https://akubrecah.com' },
+          { name: 'Engineered Systems', url: 'https://akubrecah.com/projects' },
+        ]}
+      />
       {/* Hero Header */}
       <div className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none" />

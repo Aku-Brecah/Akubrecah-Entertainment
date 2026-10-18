@@ -5,6 +5,8 @@ import { ArrowLeft, Clock, Calendar, BookOpen, Share2, Tag, CheckCircle2, User }
 import { Metadata } from 'next';
 import { MarkdownContent } from '@/components/markdown-content';
 
+import { ArticleSchema, BreadcrumbSchema } from '@/components/seo/site-schema';
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
@@ -19,16 +21,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
+  const title = article.seoTitle || article.title;
+  const description = article.seoDescription || article.excerpt;
+
   return {
-    title: `${article.seoTitle || article.title} | Akubrecah Engineering`,
-    description: article.seoDescription || article.excerpt,
+    title: `${title} | Akubrecah Engineering`,
+    description,
+    alternates: {
+      canonical: `/articles/${slug}`,
+    },
     openGraph: {
-      title: article.title,
-      description: article.excerpt,
+      title,
+      description,
+      url: `https://akubrecah.com/articles/${slug}`,
       type: 'article',
       publishedTime: article.publishedAt.toISOString(),
       tags: article.tags,
-      images: article.featuredImage ? [article.featuredImage] : [],
+      images: article.featuredImage ? [article.featuredImage] : ['https://akubrecah.com/og-image.jpg'],
     },
   };
 }
@@ -43,6 +52,21 @@ export default async function ArticleDetailPage({ params }: Props) {
 
   return (
     <article className="min-h-screen bg-background text-on-background">
+      <ArticleSchema
+        title={article.title}
+        description={article.excerpt}
+        url={`https://akubrecah.com/articles/${slug}`}
+        publishedAt={article.publishedAt.toISOString()}
+        authorName="Akubrecah Engineering"
+        imageUrl={article.featuredImage}
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', url: 'https://akubrecah.com' },
+          { name: 'Technical Writing', url: 'https://akubrecah.com/articles' },
+          { name: article.title, url: `https://akubrecah.com/articles/${slug}` },
+        ]}
+      />
       {/* Header & Hero */}
       <div className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none" />

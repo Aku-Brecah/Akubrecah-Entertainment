@@ -1,8 +1,11 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Akubrecah KRA Services",
+  title: "Privacy Policy | Akubrecah Technologies",
   description: "How Akubrecah collects, uses, and protects your personal data in compliance with Kenya's Data Protection Act 2019.",
+  alternates: {
+    canonical: "/legal/privacy",
+  },
 }
 
 export default function PrivacyPolicyPage() {

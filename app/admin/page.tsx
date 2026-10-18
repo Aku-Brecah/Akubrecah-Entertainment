@@ -30,7 +30,10 @@ import {
   Send,
   Lock,
   FileText,
-  AlertCircle
+  AlertCircle,
+  RotateCcw,
+  X,
+  BadgeCheck
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -673,89 +676,253 @@ export default function AdminOverviewPage() {
       {activeTab === "overview" && (
         <div className="space-y-6">
           {/* Quick On-Demand Live KRA Certificate Generator Toolbar */}
-          <div className="bg-surface-container-lowest p-5 sm:p-6 rounded-3xl border border-outline-variant shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-outline-variant/60">
-              <div>
-                <h2 className="text-base font-bold text-on-surface flex items-center gap-2">
-                  <FileCheck2 className="w-4 h-4 text-primary" />
-                  Live On-Demand Certificate Generator
-                </h2>
-                <p className="text-xs text-on-surface-variant">
-                  Instantly verify any KRA PIN or National ID and stream an authentic compliance PDF without server file retention.
-                </p>
+          <div className="bg-surface-container-lowest rounded-3xl border border-outline-variant shadow-soft overflow-hidden transition-all duration-300">
+            {/* Card Header Strip with Institutional Signals */}
+            <div className="p-5 sm:p-6 pb-4 border-b border-outline-variant/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-lowest">
+              <div className="flex items-start sm:items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                  <FileCheck2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base font-bold text-on-surface">
+                      Live On-Demand Certificate Generator
+                    </h2>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Live Gateway
+                    </span>
+                  </div>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Instantly verify any KRA PIN or National ID and stream an authentic compliance PDF without server file retention.
+                  </p>
+                </div>
               </div>
-              <span className="text-[11px] font-mono font-bold text-primary px-2.5 py-1 rounded-lg bg-primary/10">
-                Admin Instant Tool
-              </span>
+
+              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                <span className="text-[11px] font-mono font-bold text-on-surface-variant px-2.5 py-1 rounded-lg bg-surface-container border border-outline-variant flex items-center gap-1.5">
+                  <Lock className="w-3 h-3 text-primary" />
+                  Zero Retention
+                </span>
+                <span className="text-[11px] font-mono font-bold text-primary px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20">
+                  Admin Instant Tool
+                </span>
+              </div>
             </div>
 
-            <form onSubmit={handleQuickLookup} className="flex flex-col sm:flex-row items-center gap-3">
-              <div className="relative flex-grow w-full">
-                <Search className="w-4 h-4 text-on-surface-variant absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={quickPinInput}
-                  onChange={(e) => setQuickPinInput(e.target.value)}
-                  placeholder="Enter KRA PIN (e.g. A012345678Z) or National ID (e.g. 12345678)..."
-                  className="w-full h-11 pl-10 pr-3 rounded-xl bg-surface-container text-xs sm:text-sm text-on-surface placeholder:text-on-surface-variant/60 border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary uppercase"
-                />
-              </div>
+            {/* Form & Input Section */}
+            <div className="p-5 sm:p-6 space-y-4">
+              <form onSubmit={handleQuickLookup} className="space-y-3">
+                <div className="flex flex-col sm:flex-row items-stretch gap-3">
+                  {/* Input container with format detection pill & clear icon */}
+                  <div className="relative flex-grow">
+                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant flex items-center gap-1.5 pointer-events-none">
+                      <Search className="w-4 h-4 text-primary" />
+                    </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <button
-                  type="submit"
-                  disabled={quickLookupLoading}
-                  className="flex-grow sm:flex-grow-0 h-11 px-5 rounded-xl bg-primary text-white text-xs sm:text-sm font-bold shadow-xs hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
-                >
-                  {quickLookupLoading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Search className="w-4 h-4" />
-                  )}
-                  <span>Lookup Record</span>
-                </button>
+                    <input
+                      type="text"
+                      value={quickPinInput}
+                      onChange={(e) => setQuickPinInput(e.target.value)}
+                      placeholder="Enter KRA PIN (e.g. A012345678Z) or National ID (e.g. 12345678)..."
+                      className="w-full h-12 pl-10 pr-28 rounded-xl bg-surface-container text-xs sm:text-sm font-medium text-on-surface placeholder:text-on-surface-variant/60 border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary uppercase tracking-wide transition-all"
+                    />
 
-                {quickResult && (
-                  <button
-                    type="button"
-                    onClick={handleClearQuickLookup}
-                    className="h-11 px-3.5 rounded-xl bg-surface-container border border-outline-variant text-xs font-bold text-on-surface-variant hover:text-on-surface"
-                  >
-                    Clear & Search Another
-                  </button>
-                )}
-              </div>
-            </form>
+                    {/* Right side controls inside input: format detection pill & clear button */}
+                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                      {quickPinInput.trim() && (
+                        <>
+                          {/^[A-Za-z]\d{9}[A-Za-z]$/.test(quickPinInput.trim()) ? (
+                            <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+                              KRA PIN
+                            </span>
+                          ) : /^\d{6,9}$/.test(quickPinInput.trim()) ? (
+                            <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                              National ID
+                            </span>
+                          ) : null}
 
-            {/* Quick Record Preview & Instant Download Card */}
-            {quickResult && (
-              <div className="mt-4 p-4 rounded-2xl bg-surface-container border border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
-                <div className="space-y-1 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-sm text-primary">{quickResult.pin}</span>
-                    <span className="font-bold text-on-surface text-sm">{quickResult.name}</span>
+                          <button
+                            type="button"
+                            onClick={handleClearQuickLookup}
+                            className="w-6 h-6 rounded-md bg-surface-container-high hover:bg-surface-variant text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-colors"
+                            title="Clear input"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-on-surface-variant flex items-center flex-wrap gap-x-4 gap-y-1">
-                    <span>Station: <strong>{quickResult.station || "N/A"}</strong></span>
-                    <span>County: <strong>{quickResult.county || "N/A"}</strong></span>
-                    <span>ID: <strong>{quickResult.id_number || quickResult.idNumber || "N/A"}</strong></span>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="submit"
+                      disabled={quickLookupLoading || !quickPinInput.trim()}
+                      className="h-12 px-6 rounded-xl bg-primary text-white text-xs sm:text-sm font-bold shadow-xs hover:bg-primary/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-40 whitespace-nowrap min-w-[140px]"
+                    >
+                      {quickLookupLoading ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Querying...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Search className="w-4 h-4" />
+                          <span>Lookup Record</span>
+                        </>
+                      )}
+                    </button>
+
+                    {quickResult && (
+                      <button
+                        type="button"
+                        onClick={handleClearQuickLookup}
+                        className="h-12 px-4 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant text-xs font-bold text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1.5 shrink-0"
+                        title="Clear & Search Another"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Clear & Search Another</span>
+                      </button>
+                    )}
                   </div>
                 </div>
+              </form>
 
-                <button
-                  onClick={() => handleInstantDownload(quickResult.pin)}
-                  disabled={downloadingPin === quickResult.pin}
-                  className="h-10 px-4 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-2 shadow-xs shrink-0 disabled:opacity-50"
-                >
-                  {downloadingPin === quickResult.pin ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4" />
-                  )}
-                  <span>Download Certificate PDF</span>
-                </button>
-              </div>
-            )}
+              {/* Loading Shimmer State */}
+              {quickLookupLoading && (
+                <div className="p-6 rounded-2xl bg-surface-container border border-outline-variant flex flex-col items-center justify-center gap-3 text-center animate-pulse">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-on-surface">Querying KRA Statutory Gateway...</p>
+                    <p className="text-[11px] text-on-surface-variant">Validating taxpayer record across national registries...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Record Preview & Instant Download Dossier Card */}
+              {quickResult && !quickLookupLoading && (
+                <div className="p-5 sm:p-6 rounded-2xl bg-surface-container border border-outline-variant space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  {/* Verification Status Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-outline-variant/60">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="inline-flex items-center gap-1 font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Verified Statutory Record
+                      </span>
+                      <span className="text-on-surface-variant text-[11px]">Direct Gateway Confirmation</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(quickResult.pin, `quick-pin-${quickResult.pin}`)}
+                        className="text-[11px] font-bold text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-lowest border border-outline-variant"
+                      >
+                        {copiedId === `quick-pin-${quickResult.pin}` ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            <span className="text-emerald-600 font-semibold">PIN Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>Copy PIN</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Structured Data Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    <div className="p-3.5 rounded-xl bg-surface-container-lowest border border-outline-variant/60 space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Taxpayer Full Name</span>
+                      <p className="text-sm font-black text-on-surface truncate" title={quickResult.name}>
+                        {quickResult.name || "N/A"}
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-surface-container-lowest border border-outline-variant/60 space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">KRA PIN</span>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-mono font-black text-primary">
+                          {quickResult.pin}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(quickResult.pin, `quick-pin-inner-${quickResult.pin}`)}
+                          className="text-on-surface-variant hover:text-primary transition-colors p-1"
+                          title="Copy PIN"
+                        >
+                          {copiedId === `quick-pin-inner-${quickResult.pin}` ? (
+                            <Check className="w-3 h-3 text-emerald-600" />
+                          ) : (
+                            <Copy className="w-3 h-3" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-surface-container-lowest border border-outline-variant/60 space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">National / Alien ID</span>
+                      <p className="text-sm font-mono font-bold text-on-surface">
+                        {quickResult.id_number || quickResult.idNumber || "Not Linked"}
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-surface-container-lowest border border-outline-variant/60 space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Tax Station / County</span>
+                      <p className="text-xs font-bold text-on-surface truncate">
+                        {quickResult.station || quickResult.county ? `${quickResult.station || ""}${quickResult.station && quickResult.county ? " · " : ""}${quickResult.county || ""}` : "General Station"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action Bar */}
+                  <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <p className="text-xs text-on-surface-variant">
+                      Official compliance certificate is generated in-memory with authentic cryptographic seals and streamed directly to your browser.
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => handleInstantDownload(quickResult.pin)}
+                      disabled={downloadingPin === quickResult.pin}
+                      className="w-full sm:w-auto h-11 px-6 rounded-xl bg-emerald-600 text-white text-xs sm:text-sm font-bold hover:bg-emerald-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xs shrink-0 disabled:opacity-50"
+                    >
+                      {downloadingPin === quickResult.pin ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Generating Certificate PDF...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4" />
+                          <span>Download Certificate PDF</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Empty / Idle State Helper */}
+              {!quickResult && !quickLookupLoading && (
+                <div className="pt-1 flex flex-wrap items-center justify-between gap-2 text-[11px] text-on-surface-variant border-t border-outline-variant/40">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <span>Lookup by 11-char KRA PIN (<span className="font-mono font-bold text-on-surface">A012345678Z</span>) or 6–9 digit National ID</span>
+                  </span>
+                  <span className="text-[10px] text-on-surface-variant/70">
+                    Real-time on-demand generation · In-memory streaming · Zero disk persistence
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* PC Usage Breakdown & User Clicks Funnel */}

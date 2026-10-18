@@ -11,6 +11,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { MarkdownContent } from '@/components/markdown-content';
 
+import { BreadcrumbSchema } from '@/components/seo/site-schema';
+
 export const revalidate = 60;
 
 interface Props {
@@ -27,14 +29,34 @@ export async function generateMetadata({ params }: Props) {
       return {
         title: `${gh.name} | Akubrecah Deep Case Study & Engineering Spec`,
         description: gh.description,
+        alternates: {
+          canonical: `/projects/${slug}`,
+        },
+        openGraph: {
+          title: `${gh.name} | Akubrecah Deep Case Study`,
+          description: gh.description,
+          url: `https://akubrecah.com/projects/${slug}`,
+        },
       };
     }
     return { title: 'Project Not Found | Akubrecah' };
   }
 
+  const title = (project as any).seoTitle || `${project.title} | Akubrecah Deep Case Study`;
+  const description = (project as any).seoDescription || project.summary;
+
   return {
-    title: (project as any).seoTitle || `${project.title} | Akubrecah Deep Case Study`,
-    description: (project as any).seoDescription || project.summary,
+    title,
+    description,
+    alternates: {
+      canonical: `/projects/${slug}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://akubrecah.com/projects/${slug}`,
+      images: (project as any).featuredImage ? [(project as any).featuredImage] : ['https://akubrecah.com/og-image.jpg'],
+    },
   };
 }
 
@@ -92,6 +114,13 @@ export default async function ProjectDetailPage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-background text-on-background">
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', url: 'https://akubrecah.com' },
+          { name: 'Engineered Systems', url: 'https://akubrecah.com/projects' },
+          { name: project.title, url: `https://akubrecah.com/projects/${slug}` },
+        ]}
+      />
       {/* Header & Hero */}
       <div className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none" />

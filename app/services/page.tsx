@@ -1,11 +1,34 @@
-"use client"
-
-import Link from "next/link"
+import Link from "next/link";
+import { Metadata } from "next";
 import { 
   Laptop, Smartphone, Cloud, Layers, 
   CheckCircle2, ArrowRight, Shield, Zap, Lock, Terminal
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ServiceSchema, BreadcrumbSchema } from "@/components/seo/site-schema";
+
+export const metadata: Metadata = {
+  title: "Engineering Services & Architecture Solutions",
+  description:
+    "Full-cycle software engineering services: Next.js & React web applications, native iOS & Android mobile systems, AWS/GCP cloud DevOps, and automated GovTech statutory integration.",
+  keywords: [
+    "Full-Stack Web Engineering Kenya",
+    "Next.js SaaS Development",
+    "Mobile App Development Nairobi",
+    "Cloud DevOps AWS GCP Kenya",
+    "Custom Enterprise Architecture Africa",
+    "KRA API Gateway Integration",
+  ],
+  alternates: {
+    canonical: "/services",
+  },
+  openGraph: {
+    title: "Engineering Services & Architecture Solutions | Akubrecah Technologies",
+    description:
+      "Full-cycle software engineering: Web applications, native mobile apps, cloud infrastructure, and enterprise automation systems.",
+    url: "https://akubrecah.com/services",
+  },
+};
 
 const services = [
   {
@@ -28,12 +51,6 @@ const services = [
       "Automated CI/CD pipelines & zero-downtime deployment",
     ],
     stack: ["Next.js 15", "React 19", "TypeScript", "Tailwind CSS", "Prisma ORM", "PostgreSQL"],
-    stats: [
-      { label: "Core Web Vitals Score", value: "99/100" },
-      { label: "Avg. Page Load Time", value: "< 0.8s" },
-      { label: "Type Safety Coverage", value: "100%" },
-    ],
-    statusText: "Ready for Q2/Q3 Engagements",
   },
   {
     id: "mobile",
@@ -55,12 +72,6 @@ const services = [
       "App Store & Google Play submission and release management",
     ],
     stack: ["React Native", "Swift / SwiftUI", "Kotlin / Compose", "SQLite", "Expo", "Firebase"],
-    stats: [
-      { label: "Target Framerate", value: "60 FPS" },
-      { label: "Offline Sync Support", value: "Built-in" },
-      { label: "Crash-Free Rate", value: "> 99.8%" },
-    ],
-    statusText: "Production Native Engineering",
   },
   {
     id: "cloud",
@@ -82,12 +93,6 @@ const services = [
       "High-availability PostgreSQL & Redis clustering with PITR",
     ],
     stack: ["AWS / GCP", "Docker & K8s", "Terraform", "GitHub Actions", "Redis", "Cloudflare"],
-    stats: [
-      { label: "Infrastructure Uptime SLA", value: "99.99%" },
-      { label: "Deploy Frequency", value: "Multiple/Day" },
-      { label: "Recovery Time (RTO)", value: "< 15 min" },
-    ],
-    statusText: "Enterprise Infrastructure Active",
   },
   {
     id: "enterprise",
@@ -109,14 +114,8 @@ const services = [
       "High-throughput event streaming with Kafka or RabbitMQ",
     ],
     stack: ["Node.js", "Python / FastAPI", "PostgreSQL", "M-Pesa Daraja", "Apache Kafka", "Docker"],
-    stats: [
-      { label: "Throughput Capacity", value: "10,000 req/s" },
-      { label: "Statutory Registry Link", value: "Verified" },
-      { label: "Security Incident Rate", value: "0" },
-    ],
-    statusText: "Government-Grade Compliance",
   },
-]
+];
 
 const engineeringHighlights = [
   {
@@ -134,128 +133,117 @@ const engineeringHighlights = [
     title: "Telemetry & Observability",
     desc: "Integrated real-time error tracking, distributed tracing, and automated health checks ensure immediate visibility into system vitals.",
   },
-]
+];
 
 export default function ServicesPage() {
   return (
     <div className="min-h-screen bg-background text-on-background">
+      <ServiceSchema
+        name="Enterprise Software & GovTech Engineering"
+        description="Full-cycle software engineering services: Next.js & React web applications, native iOS & Android mobile systems, AWS/GCP cloud DevOps, and automated GovTech statutory integration."
+        serviceType="Software Engineering & Cloud Architecture"
+        url="https://akubrecah.com/services"
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", url: "https://akubrecah.com" },
+          { name: "Services", url: "https://akubrecah.com/services" },
+        ]}
+      />
 
-      {/* Page Hero - Matching Products Design */}
+      {/* Page Hero */}
       <div className="bg-surface-container-lowest border-b border-outline-variant">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 space-y-6">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
             <span>/</span>
-            <span className="text-on-surface font-semibold">Engineering Services</span>
+            <span className="text-on-surface font-semibold">Engineering Capabilities</span>
           </nav>
           <div className="max-w-3xl space-y-4">
-            <span className="text-xs font-black text-primary uppercase tracking-widest">Full-Lifecycle Engineering</span>
+            <span className="text-xs font-black text-primary uppercase tracking-widest">Capabilities & Services</span>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-on-surface tracking-tight leading-tight">
-              From Concept<br />
-              <span className="text-primary">to Scaled Production.</span>
+              Software Engineering<br />
+              <span className="text-primary">Built for Production Scale.</span>
             </h1>
             <p className="text-base sm:text-lg text-on-surface-variant max-w-2xl leading-relaxed">
-              We architect, develop, and maintain high-impact digital systems. From scalable SaaS platforms 
-              and fluid mobile ecosystems to mission-critical statutory portals and resilient cloud infrastructure.
+              We design, build, and deploy production-grade digital products. From high-throughput financial infrastructure to mission-critical mobile ecosystems.
             </p>
-          </div>
-          <div className="pt-2">
-            <Link href="/contact">
-              <Button size="lg" className="h-12 px-7 rounded-xl bg-primary text-white font-bold text-sm flex items-center gap-2 group">
-                Schedule Architecture Discovery <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 space-y-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 space-y-16">
 
-        {/* Services - Matching Products 5-Column Grid */}
-        {services.map((service, idx) => {
-          const Icon = service.icon
-          const isEven = idx % 2 === 0
+        {/* Services Showcase */}
+        {services.map((service) => {
+          const Icon = service.icon;
           return (
-            <div key={service.id} id={service.id} className="grid grid-cols-1 lg:grid-cols-5 gap-10 items-start">
-              
-              {/* Main Content */}
-              <div className={`lg:col-span-3 space-y-6 ${isEven ? "lg:order-1" : "lg:order-2"}`}>
+            <div 
+              key={service.id} 
+              id={service.id} 
+              className="p-8 sm:p-12 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-8"
+            >
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-2xl ${service.bgColor} ${service.color}`}>
+                  <div className={`p-3.5 rounded-2xl ${service.bgColor} ${service.color}`}>
                     <Icon className="h-7 w-7" />
                   </div>
-                  <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full ${service.bgColor} ${service.color} border border-current/20`}>
-                    {service.tag}
-                  </span>
-                </div>
-
-                <div>
-                  <h2 className="text-3xl sm:text-4xl font-black text-on-surface tracking-tight">{service.title}</h2>
-                  <p className={`text-sm font-bold mt-1 ${service.color}`}>{service.subtitle}</p>
-                  <p className="text-sm text-on-surface-variant mt-3 leading-relaxed">{service.description}</p>
-                </div>
-
-                {/* Stack Pills */}
-                <div className="space-y-2">
-                  <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Technology Stack</span>
-                  <div className="flex flex-wrap gap-2">
-                    {service.stack.map((tech) => (
-                      <span key={tech} className="text-xs font-semibold px-3 py-1 rounded-xl bg-surface-container text-on-surface border border-outline-variant">
-                        {tech}
-                      </span>
-                    ))}
+                  <div>
+                    <span className={`text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${service.bgColor} ${service.color} border border-current/20 inline-block mb-1`}>
+                      {service.tag}
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">{service.title}</h2>
                   </div>
                 </div>
+                <Link href={service.href}>
+                  <Button className="h-11 px-6 rounded-xl bg-primary text-white font-bold text-xs flex items-center gap-2 group w-fit">
+                    {service.ctaText} <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              </div>
 
-                {/* Features List */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <p className={`text-sm font-bold ${service.color}`}>{service.subtitle}</p>
+                <p className="text-sm text-on-surface-variant mt-2 leading-relaxed max-w-4xl">{service.description}</p>
+              </div>
+
+              {/* Deliverables & Capabilities */}
+              <div className="space-y-3">
+                <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Key Engineering Deliverables</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {service.features.map((feat) => (
-                    <div key={feat} className="flex items-start gap-2.5 text-sm text-on-surface">
+                    <div key={feat} className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-surface-container text-xs font-medium text-on-surface">
                       <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                       <span>{feat}</span>
                     </div>
                   ))}
                 </div>
-
-                <Link href={service.href}>
-                  <Button className="h-12 px-7 rounded-xl bg-primary text-white font-bold text-sm flex items-center gap-2 group w-fit">
-                    {service.ctaText} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
               </div>
 
-              {/* Stats & SLA Card */}
-              <div className={`lg:col-span-2 ${isEven ? "lg:order-2" : "lg:order-1"}`}>
-                <div className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-5 sticky top-24">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Engineering Benchmarks</h4>
-                  <div className="space-y-4">
-                    {service.stats.map((stat) => (
-                      <div key={stat.label} className="flex items-center justify-between p-4 rounded-2xl bg-surface-container">
-                        <span className="text-xs text-on-surface-variant font-semibold">{stat.label}</span>
-                        <span className="text-lg font-black text-on-surface">{stat.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-bold pt-1">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                    {service.statusText}
-                  </div>
+              {/* Technology Stack */}
+              <div className="space-y-2 pt-2 border-t border-outline-variant/60">
+                <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Technology Stack</span>
+                <div className="flex flex-wrap gap-2">
+                  {service.stack.map((tech) => (
+                    <span key={tech} className="text-xs font-semibold px-3 py-1 rounded-xl bg-surface-container text-on-surface border border-outline-variant">
+                      {tech}
+                    </span>
+                  ))}
                 </div>
               </div>
-
             </div>
-          )
+          );
         })}
 
         {/* Highlights Section */}
-        <div className="space-y-8">
+        <div className="space-y-8 pt-6">
           <div className="text-center space-y-2">
             <span className="text-xs font-black text-primary uppercase tracking-widest">Quality Assurance</span>
             <h2 className="text-3xl font-black text-on-surface">Engineering Standards Built Into Every Sprint</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {engineeringHighlights.map((item) => {
-              const Icon = item.icon
+              const Icon = item.icon;
               return (
                 <div key={item.title} className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant space-y-4 shadow-soft">
                   <div className="p-3 rounded-xl bg-primary/10 text-primary w-fit">
@@ -264,7 +252,7 @@ export default function ServicesPage() {
                   <h3 className="text-lg font-bold text-on-surface">{item.title}</h3>
                   <p className="text-xs text-on-surface-variant leading-relaxed">{item.desc}</p>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
@@ -284,5 +272,5 @@ export default function ServicesPage() {
 
       </div>
     </div>
-  )
+  );
 }

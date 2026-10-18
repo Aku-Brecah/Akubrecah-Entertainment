@@ -1,8 +1,11 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Disclaimer | Akubrecah KRA Services",
-  description: "Important disclaimer about Akubrecah's relationship with the Kenya Revenue Authority and the nature of our service.",
+  title: "Disclaimer | Akubrecah Technologies",
+  description: "Important disclaimer regarding independent statutory assistance, public data retrieval, and relationship with government authorities.",
+  alternates: {
+    canonical: "/legal/disclaimer",
+  },
 }
 
 export default function DisclaimerPage() {

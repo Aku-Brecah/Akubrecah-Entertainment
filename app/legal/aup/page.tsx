@@ -1,8 +1,11 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Acceptable Use Policy | Akubrecah KRA Services",
-  description: "Rules governing acceptable and prohibited use of Akubrecah's KRA certificate retrieval services.",
+  title: "Acceptable Use Policy | Akubrecah Technologies",
+  description: "Rules governing acceptable and prohibited use of Akubrecah's software engineering and statutory retrieval services.",
+  alternates: {
+    canonical: "/legal/aup",
+  },
 }
 
 export default function AcceptableUsePolicyPage() {

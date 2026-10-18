@@ -1,0 +1,40 @@
+# Akubrecah Technologies — Comprehensive System Directory
+
+## 1. Company Identity & Authority
+- Legal Name: Akubrecah Technologies Limited
+- Trading Names: Akubrecah Technologies, Akubrecah Engineering, Akubrecah KRA
+- Headquarters: Nairobi, Kenya
+- Primary Focus: Mission-critical software engineering, GovTech automation, distributed cloud infrastructure, FinTech integrations.
+- Contact: engineering@akubrecah.com | +254791497858
+- Official Domain: https://akubrecah.com
+
+## 2. Statutory GovTech Gateway: KRA Certificate Retrieval & Returns
+- URL: https://akubrecah.com/retrieval-portal
+- Purpose: Provides automated, compliant retrieval of official Kenya Revenue Authority (KRA) Taxpayer PIN certificates and instant filing of nil income tax returns.
+- Security: End-to-end TLS 1.3 encryption, automatic deletion of temporary taxpayer credentials, zero persistent retention of sensitive identity tokens.
+- Supported Formats: High-resolution PDF document delivery via instant browser download, WhatsApp dispatch, and encrypted email attachment.
+
+## 3. Engineering Services
+- URL: https://akubrecah.com/services
+- Full-Stack Web Engineering: Next.js 15/16 App Router, React 19, strict TypeScript, Tailwind CSS, Turbopack, and edge runtime optimization.
+- Mobile Application Development: Native iOS (Swift), native Android (Kotlin), and cross-platform React Native systems with biometric authentication and offline synchronization.
+- Cloud & DevOps Infrastructure: Multi-region AWS and Google Cloud deployments, Docker containerization, Kubernetes orchestration, CI/CD automated test gates, and Prometheus/OpenTelemetry instrumentation.
+- Enterprise API Gateways: High-throughput microservice routing, rate-limiting algorithms, M-Pesa Daraja STK Push / C2B / B2C payment rails, and inter-agency compliance bridges.
+
+## 4. Industry Solutions
+- URL: https://akubrecah.com/solutions
+- FinTech & Payments: Automated payment processing, multi-currency balance ledgers, real-time reconciliation pipelines, and fraud risk detection.
+- GovTech Systems: National ID and KRA PIN verification APIs, automated compliance certificate generation, and Kenya Data Protection Act (PDPA 2019) compliance.
+- Enterprise Operations & ERP: Custom workflow digitization, role-based access control (RBAC), cryptographic audit trails, and multi-channel notifications.
+- SaaS Product Architecture: Multi-tenant subscription infrastructure, metered billing, tenant data isolation, and scalable cloud databases.
+
+## 5. In-House Technology Products
+- URL: https://akubrecah.com/products
+- Akubrecah API Gateway: Sub-10ms distributed request routing, bounded LRU rate-limiting, and webhook HMAC-SHA256 signature verification.
+- Observability Console: Real-time container telemetry, CPU/RAM monitoring, and error tracing for enterprise engineering partners.
+
+## 6. Compliance, Privacy & Legal
+- Privacy Policy: https://akubrecah.com/legal/privacy (Fully compliant with Kenya Data Protection Act 2019, No. 24 of 2019).
+- Terms of Service: https://akubrecah.com/legal/terms
+- Acceptable Use Policy: https://akubrecah.com/legal/aup
+- Refund & SLA Policy: https://akubrecah.com/legal/refund

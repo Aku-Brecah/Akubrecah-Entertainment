@@ -1,47 +1,121 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendEvolutionTextMessage } from '@/lib/evolution';
+import { checkRateLimit } from '@/lib/rate-limit/limiter';
+import { sendAdminNotification } from '@/lib/email/reply';
 
 export const maxDuration = 30;
 
+/**
+ * Strip dangerous HTML script tags and excessive control characters.
+ */
+function sanitizeText(input: unknown, maxLength: number): string {
+  if (typeof input !== 'string') return '';
+  return input
+    .replace(/<[^>]*>/g, '') // Strip HTML tags
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '') // Strip non-printable ASCII
+    .trim()
+    .slice(0, maxLength);
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const { name, email, phone, company, projectType, budget, message } = body;
-
-    // 1. Validation
-    if (!name || typeof name !== 'string' || name.trim().length < 2) {
-      return NextResponse.json({ success: false, error: 'Full name is required (at least 2 characters).' }, { status: 400 });
-    }
-    if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      return NextResponse.json({ success: false, error: 'A valid email address is required.' }, { status: 400 });
-    }
-    if (!message || typeof message !== 'string' || message.trim().length < 10) {
-      return NextResponse.json({ success: false, error: 'Message must be at least 10 characters detailing your requirements.' }, { status: 400 });
-    }
-
     const ipAddress =
       req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
       req.headers.get('x-real-ip') ||
       'unknown';
 
-    // 2. Persistent Database Storage
+    // 1. Strict Rate Limiting (Abuse & Spam Protection)
+    const rateResult = await checkRateLimit(ipAddress, '/api/inquiries');
+    if (!rateResult.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Too many submissions. Please wait a moment before sending another message.',
+          resetSec: rateResult.resetSec,
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateResult.resetSec),
+          },
+        }
+      );
+    }
+
+    const body = await req.json().catch(() => ({}));
+
+    // 2. Anti-Spam Honeypot Detection
+    if (body.honeypot || body._gotcha || body.website_url) {
+      // Silently accept to trap bots without polluting database
+      return NextResponse.json({
+        success: true,
+        message: 'Inquiry received successfully.',
+        inquiryId: 'spm_' + Date.now(),
+      });
+    }
+
+    const rawName = body.name;
+    const rawEmail = body.email;
+    const rawPhone = body.phone;
+    const rawCompany = body.company;
+    const rawProjectType = body.projectType;
+    const rawBudget = body.budget;
+    const rawSubject = body.subject;
+    const rawMessage = body.message;
+    const rawSource = body.source;
+
+    // 3. Robust Input Validation & Sanitization
+    const name = sanitizeText(rawName, 100);
+    const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase().slice(0, 254) : '';
+    const phone = sanitizeText(rawPhone, 30);
+    const company = sanitizeText(rawCompany, 100);
+    const projectType = sanitizeText(rawProjectType, 100) || 'Software Engineering';
+    const budget = sanitizeText(rawBudget, 100) || 'Flexible';
+    const subject = sanitizeText(rawSubject, 200) || `Project Inquiry: ${projectType}`;
+    const message = sanitizeText(rawMessage, 10000);
+    const source = sanitizeText(rawSource, 100) || 'website_contact';
+
+    if (name.length < 2) {
+      return NextResponse.json(
+        { success: false, error: 'Full name is required (minimum 2 characters).' },
+        { status: 400 }
+      );
+    }
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json(
+        { success: false, error: 'A valid email address is required.' },
+        { status: 400 }
+      );
+    }
+
+    if (message.length < 10) {
+      return NextResponse.json(
+        { success: false, error: 'Message must be at least 10 characters detailing your requirements.' },
+        { status: 400 }
+      );
+    }
+
+    // 4. Persistent Database Storage
     const inquiry = await prisma.inquiry.create({
       data: {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        phone: phone ? String(phone).trim() : null,
-        company: company ? String(company).trim() : null,
-        projectType: projectType ? String(projectType).trim() : 'Software Engineering',
-        budget: budget ? String(budget).trim() : 'Flexible',
-        message: message.trim(),
+        name,
+        email,
+        phone: phone || null,
+        company: company || null,
+        projectType,
+        budget,
+        subject,
+        message,
         status: 'new',
-        source: 'website_contact',
+        source,
+        isRead: false,
         ipAddress,
       },
     });
 
-    // 3. Instant WhatsApp Notification to Admin Bot (254791497858)
+    // 5. Automated Multi-Channel Admin Notifications
     const adminPhone = process.env.SUPER_ADMIN_PHONE || '254791497858';
     const alertText =
       `🔔 *NEW CLIENT INQUIRY RECEIVED*\n\n` +
@@ -50,12 +124,17 @@ export async function POST(req: NextRequest) {
       `📱 *Phone:* ${inquiry.phone || 'Not provided'}\n` +
       `🏢 *Company:* ${inquiry.company || 'Individual / Startup'}\n` +
       `🛠️ *Project Type:* ${inquiry.projectType}\n` +
-      `💰 *Budget Range:* ${inquiry.budget}\n\n` +
+      `🏷️ *Subject:* ${inquiry.subject}\n` +
+      `💰 *Budget:* ${inquiry.budget}\n\n` +
       `📝 *Message:*\n"${inquiry.message}"\n\n` +
       `_Status: NEW. View and manage in your Admin Portal at /admin/inquiries_`;
 
     sendEvolutionTextMessage(adminPhone, alertText).catch((err) => {
       console.warn('[Inquiries WhatsApp Alert Error]:', err.message);
+    });
+
+    sendAdminNotification(inquiry).catch((err) => {
+      console.warn('[Inquiries Admin Email Alert Error]:', err.message);
     });
 
     return NextResponse.json({

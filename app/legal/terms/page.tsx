@@ -1,8 +1,11 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Akubrecah KRA Services",
-  description: "Terms and conditions governing the use of Akubrecah's KRA certificate retrieval services.",
+  title: "Terms of Service | Akubrecah Technologies",
+  description: "Terms and conditions governing the use of Akubrecah's software engineering and statutory retrieval services.",
+  alternates: {
+    canonical: "/legal/terms",
+  },
 }
 
 export default function TermsOfServicePage() {

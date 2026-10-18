@@ -1,8 +1,11 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Cookie Policy | Akubrecah KRA Services",
-  description: "Information about how Akubrecah uses cookies and similar tracking technologies.",
+  title: "Cookie Policy | Akubrecah Technologies",
+  description: "Information about how Akubrecah uses cookies and similar tracking technologies in compliance with privacy regulations.",
+  alternates: {
+    canonical: "/legal/cookies",
+  },
 }
 
 export default function CookiePolicyPage() {

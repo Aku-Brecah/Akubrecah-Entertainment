@@ -77,7 +77,10 @@ npm run lint -- --quiet
 # 3. TypeScript typecheck
 npm run typecheck
 
-# 4. Production build verification
+# 4. Automated unit & integration tests
+npm test
+
+# 5. Production build verification
 npm run build
 ```
 

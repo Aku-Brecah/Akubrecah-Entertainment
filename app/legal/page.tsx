@@ -3,8 +3,11 @@ import Link from "next/link"
 import { Shield, FileText, AlertTriangle, Cookie, RotateCcw, Ban } from "lucide-react"
 
 export const metadata: Metadata = {
-  title: "Legal | Akubrecah KRA Services",
-  description: "Legal documents governing the use of Akubrecah's KRA certificate retrieval services.",
+  title: "Legal & Compliance Center | Akubrecah Technologies",
+  description: "Legal policies, terms of service, acceptable use standards, privacy protections, and compliance information for Akubrecah Technologies.",
+  alternates: {
+    canonical: "/legal",
+  },
 }
 
 const legalDocs = [

@@ -54,8 +54,10 @@ export default function ContactPage() {
     company: "",
     phone: "",
     projectType: "",
+    subject: "",
     budget: "",
     message: "",
+    _gotcha: "",
   })
   const [formState, setFormState] = useState<FormState>("idle")
   const [errorMessage, setErrorMessage] = useState<string>("")
@@ -219,7 +221,7 @@ export default function ContactPage() {
                   className="h-11 px-7 rounded-xl bg-primary text-white font-bold text-xs"
                   onClick={() => {
                     setFormState("idle")
-                    setForm({ name: "", email: "", company: "", phone: "", projectType: "", budget: "", message: "" })
+                    setForm({ name: "", email: "", company: "", phone: "", projectType: "", subject: "", budget: "", message: "", _gotcha: "" })
                   }}
                 >
                   Submit Another Inquiry
@@ -296,6 +298,33 @@ export default function ContactPage() {
                       ))}
                     </select>
                   </div>
+                </div>
+
+                {/* Hidden Honeypot for Bot Abuse Detection */}
+                <input
+                  type="text"
+                  name="_gotcha"
+                  value={form._gotcha}
+                  onChange={handleChange}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  className="hidden"
+                  aria-hidden="true"
+                />
+
+                <div className="space-y-1.5">
+                  <label htmlFor="subject" className="text-xs font-bold text-on-surface">
+                    Inquiry Subject / Topic
+                  </label>
+                  <Input
+                    id="subject"
+                    name="subject"
+                    type="text"
+                    value={form.subject}
+                    onChange={handleChange}
+                    placeholder="e.g. Enterprise Payment Integration & Tax Portal Deployment"
+                    className="h-11 rounded-xl border border-outline-variant bg-surface-container text-xs text-on-surface focus-visible:ring-primary"
+                  />
                 </div>
 
                 <div className="space-y-1.5">

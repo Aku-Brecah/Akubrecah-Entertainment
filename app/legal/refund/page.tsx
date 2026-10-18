@@ -1,8 +1,11 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Refund Policy | Akubrecah KRA Services",
-  description: "Akubrecah's policy on service fees, refunds, and payment disputes.",
+  title: "Refund Policy | Akubrecah Technologies",
+  description: "Akubrecah's policy on service fees, automated delivery guarantees, refunds, and payment disputes.",
+  alternates: {
+    canonical: "/legal/refund",
+  },
 }
 
 export default function RefundPolicyPage() {

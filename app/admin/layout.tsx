@@ -65,7 +65,7 @@ const navSections: NavSection[] = [
     items: [
       { href: "/admin/articles", label: "Articles & Field Notes", icon: BookOpen },
       { href: "/admin/projects", label: "Projects & Portfolio", icon: FolderGit2 },
-      { href: "/admin/inquiries", label: "Client Inquiries & CRM", icon: Mail },
+      { href: "/admin/inquiries", label: "Messages & Inbox", icon: Mail },
       { href: "/admin/settings", label: "Website & SEO Settings", icon: Settings },
     ],
   },
@@ -111,6 +111,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isVerifyingPin, setIsVerifyingPin] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [unreadInquiriesCount, setUnreadInquiriesCount] = useState<number>(0);
+
+  useEffect(() => {
+    let active = true;
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch("/api/admin/inquiries?limit=1");
+        const data = await res.json();
+        if (active && data.success && data.stats) {
+          setUnreadInquiriesCount(data.stats.unread || 0);
+        }
+      } catch {
+        // Ignored
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [pathname]);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -588,8 +610,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       <span className="truncate whitespace-nowrap">{link.label}</span>
                     )}
 
+                    {link.href === "/admin/inquiries" && unreadInquiriesCount > 0 && !isCollapsed && (
+                      <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-black bg-primary text-white shadow-xs">
+                        {unreadInquiriesCount}
+                      </span>
+                    )}
+
                     {/* Pulsing Active Indicator Dot */}
-                    {isActive && !isCollapsed && (
+                    {isActive && !isCollapsed && (link.href !== "/admin/inquiries" || unreadInquiriesCount === 0) && (
                       <span className="w-1.5 h-1.5 rounded-full bg-white ml-auto shrink-0 shadow-xs animate-pulse" />
                     )}
 
@@ -721,7 +749,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       >
                         <Icon className="w-4 h-4 shrink-0" />
                         <span className="truncate">{link.label}</span>
-                        {isActive && (
+                        {link.href === "/admin/inquiries" && unreadInquiriesCount > 0 && (
+                          <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-black bg-primary text-white shadow-xs">
+                            {unreadInquiriesCount}
+                          </span>
+                        )}
+                        {isActive && (link.href !== "/admin/inquiries" || unreadInquiriesCount === 0) && (
                           <span className="w-1.5 h-1.5 rounded-full bg-white ml-auto shrink-0 shadow-xs animate-pulse" />
                         )}
                       </Link>
@@ -818,6 +851,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Client Portal</span>
+            </Link>
+
+            <Link
+              href="/admin/inquiries"
+              className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-xl transition-colors relative"
+              title="Messages & Inbox"
+            >
+              <Mail className="w-4 h-4" />
+              {unreadInquiriesCount > 0 && (
+                <span className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-primary text-white text-[9px] font-black leading-none animate-pulse">
+                  {unreadInquiriesCount}
+                </span>
+              )}
             </Link>
 
             <Link

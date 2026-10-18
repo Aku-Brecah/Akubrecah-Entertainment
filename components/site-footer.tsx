@@ -125,7 +125,7 @@ export function SiteFooter(): JSX.Element {
                 </Link>
               </li>
               <li>
-                <Link href="/#contact" className="hover:text-primary transition-colors font-bold text-primary">
+                <Link href="/contact" className="hover:text-primary transition-colors font-bold text-primary">
                   Start a Project &rarr;
                 </Link>
               </li>
