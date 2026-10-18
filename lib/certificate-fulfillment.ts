@@ -541,6 +541,7 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
   taxpayerDetails?: any;
   isCyberSubscription?: boolean;
   daysRemaining?: number;
+  skipDirectWhatsAppDocument?: boolean;
 }): Promise<{ success: boolean; error?: string }> {
   const { phone, pin, checkoutId, amount = 20, isCyberSubscription = false, daysRemaining } = opts;
   const db = prisma as any;
@@ -622,20 +623,65 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
       phoneNumber: passed.phone_number || passed.phoneNumber || cachedRecord?.phone_number || userPhone,
     });
 
-    // 4. Send Official KRA PIN Certificate PDF ONLY (minimal single-document delivery)
-    const caption = isCyberSubscription
-      ? `📄 *KRA PIN Certificate*\n• Taxpayer: *${resolvedName}*\n• PIN: *${cleanPin}*\n• Cyber Package: *Active*`
-      : `📄 *KRA PIN Certificate*\n• Taxpayer: *${resolvedName}*\n• PIN: *${cleanPin}*\n• Ref: *${receiptNum}*`;
+    // 4. Deliver via n8n workflow (so it reflects on n8n) or direct WhatsApp
+    if (!opts.skipDirectWhatsAppDocument) {
+      const caption = isCyberSubscription
+        ? `📄 *KRA PIN Certificate*\n• Taxpayer: *${resolvedName}*\n• PIN: *${cleanPin}*\n• Cyber Package: *Active*\n\n🌐 https://kra.akubrecah.com`
+        : `📄 *KRA PIN Certificate*\n• Taxpayer: *${resolvedName}*\n• PIN: *${cleanPin}*\n• Ref: *${receiptNum}*\n• Fee: *KES 20.00*\n\n🌐 Portal: https://kra.akubrecah.com`;
 
-    const certRes = await sendEvolutionDocument({
-      phone: userPhone,
-      pdfBuffer: certBuffer,
-      fileName: `KRA_PIN_Certificate_${cleanPin}.pdf`,
-      caption,
-    });
+      const certRes = await sendEvolutionDocument({
+        phone: userPhone,
+        pdfBuffer: certBuffer,
+        fileName: `KRA_PIN_Certificate_${cleanPin}.pdf`,
+        caption,
+      });
 
-    if (!certRes.success) {
-      console.error('[Fulfillment] Failed to send certificate document:', certRes.error);
+      if (!certRes.success) {
+        console.error('[Fulfillment] Failed to send certificate document:', certRes.error);
+      }
+    }
+
+    // 5. Trigger n8n delivery workflow so delivery visibly reflects in n8n execution monitor
+    const n8nWebhookUrl = process.env.N8N_KRA_DELIVERY_WEBHOOK || 'https://n8n.akubrecah.com/webhook/kra-delivery';
+    try {
+      const n8nRes = await fetch(n8nWebhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: userPhone,
+          pin: cleanPin,
+          downloadId: downloadRecord?.id || 'dl_' + Date.now(),
+          mpesaReceipt: receiptNum,
+          amount: isCyberSubscription ? 0 : (amount || 20),
+          taxpayerName: resolvedName,
+          appUrl: 'https://kra.akubrecah.com',
+          evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
+          instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment',
+          serviceSecret: 'akubrecah_secret_whatsapp_key_2026',
+          apiKey: 'akubrecah_secret_whatsapp_key_2026',
+        }),
+      });
+
+      if (!n8nRes.ok && opts.skipDirectWhatsAppDocument) {
+        // Fallback: Send directly if n8n returned error
+        console.warn('[Fulfillment] n8n webhook returned status', n8nRes.status, '- executing direct fallback');
+        await sendEvolutionDocument({
+          phone: userPhone,
+          pdfBuffer: certBuffer,
+          fileName: `KRA_PIN_Certificate_${cleanPin}.pdf`,
+          caption: `📄 *KRA PIN Certificate*\n• Taxpayer: *${resolvedName}*\n• PIN: *${cleanPin}*\n• Ref: *${receiptNum}*\n\n🌐 https://kra.akubrecah.com`,
+        });
+      }
+    } catch (n8nErr: any) {
+      console.warn('[Fulfillment] n8n delivery webhook error:', n8nErr.message);
+      if (opts.skipDirectWhatsAppDocument) {
+        await sendEvolutionDocument({
+          phone: userPhone,
+          pdfBuffer: certBuffer,
+          fileName: `KRA_PIN_Certificate_${cleanPin}.pdf`,
+          caption: `📄 *KRA PIN Certificate*\n• Taxpayer: *${resolvedName}*\n• PIN: *${cleanPin}*\n• Ref: *${receiptNum}*\n\n🌐 https://kra.akubrecah.com`,
+        });
+      }
     }
 
     // 8. Update conversation step to COMPLETED and end active session

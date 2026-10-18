@@ -528,15 +528,32 @@ async function handleTaxpayerFoundFulfillment({
 
   if (stkRes.success) {
     return (
-      `✅ *${masked.taxpayerName}* (\`${masked.pin}\`)\n` +
-      `📲 M-Pesa prompt sent to \`${stkRes.normalizedPhone}\` (KES ${downloadFee}). Enter PIN to receive your certificate.\n` +
-      `_Reply 1 to resend, or 0 to cancel._`
+      `🇰🇪 *TAX COMPLIANCE RECORD FOUND*\n` +
+      `─────────────────────────\n` +
+      `👤 *Taxpayer:* *${masked.taxpayerName}*\n` +
+      `🆔 *KRA PIN:* \`${masked.pin}\`\n` +
+      `💰 *Certificate Fee:* KES ${downloadFee}.00\n` +
+      `─────────────────────────\n` +
+      `📲 *M-PESA PAYMENT PROMPT SENT*\n` +
+      `A prompt for *KES ${downloadFee}.00* has been sent to \`${stkRes.normalizedPhone}\`.\n` +
+      `👉 *Enter your M-Pesa PIN* on your phone to complete retrieval.\n\n` +
+      `Your official KRA PIN Certificate and ETR Tax Receipt will be delivered right here.\n\n` +
+      `🌐 *Web Portal:* https://kra.akubrecah.com\n` +
+      `─────────────────────────\n` +
+      `_Reply 1 to resend prompt | Send another number | Reply 0 to cancel_`
     );
   } else {
     return (
-      `✅ *${masked.taxpayerName}* (\`${masked.pin}\`)\n` +
-      `⚠️ M-Pesa prompt failed: ${stkRes.error || 'Network error'}.\n` +
-      `👉 Send another Safaricom number (e.g. *0712345678*) or reply 0 to cancel.`
+      `🇰🇪 *TAX COMPLIANCE RECORD FOUND*\n` +
+      `─────────────────────────\n` +
+      `👤 *Taxpayer:* *${masked.taxpayerName}*\n` +
+      `🆔 *KRA PIN:* \`${masked.pin}\`\n` +
+      `💰 *Certificate Fee:* KES ${downloadFee}.00\n` +
+      `─────────────────────────\n` +
+      `⚠️ *Could not send M-Pesa prompt:* ${stkRes.error || 'Network error'}.\n\n` +
+      `👉 Send another Safaricom phone number (e.g. *0712345678*) or reply *0* to cancel.\n\n` +
+      `🌐 Prefer web download? Visit:\n` +
+      `🔗 https://kra.akubrecah.com`
     );
   }
 }
@@ -667,7 +684,12 @@ export async function handleWhatsAppChat(params: {
         checkoutId: null,
       });
 
-      const cancelReply = `✅ *Session Cancelled*\n\nThe KRA assistant is now idle. Send *.kra* or */kra* whenever you want to start again.`;
+      const cancelReply =
+        `✅ *Session Cancelled*\n` +
+        `─────────────────────────\n` +
+        `The KRA assistant is now idle.\n\n` +
+        `Send *.kra* or */kra* whenever you want to start again.\n` +
+        `🌐 *Web Portal:* https://kra.akubrecah.com`;
       let sendResult = null;
       if (sendDirect) {
         sendResult = await sendEvolutionTextMessage(userPhone, cancelReply);
@@ -713,7 +735,12 @@ export async function handleWhatsAppChat(params: {
           suggestedPhone: null,
         });
 
-        replyText = `✅ *Session Cancelled*\n\nThe KRA bot is now idle. Send *.kra* or */kra* anytime you want to start again.`;
+        replyText =
+          `✅ *Session Cancelled*\n` +
+          `─────────────────────────\n` +
+          `The KRA bot is now idle.\n\n` +
+          `Send *.kra* or */kra* anytime you want to start again.\n` +
+          `🌐 *Web Portal:* https://kra.akubrecah.com`;
       }
       // B. Cyber Cafe Subscription / Registration: .cyber, /cyber, .subscribe, /subscribe
       else if (['cyber', 'subscribe', 'package'].includes(cmdWord)) {
@@ -868,8 +895,15 @@ export async function handleWhatsAppChat(params: {
           if (!isPin && !isId) {
             await saveConversationState('AWAITING_INPUT', { activeSession: true });
             replyText =
-              `⚠️ Invalid format. Send valid National ID (6-9 digits) or KRA PIN (e.g. A012345678Z).\n` +
-              `_(Reply 0 to cancel)_`;
+              `⚠️ *Invalid Identification Format*\n` +
+              `─────────────────────────\n` +
+              `Please send a valid Kenyan ID or KRA PIN:\n` +
+              `• *National ID Number* (6 to 9 digits, e.g. *28374619*)\n` +
+              `• *KRA PIN* (Format: Letter + 9 digits + Letter, e.g. *A012345678Z*)\n\n` +
+              `🌐 *Self-Service Web Portal:*\n` +
+              `🔗 https://kra.akubrecah.com\n` +
+              `─────────────────────────\n` +
+              `_(Reply *0* to cancel)_`;
           } else {
             let taxpayer: any = null;
             try {
@@ -885,8 +919,16 @@ export async function handleWhatsAppChat(params: {
             if (!taxpayer || !taxpayer.taxpayerName) {
               await saveConversationState('AWAITING_INPUT', { activeSession: true });
               replyText =
-                `❌ No record found on KRA database for \`${cmdArgs}\`.\n` +
-                `Send another ID/PIN or reply 0 to cancel.`;
+                `❌ *No Record Found on KRA Database*\n` +
+                `─────────────────────────\n` +
+                `Could not locate tax records matching: \`${cmdArgs}\`.\n\n` +
+                `👉 *Suggestions:*\n` +
+                `• Double-check your National ID or PIN for any typo.\n` +
+                `• Search directly on our online web portal:\n` +
+                `  🔗 https://kra.akubrecah.com\n` +
+                `• Send another ID/PIN to try again.\n` +
+                `─────────────────────────\n` +
+                `_(Reply *0* to cancel)_`;
             } else {
               // Fulfill instantly if Cyber Cafe subscriber, else prompt KES 20
               replyText = await handleTaxpayerFoundFulfillment({
@@ -898,7 +940,7 @@ export async function handleWhatsAppChat(params: {
             }
           }
         } else {
-          // Standard menu trigger without args
+          // Standard menu trigger without args (.kra or /kra)
           const cyberCheck = await getCyberCafeStatus(userPhone);
 
           await saveConversationState('AWAITING_INPUT', {
@@ -911,21 +953,38 @@ export async function handleWhatsAppChat(params: {
           });
 
           replyText =
-            `*Akubrecah KRA Portal*${cyberCheck.isActive ? ` (${cyberCheck.daysRemaining}d active)` : ''}\n\n` +
-            `Send National ID or KRA PIN to retrieve certificate.\n` +
-            `_Commands: .kra, .cyber (KES 500/mo), .status, .invoice, .cancel_`;
+            `🇰🇪 *AKUBRECAH KRA COMPLIANCE PORTAL*${cyberCheck.isActive ? `\n🏢 *${cyberCheck.cafe?.cafeName}* (${cyberCheck.daysRemaining} days active package)` : ''}\n` +
+            `─────────────────────────\n` +
+            `Instant KRA PIN & Tax Compliance Certificate Retrieval.\n\n` +
+            `👉 *How to Proceed:*\n` +
+            `Send your *National ID Number* (6–9 digits) or *KRA PIN* (e.g. *A012345678Z*) directly in this chat.\n\n` +
+            `🌐 *Self-Service Web Portal:*\n` +
+            `Prefer downloading directly from your browser?\n` +
+            `🔗 https://kra.akubrecah.com\n\n` +
+            `💰 *Cost:* Strictly KES 20.00 per certificate.\n` +
+            `─────────────────────────\n` +
+            `_Available Commands:_\n` +
+            `• *.kra <ID or PIN>* — Instant lookup\n` +
+            `• *.cyber* — Cyber Cafe Package (KES 500/Month unlimited)\n` +
+            `• *.status* — Check subscription status\n` +
+            `• *.invoice* — Download official tax invoice\n` +
+            `• *.cancel* or *0* — Cancel active session`;
         }
       }
       // G. Other/Unknown bot commands
       else {
         replyText =
-          `*Akubrecah KRA Assistant Commands:*\n` +
+          `🇰🇪 *AKUBRECAH KRA ASSISTANT COMMANDS*\n` +
+          `─────────────────────────\n` +
           `• *.kra* or */kra* — Start Certificate lookup\n` +
           `• *.kra <ID or PIN>* — Instant lookup\n` +
-          `• *.cyber* or */cyber* — Cyber Cafe Package (KES 500/Month)\n` +
+          `• *.cyber* or */cyber* — Cyber Cafe Package (KES 500/Month unlimited)\n` +
           `• *.status* or */status* — Check subscription status\n` +
-          `• *.invoice* or */invoice* — Get tax invoice PDF\n` +
-          `• *.cancel* or */cancel* (or *0*) — Cancel active session`;
+          `• *.invoice* or */invoice* — Get official tax invoice PDF\n` +
+          `• *.cancel* or *0* — Cancel active session\n\n` +
+          `🌐 *Web Portal:* https://kra.akubrecah.com\n` +
+          `💰 *Download Fee:* Strictly KES 20.00 per certificate\n` +
+          `─────────────────────────`;
       }
     }
     // 4. Step AWAITING_INPUT: User entered bot mode and sends their National ID or PIN
@@ -943,21 +1002,39 @@ export async function handleWhatsAppChat(params: {
           paymentPhone: null,
           suggestedPhone: null,
         });
-        replyText = `✅ *Session Cancelled*\n\nThe KRA bot is now idle. Send */kra* or your ID/PIN to start again.`;
+        replyText =
+          `✅ *Session Cancelled*\n` +
+          `─────────────────────────\n` +
+          `The KRA assistant is now idle.\n\n` +
+          `Send *.kra* or */kra* whenever you want to start again.\n` +
+          `🌐 *Web Portal:* https://kra.akubrecah.com`;
       } else if (['hi', 'hello', 'hey', 'habari', 'mambo', 'menu', 'help', 'start', 'kra'].includes(cleanCmdWord)) {
         const cyberCheck = await getCyberCafeStatus(userPhone);
         replyText =
-          `🇰🇪 *Akubrecah KRA Portal*${cyberCheck.isActive ? `\n🏢 *${cyberCheck.cafe?.cafeName}* (${cyberCheck.daysRemaining} days active)` : ''}\n\n` +
-          `• Send your *National ID Number* or *KRA PIN* to reprint certificate.\n` +
-          `• Reply */cyber* for Cyber Cafe package (KES 500/Month unlimited).\n` +
-          `• Reply */status* to check subscription status.\n` +
-          `• Reply */invoice* to get official tax invoice PDF.\n` +
-          `• Reply *0* to cancel.`;
+          `🇰🇪 *AKUBRECAH KRA COMPLIANCE PORTAL*${cyberCheck.isActive ? `\n🏢 *${cyberCheck.cafe?.cafeName}* (${cyberCheck.daysRemaining} days active)` : ''}\n` +
+          `─────────────────────────\n` +
+          `• Send your *National ID Number* or *KRA PIN* to retrieve certificate.\n` +
+          `• Or download directly via self-service web:\n` +
+          `  🔗 https://kra.akubrecah.com\n\n` +
+          `💰 *Download Fee:* Strictly KES 20.00\n` +
+          `─────────────────────────\n` +
+          `_Other Commands:_\n` +
+          `• Reply */cyber* for Cyber Cafe package (KES 500/Month unlimited)\n` +
+          `• Reply */status* to check subscription status\n` +
+          `• Reply */invoice* to get official tax invoice PDF\n` +
+          `• Reply *0* to cancel`;
       } else if (!isPin && !isId) {
         await saveConversationState('AWAITING_INPUT', { activeSession: true });
         replyText =
-          `⚠️ Invalid format. Send valid National ID (6-9 digits) or KRA PIN (e.g. A012345678Z).\n` +
-          `_(Reply 0 to cancel)_`;
+          `⚠️ *Invalid Identification Format*\n` +
+          `─────────────────────────\n` +
+          `Please provide a valid Kenyan ID or KRA PIN:\n` +
+          `• *National ID Number* (6 to 9 digits, e.g. *28374619*)\n` +
+          `• *KRA PIN* (Format: Letter + 9 digits + Letter, e.g. *A012345678Z*)\n\n` +
+          `🌐 Self-service web access:\n` +
+          `🔗 https://kra.akubrecah.com\n` +
+          `─────────────────────────\n` +
+          `_(Reply *0* to cancel)_`;
       } else {
         let taxpayer: any = null;
         try {
@@ -973,8 +1050,16 @@ export async function handleWhatsAppChat(params: {
         if (!taxpayer || !taxpayer.taxpayerName) {
           await saveConversationState('AWAITING_INPUT', { activeSession: true });
           replyText =
-            `❌ No record found on KRA database for \`${cleanInput}\`.\n` +
-            `Send another ID/PIN or reply 0 to cancel.`;
+            `❌ *No Record Found on KRA Database*\n` +
+            `─────────────────────────\n` +
+            `Could not find tax records matching: \`${cleanInput}\`.\n\n` +
+            `👉 *Suggestions:*\n` +
+            `• Check your input for any typos and try again.\n` +
+            `• You can also search online at:\n` +
+            `  🔗 https://kra.akubrecah.com\n` +
+            `• Send another ID or PIN to proceed.\n` +
+            `─────────────────────────\n` +
+            `_(Reply *0* to cancel)_`;
         } else {
           // Fulfill instantly if Cyber Cafe subscriber, else prompt KES 20
           replyText = await handleTaxpayerFoundFulfillment({
@@ -1266,7 +1351,12 @@ export async function handleWhatsAppChat(params: {
           checkoutId: null,
           checkoutUrl: null,
         });
-        replyText = `✅ *Operation Cancelled*\n\nSend */kra* or */menu* whenever you want to start again.`;
+        replyText =
+          `✅ *Operation Cancelled*\n` +
+          `─────────────────────────\n` +
+          `The KRA assistant is now idle.\n\n` +
+          `Send *.kra* or */kra* whenever you want to start again.\n` +
+          `🌐 *Web Portal:* https://kra.akubrecah.com`;
       }
       // B. User supplies an alternate phone number (e.g. 0712345678, 254712345678, 0112345678)
       else if (/^(?:254|\+254|0)?(7|1)\d{8}$/.test(incomingText.replace(/[\s\-\+\(\)]/g, ''))) {
@@ -1288,9 +1378,20 @@ export async function handleWhatsAppChat(params: {
         });
 
         if (stkRes.success) {
-          replyText = `📲 M-Pesa prompt (KES ${downloadFee}) sent to \`${stkRes.normalizedPhone}\`. Enter PIN to complete.`;
+          replyText =
+            `📲 *M-PESA PAYMENT PROMPT SENT*\n` +
+            `─────────────────────────\n` +
+            `• *Amount:* KES ${downloadFee}.00\n` +
+            `• *Handset:* \`${stkRes.normalizedPhone}\`\n\n` +
+            `👉 *Enter your M-Pesa PIN* on your phone to complete your order.\n\n` +
+            `🌐 *Portal:* https://kra.akubrecah.com\n` +
+            `─────────────────────────\n` +
+            `_Reply 1 to resend | Reply 0 to cancel_`;
         } else {
-          replyText = `⚠️ Could not send prompt to ${stkRes.normalizedPhone}. Send another number or reply 0 to cancel.`;
+          replyText =
+            `⚠️ *Could not send prompt to \`${stkRes.normalizedPhone}\`:* ${stkRes.error || 'Network error'}.\n\n` +
+            `👉 Send another Safaricom phone number or reply *0* to cancel.\n` +
+            `🌐 Or visit: https://kra.akubrecah.com`;
         }
       }
       // C. User requests resending the STK Push
@@ -1312,9 +1413,20 @@ export async function handleWhatsAppChat(params: {
         });
 
         if (stkRes.success) {
-          replyText = `📲 M-Pesa prompt (KES ${downloadFee}) resent to \`${stkRes.normalizedPhone}\`. Enter PIN to complete.`;
+          replyText =
+            `📲 *M-PESA PAYMENT PROMPT RESENT*\n` +
+            `─────────────────────────\n` +
+            `• *Amount:* KES ${downloadFee}.00\n` +
+            `• *Handset:* \`${stkRes.normalizedPhone}\`\n\n` +
+            `👉 *Enter your M-Pesa PIN* on your phone to complete your order.\n\n` +
+            `🌐 *Portal:* https://kra.akubrecah.com\n` +
+            `─────────────────────────\n` +
+            `_Reply 1 to resend | Reply 0 to cancel_`;
         } else {
-          replyText = `⚠️ Could not resend prompt: ${stkRes.error || 'Network error'}. Send another number or reply 0 to cancel.`;
+          replyText =
+            `⚠️ *Could not resend prompt:* ${stkRes.error || 'Network error'}.\n\n` +
+            `👉 Send another Safaricom number (e.g. *0712345678*) or reply *0* to cancel.\n` +
+            `🌐 Or visit: https://kra.akubrecah.com`;
         }
       }
       // D. Verification check (e.g. "PAID", or general text)
@@ -1383,6 +1495,7 @@ export async function handleWhatsAppChat(params: {
             amount: downloadFee,
             taxpayerName: metadata.taxpayerName,
             taxpayerDetails: metadata.taxpayerDetails,
+            skipDirectWhatsAppDocument: true, // Delivered cleanly via n8n workflow
           });
 
           replyText = '';
@@ -1390,10 +1503,15 @@ export async function handleWhatsAppChat(params: {
           await saveConversationState('AWAITING_PAYMENT', { activeSession: true });
 
           replyText =
-            `⏳ *Payment Pending for \`${activePayPhone}\`*\n` +
-            `• Entered PIN? Wait 3-5s then reply *PAID*.\n` +
-            `• No prompt? Reply *1* to resend, or send another number.\n` +
-            `• Reply *0* to cancel.`;
+            `⏳ *Awaiting Payment Confirmation*\n` +
+            `─────────────────────────\n` +
+            `• *Amount:* KES ${downloadFee}.00\n` +
+            `• *Target Number:* \`${formatDisplayPhone(activePayPhone)}\`\n\n` +
+            `• Entered PIN? Wait 3–5 seconds then reply *PAID*.\n` +
+            `• No prompt received? Reply *1* to resend.\n` +
+            `• Want to pay with another phone? Send it (e.g. *0712345678*).\n` +
+            `• Reply *0* to cancel.\n\n` +
+            `🌐 *Self-Service Web Portal:* https://kra.akubrecah.com`;
         }
       }
     }

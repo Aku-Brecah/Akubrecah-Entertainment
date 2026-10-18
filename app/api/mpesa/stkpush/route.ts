@@ -148,7 +148,7 @@ export async function dispatchMpesaStkPush({
       const paystackRes = await chargePaystackMpesa({
         phone: formatPaystackKenyaPhone(normalizedPhone),
         email: userEmail || `${normalizedPhone}@akubrecah.co.ke`,
-        amountKes: Math.round(Number(amount)) || 30,
+        amountKes: Math.round(Number(amount)) || 20,
         reference: `PSTK-MPESA-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
         metadata: {
           clerkId: userClerkId,

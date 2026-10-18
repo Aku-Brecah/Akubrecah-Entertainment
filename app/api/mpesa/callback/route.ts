@@ -204,7 +204,7 @@ export async function POST(req: NextRequest) {
                 clerkId: 'wa_' + targetPhone,
                 pin: resolvedPin.toUpperCase(),
                 downloadType: 'pay_per_download',
-                amountCharged: Number(amount || 30),
+                amountCharged: Number(amount || 20),
                 currency: 'KES',
                 mpesaReceipt: mpesaReceipt,
                 checkoutId: CheckoutRequestID,
@@ -249,7 +249,7 @@ export async function POST(req: NextRequest) {
           console.error('[M-Pesa Callback] Direct fulfillment error:', fulErr.message);
         }
 
-        // Optional secondary n8n Workflow trigger
+        // Trigger n8n Workflow so executions visibly reflect in n8n
         const n8nWebhookUrl = process.env.N8N_KRA_DELIVERY_WEBHOOK || 'https://n8n.akubrecah.com/webhook/kra-delivery';
         try {
           await fetch(n8nWebhookUrl, {
@@ -258,15 +258,21 @@ export async function POST(req: NextRequest) {
             body: JSON.stringify({
               checkoutId: CheckoutRequestID,
               mpesaReceipt,
-              amount,
+              amount: Number(amount || 20),
               phone: targetPhone,
               pin: resolvedPin,
               downloadId,
               taxpayerName,
+              appUrl: 'https://kra.akubrecah.com',
               evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
+              instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment',
+              serviceSecret: 'akubrecah_secret_whatsapp_key_2026',
+              apiKey: 'akubrecah_secret_whatsapp_key_2026',
             }),
           });
-        } catch {}
+        } catch (n8nErr: any) {
+          console.warn('[M-Pesa Callback] n8n delivery webhook notice:', n8nErr.message);
+        }
       } catch (dbErr: any) {
         console.error('[M-Pesa Callback DB Handler Error]:', dbErr.message);
       }

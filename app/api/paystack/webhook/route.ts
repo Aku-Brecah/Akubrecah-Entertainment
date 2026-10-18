@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
               } catch (fulErr: any) {
                 console.error('[Paystack Webhook] Direct fulfillment error:', fulErr.message);
               }
-              // Optional secondary n8n trigger
+              // Secondary n8n trigger to reflect in workflow
               const n8nWebhookUrl = process.env.N8N_KRA_DELIVERY_WEBHOOK || 'https://n8n.akubrecah.com/webhook/kra-delivery';
               try {
                 await fetch(n8nWebhookUrl, {
@@ -131,15 +131,21 @@ export async function POST(req: NextRequest) {
                   body: JSON.stringify({
                     checkoutId: reference,
                     mpesaReceipt: `PAYSTACK_${reference}`,
-                    amount: amountKes,
+                    amount: amountKes || 20,
                     phone: waTargetPhone,
                     pin: targetPin,
                     downloadId: existingDownload?.id || 'dl_' + Date.now(),
                     taxpayerName,
+                    appUrl: 'https://kra.akubrecah.com',
                     evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
+                    instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment',
+                    serviceSecret: 'akubrecah_secret_whatsapp_key_2026',
+                    apiKey: 'akubrecah_secret_whatsapp_key_2026',
                   }),
                 });
-              } catch {}
+              } catch (n8nErr: any) {
+                console.warn('[Paystack Webhook] n8n delivery notice:', n8nErr.message);
+              }
             }
           }
         }

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       mpesaReceipt,
       pin,
       name,
-      amount = 30,
+      amount = 20,
       phone,
     } = body;
 
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       receiptNumber: resolvedReceipt,
       pin: resolvedPin,
       name: resolvedName,
-      amount: Number(amount || 30),
+      amount: Number(amount || 20),
       phone: userPhone,
       paymentMethod: 'M-PESA EXPRESS',
     });
