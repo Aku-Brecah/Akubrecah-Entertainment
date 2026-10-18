@@ -224,7 +224,7 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
       </div>
 
       {/* Main Filing Container */}
-      <div className="bg-card text-card-foreground rounded-3xl border border-border shadow-xs p-6 sm:p-8 space-y-6">
+      <div className="bg-card text-card-foreground rounded-2xl sm:rounded-3xl border border-border shadow-xs p-4 sm:p-6 md:p-8 space-y-6">
         {/* Title & Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
           <div className="space-y-1">
@@ -232,7 +232,7 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
               <FileSpreadsheet className="w-3.5 h-3.5" />
               Official Tax Returns Gateway
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-foreground tracking-tight">
               KRA Tax Returns Filing
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground">
@@ -241,14 +241,14 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex items-center bg-muted p-1 rounded-xl border border-border shrink-0">
+          <div className="flex items-center bg-muted p-1 rounded-xl border border-border w-full sm:w-auto">
             <button
               onClick={() => {
                 setActiveTab("nil")
                 setNilStage("idle")
                 setReceiptData(null)
               }}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                 activeTab === "nil"
                   ? "bg-background text-foreground shadow-xs border border-border"
                   : "text-muted-foreground hover:text-foreground"
@@ -262,13 +262,13 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                 setIncomeStage("idle")
                 setReceiptData(null)
               }}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                 activeTab === "income"
                   ? "bg-background text-foreground shadow-xs border border-border"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Income Tax Return (P9)
+              Income Tax (P9)
             </button>
           </div>
         </div>

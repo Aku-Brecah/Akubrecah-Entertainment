@@ -661,13 +661,15 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       )}
 
       {/* Eye-Catching Step Progress Bar */}
-      <div className="w-full max-w-lg mx-auto mb-5 px-3">
-        <div className="flex justify-between items-center text-[11px] font-black tracking-wide mb-2">
-          <span className={cn(currentStep >= 1 ? "text-red-600 dark:text-red-400 font-black" : "text-zinc-400")}>1. Identify</span>
+      <div className="w-full max-w-lg mx-auto mb-4 sm:mb-5 px-1 sm:px-3">
+        <div className="flex justify-between items-center text-[10px] sm:text-[11px] font-black tracking-wide mb-2">
+          <span className={cn(currentStep >= 1 ? "text-red-600 dark:text-red-400 font-black" : "text-zinc-400")}>
+            1. <span className="hidden sm:inline">Identify</span><span className="sm:hidden">ID</span>
+          </span>
           <span className={cn(currentStep >= 2 ? "text-red-600 dark:text-red-400 font-black" : "text-zinc-400")}>2. Details</span>
           <span className={cn(currentStep >= 3 ? "text-red-600 dark:text-red-400 font-black" : "text-zinc-400")}>3. Address</span>
           <span className={cn(currentStep >= 4 ? "text-red-600 dark:text-red-400 font-black" : "text-zinc-400")}>
-            4. Download {isSubscribed ? "(Free)" : "(KES 20)"}
+            4. Download<span className="hidden sm:inline"> {isSubscribed ? "(Free)" : "(KES 20)"}</span>
           </span>
         </div>
         <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden relative border border-zinc-200 dark:border-zinc-700">
@@ -687,7 +689,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
         >
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-sm border-2 border-zinc-200 dark:border-zinc-800 p-5 sm:p-7 relative overflow-hidden z-10 max-w-3xl mx-auto">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl shadow-sm border-2 border-zinc-200 dark:border-zinc-800 p-4 sm:p-6 md:p-7 relative overflow-hidden z-10 max-w-3xl mx-auto">
             <AnimatePresence mode="wait">
               {currentStep === 1 && (
                 <motion.div key="step1" variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
@@ -734,32 +736,32 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     <motion.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
                       
                       {/* Lookup Type Segmented Switcher */}
-                      <div className="flex p-1 bg-zinc-100 dark:bg-zinc-800 rounded-2xl mb-4 border border-zinc-200 dark:border-zinc-700 max-w-sm mx-auto shadow-2xs">
+                      <div className="flex p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl sm:rounded-2xl mb-4 border border-zinc-200 dark:border-zinc-700 max-w-sm mx-auto shadow-2xs">
                           <button 
                             type="button"
                             className={cn(
-                              "flex-1 py-2.5 text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer", 
+                              "flex-1 py-2 sm:py-2.5 text-xs rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap", 
                               activeTab === "id" 
                                 ? "bg-red-600 text-white font-extrabold shadow-xs" 
                                 : "text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white font-bold"
                             )}
                             onClick={() => { setActiveTab("id"); handleInputChange('pin', ''); }}
                           >
-                              <BadgeIcon className="w-3.5 h-3.5" />
-                              National ID Number
+                              <BadgeIcon className="w-3.5 h-3.5 shrink-0" />
+                              <span>National ID<span className="hidden sm:inline"> Number</span></span>
                           </button>
                           <button 
                             type="button"
                             className={cn(
-                              "flex-1 py-2.5 text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer", 
+                              "flex-1 py-2 sm:py-2.5 text-xs rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap", 
                               activeTab === "pin" 
                                 ? "bg-red-600 text-white font-extrabold shadow-xs" 
                                 : "text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white font-bold"
                             )}
                             onClick={() => { setActiveTab("pin"); handleInputChange('idNumber', ''); }}
                           >
-                              <MapPinIcon className="w-3.5 h-3.5" />
-                              KRA PIN
+                              <MapPinIcon className="w-3.5 h-3.5 shrink-0" />
+                              <span>KRA PIN</span>
                           </button>
                       </div>
 
@@ -935,11 +937,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center gap-3 pt-6">
-                    <button className={cn(secondaryButtonClass, "min-w-[100px]")} onClick={() => setCurrentStep(1)}>
+                  <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-3 pt-6 w-full max-w-md mx-auto">
+                    <button className={cn(secondaryButtonClass, "w-full sm:w-auto sm:min-w-[100px]")} onClick={() => setCurrentStep(1)}>
                       Back
                     </button>
-                    <button className={cn(primaryButtonClass, "min-w-[140px]")} onClick={() => setCurrentStep(3)}>
+                    <button className={cn(primaryButtonClass, "w-full sm:w-auto sm:min-w-[140px]")} onClick={() => setCurrentStep(3)}>
                       Continue <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -1050,11 +1052,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center gap-3 pt-6">
-                    <button className={cn(secondaryButtonClass, "min-w-[100px]")} onClick={() => setCurrentStep(2)}>
+                  <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-3 pt-6 w-full max-w-md mx-auto">
+                    <button className={cn(secondaryButtonClass, "w-full sm:w-auto sm:min-w-[100px]")} onClick={() => setCurrentStep(2)}>
                       Back
                     </button>
-                    <button className={cn(primaryButtonClass, "min-w-[170px]")} onClick={() => setCurrentStep(4)}>
+                    <button className={cn(primaryButtonClass, "w-full sm:w-auto sm:min-w-[170px]")} onClick={() => setCurrentStep(4)}>
                       Review Certificate <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -1262,19 +1264,20 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                   })()}
 
                   {/* Actions */}
-                  <div className="flex flex-wrap items-center justify-center gap-3 max-w-2xl mx-auto pt-2">
-                    <button className={secondaryButtonClass} onClick={() => { setCurrentStep(1); setIdSearchStatus("idle"); setIsVerified(false); setFormData(prev => ({ ...prev, idNumber: "", pin: "", rawPin: "" })); }}>
-                      <RefreshCw className="w-4 h-4" /> New Search
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-2xl mx-auto pt-2">
+                    <button className={cn(secondaryButtonClass, "w-full sm:w-auto justify-center")} onClick={() => { setCurrentStep(1); setIdSearchStatus("idle"); setIsVerified(false); setFormData(prev => ({ ...prev, idNumber: "", pin: "", rawPin: "" })); }}>
+                      <RefreshCw className="w-4 h-4 shrink-0" /> New Search
                     </button>
                     <button 
-                      className={cn(primaryButtonClass, "shadow-lg shadow-primary/25 h-12 px-8 text-sm font-bold flex items-center gap-2")} 
+                      className={cn(primaryButtonClass, "w-full sm:w-auto justify-center shadow-lg shadow-primary/25 h-12 px-6 sm:px-8 text-xs sm:text-sm font-bold flex items-center gap-2")} 
                       onClick={handleDownload}
                     >
-                      <Download className="w-4 h-4" /> {
-                        (isAdmin || verifiedDownloadId)
+                      <Download className="w-4 h-4 shrink-0" /> 
+                      <span className="truncate">
+                        {(isAdmin || verifiedDownloadId)
                           ? "Download Certificate" 
-                          : "Pay KES 20 & Download Certificate"
-                      }
+                          : "Pay KES 20 & Download Certificate"}
+                      </span>
                     </button>
                   </div>
                 </motion.div>
@@ -1286,12 +1289,12 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
       {/* ── Official KRA Payment & Checkout Gate Modal ── */}
       {showPaymentModal && accessInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md px-4 py-6 overflow-y-auto">
-          <div className="bg-surface border border-outline-variant/80 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden relative my-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md px-3 sm:px-4 py-4 sm:py-6 overflow-y-auto">
+          <div className="bg-surface border border-outline-variant/80 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden relative my-auto">
             {/* Top KRA Red decorative brand strip */}
             <div className="h-1.5 w-full bg-gradient-to-r from-primary-container via-primary to-primary-container" />
 
-            <div className="p-6 sm:p-7 space-y-5">
+            <div className="p-4 sm:p-7 space-y-4 sm:space-y-5">
               {/* Modal Header */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
