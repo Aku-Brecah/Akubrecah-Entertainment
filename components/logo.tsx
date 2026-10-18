@@ -9,20 +9,19 @@ interface LogoProps {
   className?: string
   width?: number
   height?: number
-  showBadge?: boolean
-  badgeOnly?: boolean
+  siteIconOnly?: boolean
 }
 
 /**
  * Akubrecah Brand Logo component.
- * Displays the authoritative circular site icon emblem as requested.
+ * Renders the primary brand logo on the website (adapted for dark/light mode).
+ * The circular emblem is retained for the site icon / favicon.
  */
 export function Logo({ 
   className, 
-  width = 36, 
-  height = 36,
-  showBadge = true,
-  badgeOnly = true,
+  width = 130, 
+  height = 38,
+  siteIconOnly = false,
 }: LogoProps) {
   const [mounted, setMounted] = useState(false)
   const { resolvedTheme } = useTheme()
@@ -31,16 +30,12 @@ export function Logo({
     setMounted(true)
   }, [])
 
-  const size = Math.max(28, Math.min(height, 56))
-
   if (!mounted) {
-    return <div style={{ width: size, height: size }} className="rounded-full bg-transparent shrink-0" />
+    return <div style={{ width: siteIconOnly ? height : width, height }} className="bg-transparent shrink-0" />
   }
 
-  const logoSrc = resolvedTheme === 'dark' ? '/akubrecah-logo-dark.png' : '/akubrecah-logo.png'
-  const altText = "Akubrecah"
-
-  if (badgeOnly) {
+  if (siteIconOnly) {
+    const size = Math.max(28, Math.min(height, 56))
     return (
       <div 
         className={cn("relative shrink-0 rounded-full overflow-hidden shadow-2xs border border-outline-variant/40 bg-white p-0.5", className)}
@@ -58,32 +53,18 @@ export function Logo({
     )
   }
 
+  const logoSrc = resolvedTheme === 'dark' ? '/akubrecah-logo-dark.png' : '/akubrecah-logo.png'
+  const altText = "Akubrecah Technologies"
+
   return (
-    <div className={cn("relative inline-flex items-center gap-2.5", className)}>
-      {showBadge && (
-        <div 
-          className="relative shrink-0 rounded-full overflow-hidden shadow-2xs border border-outline-variant/40 bg-white p-0.5"
-          style={{ width: size, height: size }}
-        >
-          <Image
-            src="/logo-circle.png"
-            alt="Akubrecah Emblem"
-            fill
-            sizes={`${size}px`}
-            priority
-            className="object-cover rounded-full"
-          />
-        </div>
-      )}
-      <div className="relative flex items-center justify-center shrink-0" style={{ width, height }}>
-        <Image
-          src={logoSrc}
-          alt={altText}
-          fill
-          priority
-          className="object-contain"
-        />
-      </div>
+    <div className={cn("relative flex items-center justify-center shrink-0", className)} style={{ width, height }}>
+      <Image
+        src={logoSrc}
+        alt={altText}
+        fill
+        priority
+        className="object-contain"
+      />
     </div>
   )
 }

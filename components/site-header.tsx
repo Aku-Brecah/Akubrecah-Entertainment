@@ -545,9 +545,7 @@ export function SiteHeader() {
           {/* Brand */}
           {isKra ? (
             <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden border border-outline-variant/40 bg-white p-0.5 shadow-xs group-hover:scale-105 transition-transform shrink-0">
-                <Image src="/logo-circle.png" alt="Akubrecah" width={36} height={36} className="w-full h-full object-cover rounded-full" priority />
-              </div>
+              <Logo width={130} height={38} className="h-8 w-auto transition-transform group-hover:scale-[1.02]" />
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs sm:text-sm font-black tracking-wide text-on-surface uppercase">
@@ -562,14 +560,10 @@ export function SiteHeader() {
             </Link>
           ) : (
             <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-              <Logo badgeOnly width={36} height={36} className="h-8 sm:h-9 w-8 sm:w-9 transition-transform group-hover:scale-105" />
-              <div className="flex flex-col">
-                <span className="text-xs sm:text-sm font-black tracking-tight text-on-surface uppercase">
-                  Akubrecah
-                </span>
-                <span className="text-[10px] text-on-surface-variant font-medium leading-none">
-                  Technologies
-                </span>
+              <Logo width={140} height={42} className="h-8 md:h-9 w-auto transition-transform group-hover:scale-[1.02]" />
+              <div className="hidden 2xl:flex flex-col border-l border-outline-variant pl-2.5 py-0.5">
+                <span className="text-[10px] font-black tracking-widest text-primary uppercase leading-tight">Technologies</span>
+                <span className="text-[9px] text-on-surface-variant font-medium leading-tight">Software Engineering</span>
               </div>
             </Link>
           )}

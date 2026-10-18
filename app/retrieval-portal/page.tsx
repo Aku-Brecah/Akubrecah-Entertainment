@@ -20,8 +20,8 @@ import { KRAPortal } from "@/components/kra-portal"
 import { KRAFilingPortal } from "@/components/kra-filing-portal"
 import { CyberSubscriptionCard } from "@/components/cyber-subscription-card"
 import { GooglePreferredSourceButton } from "@/components/google-preferred-source-button"
+import { Logo } from "@/components/logo"
 import Link from "next/link"
-import Image from "next/image"
 
 type ServiceMode = "retrieval" | "filing"
 
@@ -63,9 +63,7 @@ function FlagshipPortalContent() {
           
           {/* Brand Mark & Identity */}
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-90 shrink-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center p-1 shadow-xs group-hover:scale-105 transition-transform">
-              <Image src="/logo-circle.png" alt="Akubrecah" width={36} height={36} className="object-contain" />
-            </div>
+            <Logo width={120} height={34} className="h-7 sm:h-8 w-auto transition-transform group-hover:scale-[1.02]" />
             <div className="flex flex-col">
               <div className="flex items-center gap-1 sm:gap-1.5">
                 <span className="text-[11px] sm:text-sm font-black tracking-tight text-on-surface uppercase">
