@@ -643,69 +643,66 @@ export async function handleWhatsAppChat(params: {
     }
 
     const trimmedInput = incomingText.trim();
-    const isSlashCommand = incomingText.startsWith('/');
-    const cleanCmdText = incomingText.replace(/^[\!\/]/, '').trim().toLowerCase();
+    // Bot is explicitly triggered by either '.' or '/' prefix
+    const isBotTrigger = incomingText.startsWith('/') || incomingText.startsWith('.');
+    const cleanCmdText = incomingText.replace(/^[\!\/\.]/, '').trim().toLowerCase();
     const cleanCmdWord = cleanCmdText.split(/\s+/)[0] || '';
+    const cleanCmdArgs = incomingText.trim().includes(' ')
+      ? incomingText.trim().substring(incomingText.trim().indexOf(' ') + 1).trim()
+      : '';
 
-    // 2. Normal Message Filter & Auto-Initiation:
-    // • If user sends a National ID number or KRA PIN, process it directly!
-    // • If user sends keywords like "renew", "cyber", "status", "days", "invoice", "subscribe", let it through!
-    const isPotentialIdOrPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(trimmedInput) || /^\d{6,9}$/.test(trimmedInput);
-    const isCyberKeyword = ['renew', 'cyber', 'status', 'days', 'subscribe', 'package', 'invoice', 'sub', 'receipt', 'invoices'].includes(cleanCmdWord);
+    // Universal Cancellation: cancel, .cancel, /cancel, exit, .exit, /exit, stop, reset, 0
+    const isCancelRequest =
+      ['cancel', 'exit', 'stop', 'reset', 'abort', '0'].includes(cleanCmdWord) ||
+      ['cancel', 'exit', 'stop', 'reset', 'abort', '0'].includes(lowerText);
 
-    if (isPotentialIdOrPin) {
-      isSessionActive = true;
-      currentStep = 'AWAITING_INPUT';
-    } else if (isCyberKeyword) {
-      isSessionActive = true;
-    }
-
-    if (!isSlashCommand && !isSessionActive && !isCyberKeyword) {
-      const cyberCheck = await getCyberCafeStatus(userPhone);
-
-      await saveConversationState('AWAITING_INPUT', {
-        activeSession: true,
+    if (isCancelRequest) {
+      await saveConversationState('IDLE', {
+        activeSession: false,
         pin: null,
         idNumber: null,
         taxpayerDetails: null,
         paymentPhone: null,
         suggestedPhone: null,
+        checkoutId: null,
       });
 
-      const welcomeReply =
-        `🇰🇪 *Welcome to Akubrecah KRA Portal*${cyberCheck.isActive ? `\n🏢 *${cyberCheck.cafe?.cafeName}* (${cyberCheck.daysRemaining} days active)` : ''}\n\n` +
-        `Reprint your official KRA PIN Certificate directly on WhatsApp in seconds!\n\n` +
-        `📄 *To get your Certificate:*\n` +
-        `Send your *National ID Number* (e.g. \`12345678\`) or *KRA PIN* (e.g. \`A012345678Z\`).\n\n` +
-        `🏢 *Cyber Cafe Unlimited Plan (KES 500/Month):*\n` +
-        `• Reply */cyber* to register or renew\n` +
-        `• Reply */status* to check remaining days & daily count\n` +
-        `• Reply */invoice* to receive your official tax invoice PDF\n\n` +
-        `_Reply 0 or /cancel anytime to reset._`;
-
+      const cancelReply = `✅ *Session Cancelled*\n\nThe KRA assistant is now idle. Send *.kra* or */kra* whenever you want to start again.`;
       let sendResult = null;
       if (sendDirect) {
-        sendResult = await sendEvolutionTextMessage(userPhone, welcomeReply);
+        sendResult = await sendEvolutionTextMessage(userPhone, cancelReply);
       }
-
       return {
         success: true,
         userPhone,
-        step: 'AWAITING_INPUT',
-        reply: welcomeReply,
+        step: 'IDLE',
+        reply: cancelReply,
         metadata,
         sendResult,
       };
     }
 
-    // 3. Process Slash Commands & Cyber Keywords
-    if (isSlashCommand || isCyberKeyword) {
-      const cleanCmd = incomingText.replace(/^[\!\/]/, '').trim();
-      const spaceIdx = cleanCmd.search(/\s+/);
-      const cmdWord = (spaceIdx === -1 ? cleanCmd : cleanCmd.substring(0, spaceIdx)).toLowerCase();
-      const cmdArgs = (spaceIdx === -1 ? '' : cleanCmd.substring(spaceIdx + 1)).trim();
+    // If NO trigger prefix (not starting with '.' or '/') AND NO active session:
+    // Do not trigger or spam casual conversations!
+    if (!isBotTrigger && !isSessionActive) {
+      return {
+        success: true,
+        userPhone,
+        step: 'IDLE',
+        reply: '',
+        shouldReply: false,
+        metadata,
+        sendResult: null,
+      };
+    }
 
-      // A. Cancellation / Exit / Reset
+    // 3. Process Bot Commands (when triggered with '.' or '/')
+    if (isBotTrigger) {
+      const spaceIdx = cleanCmdText.search(/\s+/);
+      const cmdWord = (spaceIdx === -1 ? cleanCmdText : cleanCmdText.substring(0, spaceIdx)).toLowerCase();
+      const cmdArgs = cleanCmdArgs;
+
+      // A. Cancellation / Exit / Reset (handled by universal cancel above, safety fallback)
       if (['cancel', 'exit', 'stop', 'reset'].includes(cmdWord)) {
         await saveConversationState('IDLE', {
           activeSession: false,
@@ -716,9 +713,9 @@ export async function handleWhatsAppChat(params: {
           suggestedPhone: null,
         });
 
-        replyText = `✅ *Session Cancelled*\n\nThe KRA bot is now idle. Send */kra* or */menu* anytime you want to start again.`;
+        replyText = `✅ *Session Cancelled*\n\nThe KRA bot is now idle. Send *.kra* or */kra* anytime you want to start again.`;
       }
-      // B. Cyber Cafe Subscription / Registration: /cyber, /subscribe, /package
+      // B. Cyber Cafe Subscription / Registration: .cyber, /cyber, .subscribe, /subscribe
       else if (['cyber', 'subscribe', 'package'].includes(cmdWord)) {
         const cyberCheck = await getCyberCafeStatus(userPhone);
 
@@ -914,17 +911,21 @@ export async function handleWhatsAppChat(params: {
           });
 
           replyText =
-            `*Akubrecah KRA Portal*${cyberCheck.isActive ? ` (${cyberCheck.daysRemaining}d active)` : ''}\n` +
+            `*Akubrecah KRA Portal*${cyberCheck.isActive ? ` (${cyberCheck.daysRemaining}d active)` : ''}\n\n` +
             `Send National ID or KRA PIN to retrieve certificate.\n` +
-            `_Commands: /cyber (KES 500/mo), /status, /invoice, /cancel_`;
+            `_Commands: .kra, .cyber (KES 500/mo), .status, .invoice, .cancel_`;
         }
       }
-      // G. Other/Unknown slash commands
+      // G. Other/Unknown bot commands
       else {
         replyText =
-          `*Commands:*\n` +
-          `• Send National ID or PIN to look up\n` +
-          `• */cyber* (KES 500/mo) | */status* | */cancel*`;
+          `*Akubrecah KRA Assistant Commands:*\n` +
+          `• *.kra* or */kra* — Start Certificate lookup\n` +
+          `• *.kra <ID or PIN>* — Instant lookup\n` +
+          `• *.cyber* or */cyber* — Cyber Cafe Package (KES 500/Month)\n` +
+          `• *.status* or */status* — Check subscription status\n` +
+          `• *.invoice* or */invoice* — Get tax invoice PDF\n` +
+          `• *.cancel* or */cancel* (or *0*) — Cancel active session`;
       }
     }
     // 4. Step AWAITING_INPUT: User entered bot mode and sends their National ID or PIN

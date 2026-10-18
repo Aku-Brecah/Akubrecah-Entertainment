@@ -35,7 +35,10 @@ export function getEvolutionApiUrl(): string {
 }
 
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || 'akubrecah_secret_whatsapp_key_2026';
-const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE_NAME || 'akubrecah-kra';
+
+export function getEvolutionInstanceName(): string {
+  return (process.env.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment').trim();
+}
 
 /**
  * Format phone numbers to international format required by WhatsApp/Evolution API
@@ -62,7 +65,8 @@ export async function sendEvolutionTextMessage(
   text: string
 ): Promise<{ success: boolean; error?: string; targetUrl?: string }> {
   const baseUrl = getEvolutionApiUrl();
-  const url = `${baseUrl.replace(/\/$/, '')}/message/sendText/${EVOLUTION_INSTANCE}`;
+  const instanceName = encodeURIComponent(getEvolutionInstanceName());
+  const url = `${baseUrl.replace(/\/$/, '')}/message/sendText/${instanceName}`;
   try {
     const formattedPhone = sanitizeWhatsAppPhone(phone);
     
@@ -105,7 +109,8 @@ export async function markEvolutionMessageRead({
 }): Promise<void> {
   try {
     const baseUrl = getEvolutionApiUrl();
-    const url = `${baseUrl.replace(/\/$/, '')}/chat/markMessageAsRead/${EVOLUTION_INSTANCE}`;
+    const instanceName = encodeURIComponent(getEvolutionInstanceName());
+    const url = `${baseUrl.replace(/\/$/, '')}/chat/markMessageAsRead/${instanceName}`;
     await fetch(url, {
       method: 'POST',
       headers: {
@@ -146,7 +151,8 @@ export async function sendEvolutionDocument({
     const baseUrl = getEvolutionApiUrl();
     const formattedPhone = sanitizeWhatsAppPhone(phone);
     const base64Data = pdfBuffer.toString('base64');
-    const url = `${baseUrl.replace(/\/$/, '')}/message/sendMedia/${EVOLUTION_INSTANCE}`;
+    const instanceName = encodeURIComponent(getEvolutionInstanceName());
+    const url = `${baseUrl.replace(/\/$/, '')}/message/sendMedia/${instanceName}`;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -195,7 +201,8 @@ export async function sendEvolutionImage({
     const baseUrl = getEvolutionApiUrl();
     const formattedPhone = sanitizeWhatsAppPhone(phone);
     const base64Data = imageBuffer.toString('base64');
-    const url = `${baseUrl.replace(/\/$/, '')}/message/sendMedia/${EVOLUTION_INSTANCE}`;
+    const instanceName = encodeURIComponent(getEvolutionInstanceName());
+    const url = `${baseUrl.replace(/\/$/, '')}/message/sendMedia/${instanceName}`;
 
     const response = await fetch(url, {
       method: 'POST',

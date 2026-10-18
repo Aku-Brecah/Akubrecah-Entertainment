@@ -30,19 +30,22 @@ docker compose -f deploy/docker-compose.yml up -d evolution
 echo "5. Waiting 6 seconds for Evolution API to initialize..."
 sleep 6
 
-echo "6. Creating fresh instance akubrecah-kra..."
+INSTANCE_NAME="${EVOLUTION_INSTANCE_NAME:-Akubrecah Entertainment}"
+ENCODED_INSTANCE=$(echo "$INSTANCE_NAME" | sed 's/ /%20/g')
+
+echo "6. Creating fresh instance ${INSTANCE_NAME}..."
 curl -s -X POST "https://wa.akubrecah.com/instance/create" \
   -H "Content-Type: application/json" \
   -H "apikey: akubrecah_secret_whatsapp_key_2026" \
   -d '{
-    "instanceName": "akubrecah-kra",
+    "instanceName": "'"${INSTANCE_NAME}"'",
     "token": "akubrecah_secret_whatsapp_key_2026",
     "qrcode": true,
     "integration": "WHATSAPP-BAILEYS"
   }' > /dev/null || true
 
 echo "7. Applying real-time chat & contact sync settings..."
-curl -s -X POST "https://wa.akubrecah.com/settings/set/akubrecah-kra" \
+curl -s -X POST "https://wa.akubrecah.com/settings/set/${ENCODED_INSTANCE}" \
   -H "Content-Type: application/json" \
   -H "apikey: akubrecah_secret_whatsapp_key_2026" \
   -d '{
@@ -56,7 +59,7 @@ curl -s -X POST "https://wa.akubrecah.com/settings/set/akubrecah-kra" \
   }' > /dev/null || true
 
 echo "8. Pointing webhook to https://n8n.akubrecah.com/webhook/whatsapp-inbound..."
-curl -s -X POST "https://wa.akubrecah.com/webhook/set/akubrecah-kra" \
+curl -s -X POST "https://wa.akubrecah.com/webhook/set/${ENCODED_INSTANCE}" \
   -H "Content-Type: application/json" \
   -H "apikey: akubrecah_secret_whatsapp_key_2026" \
   -d '{

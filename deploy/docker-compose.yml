@@ -47,7 +47,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - EVOLUTION_API_URL=http://evolution:8080
       - EVOLUTION_API_KEY=${EVOLUTION_API_KEY:-akubrecah_secret_whatsapp_key_2026}
-      - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME:-akubrecah-kra}
+      - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME:-Akubrecah Entertainment}
       - REDIS_URL=redis://redis:6379
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - JWT_SECRET=${JWT_SECRET}
@@ -99,7 +99,7 @@ services:
       - DATABASE_SAVE_MESSAGE_UPDATE=true
       - DATABASE_SAVE_DATA_CONTACTS=true
       - DATABASE_SAVE_DATA_CHATS=true
-      - REDIS_ENABLED=true
+      - REDIS_ENABLED=false
       - REDIS_URI=redis://redis:6379
       - REDIS_PREFIX_KEY=evolution
       - WEBHOOK_GLOBAL_URL=${WEBHOOK_GLOBAL_URL:-https://akubrecah.com/api/whatsapp/webhook}
