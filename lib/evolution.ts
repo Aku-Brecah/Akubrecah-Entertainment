@@ -37,7 +37,11 @@ export function getEvolutionApiUrl(): string {
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || 'akubrecah_secret_whatsapp_key_2026';
 
 export function getEvolutionInstanceName(): string {
-  return (process.env.EVOLUTION_INSTANCE_NAME || 'akubrecah-portal').trim();
+  const envVal = (process.env.EVOLUTION_INSTANCE_NAME || 'akubrecah-portal').trim();
+  if (!envVal || envVal === 'Akubrecah Entertainment' || envVal === 'akubrecah-kra') {
+    return 'akubrecah-portal';
+  }
+  return envVal;
 }
 
 /**

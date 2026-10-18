@@ -298,25 +298,12 @@ export async function POST(req: NextRequest) {
 
           if (conversation && conversation.metadata?.activeSession) {
             const targetPhone = conversation.user_phone;
-            const evolutionUrl = process.env.EVOLUTION_API_URL || 'http://169.58.96.131:8085';
-            const apiKey = process.env.EVOLUTION_API_KEY || '8E3875DCF659-4D88-AC50-F7EB51EFE4A5';
-            const instance = process.env.EVOLUTION_INSTANCE_NAME || 'akubrecah-kra';
-
             const failMsg =
               `⚠️ M-Pesa payment not completed (${ResultDesc || 'timed out'}).\n` +
               `Reply 1 to resend prompt, or 0 to cancel.`;
 
-            await fetch(`${evolutionUrl}/message/sendText/${instance}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                apikey: apiKey,
-              },
-              body: JSON.stringify({
-                number: targetPhone,
-                text: failMsg,
-              }),
-            });
+            const { sendEvolutionTextMessage } = await import('@/lib/evolution');
+            await sendEvolutionTextMessage(targetPhone, failMsg);
           }
         } catch (err: any) {
           console.warn('[M-Pesa Callback Fail Notify Notice]:', err.message);

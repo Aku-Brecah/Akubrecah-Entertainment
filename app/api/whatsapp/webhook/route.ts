@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { sanitizeWhatsAppPhone, markEvolutionMessageRead } from '@/lib/evolution';
+import { sanitizeWhatsAppPhone, markEvolutionMessageRead, getEvolutionInstanceName } from '@/lib/evolution';
 import { handleWhatsAppChat } from '@/app/api/whatsapp/chat/route';
 
 export const maxDuration = 60;
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     // Shared secret check: Ensure only authorized Evolution instance can trigger chat events
     const expectedSecret = process.env.EVOLUTION_WEBHOOK_SECRET || process.env.EVOLUTION_API_KEY || 'akubrecah_secret_whatsapp_key_2026';
-    const expectedInstance = (process.env.EVOLUTION_INSTANCE_NAME || 'akubrecah-kra').toLowerCase().trim();
+    const expectedInstance = getEvolutionInstanceName().toLowerCase().trim();
 
     const providedHeaderSecret =
       req.headers.get('x-webhook-secret') ||
