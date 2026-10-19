@@ -12,14 +12,14 @@ export default function RefundPolicyPage() {
   const lastUpdated = "10 June 2026"
 
   return (
-    <div className="space-y-10">
-      <div className="space-y-3 border-b border-outline-variant pb-8">
+    <div className="max-w-4xl mx-auto rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-10 shadow-xs space-y-8">
+      <div className="space-y-3 border-b border-border/60 pb-6">
         <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Legal Document</p>
         <h1 className="text-2xl font-black uppercase tracking-tight text-foreground">Refund Policy</h1>
         <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
           Last Updated: {lastUpdated}
         </p>
-        <div className="bg-surface-container border border-outline-variant rounded-xl p-4 mt-4">
+        <div className="bg-surface-container border border-border rounded-2xl p-4 mt-4">
           <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-wide">
             This policy applies to all paid services offered by Akubrecah and is governed by the Consumer Protection
             Act, 2012 (Kenya).

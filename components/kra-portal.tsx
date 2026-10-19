@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState, useEffect } from "react"
 import { 
   Search, 
@@ -746,11 +747,14 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     <motion.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
                       
                       {/* Third-Party Service Disclaimer Banner */}
-                      <div className="max-w-md mx-auto p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-[11px] leading-relaxed text-center">
+                      <div className="max-w-md mx-auto p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-[11px] leading-relaxed text-center">
                         <span className="font-bold">Third-Party Cyber Facilitation:</span> Akubrecah Technologies is an independent digital service provider and is not affiliated with the Kenya Revenue Authority (KRA). Free official services are available at{" "}
                         <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline font-semibold hover:text-amber-950 dark:hover:text-white">
                           itax.kra.go.ke
-                        </a>.
+                        </a>.{" "}
+                        <Link href="/legal/disclaimer" className="underline font-bold text-primary dark:text-red-400 hover:text-primary/80 ml-1">
+                          View Full Disclaimer →
+                        </Link>
                       </div>
 
                       {/* Lookup Type Segmented Switcher */}

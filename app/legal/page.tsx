@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Shield, FileText, AlertTriangle, Cookie, RotateCcw, Ban } from "lucide-react"
+import { Shield, FileText, AlertTriangle, Cookie, RotateCcw, Ban, ArrowRight, ExternalLink, Scale, CheckCircle2 } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "Legal & Compliance Center | Akubrecah Technologies",
@@ -25,125 +25,191 @@ export const metadata: Metadata = {
 
 const legalDocs = [
   {
+    icon: AlertTriangle,
+    title: "Statutory Disclaimer",
+    description:
+      "Clarifies that Akubrecah is NOT the Kenya Revenue Authority (KRA). Outlines our third-party independence, real-time data sourcing, and limits of liability.",
+    href: "/legal/disclaimer",
+    tag: "Mandatory Disclosure",
+    tagColor: "text-primary bg-primary/10 border-primary/20",
+    badge: "Important",
+    featured: true,
+  },
+  {
     icon: Shield,
     title: "Privacy Policy",
     description:
-      "How we collect, process, and protect your personal data under Kenya's Data Protection Act 2019. Covers ID data, retention periods, your rights, and our security measures.",
+      "How we collect, process, and protect your personal data under Kenya's Data Protection Act 2019 (KDPA). Covers ID data, zero unmasked caching, and your rights.",
     href: "/legal/privacy",
     tag: "Data Protection Act 2019",
-    tagColor: "text-primary bg-primary/10 border-primary/20",
+    tagColor: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
   },
   {
     icon: FileText,
     title: "Terms of Service",
     description:
-      "The binding agreement between you and Akubrecah. Covers acceptable use, liability limits, indemnification, eligibility, and Kenyan governing law.",
+      "The binding agreement governing your use of Akubrecah. Covers acceptable use, convenience fees, liability limits, and Republic of Kenya governing law.",
     href: "/legal/terms",
     tag: "Binding Agreement",
     tagColor: "text-primary bg-primary/10 border-primary/20",
   },
   {
-    icon: AlertTriangle,
-    title: "Disclaimer",
-    description:
-      "Akubrecah is NOT the Kenya Revenue Authority. This document clarifies our independence, limits our liability for KRA system errors, and confirms we provide no legal or tax advice.",
-    href: "/legal/disclaimer",
-    tag: "Not Affiliated with KRA",
-    tagColor: "text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20",
-  },
-  {
-    icon: Cookie,
-    title: "Cookie Policy",
-    description:
-      "A detailed breakdown of the minimal cookies we use — only Clerk authentication cookies. We use no advertising, tracking, or third-party analytics cookies.",
-    href: "/legal/cookies",
-    tag: "No Ad Cookies",
-    tagColor: "text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20",
-  },
-  {
     icon: RotateCcw,
     title: "Refund Policy",
     description:
-      "Our policy on service fees, refund eligibility, and the process for requesting a refund if our service fails to deliver your certificate.",
+      "Our 100% Delivery or Refund guarantee. Outlines service fee rules, delivery failure refund procedures, and M-Pesa reversal timelines.",
     href: "/legal/refund",
-    tag: "Payments & Refunds",
+    tag: "Payments & Protection",
     tagColor: "text-primary bg-primary/10 border-primary/20",
   },
   {
     icon: Ban,
     title: "Acceptable Use Policy",
     description:
-      "What you may and may not do with this service. Prohibits accessing others' KRA data without consent, scraping, fraud, and other misuse.",
+      "Statutory rules of conduct. Strictly prohibits querying third-party taxpayer data without consent, automated scraping, phishing, and fraudulent misuse.",
     href: "/legal/aup",
     tag: "User Conduct",
-    tagColor: "text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20",
+    tagColor: "text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20",
+  },
+  {
+    icon: Cookie,
+    title: "Cookie Policy",
+    description:
+      "Details our minimal cookie footprint. We use strictly functional Clerk authentication session cookies — zero advertising, tracking, or surveillance cookies.",
+    href: "/legal/cookies",
+    tag: "Zero Ad Tracking",
+    tagColor: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
   },
 ]
 
 export default function LegalIndexPage() {
   return (
-    <div className="space-y-10">
-      {/* Header */}
-      <div className="space-y-3 border-b border-outline-variant pb-8">
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Akubrecah</p>
-        <h1 className="text-2xl font-black uppercase tracking-tight text-foreground">Legal Center</h1>
-        <p className="text-[12px] text-muted-foreground leading-relaxed max-w-lg">
-          All legal documents governing your use of Akubrecah KRA Services. Please read these carefully before using
-          the Service.
-        </p>
-        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mt-2">
-          <p className="text-[11px] text-primary font-bold uppercase tracking-wide">
-            ⚠ Akubrecah is an independent third-party service and is NOT the Kenya Revenue Authority (KRA) or any
-            government entity.
+    <div className="space-y-8 sm:space-y-12">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-10 shadow-xs">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 space-y-4 max-w-2xl">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">
+              <Scale className="w-3.5 h-3.5" />
+              Statutory Compliance Center
+            </span>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-surface-container dark:bg-slate-800 text-on-surface-variant border border-border">
+              Republic of Kenya
+            </span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-tight text-foreground">
+            Legal & Compliance Center
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            All institutional policies, terms of service, acceptable use standards, and statutory disclaimers governing
+            the Akubrecah Compliance Portal.
           </p>
+
+          <div className="p-4 rounded-2xl bg-primary/5 dark:bg-primary/10 border border-primary/20 flex items-start gap-3">
+            <AlertTriangle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-[11px] text-foreground/90 font-medium leading-relaxed">
+              <strong>Mandatory Notice:</strong> Akubrecah is an independent third-party convenience software service
+              and is <strong>NOT</strong> the Kenya Revenue Authority (KRA) or any government agency. Official KRA services
+              are available free of charge at{" "}
+              <a
+                href="https://itax.kra.go.ke"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline font-bold"
+              >
+                itax.kra.go.ke
+              </a>.
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Documents grid */}
-      <div className="grid grid-cols-1 gap-4">
+      {/* Legal Documents Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {legalDocs.map((doc) => {
           const Icon = doc.icon
           return (
             <Link
               key={doc.href}
               href={doc.href}
-              className="group flex items-start gap-5 p-5 rounded-2xl border border-outline-variant hover:border-primary/30 hover:bg-primary/5 transition-all"
+              className={`group flex flex-col justify-between p-6 rounded-3xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${
+                doc.featured
+                  ? "bg-surface-card dark:bg-slate-900 border-primary/40 shadow-xs"
+                  : "bg-surface-card dark:bg-slate-900 border-border/80 dark:border-slate-800 hover:border-primary/30"
+              }`}
             >
-              <div className="w-10 h-10 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center flex-shrink-0 group-hover:border-primary/30 transition-colors">
-                <Icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-              <div className="space-y-1.5 flex-1 min-w-0">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <h2 className="text-[12px] font-black uppercase tracking-widest text-foreground group-hover:text-primary transition-colors">
-                    {doc.title}
-                  </h2>
-                  <span className={`text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${doc.tagColor}`}>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-2xl bg-surface-container dark:bg-slate-800 border border-border flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-2xs">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <span className={`text-[9px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${doc.tagColor}`}>
                     {doc.tag}
                   </span>
                 </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">{doc.description}</p>
+
+                <div className="space-y-1.5">
+                  <h2 className="text-sm font-black uppercase tracking-tight text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
+                    {doc.title}
+                  </h2>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {doc.description}
+                  </p>
+                </div>
               </div>
-              <span className="text-primary/40 group-hover:text-primary transition-colors text-lg flex-shrink-0 mt-1">
-                →
-              </span>
+
+              <div className="pt-5 mt-4 border-t border-border/60 flex items-center justify-between text-xs font-bold text-primary">
+                <span>Read Full Policy</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </div>
             </Link>
           )
         })}
       </div>
 
-      {/* Bottom notice */}
-      <div className="border-t border-outline-variant pt-6 space-y-2">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
-          These documents were last reviewed on <strong className="text-foreground">10 June 2026</strong>.
-        </p>
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
-          Questions? Contact us at{" "}
-          <a href="mailto:legal@akubrecah.com" className="text-primary underline underline-offset-4">
+      {/* Official Government Portals Callout */}
+      <div className="rounded-3xl bg-surface-card dark:bg-slate-900 border border-border p-6 sm:p-8 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              Direct Official Government Services
+            </span>
+            <h3 className="text-base font-bold text-foreground">
+              Prefer Free Manual Government Portals?
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              You can access your KRA PIN certificate directly on the official portal at zero cost.
+            </p>
+          </div>
+          <a
+            href="https://itax.kra.go.ke"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-surface-container dark:bg-slate-800 border border-border text-xs font-bold text-foreground hover:bg-muted transition-all active:scale-95 shrink-0"
+          >
+            <span>Visit itax.kra.go.ke</span>
+            <ExternalLink className="w-3.5 h-3.5 text-primary" />
+          </a>
+        </div>
+      </div>
+
+      {/* Footer Info */}
+      <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+        <p>All legal documents last reviewed: <strong>October 2026</strong> · Akubrecah Technologies Limited</p>
+        <div className="flex items-center gap-4">
+          <a href="mailto:legal@akubrecah.com" className="text-primary hover:underline font-bold">
             legal@akubrecah.com
           </a>
-        </p>
+          <span>•</span>
+          <Link href="/contact" className="hover:text-foreground">
+            Support Desk
+          </Link>
+        </div>
       </div>
     </div>
   )
 }
-

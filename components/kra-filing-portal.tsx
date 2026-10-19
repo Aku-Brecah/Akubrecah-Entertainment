@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   FileSpreadsheet,
@@ -274,11 +275,14 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
         </div>
 
         {/* Third-Party Service Disclaimer Banner */}
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-xs leading-relaxed">
+        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-xs leading-relaxed">
           <strong className="font-semibold">Notice:</strong> Akubrecah Technologies is an independent cyber facilitation service and is not affiliated with the Kenya Revenue Authority (KRA). Free official tax filing services are available directly on{" "}
           <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline font-semibold hover:text-amber-950 dark:hover:text-white">
             itax.kra.go.ke
-          </a>.
+          </a>.{" "}
+          <Link href="/legal/disclaimer" className="underline font-bold text-primary dark:text-red-400 hover:text-primary/80 ml-1">
+            Read Disclaimer →
+          </Link>
         </div>
 
         {/* ------------------------------------------------------------- */}

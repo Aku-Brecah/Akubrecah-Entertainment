@@ -12,16 +12,16 @@ export default function CookiePolicyPage() {
   const lastUpdated = "10 June 2026"
 
   return (
-    <div className="space-y-10">
+    <div className="max-w-4xl mx-auto rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-10 shadow-xs space-y-8">
       {/* Header */}
-      <div className="space-y-3 border-b border-outline-variant pb-8">
+      <div className="space-y-3 border-b border-border/60 pb-6">
         <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Legal Document</p>
         <h1 className="text-2xl font-black uppercase tracking-tight text-foreground">Cookie Policy</h1>
         <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
           Last Updated: {lastUpdated}
         </p>
-        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mt-4">
-          <p className="text-[11px] text-green-600 dark:text-green-400 font-bold uppercase tracking-wide">
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 mt-4">
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wide">
             ✓ We use minimal cookies. We do not use advertising cookies or sell your browsing data.
           </p>
         </div>
