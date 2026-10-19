@@ -468,3 +468,23 @@
   border-color: rgba(239, 68, 68, 0.3);
   background-color: rgba(239, 68, 68, 0.05);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Clerk Development Mode & Watermark Badge Suppression
+   ───────────────────────────────────────────────────────────────────────────── */
+.cl-development-badge,
+.clerk-watermark,
+[data-localization-key="developmentMode"],
+[data-localization-key="badge__developmentMode"],
+div[class*="cl-internal"][class*="badge"],
+div[class*="clerk-internal"][class*="badge"],
+div[class*="cl-internal-b3fm6y"],
+div[class*="clerk-internal-b3fm6y"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+}

@@ -16,7 +16,7 @@ const envSchema = z.object({
   DIRECT_URL: z.string().optional(),
 
   // Authentication (Clerk)
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional().default('pk_test_placeholder_key'),
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional().default('pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ'),
   CLERK_SECRET_KEY: z.string().optional(),
   SUPER_ADMIN_EMAIL: z.string().email().default('poweldayck@gmail.com'),
   NEXT_PUBLIC_SUPER_ADMIN_EMAIL: z.string().email().default('poweldayck@gmail.com'),

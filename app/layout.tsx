@@ -134,11 +134,17 @@ export default async function RootLayout({
       </head>
       <body className={`${inter.variable} ${plusJakarta.variable} ${alfa.variable} ${satisfy.variable} font-sans`} data-theme={theme} suppressHydrationWarning={true}>
         <ClerkProvider 
+          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ"}
           signInUrl="/sign-in"
           signUpUrl="/sign-up"
           taskUrls={{
             'setup-mfa': '/session-tasks/setup-mfa',
             'reset-password': '/session-tasks/reset-password',
+          }}
+          appearance={{
+            layout: {
+              unsafe_disableDevelopmentModeWarnings: true,
+            },
           }}
         >
           {/* SiteHeader is managed within AdminLayoutWrapper */}
