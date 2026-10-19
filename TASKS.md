@@ -202,3 +202,9 @@
   - [x] Added Edge CDN cache header (`s-maxage=3600, stale-while-revalidate=86400`) in `proxy.ts` for root homepage.
   - [x] Enhanced accessibility color contrast across headings and badges to pass WCAG AA standards.
   - [x] Verified full production build (`npm run build` static generation 83/83 routes, route `/` generated as static ISR), 0 type errors, and 30/30 tests passing.
+- [x] **Resolved National ID Verification Data Mismatch:**
+  - [x] Fixed KRA iTax DWR obfuscation decoding in `lib/kra-api.ts` and `app/api/kra/retrieve/route.ts` by reversing the 5 obfuscated digits (`actualDigits = rev.trim().split('').reverse().join('')`) to ensure exact 1:1 National ID-to-PIN mapping.
+  - [x] Eliminated modal cross-contamination in `components/kra-portal.tsx` by clearing opposite credentials on input change and sending only active lookup parameters.
+  - [x] Guaranteed `idNumber` and `rawId` are explicitly attached to all response payloads (`/api/kra/retrieve`, `/api/kra/live-verify/id`), matching taxpayer names and stations accurately.
+  - [x] Added unit test suite `tests/id-verification.test.ts` (35/35 passing tests, 0 type errors).
+
