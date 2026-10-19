@@ -1219,8 +1219,7 @@ export async function handleWhatsAppChat(params: {
 
     // 3. Process Bot Commands (when triggered with '.' or '/')
     if (isBotTrigger) {
-      const spaceIdx = cleanCmdText.search(/\s+/);
-      const cmdWord = (spaceIdx === -1 ? cleanCmdText : cleanCmdText.substring(0, spaceIdx)).toLowerCase();
+      const cmdWord = cleanCmdWord;
       const cmdArgs = cleanCmdArgs;
 
       // A. Cancellation / Exit / Reset (handled by universal cancel above, safety fallback)
