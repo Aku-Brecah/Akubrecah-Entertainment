@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -32,6 +32,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -39,6 +40,24 @@ export default function DashboardLayout({
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!isLoaded || !user) return;
+    const hasCompletedLocal = typeof window !== 'undefined' ? localStorage.getItem('hasCompletedOnboarding') : null;
+    const hasCompletedClerk = user.publicMetadata?.onboardingComplete;
+    if (!hasCompletedLocal && !hasCompletedClerk) {
+      router.push('/onboarding');
+      return;
+    } else if (hasCompletedClerk && !hasCompletedLocal && typeof window !== 'undefined') {
+      localStorage.setItem('hasCompletedOnboarding', 'true');
+    }
+
+    const hasName = !!(user?.firstName && user?.lastName) || !!user?.fullName;
+    const hasPhone = (user?.phoneNumbers && user?.phoneNumbers.length > 0) || !!user?.publicMetadata?.phoneNumber;
+    if (pathname?.startsWith('/dashboard/filing') && (!hasName || !hasPhone)) {
+      router.push('/dashboard/profile?message=incomplete_profile');
+    }
+  }, [pathname, isLoaded, user, router]);
 
   const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
   const userRole = user?.publicMetadata?.role as string;

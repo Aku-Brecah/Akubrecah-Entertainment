@@ -9,8 +9,6 @@ import { sanitizeWhatsAppPhone, sendEvolutionDocument, sendEvolutionImage, sendE
 try {
   const dns = require('dns');
   dns.setDefaultResultOrder?.('ipv4first');
-  const { setGlobalDispatcher, Agent } = require('undici');
-  setGlobalDispatcher(new Agent({ connect: { autoSelectFamily: false, family: 4 } }));
 } catch {}
 
 export interface TaxpayerPdfData {

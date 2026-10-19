@@ -14,8 +14,16 @@ const nextConfig = {
   },
   outputFileTracingRoot: __dirname,
   compress: true,
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      '@clerk/nextjs',
+      'date-fns',
+    ],
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 31536000,
     remotePatterns: [
       {
         protocol: 'https',
@@ -37,6 +45,26 @@ const nextConfig = {
   },
   async headers() {
     return [
+      {
+        // Immutable cache for static Next.js assets
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        // Long-lived cache for brand image assets & icons
+        source: '/(akubrecah-logo.*|logo-circle.*|favicon.*|icon.*|og-image.*|apple-icon.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
       {
         // Global baseline security headers
         source: '/:path*',

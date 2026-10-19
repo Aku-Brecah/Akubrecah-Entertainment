@@ -1,12 +1,10 @@
-import { Inter, Alfa_Slab_One, Satisfy, Plus_Jakarta_Sans } from 'next/font/google'
-import { headers } from 'next/headers'
+import { Inter } from 'next/font/google'
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from 'next-themes'
-import { ClerkProvider, Show, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
+import { ClerkProvider } from '@clerk/nextjs'
 
 import { TooltipProviderWrapper } from '@/components/providers/tooltip-provider'
 import { AdminLayoutWrapper } from "@/components/admin-layout-wrapper"
-import { getDomainTheme } from '@/lib/utils'
 import KRAAnnouncementBanner from '@/components/KRAAnnouncementBanner'
 import { Analytics } from "@vercel/analytics/next"
 
@@ -15,10 +13,11 @@ import "./globals.css"
 import { Metadata } from 'next';
 import { SiteSchema } from '@/components/seo/site-schema';
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
-const plusJakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-plus-jakarta" })
-const alfa = Alfa_Slab_One({ weight: "400", subsets: ["latin"], variable: "--font-alfa" })
-const satisfy = Satisfy({ weight: "400", subsets: ["latin"], variable: "--font-satisfy" })
+const inter = Inter({ 
+  subsets: ["latin"], 
+  variable: "--font-inter",
+  display: "swap",
+})
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://akubrecah.com';
 
@@ -109,30 +108,27 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const headersList = await headers()
-  const hostname = headersList.get('x-forwarded-host') || headersList.get('host') || ''
-  const theme = getDomainTheme(hostname)
-
   const isVercel = Boolean(
     process.env.VERCEL || 
-    process.env.NEXT_PUBLIC_VERCEL_ENV || 
-    hostname.includes('vercel.app')
+    process.env.NEXT_PUBLIC_VERCEL_ENV
   );
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <SiteSchema />
-        {/* Preconnect to Clerk edge to accelerate auth components */}
+        {/* Preconnect to external resources */}
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://clerk.akubrecah.com" />
         <link rel="dns-prefetch" href="https://clerk.akubrecah.com" />
       </head>
-      <body className={`${inter.variable} ${plusJakarta.variable} ${alfa.variable} ${satisfy.variable} font-sans`} data-theme={theme} suppressHydrationWarning={true}>
+      <body className={`${inter.variable} font-sans`} data-theme="default" suppressHydrationWarning={true}>
         <ClerkProvider 
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ"}
           signInUrl="/sign-in"
@@ -156,7 +152,7 @@ export default async function RootLayout({
             <TooltipProviderWrapper>
               <div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-hidden bg-background">                
                 <KRAAnnouncementBanner />
-                <AdminLayoutWrapper hostname={hostname}>
+                <AdminLayoutWrapper>
                   {children}
                 </AdminLayoutWrapper>
               </div>

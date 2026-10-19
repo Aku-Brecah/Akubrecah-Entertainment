@@ -1,14 +1,9 @@
-"use client"
-
-import { useUser } from "@clerk/nextjs"
 import { 
   ArrowRight, 
   Laptop, 
   Smartphone, 
   Cloud, 
   Layers, 
-  ShieldCheck, 
-  CheckCircle2, 
   Code2, 
   Zap, 
   Globe, 
@@ -17,31 +12,19 @@ import {
   BookOpen, 
   Clock 
 } from 'lucide-react'
-import { motion } from "framer-motion"
-import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { getPublishedProjects, getPublishedArticles } from '@/lib/cms'
 
-export default function Home() {
-  const { isSignedIn, isLoaded } = useUser()
-  const [projects, setProjects] = useState<any[]>([])
-  const [articles, setArticles] = useState<any[]>([])
-  const [loadingContent, setLoadingContent] = useState(true)
+export const revalidate = 3600;
 
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/projects').then((r) => r.json()).catch(() => ({ success: false })),
-      fetch('/api/articles').then((r) => r.json()).catch(() => ({ success: false }))
-    ]).then(([projData, artData]) => {
-      if (projData?.success && Array.isArray(projData.projects)) {
-        setProjects(projData.projects.slice(0, 3))
-      }
-      if (artData?.success && Array.isArray(artData.articles)) {
-        setArticles(artData.articles.slice(0, 2))
-      }
-      setLoadingContent(false)
-    })
-  }, [])
+export default async function Home() {
+  const [allProjects, allArticles] = await Promise.all([
+    getPublishedProjects().catch(() => []),
+    getPublishedArticles().catch(() => []),
+  ]);
+  const projects = allProjects.slice(0, 3);
+  const articles = allArticles.slice(0, 2);
 
   const capabilities = [
     { icon: Laptop, label: "Web Engineering", desc: "Next.js, React, TypeScript", href: "/services" },
@@ -66,7 +49,7 @@ export default function Home() {
           <div className="flex-1 space-y-7">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-high border border-outline-variant text-xs font-semibold shadow-xs">
               <span className="flex h-2 w-2 rounded-full bg-primary" />
-              <span className="font-black text-primary">Akubrecah Technologies</span>
+              <span className="font-black text-red-700 dark:text-red-400">Akubrecah Technologies</span>
               <span className="text-outline-muted">·</span>
               <span className="text-on-surface-variant">Nairobi, Kenya</span>
             </div>
@@ -101,13 +84,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right: Animated Capability Grid */}
-          <motion.div
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.65, delay: 0.15, ease: "easeOut" }}
-            className="flex-1 grid grid-cols-2 gap-4 w-full max-w-md"
-          >
+          {/* Right: Capability Grid with CSS Entrance */}
+          <div className="flex-1 grid grid-cols-2 gap-4 w-full max-w-md animate-in fade-in slide-in-from-right-6 duration-700 ease-out">
             {capabilities.map((cap, i) => {
               const Icon = cap.icon
               return (
@@ -127,14 +105,14 @@ export default function Home() {
                 </Link>
               )
             })}
-          </motion.div>
+          </div>
         </section>
 
         {/* ============================= FEATURED PROJECTS & CASE STUDIES ============================= */}
         <section id="featured-projects" className="space-y-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-black text-primary uppercase tracking-widest">
+              <span className="inline-flex items-center gap-1.5 text-xs font-black text-red-700 dark:text-red-400 uppercase tracking-widest">
                 <FolderGit2 className="h-3.5 w-3.5" />
                 Engineering Case Studies
               </span>
@@ -161,7 +139,7 @@ export default function Home() {
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-black uppercase tracking-wider text-primary px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-red-700 dark:text-red-400 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
                         {proj.category}
                       </span>
                       {proj.liveUrl && (
@@ -191,7 +169,7 @@ export default function Home() {
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 pt-2">
-                      {proj.techStack?.slice(0, 4).map((tech: string) => (
+                      {((proj as any).technologies || (proj as any).techStack || []).slice(0, 4).map((tech: string) => (
                         <span key={tech} className="text-[10px] font-mono text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md border border-outline-variant/60">
                           {tech}
                         </span>
@@ -222,7 +200,7 @@ export default function Home() {
           <section id="articles-teaser" className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div className="space-y-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-black text-primary uppercase tracking-widest">
+                <span className="inline-flex items-center gap-1.5 text-xs font-black text-red-700 dark:text-red-400 uppercase tracking-widest">
                   <BookOpen className="h-3.5 w-3.5" />
                   Engineering Writing
                 </span>
@@ -248,7 +226,7 @@ export default function Home() {
                 >
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 text-xs text-on-surface-variant">
-                      <span className="font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                      <span className="font-bold text-red-700 dark:text-red-400 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
                         {art.category}
                       </span>
                       <span className="flex items-center gap-1 font-mono">
@@ -286,7 +264,7 @@ export default function Home() {
         <section className="p-10 sm:p-14 rounded-3xl bg-on-surface text-background dark:bg-surface-container-lowest dark:text-on-surface space-y-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-red-400 dark:text-red-400">Engineering Capabilities</span>
+              <span className="text-xs font-black uppercase tracking-widest text-red-300 dark:text-red-300">Engineering Capabilities</span>
               <h2 className="text-3xl sm:text-4xl font-black leading-tight">
                 Built for Complexity.<br />Delivered with Precision.
               </h2>
@@ -325,7 +303,7 @@ export default function Home() {
         {/* ============================= PROCESS TEASER ============================= */}
         <section className="space-y-8 text-center max-w-3xl mx-auto">
           <div className="space-y-3">
-            <span className="text-xs font-black text-primary uppercase tracking-widest">How We Work</span>
+            <span className="text-xs font-black text-red-700 dark:text-red-400 uppercase tracking-widest">How We Work</span>
             <h2 className="text-3xl sm:text-4xl font-black text-on-surface">
               Disciplined Engineering Methodology
             </h2>

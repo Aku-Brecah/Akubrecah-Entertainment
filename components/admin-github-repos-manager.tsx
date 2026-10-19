@@ -7,7 +7,7 @@ import {
   Filter, Layers, ArrowUpRight
 } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { GITHUB_LANGUAGE_COLORS } from "@/lib/github";
+import { GITHUB_LANGUAGE_COLORS } from "@/lib/github-constants";
 
 interface AdminRepo {
   id: number;

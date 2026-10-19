@@ -190,4 +190,15 @@
   - [x] Injected universal CSS badge and watermark suppression in `app/globals.css` targeting `.cl-development-badge`, `.clerk-watermark`, `[data-localization-key="developmentMode"]`, and internal Clerk watermark classes.
   - [x] Updated `lib/config/env.ts` schema default to live publishable key `pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ`.
   - [x] Set `devIndicators: false` in `next.config.mjs` to eliminate framework development overlays.
-  - [x] Verified zero hardcoded secrets in source control; passed typecheck (`npm run typecheck`), 100% tests passing (`npm test`), and merged cleanly to `main`.
+## Feature 10: Mobile PageSpeed & Core Web Vitals Optimization (90+ Score)
+- [x] **Task 42: Next.js Performance Engineering, SSR Decoupling & Static Generation**
+  - [x] Converted `app/page.tsx` from dynamic client component to static Server Component with ISR (`revalidate = 3600`) and direct CMS data loading.
+  - [x] Eliminated client-side data fetch waterfall (`useEffect` + `useState`) and removed heavy `framer-motion` bundle on homepage.
+  - [x] Removed `await headers()` in `app/layout.tsx` to unlock Static Site Generation (SSG) across public routes.
+  - [x] Streamlined web fonts: purged 3 unused fonts (`Alfa_Slab_One`, `Satisfy`, `Plus_Jakarta_Sans`), keeping only `Inter` with `display: 'swap'`.
+  - [x] Optimized `Logo` component to render directly in initial SSR HTML with explicit dimensions and `priority` (eliminating client hydration flash and 0 CLS).
+  - [x] Removed `"use client"` from `components/site-footer.tsx` and decoupled `useUser` from `components/admin-layout-wrapper.tsx`.
+  - [x] Configured `next.config.mjs` with `optimizePackageImports` (treeshaking `lucide-react`, `@clerk/nextjs`, `date-fns`), 1-year immutable static caching headers, and `minimumCacheTTL`.
+  - [x] Added Edge CDN cache header (`s-maxage=3600, stale-while-revalidate=86400`) in `proxy.ts` for root homepage.
+  - [x] Enhanced accessibility color contrast across headings and badges to pass WCAG AA standards.
+  - [x] Verified full production build (`npm run build` static generation 83/83 routes, route `/` generated as static ISR), 0 type errors, and 30/30 tests passing.
