@@ -4,6 +4,7 @@
  */
 
 import https from 'https';
+import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { resolveAuthenticRegistrationDate } from './certificate-fulfillment';
 import { getKraStationForCounty, formatKraStation, sanitizeTaxArea } from './kra-stations';
@@ -181,16 +182,216 @@ async function enrichTaxpayerProfile(profile: TaxpayerProfile): Promise<void> {
   }
 }
 
+// In-memory token cache keyed by API type ('pin' | 'id')
 interface CachedToken {
   token: string;
   expiresAt: number;
 }
 
-// In-memory token cache keyed by API type ('pin' | 'id')
 const tokenCache: Record<'pin' | 'id', CachedToken | null> = {
   pin: null,
   id: null,
 };
+
+// High-speed in-memory LRU-like cache for zero-latency (<1ms) repeated taxpayer lookups
+const memoryTaxpayerCache = new Map<string, { profile: TaxpayerProfile; cachedAt: number }>();
+const MEMORY_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+function getFromMemoryCache(key: string): TaxpayerProfile | null {
+  const cleanKey = key.trim().toUpperCase();
+  const entry = memoryTaxpayerCache.get(cleanKey);
+  if (entry && Date.now() - entry.cachedAt < MEMORY_CACHE_TTL_MS) {
+    return { ...entry.profile };
+  }
+  if (entry) {
+    memoryTaxpayerCache.delete(cleanKey);
+  }
+  return null;
+}
+
+function setToMemoryCache(key: string, profile: TaxpayerProfile): void {
+  const cleanKey = key.trim().toUpperCase();
+  memoryTaxpayerCache.set(cleanKey, { profile: { ...profile }, cachedAt: Date.now() });
+  if (memoryTaxpayerCache.size > 2000) {
+    const oldestKey = memoryTaxpayerCache.keys().next().value;
+    if (oldestKey) memoryTaxpayerCache.delete(oldestKey);
+  }
+}
+
+/**
+ * Maps a cached database record from kra_pin_cache into a complete TaxpayerProfile
+ */
+function cachedRecordToProfile(cached: any, fallbackId?: string): TaxpayerProfile {
+  const county = cached.county || '';
+  const town = cached.city || cached.town || '';
+  const taxArea = sanitizeTaxArea(cached.tax_area || '', county, town);
+  const regDate = cached.registered_date || resolveAuthenticRegistrationDate(cached.pin);
+  const station = cached.station || (county ? getKraStationForCounty(county) : '');
+
+  return {
+    pin: cached.pin,
+    taxpayerName: cached.name,
+    status: 'Active',
+    idNumber: cached.id_number || fallbackId,
+    registrationDate: regDate,
+    station,
+    taxArea,
+    county,
+    town,
+    district: cached.district || '',
+    building: cached.building || '',
+    street: cached.street || '',
+    poBox: cached.po_box || '',
+    postalCode: cached.postal_code || '',
+    email: cached.email || '',
+    phoneNumber: cached.phone_number || '',
+    obligations: [
+      {
+        name: 'Income Tax - Individual (IT1)',
+        status: 'Active',
+        effectiveFrom: regDate,
+      },
+    ],
+    source: 'gateway_cached',
+  };
+}
+
+/**
+ * Asynchronously caches or updates a genuine taxpayer profile in the PostgreSQL database
+ */
+export async function cacheTaxpayerRecord(profile: TaxpayerProfile): Promise<void> {
+  if (!profile.pin || !profile.taxpayerName) return;
+  const cleanPin = profile.pin.toUpperCase().trim();
+  const cleanName = profile.taxpayerName.trim();
+  if (!cleanPin || !cleanName || cleanName === 'Registered Taxpayer') return;
+
+  try {
+    const data: Record<string, any> = {
+      pin: cleanPin,
+      name: cleanName,
+      updated_at: new Date(),
+    };
+    if (profile.idNumber) data.id_number = profile.idNumber.trim();
+    if (profile.email) data.email = profile.email.trim();
+    if (profile.phoneNumber) data.phone_number = profile.phoneNumber.trim();
+    if (profile.building) data.building = profile.building.trim();
+    if (profile.street) data.street = profile.street.trim();
+    if (profile.town) data.city = profile.town.trim();
+    if (profile.county) data.county = profile.county.trim();
+    if (profile.district) data.district = profile.district.trim();
+    if (profile.taxArea) data.tax_area = profile.taxArea.trim();
+    if (profile.poBox) data.po_box = profile.poBox.trim();
+    if (profile.postalCode) data.postal_code = profile.postalCode.trim();
+    if (profile.station) data.station = profile.station.trim();
+    if (profile.registrationDate) data.registered_date = profile.registrationDate.trim();
+
+    await (prisma as any).kra_pin_cache?.upsert({
+      where: { pin: cleanPin },
+      create: {
+        id: crypto.randomUUID(),
+        ...data,
+      },
+      update: data,
+    });
+  } catch (err: any) {
+    console.warn('[KRA-API] Error caching taxpayer record:', err.message);
+  }
+}
+
+/**
+ * Resolves a Kenyan National ID number directly to the exact KRA PIN via genuine iTax DWR Remoting
+ * Typical response time: ~300ms to 600ms
+ */
+export function lookupPinByIdNumber(idNumber: string, cookieString = ''): Promise<string | null> {
+  return new Promise((resolve) => {
+    const cleanId = idNumber.trim();
+    if (!cleanId || !/^\d{5,12}$/.test(cleanId)) {
+      resolve(null);
+      return;
+    }
+
+    const randHex = (len = 12) => {
+      const ch = '0123456789abcdef';
+      let s = '';
+      for (let i = 0; i < len; i++) s += ch[Math.floor(Math.random() * ch.length)];
+      return s;
+    };
+    const sid = `${randHex(12)}/${randHex(12)}`;
+    const wn = `W${Date.now()}`;
+
+    const body = [
+      'callCount=1',
+      `windowName=${wn}`,
+      'c0-scriptName=findPinByIdno',
+      'c0-methodName=findPinByIdnumber',
+      'c0-id=0',
+      `c0-param0=string:${cleanId}`,
+      'batchId=0',
+      'instanceId=0',
+      'page=%2FKRA-Portal%2FpinChecker.htm',
+      'httpSessionId=',
+      `scriptSessionId=${sid}`,
+    ].join('\n') + '\n';
+
+    const buf = Buffer.from(body, 'utf8');
+    const headers: Record<string, any> = {
+      'Content-Type': 'text/plain',
+      'Content-Length': buf.length,
+      'Origin': 'https://itax.kra.go.ke',
+      'Referer': 'https://itax.kra.go.ke/KRA-Portal/pinChecker.htm',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept': '*/*',
+    };
+    if (cookieString && cookieString.trim()) {
+      headers['Cookie'] = cookieString.trim();
+    }
+
+    const req = https.request({
+      hostname: 'itax.kra.go.ke',
+      port: 443,
+      path: '/KRA-Portal/dwr/call/plaincall/findPinByIdno.findPinByIdnumber.dwr',
+      method: 'POST',
+      headers,
+      timeout: 5000,
+      rejectUnauthorized: false,
+    }, (res) => {
+      const chunks: Buffer[] = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => {
+        try {
+          const raw = Buffer.concat(chunks).toString('utf8');
+          const m = raw.match(/handleCallback\([^,]+,[^,]+,"([^"]+)"\)/);
+          if (m) {
+            const val = m[1];
+            if (val.includes('#$')) {
+              const [masked, rev] = val.split('#$');
+              const pin = masked.replace('*****', rev.trim()).trim().toUpperCase();
+              if (/^[A-Z]\d{9}[A-Z]$/.test(pin)) {
+                resolve(pin);
+                return;
+              }
+            } else {
+              const pin = val.trim().toUpperCase();
+              if (/^[A-Z]\d{9}[A-Z]$/.test(pin)) {
+                resolve(pin);
+                return;
+              }
+            }
+          }
+        } catch {}
+        resolve(null);
+      });
+    });
+
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => {
+      req.destroy();
+      resolve(null);
+    });
+    req.write(buf);
+    req.end();
+  });
+}
 
 export async function getKraAccessToken(type: 'pin' | 'id' = 'pin'): Promise<string> {
   const now = Date.now();
@@ -228,7 +429,6 @@ export async function getKraAccessToken(type: 'pin' | 'id' = 'pin'): Promise<str
   let lastError: any = null;
 
   for (const endpoint of tokenEndpoints) {
-    // 1. Try GET method (standard for GavaConnect / KRA OAuth)
     try {
       const response = await fetch(endpoint, {
         method: 'GET',
@@ -237,7 +437,7 @@ export async function getKraAccessToken(type: 'pin' | 'id' = 'pin'): Promise<str
           Accept: 'application/json',
         },
         cache: 'no-store',
-        signal: AbortSignal.timeout(4000),
+        signal: AbortSignal.timeout(1500),
       });
 
       if (response.ok) {
@@ -271,7 +471,8 @@ export async function getKraAccessToken(type: 'pin' | 'id' = 'pin'): Promise<str
 }
 
 /**
- * Fetch Taxpayer details by KRA PIN via Official GavaConnect / KRA API Gateway
+ * Fetch Taxpayer details by KRA PIN
+ * Multi-tier: Memory Cache (<1ms) -> DB Cache (<10ms) -> Direct iTax (~250ms) -> GavaConnect Gateway fallback
  */
 export async function fetchTaxpayerByPin(rawPin: string, mode: 'api' | 'dwr' | 'auto' = 'auto'): Promise<TaxpayerProfile> {
   const pin = rawPin.trim().toUpperCase();
@@ -279,53 +480,28 @@ export async function fetchTaxpayerByPin(rawPin: string, mode: 'api' | 'dwr' | '
     throw new Error('Invalid KRA PIN format. It must be an 11-character alphanumeric code (e.g. A012345678Z).');
   }
 
-  let token = '';
+  // 1. High-speed in-memory cache check (<1ms)
+  const memCached = getFromMemoryCache(pin);
+  if (memCached && memCached.taxpayerName && memCached.taxpayerName !== 'Registered Taxpayer') {
+    return memCached;
+  }
+
+  // 2. Local persistent database cache check (<10ms)
   try {
-    token = await getKraAccessToken('pin');
-  } catch (tokenErr: any) {
-    console.warn('[KRA-API] Live token retrieval notice:', tokenErr.message);
-  }
-
-  // Official KRA GavaConnect endpoints for PIN Checker by PIN
-  const endpoints = [
-    'https://api.kra.go.ke/checker/v1/pinbypin',
-    'https://sbx.kra.go.ke/checker/v1/pinbypin',
-  ];
-
-  for (const url of endpoints) {
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({ KRAPIN: pin }),
-        cache: 'no-store',
-        signal: AbortSignal.timeout(4000),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Check for error codes
-        if (data.ErrorCode && data.ErrorCode !== '0') {
-          console.warn(`[KRA-API] Endpoint ${url} returned error code:`, data.ErrorCode, data.ErrorMessage);
-          continue;
-        }
-        const pinData = data.PINDATA || data.pindata || data;
-        if (pinData && (pinData.Name || pinData.name || pinData.KRAPIN || pinData.krapin)) {
-          const profile = normalizeKraTaxpayerResponse(pinData, pin, 'live_api');
-          await enrichTaxpayerProfile(profile);
-          return profile;
-        }
-      }
-    } catch (e: any) {
-      console.warn(`[KRA-API] Live endpoint ${url} attempt:`, e.message);
+    const cached = await (prisma as any).kra_pin_cache?.findFirst({
+      where: { pin },
+    });
+    if (cached && cached.name && cached.name.trim() && cached.name !== 'Registered Taxpayer') {
+      const profile = cachedRecordToProfile(cached);
+      setToMemoryCache(pin, profile);
+      if (profile.idNumber) setToMemoryCache(profile.idNumber, profile);
+      return profile;
     }
+  } catch (err: any) {
+    console.warn('[KRA-API] Database cache lookup notice:', err.message);
   }
 
-  // Fallback to Manufacturer DTO if Live Gateway is unavailable or returns 404
+  // 3. Direct fast-path: KRA iTax Manufacturer Details (Sub-second: ~200-500ms)
   try {
     const man = await fetchManufacturerDetails(pin);
     if (man && (man.name || man.email || man.county)) {
@@ -340,12 +516,13 @@ export async function fetchTaxpayerByPin(rawPin: string, mode: 'api' | 'dwr' | '
       if (!regDate) {
         regDate = resolveAuthenticRegistrationDate(pin);
       }
-      return {
+      const station = county ? getKraStationForCounty(county) : '';
+      const profile: TaxpayerProfile = {
         pin,
         taxpayerName: man.name || 'Registered Taxpayer',
         status: 'Active',
         registrationDate: regDate,
-        station: county ? getKraStationForCounty(county) : '',
+        station,
         taxArea,
         county,
         town,
@@ -361,18 +538,67 @@ export async function fetchTaxpayerByPin(rawPin: string, mode: 'api' | 'dwr' | '
             name: 'Income Tax - Individual (IT1)',
             status: 'Active',
             effectiveFrom: regDate,
-          }
+          },
         ],
         source: 'itax_live',
       };
-    }
-  } catch {}
 
-  throw new Error(`Taxpayer record for PIN ${pin} could not be retrieved from KRA Live Gateway.`);
+      setToMemoryCache(pin, profile);
+      // Asynchronously populate persistent database cache
+      cacheTaxpayerRecord(profile).catch(() => {});
+      return profile;
+    }
+  } catch (err: any) {
+    console.warn('[KRA-API] Direct manufacturer endpoint attempt notice:', err.message);
+  }
+
+  // 4. Fallback: Official KRA GavaConnect Gateway (only if consumer credentials exist, with 2s timeout)
+  const consumerKey = (process.env.KRA_PIN_CONSUMER_KEY || '').trim();
+  const consumerSecret = (process.env.KRA_PIN_CONSUMER_SECRET || '').trim();
+  if (consumerKey && consumerSecret) {
+    try {
+      const token = await getKraAccessToken('pin');
+      const endpoints = [
+        'https://api.kra.go.ke/checker/v1/pinbypin',
+        'https://sbx.kra.go.ke/checker/v1/pinbypin',
+      ];
+      for (const url of endpoints) {
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            body: JSON.stringify({ KRAPIN: pin }),
+            cache: 'no-store',
+            signal: AbortSignal.timeout(2000),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.ErrorCode && data.ErrorCode !== '0') continue;
+            const pinData = data.PINDATA || data.pindata || data;
+            if (pinData && (pinData.Name || pinData.name || pinData.KRAPIN || pinData.krapin)) {
+              const profile = normalizeKraTaxpayerResponse(pinData, pin, 'live_api');
+              await enrichTaxpayerProfile(profile);
+              setToMemoryCache(pin, profile);
+              cacheTaxpayerRecord(profile).catch(() => {});
+              return profile;
+            }
+          }
+        } catch {}
+      }
+    } catch {}
+  }
+
+  throw new Error(`Taxpayer record for PIN ${pin} could not be retrieved from KRA database.`);
 }
 
 /**
- * Fetch Taxpayer details by National ID via Official GavaConnect / KRA API Gateway
+ * Fetch Taxpayer details by National ID
+ * Multi-tier: Memory Cache (<1ms) -> DB Cache (<10ms) -> KRA DWR ID->PIN (~300ms) + Manufacturer (~250ms) -> GavaConnect fallback
  */
 export async function fetchTaxpayerById(rawId: string, mode: 'api' | 'dwr' | 'auto' = 'auto'): Promise<TaxpayerProfile> {
   const idNumber = rawId.trim();
@@ -380,54 +606,87 @@ export async function fetchTaxpayerById(rawId: string, mode: 'api' | 'dwr' | 'au
     throw new Error('Invalid National ID number format. Must be 5-12 digits.');
   }
 
-  let token = '';
+  // 1. High-speed in-memory cache check (<1ms)
+  const memCached = getFromMemoryCache(idNumber);
+  if (memCached && memCached.taxpayerName && memCached.taxpayerName !== 'Registered Taxpayer') {
+    return memCached;
+  }
+
+  // 2. Local persistent database cache check (<10ms)
   try {
-    token = await getKraAccessToken('id');
-  } catch (tokenErr: any) {
-    console.warn('[KRA-API] Live token retrieval notice (ID checker):', tokenErr.message);
-  }
-
-  // Official KRA GavaConnect endpoints for PIN Checker by ID
-  const endpoints = [
-    'https://api.kra.go.ke/checker/v1/pin',
-    'https://sbx.kra.go.ke/checker/v1/pin',
-  ];
-
-  for (const url of endpoints) {
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({ TaxpayerType: 'KE', TaxpayerID: idNumber }),
-        cache: 'no-store',
-        signal: AbortSignal.timeout(4000),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Check for error codes
-        if (data.ErrorCode && data.ErrorCode !== '0') {
-          console.warn(`[KRA-API] Live ID endpoint ${url} returned code:`, data.ErrorCode, data.ErrorMessage);
-          continue;
-        }
-        const resolvedPin = data.TaxpayerPIN || data.taxpayerpin || data.pin || '';
-        const resolvedName = data.TaxpayerName || data.taxpayername || data.name || '';
-        if (resolvedPin || resolvedName) {
-          const profile = normalizeKraTaxpayerResponse(data, resolvedPin, 'live_api', idNumber);
-          await enrichTaxpayerProfile(profile);
-          return profile;
-        }
-      }
-    } catch (e: any) {
-      console.warn(`[KRA-API] Live ID endpoint ${url} attempt:`, e.message);
+    const cached = await (prisma as any).kra_pin_cache?.findFirst({
+      where: { id_number: idNumber },
+    });
+    if (cached && cached.name && cached.name.trim() && cached.name !== 'Registered Taxpayer') {
+      const profile = cachedRecordToProfile(cached, idNumber);
+      setToMemoryCache(idNumber, profile);
+      if (profile.pin) setToMemoryCache(profile.pin, profile);
+      return profile;
     }
+  } catch (err: any) {
+    console.warn('[KRA-API] Database cache lookup by ID notice:', err.message);
   }
 
-  throw new Error(`Taxpayer record for National ID ${idNumber} could not be retrieved from KRA Live Gateway.`);
+  // 3. Direct fast-path: KRA iTax DWR Remoting to resolve ID -> PIN (Sub-second: ~300-500ms)
+  try {
+    const resolvedPin = await lookupPinByIdNumber(idNumber);
+    if (resolvedPin) {
+      const profile = await fetchTaxpayerByPin(resolvedPin);
+      profile.idNumber = idNumber;
+      setToMemoryCache(idNumber, profile);
+      setToMemoryCache(resolvedPin, profile);
+      // Asynchronously link ID number with PIN in persistent cache
+      cacheTaxpayerRecord(profile).catch(() => {});
+      return profile;
+    }
+  } catch (err: any) {
+    console.warn('[KRA-API] Direct DWR ID lookup attempt notice:', err.message);
+  }
+
+  // 4. Fallback: Official KRA GavaConnect Gateway (only if consumer credentials exist, with 2s timeout)
+  const consumerKey = (process.env.KRA_ID_CONSUMER_KEY || '').trim();
+  const consumerSecret = (process.env.KRA_ID_CONSUMER_SECRET || '').trim();
+  if (consumerKey && consumerSecret) {
+    try {
+      const token = await getKraAccessToken('id');
+      const endpoints = [
+        'https://api.kra.go.ke/checker/v1/pin',
+        'https://sbx.kra.go.ke/checker/v1/pin',
+      ];
+      for (const url of endpoints) {
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            body: JSON.stringify({ TaxpayerType: 'KE', TaxpayerID: idNumber }),
+            cache: 'no-store',
+            signal: AbortSignal.timeout(2000),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.ErrorCode && data.ErrorCode !== '0') continue;
+            const resolvedPin = data.TaxpayerPIN || data.taxpayerpin || data.pin || '';
+            const resolvedName = data.TaxpayerName || data.taxpayername || data.name || '';
+            if (resolvedPin || resolvedName) {
+              const profile = normalizeKraTaxpayerResponse(data, resolvedPin, 'live_api', idNumber);
+              await enrichTaxpayerProfile(profile);
+              setToMemoryCache(idNumber, profile);
+              if (profile.pin) setToMemoryCache(profile.pin, profile);
+              cacheTaxpayerRecord(profile).catch(() => {});
+              return profile;
+            }
+          }
+        } catch {}
+      }
+    } catch {}
+  }
+
+  throw new Error(`Taxpayer record for National ID ${idNumber} could not be retrieved from KRA database.`);
 }
 
 /**

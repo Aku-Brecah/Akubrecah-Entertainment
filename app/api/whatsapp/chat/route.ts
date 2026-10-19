@@ -994,13 +994,28 @@ export async function handleWhatsAppChat(params: {
     }
 
     const trimmedInput = incomingText.trim();
-    // Bot is explicitly triggered by either '.' or '/' prefix
-    const isBotTrigger = incomingText.startsWith('/') || incomingText.startsWith('.');
-    const cleanCmdText = incomingText.replace(/^[\!\/\.]/, '').trim().toLowerCase();
-    const cleanCmdWord = cleanCmdText.split(/\s+/)[0] || '';
-    const cleanCmdArgs = incomingText.trim().includes(' ')
+    const sanitizedDirectInput = trimmedInput.replace(/^(id|national\s*id|pin|kra\s*pin)[\s:]+/i, '').replace(/\s+/g, '').toUpperCase();
+    const isDirectPin = /^[A-Z]\d{9}[A-Z]$/.test(sanitizedDirectInput);
+    const isDirectId = /^\d{5,12}$/.test(sanitizedDirectInput);
+    const isDirectLookupInput = isDirectPin || isDirectId;
+
+    let cleanCmdText = incomingText.replace(/^[\!\/\.]/, '').trim().toLowerCase();
+    let cleanCmdWord = cleanCmdText.split(/\s+/)[0] || '';
+    let cleanCmdArgs = incomingText.trim().includes(' ')
       ? incomingText.trim().substring(incomingText.trim().indexOf(' ') + 1).trim()
       : '';
+
+    // Bot is explicitly triggered by either '.' or '/' prefix, or direct ID/PIN submission, or common bot command words
+    let isBotTrigger = incomingText.startsWith('/') || incomingText.startsWith('.') || isDirectLookupInput;
+    if (['kra', 'pin', 'cyber', 'status', 'invoice', 'renew', 'menu', 'start', 'help'].includes(cleanCmdWord) && cleanCmdArgs) {
+      isBotTrigger = true;
+    }
+
+    // If user sent a raw National ID or KRA PIN directly without prefix, treat as direct lookup command
+    if (isDirectLookupInput && !incomingText.startsWith('/') && !incomingText.startsWith('.')) {
+      cleanCmdWord = 'kra';
+      cleanCmdArgs = sanitizedDirectInput;
+    }
 
     // Universal Cancellation: cancel, .cancel, /cancel, exit, .exit, /exit, stop, reset, 0
     const isCancelRequest =
@@ -1373,8 +1388,9 @@ export async function handleWhatsAppChat(params: {
       else if (['kra', 'menu', 'start', 'help', 'pin'].includes(cmdWord)) {
         // Direct search: /kra <ID_OR_PIN> or /pin <ID_OR_PIN>
         if (cmdArgs) {
-          const isPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(cmdArgs);
-          const isId = /^\d{6,9}$/.test(cmdArgs);
+          const cleanArg = cmdArgs.replace(/^(id|national\s*id|pin|kra\s*pin)[\s:]+/i, '').replace(/\s+/g, '').trim();
+          const isPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(cleanArg);
+          const isId = /^\d{5,12}$/.test(cleanArg);
 
           if (!isPin && !isId) {
             await saveConversationState('AWAITING_INPUT', { activeSession: true });
@@ -1392,9 +1408,9 @@ export async function handleWhatsAppChat(params: {
             let taxpayer: any = null;
             try {
               if (isPin) {
-                taxpayer = await fetchTaxpayerByPin(cmdArgs.toUpperCase());
+                taxpayer = await fetchTaxpayerByPin(cleanArg.toUpperCase());
               } else {
-                taxpayer = await fetchTaxpayerById(cmdArgs);
+                taxpayer = await fetchTaxpayerById(cleanArg);
               }
             } catch (kraError: any) {
               console.warn('[WhatsApp KRA Direct Lookup Notice]:', kraError.message);
@@ -1405,7 +1421,7 @@ export async function handleWhatsAppChat(params: {
               replyText =
                 `❌ *No Record Found on KRA Database*\n` +
                 `─────────────────────────\n` +
-                `Could not locate tax records matching: \`${cmdArgs}\`.\n\n` +
+                `Could not locate tax records matching: \`${cleanArg}\`.\n\n` +
                 `👉 *Suggestions:*\n` +
                 `• Double-check your National ID or PIN for any typo.\n` +
                 `• Search directly on our online web portal:\n` +
@@ -1418,7 +1434,7 @@ export async function handleWhatsAppChat(params: {
               replyText = await handleTaxpayerFoundFulfillment({
                 userPhone,
                 taxpayer,
-                idOrPinInput: cmdArgs,
+                idOrPinInput: cleanArg,
                 saveConversationState,
               });
             }
@@ -1473,9 +1489,9 @@ export async function handleWhatsAppChat(params: {
     }
     // 4. Step AWAITING_INPUT: User entered bot mode and sends their National ID or PIN
     else if (currentStep === 'AWAITING_INPUT') {
-      const cleanInput = incomingText.trim();
+      const cleanInput = incomingText.replace(/^(id|national\s*id|pin|kra\s*pin)[\s:]+/i, '').replace(/\s+/g, '').trim();
       const isPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(cleanInput);
-      const isId = /^\d{6,9}$/.test(cleanInput);
+      const isId = /^\d{5,12}$/.test(cleanInput);
 
       if (lowerText === '0' || lowerText === 'cancel' || lowerText === 'exit') {
         await saveConversationState('IDLE', {
