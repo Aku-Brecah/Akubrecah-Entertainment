@@ -217,3 +217,17 @@
   - [x] Hardened crawler protections in `app/robots.ts` and noindex headers for private checkout/auth routes.
   - [x] Established automated SEO test suite in `tests/seo.test.ts` (8/8 passing tests).
 
+## Feature 11: Legal & Disclaimer Center GovTech Prestige Redesign
+- [x] **Task 43: Legal Center Brand Alignment & Statutory Disclaimer Elevation**
+  - [x] Designed and built `components/legal/disclaimer-view.tsx` embodying the institutional "GovTech Prestige" design system defined in `DESIGN.md`.
+  - [x] Configured Sovereign Red (`#BA1A1A`) statutory alert banners and side-by-side comparison matrix ("What Akubrecah Is" vs "What Akubrecah Is Not").
+  - [x] Implemented sticky sidebar with 9-section anchor navigation, verified KRA official contacts (Times Tower, `020 4 999 999`), and related policy switcher.
+  - [x] Added action toolbar: Print to PDF (`window.print()`), Copy Share Link (with active toast), and Direct Link to official KRA portal (`itax.kra.go.ke`).
+  - [x] Added interactive third-party compliance FAQ accordion addressing data handling, refund policies, and authority status.
+  - [x] Refactored `app/legal/layout.tsx`: removed redundant double padding (`pt-16`), expanded container width to responsive `max-w-6xl`, added breadcrumbs (`Home > Legal Center > [Policy]`), and horizontally scrollable policy tabs.
+  - [x] Elevated `app/legal/page.tsx` into a 3-column card grid with icon badges, featured disclaimer callout, and direct KRA link.
+  - [x] Refined sub-policy pages (`/legal/privacy`, `/legal/terms`, `/legal/refund`, `/legal/aup`, `/legal/cookies`) with matching rounded card containers and consistent typography.
+  - [x] Linked portal disclaimer banners in `components/kra-portal.tsx` and `components/kra-filing-portal.tsx` directly to `/legal/disclaimer`.
+  - [x] Verified full build (`npm run build`: 83/83 routes static/dynamic pass), 0 type errors, and 38/38 unit tests passing.
+
+
