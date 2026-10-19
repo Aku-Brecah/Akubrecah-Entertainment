@@ -184,3 +184,10 @@
   - [x] Hardened GitHub Actions CI/CD pipelines (`.github/workflows/ci.yml` and `deploy.yml`) with automated `npm test` gate.
   - [x] Verified 100% test pass rate, 0 type errors, 0 lint warnings, and successful production build.
 
+## Feature 9: Clerk Live Production Mode & Badge Removal
+- [x] **Task 41: Enforce Live Clerk Production Keys & Suppress Development Badges**
+  - [x] Configured `<ClerkProvider>` in `app/layout.tsx` with production publishable key (`pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ`) and `unsafe_disableDevelopmentModeWarnings: true`.
+  - [x] Injected universal CSS badge and watermark suppression in `app/globals.css` targeting `.cl-development-badge`, `.clerk-watermark`, `[data-localization-key="developmentMode"]`, and internal Clerk watermark classes.
+  - [x] Updated `lib/config/env.ts` schema default to live publishable key `pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ`.
+  - [x] Set `devIndicators: false` in `next.config.mjs` to eliminate framework development overlays.
+  - [x] Verified zero hardcoded secrets in source control; passed typecheck (`npm run typecheck`), 100% tests passing (`npm test`), and merged cleanly to `main`.
