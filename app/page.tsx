@@ -12,11 +12,57 @@ import {
   BookOpen, 
   Clock 
 } from 'lucide-react'
+import type { Metadata } from 'next'
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getPublishedProjects, getPublishedArticles } from '@/lib/cms'
 
 export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  title: 'Akubrecah Technologies | Premier Software Engineering & GovTech Solutions',
+  description:
+    'Bespoke full-stack web platforms, native iOS & Android ecosystems, cloud DevOps, and enterprise GovTech automation systems in Nairobi, Kenya. Home of the Akubrecah KRA Compliance & Statutory Document Suite.',
+  keywords: [
+    'Software Engineering Kenya',
+    'Next.js Development Company Nairobi',
+    'GovTech Automation East Africa',
+    'KRA Compliance Portal',
+    'KRA PIN Certificate Retrieval',
+    'Tax Compliance Certificate Kenya',
+    'Nil Returns Filing Automation',
+    'Enterprise Mobile Applications Kenya',
+    'Fintech Daraja M-Pesa API Architecture',
+  ],
+  alternates: {
+    canonical: 'https://akubrecah.com',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_KE',
+    url: 'https://akubrecah.com',
+    siteName: 'Akubrecah Technologies',
+    title: 'Akubrecah Technologies | Premier Software Engineering & GovTech Solutions',
+    description:
+      'Architecting resilient software systems, cloud automation, and statutory tax compliance portals. High-impact engineering made in Nairobi, Kenya.',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Akubrecah Technologies - Engineering Excellence',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Akubrecah Technologies | Software Engineering & GovTech',
+    description:
+      'Premier software engineering company in Nairobi, Kenya. Full-stack web, mobile, cloud infrastructure, and automated statutory gateways.',
+    images: ['/og-image.jpg'],
+    creator: '@akubrecah',
+  },
+};
 
 export default async function Home() {
   const [allProjects, allArticles] = await Promise.all([

@@ -6,7 +6,20 @@ export const metadata: Metadata = {
   title: "Legal & Compliance Center | Akubrecah Technologies",
   description: "Legal policies, terms of service, acceptable use standards, privacy protections, and compliance information for Akubrecah Technologies.",
   alternates: {
-    canonical: "/legal",
+    canonical: "https://akubrecah.com/legal",
+  },
+  openGraph: {
+    title: "Legal & Compliance Center | Akubrecah Technologies",
+    description: "Legal policies, terms of service, acceptable use standards, and KDPA 2019 compliance information.",
+    url: "https://akubrecah.com/legal",
+    type: "website",
+    images: ["/og-image.jpg"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Legal & Compliance Center | Akubrecah",
+    description: "Legal policies, terms of service, and KDPA 2019 compliance information.",
+    images: ["/og-image.jpg"],
   },
 }
 

@@ -1,7 +1,26 @@
 import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('next/font/google', () => ({
+  Inter: () => ({
+    variable: '--font-inter',
+    className: 'font-inter',
+  }),
+}));
+
 import robots from '@/app/robots';
 import sitemap from '@/app/sitemap';
 import { submitToIndexNow } from '@/lib/seo/indexnow';
+import { metadata as rootMetadata } from '@/app/layout';
+import { metadata as homeMetadata } from '@/app/page';
+import { metadata as retrievalMetadata } from '@/app/retrieval-portal/layout';
+import { metadata as servicesMetadata } from '@/app/services/page';
+import { metadata as solutionsMetadata } from '@/app/solutions/page';
+import { metadata as productsMetadata } from '@/app/products/page';
+import { metadata as projectsMetadata } from '@/app/projects/page';
+import { metadata as articlesMetadata } from '@/app/articles/page';
+import { metadata as aboutMetadata } from '@/app/about/page';
+import { metadata as contactMetadata } from '@/app/contact/layout';
+import { metadata as legalMetadata } from '@/app/legal/page';
 import fs from 'fs';
 import path from 'path';
 
@@ -128,6 +147,44 @@ describe('Search Engine Optimization (SEO) & Indexing Suite', () => {
 
       const indexNowKeyContent = fs.readFileSync(indexNowKeyPath, 'utf-8').trim();
       expect(indexNowKeyContent).toBe('c95843a0d5c040d6832dbff09ce6a213');
+    });
+  });
+
+  describe('Canonical URL & Page Independence Verification', () => {
+    it('ensures root layout does NOT leak canonical: "/" to child routes', () => {
+      expect((rootMetadata as any)?.alternates?.canonical).toBeUndefined();
+    });
+
+    it('ensures every public page defines its own distinct, absolute canonical URL', () => {
+      expect((homeMetadata as any)?.alternates?.canonical).toBe('https://akubrecah.com');
+      expect((retrievalMetadata as any)?.alternates?.canonical).toBe('https://akubrecah.com/retrieval-portal');
+      expect((servicesMetadata as any)?.alternates?.canonical).toBe('https://akubrecah.com/services');
+      expect((solutionsMetadata as any)?.alternates?.canonical).toBe('https://akubrecah.com/solutions');
+      expect((productsMetadata as any)?.alternates?.canonical).toBe('https://akubrecah.com/products');
+      expect((projectsMetadata as any)?.alternates?.canonical).toBe('https://akubrecah.com/projects');
+      expect((articlesMetadata as any)?.alternates?.canonical).toBe('https://akubrecah.com/articles');
+      expect((aboutMetadata as any)?.alternates?.canonical).toBe('https://akubrecah.com/about');
+      expect((contactMetadata as any)?.alternates?.canonical).toBe('https://akubrecah.com/contact');
+      expect((legalMetadata as any)?.alternates?.canonical).toBe('https://akubrecah.com/legal');
+    });
+
+    it('ensures every public page has distinct title and description for search ranking', () => {
+      const titles = [
+        homeMetadata.title,
+        retrievalMetadata.title,
+        servicesMetadata.title,
+        solutionsMetadata.title,
+        productsMetadata.title,
+        projectsMetadata.title,
+        articlesMetadata.title,
+        aboutMetadata.title,
+        contactMetadata.title,
+        legalMetadata.title,
+      ];
+
+      // Verify no duplicate titles exist among public pages
+      const uniqueTitles = new Set(titles.map((t) => (typeof t === 'string' ? t : JSON.stringify(t))));
+      expect(uniqueTitles.size).toBe(titles.length);
     });
   });
 });

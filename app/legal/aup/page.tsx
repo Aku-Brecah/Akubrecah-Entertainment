@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: "Acceptable Use Policy | Akubrecah Technologies",
   description: "Rules governing acceptable and prohibited use of Akubrecah's software engineering and statutory retrieval services.",
   alternates: {
-    canonical: "/legal/aup",
+    canonical: "https://akubrecah.com/legal/aup",
   },
 }
 

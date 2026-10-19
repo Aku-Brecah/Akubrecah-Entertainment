@@ -4,19 +4,34 @@ export const metadata: Metadata = {
   title: "Software Solutions & Industry Specializations",
   description: "Enterprise software solutions across FinTech, GovTech, automated statutory compliance, ERP systems, and cloud-native SaaS engineering in Nairobi, Kenya.",
   alternates: {
-    canonical: "/solutions",
+    canonical: "https://akubrecah.com/solutions",
   },
   openGraph: {
     title: "Enterprise Software Solutions | Akubrecah Technologies",
     description: "Tailored software solutions for FinTech payments, GovTech statutory automation, ERP, and cloud-native SaaS systems.",
     url: "https://akubrecah.com/solutions",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Akubrecah Enterprise Software Solutions",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Software Solutions & Industry Specializations | Akubrecah",
+    description: "FinTech payments, GovTech compliance portals, ERP, and cloud-native SaaS.",
+    images: ["/og-image.jpg"],
   },
 }
 
 import Link from "next/link"
 import { CheckCircle2, ArrowRight, Globe, Zap, Shield, Users, Laptop, Smartphone, Cloud, ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { BreadcrumbSchema } from "@/components/seo/site-schema"
+import { BreadcrumbSchema, ServiceSchema } from "@/components/seo/site-schema"
 
 const solutions = [
   {
@@ -119,6 +134,12 @@ const processSteps = [
 export default function SolutionsPage() {
   return (
     <div className="min-h-screen bg-background text-on-background">
+      <ServiceSchema
+        name="Enterprise Domain Software Solutions"
+        description="Tailored software solutions across FinTech, GovTech, automated statutory compliance, ERP systems, and cloud-native SaaS engineering in Nairobi, Kenya."
+        serviceType="Enterprise Software Architecture & GovTech Solutions"
+        url="https://akubrecah.com/solutions"
+      />
       <BreadcrumbSchema
         items={[
           { name: "Home", url: "https://akubrecah.com" },

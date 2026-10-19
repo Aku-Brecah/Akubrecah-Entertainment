@@ -12,13 +12,28 @@ export const metadata: Metadata = {
   description:
     "Learn about Akubrecah Technologies — full-cycle software engineering and digital innovation firm headquartered in Nairobi, Kenya. Powering enterprise platforms, cloud systems, and government statutory automation.",
   alternates: {
-    canonical: "/about",
+    canonical: "https://akubrecah.com/about",
   },
   openGraph: {
     title: "About Akubrecah Technologies | Software Engineering Excellence",
     description:
       "Full-cycle software engineering firm in Nairobi, Kenya. Resilient web apps, native mobile, cloud infrastructure, and GovTech platforms.",
     url: "https://akubrecah.com/about",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "About Akubrecah Technologies",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About Akubrecah Technologies | Software Engineering & Innovation",
+    description: "Full-cycle software engineering firm in Nairobi, Kenya.",
+    images: ["/og-image.jpg"],
   },
 };
 

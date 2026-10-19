@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: "Terms of Service | Akubrecah Technologies",
   description: "Terms and conditions governing the use of Akubrecah's software engineering and statutory retrieval services.",
   alternates: {
-    canonical: "/legal/terms",
+    canonical: "https://akubrecah.com/legal/terms",
   },
 }
 

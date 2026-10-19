@@ -168,8 +168,8 @@ async function lookupPinByIdNumber(idNumber: string, cookieString: string, proxy
   if (m) {
     const val = m[1];
     if (val.includes('#$')) {
-      const [masked, rev] = val.split('#$');
-      const actualDigits = rev ? rev.trim().split('').reverse().join('') : '';
+      const [masked, digits] = val.split('#$');
+      const actualDigits = (digits || '').trim();
       const pin = masked.replace(/\*+/g, actualDigits).trim().toUpperCase();
       if (/^[A-Z]\d{9}[A-Z]$/.test(pin)) {
         return pin;

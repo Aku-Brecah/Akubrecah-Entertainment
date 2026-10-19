@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: "Refund Policy | Akubrecah Technologies",
   description: "Akubrecah's policy on service fees, automated delivery guarantees, refunds, and payment disputes.",
   alternates: {
-    canonical: "/legal/refund",
+    canonical: "https://akubrecah.com/legal/refund",
   },
 }
 

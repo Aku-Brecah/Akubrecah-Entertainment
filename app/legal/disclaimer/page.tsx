@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: "Disclaimer | Akubrecah Technologies",
   description: "Important disclaimer regarding independent statutory assistance, public data retrieval, and relationship with government authorities.",
   alternates: {
-    canonical: "/legal/disclaimer",
+    canonical: "https://akubrecah.com/legal/disclaimer",
   },
 }
 

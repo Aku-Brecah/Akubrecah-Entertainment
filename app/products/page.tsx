@@ -4,19 +4,34 @@ export const metadata: Metadata = {
   title: "In-House Products & Statutory Software Tools",
   description: "Explore Akubrecah Technologies' battle-tested software products: Akubrecah API Gateway, high-throughput financial routing, and automated compliance tools built for East African enterprises.",
   alternates: {
-    canonical: "/products",
+    canonical: "https://akubrecah.com/products",
   },
   openGraph: {
     title: "In-House Products & Developer Tools | Akubrecah Technologies",
     description: "Explore battle-tested software products, distributed API gateways, and tax compliance automation tools.",
     url: "https://akubrecah.com/products",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Akubrecah In-House Software Products",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "In-House Products & Statutory Software Tools | Akubrecah",
+    description: "Distributed API gateways, observability consoles, and statutory compliance tools.",
+    images: ["/og-image.jpg"],
   },
 }
 
 import Link from "next/link"
 import { FileCheck2, ShieldCheck, Send, ArrowRight, CheckCircle2, Lock, Zap, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { BreadcrumbSchema } from "@/components/seo/site-schema"
+import { BreadcrumbSchema, SoftwareSchema } from "@/components/seo/site-schema"
 
 const products = [
   {
@@ -83,6 +98,12 @@ const techHighlights = [
 export default function ProductsPage() {
   return (
     <div className="min-h-screen bg-background text-on-background">
+      <SoftwareSchema
+        name="Akubrecah In-House Developer & Statutory Software Suite"
+        description="High-throughput distributed API gateways, client engineering observability consoles, and GovTech compliance tools."
+        applicationCategory="DeveloperApplication"
+        url="https://akubrecah.com/products"
+      />
       <BreadcrumbSchema
         items={[
           { name: "Home", url: "https://akubrecah.com" },

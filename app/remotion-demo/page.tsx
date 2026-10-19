@@ -5,6 +5,11 @@ import Link from 'next/link';
 export const metadata = {
   title: 'Remotion Studio | Akubrecah KRA Portal',
   description: 'Design and preview programmatic video layouts in real time.',
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
 };
 
 export default function RemotionDemoPage() {

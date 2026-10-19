@@ -12,7 +12,10 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
-  FileText
+  FileText,
+  HelpCircle,
+  ArrowRight,
+  CheckCircle2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useUser, UserButton } from "@clerk/nextjs"
@@ -300,6 +303,150 @@ function FlagshipPortalContent() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ============================================================== */}
+        {/* 3. CRAWLABLE STATUTORY GUIDE & TAXPAYER FAQ ACCORDION (SEO/GOOGLE) */}
+        {/* ============================================================== */}
+        <section aria-labelledby="statutory-guide-heading" className="space-y-6 pt-6 sm:pt-10 border-t border-outline-variant/60">
+          
+          <div className="space-y-2 text-center max-w-2xl mx-auto">
+            <span className="text-[11px] font-black text-primary uppercase tracking-widest">
+              Statutory Knowledge Base & Verification Standard
+            </span>
+            <h2 id="statutory-guide-heading" className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
+              Complete Guide to KRA PIN Retrieval & Nil Returns Filing
+            </h2>
+            <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+              Official compliance procedures, reverse identity lookups, and legal data protection guarantees for Kenyan taxpayers and cyber cafe operators.
+            </p>
+          </div>
+
+          {/* 3-Step Information Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+            <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-2xs space-y-2.5">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-mono font-bold text-xs">
+                01
+              </div>
+              <h3 className="text-xs sm:text-sm font-bold text-on-surface">
+                Reverse National ID Query
+              </h3>
+              <p className="text-[11px] sm:text-xs text-on-surface-variant leading-relaxed">
+                Forgot your PIN, registered email, or iTax password? Enter your 7 or 8-digit Kenyan National ID number. Our automated gateway matches your statutory taxpayer record in real time.
+              </p>
+            </div>
+
+            <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-2xs space-y-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-mono font-bold text-xs">
+                02
+              </div>
+              <h3 className="text-xs sm:text-sm font-bold text-on-surface">
+                Authentic QR Verification
+              </h3>
+              <p className="text-[11px] sm:text-xs text-on-surface-variant leading-relaxed">
+                Downloaded certificates feature the official high-resolution QR verification code, official station designation, and taxpayer names recognized by Kenyan banks, employers, and government institutions.
+              </p>
+            </div>
+
+            <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-2xs space-y-2.5">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-mono font-bold text-xs">
+                03
+              </div>
+              <h3 className="text-xs sm:text-sm font-bold text-on-surface">
+                KDPA 2019 Privacy First
+              </h3>
+              <p className="text-[11px] sm:text-xs text-on-surface-variant leading-relaxed">
+                Built strictly within the Kenya Data Protection Act 2019 framework. 256-bit TLS bank encryption with zero data retention. Your sensitive taxpayer credentials are never stored or logged.
+              </p>
+            </div>
+          </div>
+
+          {/* Crawlable Frequently Asked Questions Accordion */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center gap-2">
+              <HelpCircle className="w-4 h-4 text-primary" />
+              <h3 className="text-sm sm:text-base font-black text-on-surface">
+                Frequently Asked Questions (FAQs)
+              </h3>
+            </div>
+
+            <div className="space-y-2.5">
+              {[
+                {
+                  q: "How can I retrieve my KRA PIN certificate using only my National ID?",
+                  a: "Enter your 7 or 8-digit Kenyan National ID number into the search box above. The system queries statutory taxpayer databases to verify your registered profile and renders your official certificate immediately with an authentic QR verification stamp.",
+                },
+                {
+                  q: "Can I retrieve my certificate if I forgot my iTax password and email address?",
+                  a: "Yes. Traditional iTax logins require your password, security question answer, and access to your registered email. The Akubrecah retrieval system uses reverse identity lookup with your National ID number, allowing you to bypass forgotten passwords.",
+                },
+                {
+                  q: "How much does it cost to retrieve and download the certificate?",
+                  a: "Identity lookup and preview verification are 100% free. Generating and downloading the official high-resolution PDF certificate with instant WhatsApp and Email delivery is only KES 20 per retrieval. Cyber cafe operators can also purchase an unlimited monthly pass for KES 500.",
+                },
+                {
+                  q: "How fast is the certificate delivered?",
+                  a: "Retrieval and rendering take an average of 2.4 seconds. Upon completing the M-Pesa transaction, your certificate displays instantly on your screen and is simultaneously dispatched to your specified WhatsApp number and email.",
+                },
+                {
+                  q: "What should I do if the portal returns 'No Record Found'?",
+                  a: "A 'No Record Found' result means no KRA PIN is currently associated with that National ID in the statutory database. If you have never registered for a KRA PIN before, you will need to register on the official iTax portal or visit a Huduma Centre.",
+                },
+                {
+                  q: "How do I file KRA Nil Returns online through this portal?",
+                  a: "Toggle the service selector to 'Returns Filing'. Enter your KRA PIN and National ID, select the applicable tax year, and click submit. Our automated gateway files your nil income return and generates your official KRA electronic acknowledgment receipt.",
+                },
+                {
+                  q: "Is this certificate accepted by Kenyan banks, employers, and government agencies?",
+                  a: "Yes. The generated certificate is an official statutory compliance document complete with taxpayer names, PIN number, station, and the standard KRA QR verification code that can be scanned by any smartphone or validation terminal.",
+                },
+                {
+                  q: "Is Akubrecah Technologies affiliated with the Kenya Revenue Authority (KRA)?",
+                  a: "Akubrecah Technologies is an independent private software engineering firm and cyber facilitation service provider. We are not the Kenya Revenue Authority. We operate as an independent facilitator under Kenyan commercial law to assist citizens with technical and statutory document retrievals.",
+                },
+              ].map((faq, index) => (
+                <details
+                  key={index}
+                  className="group rounded-2xl bg-surface-container-lowest border border-outline-variant/70 p-4 transition-colors hover:border-primary/40 open:border-primary/50 shadow-2xs"
+                >
+                  <summary className="flex items-center justify-between font-bold text-xs sm:text-sm text-on-surface cursor-pointer select-none list-none">
+                    <span className="flex items-center gap-2 pr-2">
+                      <span className="text-primary font-mono text-xs">Q{index + 1}.</span>
+                      <span>{faq.q}</span>
+                    </span>
+                    <ChevronDown className="w-4 h-4 text-on-surface-variant shrink-0 group-open:rotate-180 transition-transform duration-200" />
+                  </summary>
+                  <div className="mt-3 text-xs sm:text-[13px] text-on-surface-variant leading-relaxed border-t border-outline-variant/40 pt-3">
+                    {faq.a}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </div>
+
+          {/* Cross-linking Statutory & Engineering Deep Links */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-surface-container border border-outline-variant/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-on-surface">
+              <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+              <span className="font-semibold">Explore Engineering Case Studies & Developer Articles:</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href="/articles" className="text-primary font-bold hover:underline flex items-center gap-1">
+                <span>Technical Articles</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+              <span className="text-outline-muted">·</span>
+              <Link href="/services" className="text-primary font-bold hover:underline flex items-center gap-1">
+                <span>GovTech Services</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+              <span className="text-outline-muted">·</span>
+              <Link href="/legal/privacy" className="text-on-surface-variant hover:text-primary transition-colors">
+                <span>Privacy & KDPA</span>
+              </Link>
+            </div>
+          </div>
+
+        </section>
 
       </main>
 

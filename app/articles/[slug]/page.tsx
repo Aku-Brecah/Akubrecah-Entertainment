@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${title} | Akubrecah Engineering`,
     description,
     alternates: {
-      canonical: `/articles/${slug}`,
+      canonical: `https://akubrecah.com/articles/${slug}`,
     },
     openGraph: {
       title,

@@ -5,7 +5,7 @@ import {
   CheckCircle2, ArrowRight, Shield, Zap, Lock, Terminal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ServiceSchema, BreadcrumbSchema } from "@/components/seo/site-schema";
+import { ServiceSchema, BreadcrumbSchema, FaqSchema } from "@/components/seo/site-schema";
 
 export const metadata: Metadata = {
   title: "Engineering Services & Architecture Solutions",
@@ -20,15 +20,45 @@ export const metadata: Metadata = {
     "KRA API Gateway Integration",
   ],
   alternates: {
-    canonical: "/services",
+    canonical: "https://akubrecah.com/services",
   },
   openGraph: {
     title: "Engineering Services & Architecture Solutions | Akubrecah Technologies",
     description:
       "Full-cycle software engineering: Web applications, native mobile apps, cloud infrastructure, and enterprise automation systems.",
     url: "https://akubrecah.com/services",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Akubrecah Engineering Services",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Engineering Services & Architecture Solutions | Akubrecah",
+    description: "Production-grade web apps, mobile ecosystems, cloud DevOps, and enterprise systems.",
+    images: ["/og-image.jpg"],
   },
 };
+
+const servicesFaqs = [
+  {
+    question: "What core software engineering technologies does Akubrecah specialize in?",
+    answer: "We specialize in modern web platforms using Next.js 15, React 19, and TypeScript; mobile applications using Swift/SwiftUI, Kotlin/Compose, and React Native; and cloud infrastructure using AWS, GCP, Docker, and Kubernetes.",
+  },
+  {
+    question: "Does Akubrecah build integrations for Kenya Revenue Authority (KRA) and M-Pesa?",
+    answer: "Yes. We have deep expertise in building high-throughput payment gateways with Safaricom Daraja M-Pesa APIs (STK Push, C2B, B2C) and integrating with government statutory systems like KRA iTax, eCitizen, and NTSA.",
+  },
+  {
+    question: "How does Akubrecah ensure system security and data privacy?",
+    answer: "We enforce security-by-default on every build: OWASP compliance, bank-grade 256-bit TLS encryption, strict role-based access control (RBAC), automated vulnerability scanning in CI/CD, and adherence to the Kenya Data Protection Act 2019.",
+  },
+];
 
 const services = [
   {
@@ -150,6 +180,7 @@ export default function ServicesPage() {
           { name: "Services", url: "https://akubrecah.com/services" },
         ]}
       />
+      <FaqSchema items={servicesFaqs} />
 
       {/* Page Hero */}
       <div className="bg-surface-container-lowest border-b border-outline-variant">

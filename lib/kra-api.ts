@@ -303,17 +303,53 @@ export async function cacheTaxpayerRecord(profile: TaxpayerProfile): Promise<voi
 }
 
 /**
+ * Initializes a session on KRA iTax portal to obtain valid session cookies (e.g. JSESSIONID)
+ */
+export function initKraSession(): Promise<string> {
+  return new Promise((resolve) => {
+    const req = https.request({
+      hostname: 'itax.kra.go.ke',
+      port: 443,
+      path: '/KRA-Portal/pinChecker.htm?actionCode=loadPage&viewType=static',
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      timeout: 5000,
+      rejectUnauthorized: false,
+    }, (res) => {
+      const cookies = ((res.headers['set-cookie'] as string[]) || []).map(c => c.split(';')[0]).join('; ');
+      res.resume();
+      resolve(cookies);
+    });
+    req.on('error', () => resolve(''));
+    req.on('timeout', () => {
+      req.destroy();
+      resolve('');
+    });
+    req.end();
+  });
+}
+
+/**
  * Resolves a Kenyan National ID number directly to the exact KRA PIN via genuine iTax DWR Remoting
  * Typical response time: ~300ms to 600ms
  */
-export function lookupPinByIdNumber(idNumber: string, cookieString = ''): Promise<string | null> {
-  return new Promise((resolve) => {
-    const cleanId = idNumber.trim();
-    if (!cleanId || !/^\d{5,12}$/.test(cleanId)) {
-      resolve(null);
-      return;
-    }
+export async function lookupPinByIdNumber(idNumber: string, cookieString = ''): Promise<string | null> {
+  const cleanId = idNumber.trim();
+  if (!cleanId || !/^\d{5,12}$/.test(cleanId)) {
+    return null;
+  }
 
+  let activeCookie = (cookieString || '').trim();
+  if (!activeCookie) {
+    try {
+      activeCookie = await initKraSession();
+    } catch {}
+  }
+
+  return new Promise((resolve) => {
     const randHex = (len = 12) => {
       const ch = '0123456789abcdef';
       let s = '';
@@ -346,8 +382,8 @@ export function lookupPinByIdNumber(idNumber: string, cookieString = ''): Promis
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
       'Accept': '*/*',
     };
-    if (cookieString && cookieString.trim()) {
-      headers['Cookie'] = cookieString.trim();
+    if (activeCookie) {
+      headers['Cookie'] = activeCookie;
     }
 
     const req = https.request({
@@ -356,7 +392,7 @@ export function lookupPinByIdNumber(idNumber: string, cookieString = ''): Promis
       path: '/KRA-Portal/dwr/call/plaincall/findPinByIdno.findPinByIdnumber.dwr',
       method: 'POST',
       headers,
-      timeout: 5000,
+      timeout: 6000,
       rejectUnauthorized: false,
     }, (res) => {
       const chunks: Buffer[] = [];
@@ -368,8 +404,8 @@ export function lookupPinByIdNumber(idNumber: string, cookieString = ''): Promis
           if (m) {
             const val = m[1];
             if (val.includes('#$')) {
-              const [masked, rev] = val.split('#$');
-              const actualDigits = rev ? rev.trim().split('').reverse().join('') : '';
+              const [masked, digits] = val.split('#$');
+              const actualDigits = (digits || '').trim();
               const pin = masked.replace(/\*+/g, actualDigits).trim().toUpperCase();
               if (/^[A-Z]\d{9}[A-Z]$/.test(pin)) {
                 resolve(pin);
@@ -612,14 +648,31 @@ export async function fetchTaxpayerById(rawId: string, mode: 'api' | 'dwr' | 'au
     throw new Error('Invalid National ID number format. Must be 5-12 digits.');
   }
 
-  // 1. High-speed in-memory cache check (<1ms)
+  // 1. Direct fast-path: KRA iTax DWR Remoting to resolve ID -> PIN (~300-500ms authoritative)
+  if (mode !== 'api') {
+    try {
+      const resolvedPin = await lookupPinByIdNumber(idNumber);
+      if (resolvedPin) {
+        const profile = await fetchTaxpayerByPin(resolvedPin, mode);
+        profile.idNumber = idNumber;
+        setToMemoryCache(idNumber, profile);
+        setToMemoryCache(resolvedPin, profile);
+        // Asynchronously link ID number with PIN in persistent cache
+        cacheTaxpayerRecord(profile).catch(() => {});
+        return profile;
+      }
+    } catch (err: any) {
+      console.warn('[KRA-API] Direct DWR ID lookup attempt notice:', err.message);
+    }
+  }
+
+  // 2. High-speed in-memory & database cache check (fallback if live DWR is unreachable)
   if (mode !== 'dwr') {
     const memCached = getFromMemoryCache(idNumber);
     if (memCached && memCached.taxpayerName && memCached.taxpayerName !== 'Registered Taxpayer') {
       return memCached;
     }
 
-    // 2. Local persistent database cache check (<10ms)
     try {
       const cached = await (prisma as any).kra_pin_cache?.findFirst({
         where: { id_number: idNumber },
@@ -635,23 +688,7 @@ export async function fetchTaxpayerById(rawId: string, mode: 'api' | 'dwr' | 'au
     }
   }
 
-  // 3. Direct fast-path: KRA iTax DWR Remoting to resolve ID -> PIN (Sub-second: ~300-500ms)
-  try {
-    const resolvedPin = await lookupPinByIdNumber(idNumber);
-    if (resolvedPin) {
-      const profile = await fetchTaxpayerByPin(resolvedPin, mode);
-      profile.idNumber = idNumber;
-      setToMemoryCache(idNumber, profile);
-      setToMemoryCache(resolvedPin, profile);
-      // Asynchronously link ID number with PIN in persistent cache
-      cacheTaxpayerRecord(profile).catch(() => {});
-      return profile;
-    }
-  } catch (err: any) {
-    console.warn('[KRA-API] Direct DWR ID lookup attempt notice:', err.message);
-  }
-
-  // 4. Fallback: Official KRA GavaConnect Gateway (only if consumer credentials exist, with 2s timeout)
+  // 3. Fallback: Official KRA GavaConnect Gateway (only if consumer credentials exist, with 2s timeout)
   const consumerKey = (process.env.KRA_ID_CONSUMER_KEY || '').trim();
   const consumerSecret = (process.env.KRA_ID_CONSUMER_SECRET || '').trim();
   if (consumerKey && consumerSecret) {

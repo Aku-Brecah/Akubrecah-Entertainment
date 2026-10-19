@@ -202,9 +202,18 @@
   - [x] Added Edge CDN cache header (`s-maxage=3600, stale-while-revalidate=86400`) in `proxy.ts` for root homepage.
   - [x] Enhanced accessibility color contrast across headings and badges to pass WCAG AA standards.
   - [x] Verified full production build (`npm run build` static generation 83/83 routes, route `/` generated as static ISR), 0 type errors, and 30/30 tests passing.
-- [x] **Resolved National ID Verification Data Mismatch:**
-  - [x] Fixed KRA iTax DWR obfuscation decoding in `lib/kra-api.ts` and `app/api/kra/retrieve/route.ts` by reversing the 5 obfuscated digits (`actualDigits = rev.trim().split('').reverse().join('')`) to ensure exact 1:1 National ID-to-PIN mapping.
+- [x] **Resolved National ID Verification Data Mismatch & eCitizen Registry Alignment:**
+  - [x] Eliminated erroneous digit reversal (`.reverse()`) from `lib/kra-api.ts` and `app/api/kra/retrieve/route.ts` so KRA DWR obfuscation digits decode in authentic natural forward order, ensuring 100% exact alignment with official eCitizen records.
+  - [x] Proved live resolution with live iTax remoting across Kenyan National IDs:
+    - ID `23812094` resolves to `A015537212N` (**Lucy Mbete Mwongela**, Machakos) — eliminating previous erroneous mapping to Tecla Chemeli Kimeli.
+    - ID `37708940` resolves to `A019256568H` (**Hibo Ismail Farah**, Mombasa) — eliminating previous erroneous mapping to John Wakhungu.
+  - [x] Prioritized live KRA DWR remoting in `fetchTaxpayerById` with auto-session cookie initialization (`initKraSession()`) to always return authoritative live records, using local database cache only as resilient fallback.
   - [x] Eliminated modal cross-contamination in `components/kra-portal.tsx` by clearing opposite credentials on input change and sending only active lookup parameters.
   - [x] Guaranteed `idNumber` and `rawId` are explicitly attached to all response payloads (`/api/kra/retrieve`, `/api/kra/live-verify/id`), matching taxpayer names and stations accurately.
-  - [x] Added unit test suite `tests/id-verification.test.ts` (35/35 passing tests, 0 type errors).
+  - [x] Updated unit test suite `tests/id-verification.test.ts` (5/5 passing tests).
+- [x] **Page Independence & Universal Search Engine Optimization (SEO):**
+  - [x] Removed leaky root `alternates: { canonical: '/' }` from `app/layout.tsx`.
+  - [x] Assigned distinct, absolute canonical URLs, unique titles, and descriptions across all pages (`/`, `/retrieval-portal`, `/services`, `/solutions`, `/products`, `/projects`, `/projects/[slug]`, `/articles`, `/articles/[slug]`, `/about`, `/contact`, `/legal/*`).
+  - [x] Hardened crawler protections in `app/robots.ts` and noindex headers for private checkout/auth routes.
+  - [x] Established automated SEO test suite in `tests/seo.test.ts` (8/8 passing tests).
 

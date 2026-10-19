@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props) {
         title: `${gh.name} | Akubrecah Deep Case Study & Engineering Spec`,
         description: gh.description,
         alternates: {
-          canonical: `/projects/${slug}`,
+          canonical: `https://akubrecah.com/projects/${slug}`,
         },
         openGraph: {
           title: `${gh.name} | Akubrecah Deep Case Study`,
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: Props) {
     title,
     description,
     alternates: {
-      canonical: `/projects/${slug}`,
+      canonical: `https://akubrecah.com/projects/${slug}`,
     },
     openGraph: {
       title,

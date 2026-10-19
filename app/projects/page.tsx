@@ -12,12 +12,27 @@ export const metadata: Metadata = {
   title: 'Engineering Projects & Case Studies',
   description: 'Explore verified GovTech compliance portals, enterprise software platforms, and fintech payment architectures engineered by Akubrecah Technologies in Nairobi, Kenya.',
   alternates: {
-    canonical: '/projects',
+    canonical: 'https://akubrecah.com/projects',
   },
   openGraph: {
     title: 'Engineering Projects & Case Studies | Akubrecah Technologies',
     description: 'Explore verified GovTech compliance portals, enterprise software platforms, and fintech architectures.',
     url: 'https://akubrecah.com/projects',
+    type: 'website',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Akubrecah Engineering Projects',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Engineering Projects & Case Studies | Akubrecah',
+    description: 'Explore verified GovTech compliance portals and enterprise platforms.',
+    images: ['/og-image.jpg'],
   },
 };
 
