@@ -63,12 +63,7 @@ export default function Home() {
         <section id="hero" className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
           
           {/* Left: Text */}
-          <motion.div
-            initial={{ opacity: 0, x: -24 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.65, ease: "easeOut" }}
-            className="flex-1 space-y-7"
-          >
+          <div className="flex-1 space-y-7">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-high border border-outline-variant text-xs font-semibold shadow-xs">
               <span className="flex h-2 w-2 rounded-full bg-primary" />
               <span className="font-black text-primary">Akubrecah Technologies</span>
@@ -91,20 +86,20 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <Link href="/contact">
-                <Button size="lg" className="h-13 px-7 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/92 shadow-lg shadow-primary/20 flex items-center gap-2 group">
+              <Button asChild size="lg" className="h-13 px-7 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/92 shadow-lg shadow-primary/20 flex items-center gap-2 group">
+                <Link href="/contact">
                   <span>Start a Project</span>
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Link href="/services">
-                <Button variant="outline" size="lg" className="h-13 px-7 rounded-xl border-outline-variant font-bold text-sm hover:bg-surface-container flex items-center gap-2">
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="h-13 px-7 rounded-xl border-outline-variant font-bold text-sm hover:bg-surface-container flex items-center gap-2">
+                <Link href="/services">
                   <Code2 className="h-4 w-4 text-primary" />
                   <span>View Services</span>
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
-          </motion.div>
+          </div>
 
           {/* Right: Animated Capability Grid */}
           <motion.div
@@ -150,11 +145,11 @@ export default function Home() {
                 Real-world platforms architected for high concurrency, zero-data-loss compliance, and seamless payment flows.
               </p>
             </div>
-            <Link href="/projects">
-              <Button variant="outline" size="sm" className="h-10 px-5 rounded-xl font-bold text-xs gap-2 shrink-0">
+            <Button asChild variant="outline" size="sm" className="h-10 px-5 rounded-xl font-bold text-xs gap-2 shrink-0">
+              <Link href="/projects">
                 Explore All Projects <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -238,11 +233,11 @@ export default function Home() {
                   Pragmatic architectural insights, payment engineering patterns, and lessons learned from production.
                 </p>
               </div>
-              <Link href="/articles">
-                <Button variant="outline" size="sm" className="h-10 px-5 rounded-xl font-bold text-xs gap-2 shrink-0">
+              <Button asChild variant="outline" size="sm" className="h-10 px-5 rounded-xl font-bold text-xs gap-2 shrink-0">
+                <Link href="/articles">
                   All Articles <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -300,12 +295,12 @@ export default function Home() {
                 we architect systems that handle real-world scale.
               </p>
             </div>
-            <Link href="/services">
-              <Button size="lg" className="h-13 px-7 rounded-xl bg-primary text-white font-bold text-sm flex items-center gap-2 group shrink-0">
+            <Button asChild size="lg" className="h-13 px-7 rounded-xl bg-primary text-white font-bold text-sm flex items-center gap-2 group shrink-0">
+              <Link href="/services">
                 <span>Explore All Services</span>
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -354,11 +349,11 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <Link href="/about">
-            <Button variant="outline" size="sm" className="h-10 px-6 rounded-xl font-bold text-xs gap-2">
+          <Button asChild variant="outline" size="sm" className="h-10 px-6 rounded-xl font-bold text-xs gap-2">
+            <Link href="/about">
               Learn Our Methodology <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </section>
 
         {/* ============================= CTA BAND ============================= */}

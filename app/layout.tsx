@@ -9,7 +9,6 @@ import { AdminLayoutWrapper } from "@/components/admin-layout-wrapper"
 import { getDomainTheme } from '@/lib/utils'
 import KRAAnnouncementBanner from '@/components/KRAAnnouncementBanner'
 import { Analytics } from "@vercel/analytics/next"
-import Script from 'next/script'
 
 import "./globals.css"
 
@@ -132,11 +131,6 @@ export default async function RootLayout({
         {/* Preconnect to Clerk edge to accelerate auth components */}
         <link rel="preconnect" href="https://clerk.akubrecah.com" />
         <link rel="dns-prefetch" href="https://clerk.akubrecah.com" />
-        {/* Lazy load third-party Google Publisher SDK to eliminate critical-path render blocking */}
-        <Script 
-          src="https://news.google.com/swg/js/v1/publisher.js" 
-          strategy="lazyOnload" 
-        />
       </head>
       <body className={`${inter.variable} ${plusJakarta.variable} ${alfa.variable} ${satisfy.variable} font-sans`} data-theme={theme} suppressHydrationWarning={true}>
         <ClerkProvider 
