@@ -155,6 +155,7 @@ export function KraPinChecker() {
         }
         setResult({
           ...data.data,
+          idNumber: data.data?.idNumber || cleanId,
           rawId: data.data?.rawId || cleanId,
           rawPin: data.data?.rawPin,
           isSubscribed: Boolean(data.isSubscribed ?? data.data?.isSubscribed),

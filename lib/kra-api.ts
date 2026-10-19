@@ -39,6 +39,7 @@ export interface TaxpayerProfile {
 
 export interface ManufacturerDetails {
   name: string;
+  idNumber?: string;
   email: string;
   phoneNumber: string;
   building: string;
@@ -102,6 +103,7 @@ export function fetchManufacturerDetails(pin: string, cookieString = ''): Promis
             const mn = clean(basic.middleName);
             const ln = clean(basic.lastName);
             const fullName = clean([fn, mn, ln].filter(Boolean).join(' ') || basic.manufacturerName || business.businessName);
+            const idNumber = clean(basic.manufacturerBrNo || basic.nationalId || basic.identityDocNo || basic.idNo || basic.idNumber);
 
             const email = clean(contact.mainEmail || contact.secondaryEmail);
             const phoneNumber = clean(contact.mobileNo || contact.telephoneNo);
@@ -117,6 +119,7 @@ export function fetchManufacturerDetails(pin: string, cookieString = ''): Promis
 
             resolve({
               name: fullName,
+              idNumber: idNumber || undefined,
               email,
               phoneNumber,
               building,
@@ -159,6 +162,7 @@ async function enrichTaxpayerProfile(profile: TaxpayerProfile): Promise<void> {
       if (man) {
         if (!profile.email && man.email) profile.email = man.email;
         if (!profile.phoneNumber && man.phoneNumber) profile.phoneNumber = man.phoneNumber;
+        if (!profile.idNumber && man.idNumber) profile.idNumber = man.idNumber;
         if ((!profile.taxpayerName || profile.taxpayerName === 'Registered Taxpayer') && man.name) {
           profile.taxpayerName = man.name;
         }
@@ -360,12 +364,13 @@ export function lookupPinByIdNumber(idNumber: string, cookieString = ''): Promis
       res.on('end', () => {
         try {
           const raw = Buffer.concat(chunks).toString('utf8');
-          const m = raw.match(/handleCallback\([^,]+,[^,]+,"([^"]+)"\)/);
+          const m = raw.match(/handleCallback\([^,]+,[^,]+,"([^"]+)"\)/) || raw.match(/s\d+="([^"]+)"/);
           if (m) {
             const val = m[1];
             if (val.includes('#$')) {
               const [masked, rev] = val.split('#$');
-              const pin = masked.replace('*****', rev.trim()).trim().toUpperCase();
+              const actualDigits = rev ? rev.trim().split('').reverse().join('') : '';
+              const pin = masked.replace(/\*+/g, actualDigits).trim().toUpperCase();
               if (/^[A-Z]\d{9}[A-Z]$/.test(pin)) {
                 resolve(pin);
                 return;
@@ -521,6 +526,7 @@ export async function fetchTaxpayerByPin(rawPin: string, mode: 'api' | 'dwr' | '
         pin,
         taxpayerName: man.name || 'Registered Taxpayer',
         status: 'Active',
+        idNumber: man.idNumber || undefined,
         registrationDate: regDate,
         station,
         taxArea,
@@ -607,31 +613,33 @@ export async function fetchTaxpayerById(rawId: string, mode: 'api' | 'dwr' | 'au
   }
 
   // 1. High-speed in-memory cache check (<1ms)
-  const memCached = getFromMemoryCache(idNumber);
-  if (memCached && memCached.taxpayerName && memCached.taxpayerName !== 'Registered Taxpayer') {
-    return memCached;
-  }
-
-  // 2. Local persistent database cache check (<10ms)
-  try {
-    const cached = await (prisma as any).kra_pin_cache?.findFirst({
-      where: { id_number: idNumber },
-    });
-    if (cached && cached.name && cached.name.trim() && cached.name !== 'Registered Taxpayer') {
-      const profile = cachedRecordToProfile(cached, idNumber);
-      setToMemoryCache(idNumber, profile);
-      if (profile.pin) setToMemoryCache(profile.pin, profile);
-      return profile;
+  if (mode !== 'dwr') {
+    const memCached = getFromMemoryCache(idNumber);
+    if (memCached && memCached.taxpayerName && memCached.taxpayerName !== 'Registered Taxpayer') {
+      return memCached;
     }
-  } catch (err: any) {
-    console.warn('[KRA-API] Database cache lookup by ID notice:', err.message);
+
+    // 2. Local persistent database cache check (<10ms)
+    try {
+      const cached = await (prisma as any).kra_pin_cache?.findFirst({
+        where: { id_number: idNumber },
+      });
+      if (cached && cached.name && cached.name.trim() && cached.name !== 'Registered Taxpayer') {
+        const profile = cachedRecordToProfile(cached, idNumber);
+        setToMemoryCache(idNumber, profile);
+        if (profile.pin) setToMemoryCache(profile.pin, profile);
+        return profile;
+      }
+    } catch (err: any) {
+      console.warn('[KRA-API] Database cache lookup by ID notice:', err.message);
+    }
   }
 
   // 3. Direct fast-path: KRA iTax DWR Remoting to resolve ID -> PIN (Sub-second: ~300-500ms)
   try {
     const resolvedPin = await lookupPinByIdNumber(idNumber);
     if (resolvedPin) {
-      const profile = await fetchTaxpayerByPin(resolvedPin);
+      const profile = await fetchTaxpayerByPin(resolvedPin, mode);
       profile.idNumber = idNumber;
       setToMemoryCache(idNumber, profile);
       setToMemoryCache(resolvedPin, profile);

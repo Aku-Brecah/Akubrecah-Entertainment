@@ -164,14 +164,21 @@ async function lookupPinByIdNumber(idNumber: string, cookieString: string, proxy
   );
   console.log('[retrieve] PIN lookup raw:', raw ? raw.substring(0, 350) : 'EMPTY');
 
-  const m = raw.match(/handleCallback\([^,]+,[^,]+,"([^"]+)"\)/);
+  const m = raw.match(/handleCallback\([^,]+,[^,]+,"([^"]+)"\)/) || raw.match(/s\d+="([^"]+)"/);
   if (m) {
     const val = m[1];
     if (val.includes('#$')) {
       const [masked, rev] = val.split('#$');
-      return masked.replace('*****', rev.trim()).trim().toUpperCase();
+      const actualDigits = rev ? rev.trim().split('').reverse().join('') : '';
+      const pin = masked.replace(/\*+/g, actualDigits).trim().toUpperCase();
+      if (/^[A-Z]\d{9}[A-Z]$/.test(pin)) {
+        return pin;
+      }
     }
-    return val.trim().toUpperCase();
+    const cleanPin = val.trim().toUpperCase();
+    if (/^[A-Z]\d{9}[A-Z]$/.test(cleanPin)) {
+      return cleanPin;
+    }
   }
   return null;
 }
@@ -346,6 +353,7 @@ function parsePinCheckerHtml(html: string): PinCheckerResult {
 
 interface ManufacturerResult {
   name: string;
+  idNumber?: string;
   email: string;
   phoneNumber: string;
   building: string;
@@ -394,6 +402,14 @@ async function fetchManufacturerDetails(pin: string, cookieString?: string, prox
         || business.businessName 
         || ''
       );
+      const directIdNumber = cleanField(
+        basic.manufacturerBrNo 
+        || basic.nationalId 
+        || basic.identityDocNo 
+        || basic.idNo 
+        || basic.idNumber 
+        || ''
+      );
 
       const directEmail = cleanField(contact.mainEmail || contact.secondaryEmail);
       const directPhone = cleanField(contact.mobileNo || contact.telephoneNo);
@@ -410,6 +426,7 @@ async function fetchManufacturerDetails(pin: string, cookieString?: string, prox
       if (directFullName || directEmail || directCounty || directTown) {
         return {
           name: directFullName,
+          idNumber: directIdNumber || undefined,
           email: directEmail,
           phoneNumber: directPhone,
           building: directBuilding,
@@ -604,7 +621,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { idNumber, pin: directPin, captchaAnswer, sessionToken, engineMode = 'auto' } = body;
 
-    if (!idNumber && !directPin) {
+    const cleanId = idNumber ? String(idNumber).trim() : '';
+    const cleanDirectPin = directPin ? String(directPin).trim().toUpperCase() : '';
+
+    if (!cleanId && !cleanDirectPin) {
       return NextResponse.json({ success: false, error: 'ID Number or PIN is required' }, { status: 400 });
     }
 
@@ -613,17 +633,19 @@ export async function POST(req: NextRequest) {
     // ── 1. If 'api' or 'auto' mode, attempt Official KRA Live API ─────────────
     let liveApiTaxpayer: any = null;
     try {
-      if (directPin) {
-        liveApiTaxpayer = await fetchTaxpayerByPin(String(directPin).trim().toUpperCase());
-      } else if (idNumber) {
-        liveApiTaxpayer = await fetchTaxpayerById(String(idNumber).trim());
+      if (cleanId) {
+        liveApiTaxpayer = await fetchTaxpayerById(cleanId, engineMode);
+      } else if (cleanDirectPin) {
+        liveApiTaxpayer = await fetchTaxpayerByPin(cleanDirectPin, engineMode);
       }
     } catch (liveApiErr: any) {
       console.warn('[retrieve] Live API gateway notice:', liveApiErr.message);
     }
 
     // ── 2. Resolve PIN & Session Cookies ─────────────────────────────────────
-    let fullPin = (engineMode !== 'dwr' && liveApiTaxpayer?.pin) ? liveApiTaxpayer.pin : (directPin ? String(directPin).trim().toUpperCase() : null);
+    let fullPin = (engineMode !== 'dwr' && liveApiTaxpayer?.pin)
+      ? liveApiTaxpayer.pin
+      : (!cleanId && cleanDirectPin ? cleanDirectPin : null);
 
     let cookieString = "";
     let freshCookieString = "";
@@ -783,6 +805,7 @@ export async function POST(req: NextRequest) {
 
     const fullTaxpayerRecord = {
       pin:           fullPin,
+      idNumber:      cleanId || liveApiTaxpayer?.idNumber || man?.idNumber || '',
       name:          name || '',
       email:         email || '',
       status:        'Active',
@@ -807,6 +830,7 @@ export async function POST(req: NextRequest) {
       success: true,
       data: clientTaxpayerData,
       rawPin: fullPin,
+      rawId: cleanId || clientTaxpayerData.idNumber || '',
       isSubscribed,
     };
 

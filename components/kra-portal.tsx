@@ -158,6 +158,15 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value }
+      if (field === 'idNumber') {
+        updated.pin = ''
+        updated.rawPin = ''
+        updated.fullName = ''
+      } else if (field === 'pin') {
+        updated.idNumber = ''
+        updated.rawPin = ''
+        updated.fullName = ''
+      }
       if (typeof window !== "undefined") {
         try {
           sessionStorage.setItem("kra_active_form_data", JSON.stringify(updated))
@@ -209,8 +218,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          idNumber: formData.idNumber,
-          pin: formData.pin,
+          idNumber: activeTab === "id" ? formData.idNumber.trim() : "",
+          pin: activeTab === "pin" ? formData.pin.trim().toUpperCase() : "",
           captchaAnswer: captchaAnswer.trim(),
           sessionToken,
           engineMode,
@@ -234,25 +243,26 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       if (result.success && (result.data?.name || result.data?.pin)) {
         setIsSubscribed(Boolean(result.isSubscribed))
         setFormData(prev => {
-          const effectiveRawPin = result.rawPin || result.data?.rawPin || prev.rawPin || prev.pin || ''
+          const effectiveRawPin = result.rawPin || result.data?.rawPin || (activeTab === "pin" ? (prev.rawPin || prev.pin) : '')
+          const effectiveIdNumber = result.rawId || result.data?.idNumber || (activeTab === "id" ? formData.idNumber.trim() : (prev.idNumber || ''))
           const updatedData = {
             ...prev,
-            fullName: result.data?.name || result.data?.fullName || prev.fullName || '',
-            pin: result.data?.pin || prev.pin,
-            rawPin: effectiveRawPin || result.data?.pin || prev.pin,
-            idNumber: result.data?.idNumber || prev.idNumber || '',
-            email: result.data?.email || prev.email || '',
+            fullName: result.data?.name || result.data?.fullName || '',
+            pin: result.data?.pin || (activeTab === "pin" ? prev.pin : ''),
+            rawPin: effectiveRawPin || result.data?.pin || '',
+            idNumber: effectiveIdNumber,
+            email: result.data?.email || '',
             building: result.data?.building || '',
             street: result.data?.street || '',
             town: result.data?.town || '',
             county: result.data?.county || '',
             district: result.data?.district || '',
             taxArea: result.data?.taxArea || '',
-            station: result.data?.station || prev.station || '',
+            station: result.data?.station || '',
             poBox: result.data?.poBox || '',
             postalCode: result.data?.postalCode || '',
             phoneNumber: result.data?.phoneNumber || '',
-            registeredDate: result.data?.registeredDate || prev.registeredDate || '',
+            registeredDate: result.data?.registeredDate || '',
           }
           if (typeof window !== "undefined") {
             try {
