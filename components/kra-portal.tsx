@@ -24,8 +24,15 @@ import {
   CheckCircle2,
   X,
   FileText,
-  ExternalLink
+  ExternalLink,
+  Printer
 } from 'lucide-react'
+import { 
+  ReceiptPrinter, 
+  TaxpayerCertificateReceiptContent, 
+  type ReceiptPrinterStage 
+} from "@/components/receipt-printer"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -110,6 +117,9 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const [verifiedDownloadId, setVerifiedDownloadId] = useState<string | null>(null)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
   const [verifiedReceipt, setVerifiedReceipt] = useState<string | null>(null)
+  const [previewMode, setPreviewMode] = useState<"printer" | "card">("printer")
+  const [printerStage, setPrinterStage] = useState<ReceiptPrinterStage>("complete")
+
 
   // Subscription & Paystack state
   const [isSubscribed, setIsSubscribed] = useState(false)
@@ -520,8 +530,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     }
 
     setIsDownloadingPdf(true)
+    setPrinterStage("processing")
     const loadingToast = toast.loading("Securely generating your compliance certificate...")
     try {
+      setTimeout(() => setPrinterStage("printing"), 350)
+
       let activeForm = { ...formData }
       if ((!activeForm.pin || !activeForm.fullName) && typeof window !== "undefined") {
         try {
@@ -579,8 +592,10 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       }, 1500)
 
       toast.success("Certificate downloaded successfully!", { id: loadingToast })
+      setPrinterStage("complete")
       setPaymentStep("done")
     } catch (err: any) {
+      setPrinterStage("complete")
       toast.error(err.message || "Download failed. Please check your connection.", { id: loadingToast })
     } finally {
       setIsDownloadingPdf(false)
@@ -1180,159 +1195,265 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           </div>
                         </div>
 
-                        {/* KDPA Masked Taxpayer Preview Grid */}
-                        <div className="w-full max-w-2xl mx-auto bg-surface-variant/30 rounded-2xl p-4 sm:p-6 border border-outline-variant space-y-4 shadow-sm">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                            
-                            {/* 1. Taxpayer Legal Name (Unmasked) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>Taxpayer Legal Name</span>
-                                <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[9px] bg-emerald-500/10 px-1.5 py-0.5 rounded">Verified Citizen</span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-bold text-on-surface uppercase truncate">
-                                {formData.fullName || "REGISTERED TAXPAYER"}
-                              </p>
-                            </div>
-
-                            {/* 2. National ID (Unmasked - Fully Visible) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>National ID Number</span>
-                                <span className="text-primary font-semibold text-[9px] bg-primary/10 px-1.5 py-0.5 rounded">Official ID</span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-mono font-bold text-on-surface">
-                                {formData.idNumber || "On File"}
-                              </p>
-                            </div>
-
-                            {/* 3. KRA PIN (Masked until paid) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>KRA PIN</span>
-                                <span className={cn(
-                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                )}>
-                                  {isRecordUnlocked ? "Verified & Paid" : "Partial Mask"}
-                                </span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-mono font-black text-primary tracking-wider">
-                                {isRecordUnlocked 
-                                  ? (formData.rawPin || formData.pin) 
-                                  : (maskPin(formData.pin || formData.rawPin) || "A01*****78Z")}
-                              </p>
-                            </div>
-
-                            {/* 4. Tax Station (Unmasked - Fully Visible) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>Tax Station</span>
-                                <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[9px] bg-emerald-500/10 px-1.5 py-0.5 rounded">Station Match</span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-bold text-on-surface truncate">
-                                {formData.station || "Kitale TSO"}
-                              </p>
-                            </div>
-
-                            {/* 5. Email Address (Masked until paid) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>Email Address</span>
-                                <span className={cn(
-                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-surface-variant text-on-surface-variant"
-                                )}>
-                                  {isRecordUnlocked ? "Unmasked" : "Partial Mask"}
-                                </span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-mono text-on-surface truncate">
-                                {isRecordUnlocked 
-                                  ? (formData.email || "Registered Email") 
-                                  : (maskEmail(formData.email) || "j***e@gmail.com")}
-                              </p>
-                            </div>
-
-                            {/* 6. Phone Number (Completely Masked until paid) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>Mobile Phone</span>
-                                <span className={cn(
-                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400"
-                                )}>
-                                  {isRecordUnlocked ? "Unmasked" : "Protected Phone"}
-                                </span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-mono font-bold text-on-surface tracking-wider">
-                                {isRecordUnlocked && formData.phoneNumber && !formData.phoneNumber.includes('•')
-                                  ? formData.phoneNumber 
-                                  : "••••••••••"}
-                              </p>
-                            </div>
-
-                            {/* 7. Region & City */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>County & Town</span>
-                                <span className="text-on-surface-variant font-semibold text-[9px] bg-surface-variant px-1.5 py-0.5 rounded">Location</span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-medium text-on-surface truncate">
-                                {formData.county ? `${formData.county} · ${formData.town || formData.county}` : (formData.town || "Nairobi")}
-                              </p>
-                            </div>
-
-                            {/* 8. Registration Date */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>Registration Date</span>
-                                <span className="text-on-surface-variant font-semibold text-[9px] bg-surface-variant px-1.5 py-0.5 rounded">Statutory</span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-medium text-on-surface">
-                                {formData.registeredDate || "On Official File"}
-                              </p>
-                            </div>
-
-                            {/* 9. Physical Building & Street Address (Protected until paid) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80 sm:col-span-2">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>Physical Address & Postal Records</span>
-                                <span className={cn(
-                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-surface-variant text-on-surface-variant"
-                                )}>
-                                  {isRecordUnlocked ? "Unmasked" : "KDPA Protected"}
-                                </span>
-                              </div>
-                              <p className="text-xs font-mono text-on-surface flex items-center gap-1.5">
-                                {isRecordUnlocked ? (
-                                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                                    {[formData.building, formData.street, formData.poBox ? `P.O. Box ${formData.poBox}` : '', formData.postalCode].filter(Boolean).join(', ') || "Official Address Records on File"}
-                                  </span>
-                                ) : (
-                                  <>
-                                    <Lock className="w-3.5 h-3.5 text-primary" />
-                                    <span className="text-on-surface-variant">•••••••••••• (Secured — Pay KES 20 to unmask and download certificate)</span>
-                                  </>
-                                )}
-                              </p>
-                            </div>
-
-                          </div>
-
-                          {/* Privacy Assurance Banner */}
-                          <div className="rounded-xl bg-surface-container p-3 border border-outline-variant/60 flex items-start gap-2.5 text-[11px] text-on-surface-variant">
-                            <Lock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                            <p className="leading-relaxed">
-                              {isRecordUnlocked 
-                                ? "Payment verified. Your complete, unmasked statutory record is shown and included in your downloaded certificate."
-                                : <>To protect citizen privacy under the Kenya Data Protection Act, contact details and identification numbers are partially masked during web preview. The full unmasked official record is embedded into your official PDF certificate upon payment of <strong>KES 20</strong>.</>}
-                            </p>
-                          </div>
+                        {/* View Switcher: Interactive Receipt Dispenser vs Data Grid */}
+                        <div className="flex items-center justify-center gap-1.5 max-w-xs mx-auto p-1 bg-surface-variant/40 dark:bg-zinc-800/60 rounded-xl border border-outline-variant/60 my-2">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewMode("printer")}
+                            className={cn(
+                              "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                              previewMode === "printer"
+                                ? "bg-primary text-white shadow-xs"
+                                : "text-on-surface-variant hover:text-on-surface"
+                            )}
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>Receipt Printer</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewMode("card")}
+                            className={cn(
+                              "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                              previewMode === "card"
+                                ? "bg-primary text-white shadow-xs"
+                                : "text-on-surface-variant hover:text-on-surface"
+                            )}
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>Data Grid</span>
+                          </button>
                         </div>
+
+                        {previewMode === "printer" ? (
+                          /* Interactive Stepped Receipt Printer View */
+                          <div className="w-full max-w-sm sm:max-w-md mx-auto py-1">
+                            <ReceiptPrinter.Root stage={printerStage} feedMotion="stepped">
+                              <ReceiptPrinter.Machine>
+                                <ReceiptPrinter.Header>
+                                  <ReceiptPrinter.Status />
+                                  <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-400">
+                                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span className="tracking-widest">KRA-ONLINE</span>
+                                  </div>
+                                </ReceiptPrinter.Header>
+
+                                <ReceiptPrinter.Screen>
+                                  <div className="space-y-1 font-mono text-[11px]">
+                                    <div className="flex items-center justify-between text-zinc-400 text-[10px]">
+                                      <span>TERMINAL SYSTEM:</span>
+                                      <span className="text-primary font-bold">KRA-CERT-DISPENSER</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-zinc-200">
+                                      <span>TAXPAYER:</span>
+                                      <span className="font-bold truncate max-w-[170px] uppercase text-zinc-100">
+                                        {formData.fullName || "REGISTERED CITIZEN"}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-zinc-200">
+                                      <span>PIN:</span>
+                                      <span className="font-bold font-mono text-primary">
+                                        {isRecordUnlocked ? (formData.rawPin || formData.pin) : (maskPin(formData.pin || formData.rawPin) || "A01*****78Z")}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </ReceiptPrinter.Screen>
+
+                                <ReceiptPrinter.Output>
+                                  <ReceiptPrinter.Paper>
+                                    <TaxpayerCertificateReceiptContent
+                                      pin={isRecordUnlocked ? (formData.rawPin || formData.pin) : (maskPin(formData.pin || formData.rawPin) || "A01*****78Z")}
+                                      name={formData.fullName || "REGISTERED TAXPAYER"}
+                                      idNumber={formData.idNumber}
+                                      station={formData.station}
+                                      registeredDate={formData.registeredDate}
+                                      building={isRecordUnlocked ? formData.building : undefined}
+                                      street={isRecordUnlocked ? formData.street : undefined}
+                                      town={formData.town || formData.county}
+                                      county={formData.county}
+                                      email={isRecordUnlocked ? formData.email : (maskEmail(formData.email) || undefined)}
+                                      phoneNumber={isRecordUnlocked && formData.phoneNumber && !formData.phoneNumber.includes('•') ? formData.phoneNumber : undefined}
+                                      isUnlocked={isRecordUnlocked}
+                                      onDownload={handleDownload}
+                                      isDownloading={isDownloadingPdf}
+                                    />
+                                  </ReceiptPrinter.Paper>
+                                </ReceiptPrinter.Output>
+                              </ReceiptPrinter.Machine>
+                            </ReceiptPrinter.Root>
+
+                            {/* Micro-interaction controls */}
+                            <div className="flex items-center justify-center gap-3 pt-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPrinterStage("processing")
+                                  setTimeout(() => setPrinterStage("printing"), 350)
+                                  setTimeout(() => setPrinterStage("complete"), 2200)
+                                }}
+                                className="text-[11px] font-mono text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                              >
+                                <RefreshCw className="w-3 h-3" /> Replay Dispense Motion
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* KDPA Masked Taxpayer Preview Grid */
+                          <div className="w-full max-w-2xl mx-auto bg-surface-variant/30 rounded-2xl p-4 sm:p-6 border border-outline-variant space-y-4 shadow-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                              
+                              {/* 1. Taxpayer Legal Name (Unmasked) */}
+                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                  <span>Taxpayer Legal Name</span>
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[9px] bg-emerald-500/10 px-1.5 py-0.5 rounded">Verified Citizen</span>
+                                </div>
+                                <p className="text-xs sm:text-sm font-bold text-on-surface uppercase truncate">
+                                  {formData.fullName || "REGISTERED TAXPAYER"}
+                                </p>
+                              </div>
+
+                              {/* 2. National ID (Unmasked - Fully Visible) */}
+                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                  <span>National ID Number</span>
+                                  <span className="text-primary font-semibold text-[9px] bg-primary/10 px-1.5 py-0.5 rounded">Official ID</span>
+                                </div>
+                                <p className="text-xs sm:text-sm font-mono font-bold text-on-surface">
+                                  {formData.idNumber || "On File"}
+                                </p>
+                              </div>
+
+                              {/* 3. KRA PIN (Masked until paid) */}
+                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                  <span>KRA PIN</span>
+                                  <span className={cn(
+                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                  )}>
+                                    {isRecordUnlocked ? "Verified & Paid" : "Partial Mask"}
+                                  </span>
+                                </div>
+                                <p className="text-xs sm:text-sm font-mono font-black text-primary tracking-wider">
+                                  {isRecordUnlocked 
+                                    ? (formData.rawPin || formData.pin) 
+                                    : (maskPin(formData.pin || formData.rawPin) || "A01*****78Z")}
+                                </p>
+                              </div>
+
+                              {/* 4. Tax Station (Unmasked - Fully Visible) */}
+                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                  <span>Tax Station</span>
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[9px] bg-emerald-500/10 px-1.5 py-0.5 rounded">Station Match</span>
+                                </div>
+                                <p className="text-xs sm:text-sm font-bold text-on-surface truncate">
+                                  {formData.station || "Kitale TSO"}
+                                </p>
+                              </div>
+
+                              {/* 5. Email Address (Masked until paid) */}
+                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                  <span>Email Address</span>
+                                  <span className={cn(
+                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-surface-variant text-on-surface-variant"
+                                  )}>
+                                    {isRecordUnlocked ? "Unmasked" : "Partial Mask"}
+                                  </span>
+                                </div>
+                                <p className="text-xs sm:text-sm font-mono text-on-surface truncate">
+                                  {isRecordUnlocked 
+                                    ? (formData.email || "Registered Email") 
+                                    : (maskEmail(formData.email) || "j***e@gmail.com")}
+                                </p>
+                              </div>
+
+                              {/* 6. Phone Number (Completely Masked until paid) */}
+                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                  <span>Mobile Phone</span>
+                                  <span className={cn(
+                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400"
+                                  )}>
+                                    {isRecordUnlocked ? "Unmasked" : "Protected Phone"}
+                                  </span>
+                                </div>
+                                <p className="text-xs sm:text-sm font-mono font-bold text-on-surface tracking-wider">
+                                  {isRecordUnlocked && formData.phoneNumber && !formData.phoneNumber.includes('•')
+                                    ? formData.phoneNumber 
+                                    : "••••••••••"}
+                                </p>
+                              </div>
+
+                              {/* 7. Region & City */}
+                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                  <span>County & Town</span>
+                                  <span className="text-on-surface-variant font-semibold text-[9px] bg-surface-variant px-1.5 py-0.5 rounded">Location</span>
+                                </div>
+                                <p className="text-xs sm:text-sm font-medium text-on-surface truncate">
+                                  {formData.county ? `${formData.county} · ${formData.town || formData.county}` : (formData.town || "Nairobi")}
+                                </p>
+                              </div>
+
+                              {/* 8. Registration Date */}
+                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                  <span>Registration Date</span>
+                                  <span className="text-on-surface-variant font-semibold text-[9px] bg-surface-variant px-1.5 py-0.5 rounded">Statutory</span>
+                                </div>
+                                <p className="text-xs sm:text-sm font-medium text-on-surface">
+                                  {formData.registeredDate || "On Official File"}
+                                </p>
+                              </div>
+
+                              {/* 9. Physical Building & Street Address (Protected until paid) */}
+                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80 sm:col-span-2">
+                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                  <span>Physical Address & Postal Records</span>
+                                  <span className={cn(
+                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-surface-variant text-on-surface-variant"
+                                  )}>
+                                    {isRecordUnlocked ? "Unmasked" : "KDPA Protected"}
+                                  </span>
+                                </div>
+                                <p className="text-xs font-mono text-on-surface flex items-center gap-1.5">
+                                  {isRecordUnlocked ? (
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                                      {[formData.building, formData.street, formData.poBox ? `P.O. Box ${formData.poBox}` : '', formData.postalCode].filter(Boolean).join(', ') || "Official Address Records on File"}
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <Lock className="w-3.5 h-3.5 text-primary" />
+                                      <span className="text-on-surface-variant">•••••••••••• (Secured — Pay KES 20 to unmask and download certificate)</span>
+                                    </>
+                                  )}
+                                </p>
+                              </div>
+
+                            </div>
+
+                            {/* Privacy Assurance Banner */}
+                            <div className="rounded-xl bg-surface-container p-3 border border-outline-variant/60 flex items-start gap-2.5 text-[11px] text-on-surface-variant">
+                              <Lock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                              <p className="leading-relaxed">
+                                {isRecordUnlocked 
+                                  ? "Payment verified. Your complete, unmasked statutory record is shown and included in your downloaded certificate."
+                                  : <>To protect citizen privacy under the Kenya Data Protection Act, contact details and identification numbers are partially masked during web preview. The full unmasked official record is embedded into your official PDF certificate upon payment of <strong>KES 20</strong>.</>}
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </>
                     );
                   })()}
+
+
 
                   {/* Actions */}
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-2xl mx-auto pt-2">
