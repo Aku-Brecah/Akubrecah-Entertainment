@@ -220,7 +220,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           idNumber: activeTab === "id" ? formData.idNumber.trim() : "",
-          pin: activeTab === "pin" ? formData.pin.trim().toUpperCase() : "",
+          pin: activeTab === "pin" ? formData.pin.trim().toUpperCase() : (formData.rawPin || formData.pin || "").trim().toUpperCase(),
           captchaAnswer: captchaAnswer.trim(),
           sessionToken,
           engineMode,
@@ -291,6 +291,56 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   }
 }
 
+  // Refreshes unmasked taxpayer details from authorized backend endpoint
+  const refreshVerifiedData = async (downloadId?: string, targetPin?: string) => {
+    try {
+      const pinToVerify = targetPin || formData.rawPin || formData.pin
+      if (!pinToVerify && !downloadId) return
+
+      const res = await fetch('/api/certificate/verified-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          downloadId,
+          pin: pinToVerify,
+        }),
+      })
+      const result = await res.json()
+      if (result.success && result.data) {
+        setIsSubscribed(true)
+        setFormData(prev => {
+          const updated = {
+            ...prev,
+            fullName: result.data.name || result.data.taxpayerName || prev.fullName,
+            pin: result.data.pin || prev.pin,
+            rawPin: result.data.pin || prev.rawPin,
+            idNumber: result.data.idNumber || prev.idNumber,
+            email: result.data.email || prev.email,
+            building: result.data.building || prev.building,
+            street: result.data.street || prev.street,
+            town: result.data.town || prev.town,
+            county: result.data.county || prev.county,
+            district: result.data.district || prev.district,
+            taxArea: result.data.taxArea || prev.taxArea,
+            station: result.data.station || prev.station,
+            poBox: result.data.poBox || prev.poBox,
+            postalCode: result.data.postalCode || prev.postalCode,
+            phoneNumber: result.data.phoneNumber || prev.phoneNumber,
+            registeredDate: result.data.registeredDate || prev.registeredDate,
+          }
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem("kra_active_form_data", JSON.stringify(updated))
+            } catch {}
+          }
+          return updated
+        })
+      }
+    } catch (e) {
+      console.warn("Failed to refresh unmasked data:", e)
+    }
+  }
+
   // Verifies a Paystack transaction upon redirect or completion
   const handleVerifyPaystackReference = async (reference: string, type?: string | null) => {
     const loadingToast = toast.loading("Verifying your payment with Paystack...")
@@ -309,10 +359,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         if (data.type === 'subscription') {
           setIsSubscribed(true)
           toast.success("🎉 Payment Verified! Ready to download your certificate.", { duration: 4000 })
-          // Re-retrieve to reveal full unmasked profile
-          if (formData.idNumber || formData.pin) {
-            handleIdSearch()
-          }
+          await refreshVerifiedData(undefined, formData.rawPin || formData.pin)
           setShowPaymentModal(false)
         } else {
           toast.success("Payment verified! Certificate ready for download.", { duration: 4000 })
@@ -321,6 +368,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             setPaymentStep("done")
             setShowPaymentModal(false)
             setCurrentStep(4)
+            await refreshVerifiedData(data.downloadId, formData.rawPin || formData.pin)
             await executeDownload(data.downloadId)
           }
         }
@@ -385,15 +433,14 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
               setIsSubscribed(true)
               toast.success("Payment verified! Ready to download your certificate.", { duration: 4000 })
               setShowPaymentModal(false)
-              if (formData.idNumber || formData.pin) {
-                handleIdSearch()
-              }
+              await refreshVerifiedData(undefined, formData.rawPin || formData.pin)
             } else if (vData.downloadId) {
               setVerifiedDownloadId(vData.downloadId)
               setPaymentStep("done")
               setShowPaymentModal(false)
               setCurrentStep(4)
               toast.success("Payment verified! Downloading certificate...", { duration: 4000 })
+              await refreshVerifiedData(vData.downloadId, formData.rawPin || formData.pin)
               await executeDownload(vData.downloadId)
             }
           } else if (pollAttempts >= 40) {
@@ -563,6 +610,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           setPaymentStep("done")
           setShowPaymentModal(false)
           setCurrentStep(4)
+          await refreshVerifiedData(recordData.downloadId, formData.rawPin || formData.pin)
           await executeDownload(recordData.downloadId)
           return
         } else {
@@ -595,6 +643,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       if (!recordData.success) throw new Error(recordData.error || 'Failed to authorize download')
       setVerifiedDownloadId(recordData.downloadId)
       setPaymentStep("done")
+      await refreshVerifiedData(recordData.downloadId, formData.rawPin || formData.pin)
       await executeDownload(recordData.downloadId)
     } catch (err: any) {
       toast.error(err.message || 'Download failed. Please try again.')

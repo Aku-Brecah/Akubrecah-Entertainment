@@ -90,12 +90,16 @@ export function maskDate(dateStr?: string | null): string {
  */
 export function maskTaxpayerData<T extends TaxpayerData>(
   data: T,
-  _isSubscribed: boolean = false,
-  _isAdmin: boolean = false
+  isSubscribed: boolean = false,
+  isAdmin: boolean = false
 ): T & { isSubscribed: boolean } {
-  if (_isAdmin) {
+  if (isAdmin || isSubscribed) {
+    const name = data.name || data.taxpayerName || data.fullName || '';
     return {
       ...data,
+      name,
+      taxpayerName: name,
+      fullName: name,
       isSubscribed: true,
     };
   }

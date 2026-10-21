@@ -118,6 +118,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Enforce that payment for certificate A cannot download certificate B
+    const recordPin = (downloadRecord?.pin || '').toUpperCase().trim();
+    const payloadPin = (pin || '').toUpperCase().trim();
+    if (recordPin && recordPin !== 'KRA_CERT' && payloadPin && !payloadPin.includes('*')) {
+      if (recordPin !== payloadPin) {
+        return NextResponse.json(
+          { success: false, error: 'Download token is not authorized for this KRA PIN.' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Resolve or auto-provision DB user
     const effectiveClerkId = userId || downloadRecord?.clerkId || 'guest_user';
     let dbUser: any = null;
@@ -132,6 +144,9 @@ export async function POST(req: NextRequest) {
     } else if (pin && !pin.includes('*')) {
       cleanPin = pin.toUpperCase().trim();
     }
+
+    // Helper to detect masked or empty placeholder values
+    const isMaskedOrEmpty = (val: any) => !val || typeof val !== 'string' || val.includes('•') || val.includes('***') || val.includes('*****');
 
     // Retrieve cached full details from kra_pin_cache
     let cachedRecord: any = null;
@@ -152,21 +167,55 @@ export async function POST(req: NextRequest) {
       console.warn('[generate-certificate] Cache lookup warning:', e.message);
     }
 
-    const resolvedPin = cleanPin || cachedRecord?.pin || (pin ? pin.toUpperCase() : 'KRA_CERT');
-    const resolvedName = (name && !name.includes('***')) 
-      ? name 
-      : (cachedRecord?.name || [dbUser?.firstName, dbUser?.lastName].filter(Boolean).join(' ') || 'Registered Taxpayer');
-    const resolvedEmail = email && !email.includes('***') ? email : (cachedRecord?.email || dbUser?.email || '');
-    const resolvedBuilding = building || cachedRecord?.building || '';
-    const resolvedStreet = street || cachedRecord?.street || '';
-    const resolvedCity = city || cachedRecord?.city || '';
-    const resolvedCounty = county || cachedRecord?.county || '';
-    const resolvedDistrict = district || cachedRecord?.district || '';
-    const resolvedTaxArea = taxArea || cachedRecord?.tax_area || '';
-    const resolvedStation = station || cachedRecord?.station || '';
-    const resolvedPoBox = poBox || cachedRecord?.po_box || '';
-    const resolvedPostalCode = postalCode || cachedRecord?.postal_code || '';
-    const resolvedRegDate = registeredDate && !registeredDate.includes('**') ? registeredDate : (cachedRecord?.registered_date || '');
+    // If cache is missing or address fields are masked, fetch live unmasked details
+    let liveProfile: any = null;
+    const needsAuthoritativeFetch = cleanPin && (!cachedRecord || isMaskedOrEmpty(cachedRecord.building) || isMaskedOrEmpty(cachedRecord.station));
+    if (needsAuthoritativeFetch) {
+      try {
+        const { fetchTaxpayerByPin } = await import('@/lib/kra-api');
+        liveProfile = await fetchTaxpayerByPin(cleanPin);
+      } catch (err: any) {
+        console.warn('[generate-certificate] Live profile fetch notice:', err.message);
+      }
+    }
+
+    const resolvedPin = cleanPin || cachedRecord?.pin || liveProfile?.pin || (pin && !pin.includes('*') ? pin.toUpperCase() : 'KRA_CERT');
+    const resolvedName = !isMaskedOrEmpty(name)
+      ? name
+      : (cachedRecord?.name || liveProfile?.taxpayerName || [dbUser?.firstName, dbUser?.lastName].filter(Boolean).join(' ') || 'Registered Taxpayer');
+    const resolvedEmail = !isMaskedOrEmpty(email)
+      ? email
+      : (cachedRecord?.email || liveProfile?.email || dbUser?.email || '');
+    const resolvedBuilding = !isMaskedOrEmpty(building)
+      ? building
+      : (!isMaskedOrEmpty(cachedRecord?.building) ? cachedRecord.building : (liveProfile?.building || ''));
+    const resolvedStreet = !isMaskedOrEmpty(street)
+      ? street
+      : (!isMaskedOrEmpty(cachedRecord?.street) ? cachedRecord.street : (liveProfile?.street || ''));
+    const resolvedCity = !isMaskedOrEmpty(city)
+      ? city
+      : (!isMaskedOrEmpty(cachedRecord?.city) ? cachedRecord.city : (liveProfile?.town || ''));
+    const resolvedCounty = !isMaskedOrEmpty(county)
+      ? county
+      : (!isMaskedOrEmpty(cachedRecord?.county) ? cachedRecord.county : (liveProfile?.county || ''));
+    const resolvedDistrict = !isMaskedOrEmpty(district)
+      ? district
+      : (!isMaskedOrEmpty(cachedRecord?.district) ? cachedRecord.district : (liveProfile?.district || ''));
+    const resolvedTaxArea = !isMaskedOrEmpty(taxArea)
+      ? taxArea
+      : (!isMaskedOrEmpty(cachedRecord?.tax_area) ? cachedRecord.tax_area : (liveProfile?.taxArea || ''));
+    const resolvedStation = !isMaskedOrEmpty(station)
+      ? station
+      : (!isMaskedOrEmpty(cachedRecord?.station) ? cachedRecord.station : (liveProfile?.station || ''));
+    const resolvedPoBox = !isMaskedOrEmpty(poBox)
+      ? poBox
+      : (!isMaskedOrEmpty(cachedRecord?.po_box) ? cachedRecord.po_box : (liveProfile?.poBox || ''));
+    const resolvedPostalCode = !isMaskedOrEmpty(postalCode)
+      ? postalCode
+      : (!isMaskedOrEmpty(cachedRecord?.postal_code) ? cachedRecord.postal_code : (liveProfile?.postalCode || ''));
+    const resolvedRegDate = !isMaskedOrEmpty(registeredDate)
+      ? registeredDate
+      : (!isMaskedOrEmpty(cachedRecord?.registered_date) ? cachedRecord.registered_date : (liveProfile?.registrationDate || ''));
 
     // 4. Resolve template PDF file path
     let templatePath = path.join(process.cwd(), 'public', 'receipt-template.pdf');
