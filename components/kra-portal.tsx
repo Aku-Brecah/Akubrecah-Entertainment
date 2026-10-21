@@ -166,6 +166,19 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     }
   }, [])
 
+  // Auto-trigger stepped receipt printer feed animation when navigating to Step 4
+  useEffect(() => {
+    if (currentStep === 4) {
+      setPrinterStage("processing")
+      const t1 = setTimeout(() => setPrinterStage("printing"), 350)
+      const t2 = setTimeout(() => setPrinterStage("complete"), 2400)
+      return () => {
+        clearTimeout(t1)
+        clearTimeout(t2)
+      }
+    }
+  }, [currentStep])
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value }
@@ -1258,29 +1271,30 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                     </div>
                                   </div>
                                 </ReceiptPrinter.Screen>
-
-                                <ReceiptPrinter.Output>
-                                  <ReceiptPrinter.Paper>
-                                    <TaxpayerCertificateReceiptContent
-                                      pin={isRecordUnlocked ? (formData.rawPin || formData.pin) : (maskPin(formData.pin || formData.rawPin) || "A01*****78Z")}
-                                      name={formData.fullName || "REGISTERED TAXPAYER"}
-                                      idNumber={formData.idNumber}
-                                      station={formData.station}
-                                      registeredDate={formData.registeredDate}
-                                      building={isRecordUnlocked ? formData.building : undefined}
-                                      street={isRecordUnlocked ? formData.street : undefined}
-                                      town={formData.town || formData.county}
-                                      county={formData.county}
-                                      email={isRecordUnlocked ? formData.email : (maskEmail(formData.email) || undefined)}
-                                      phoneNumber={isRecordUnlocked && formData.phoneNumber && !formData.phoneNumber.includes('•') ? formData.phoneNumber : undefined}
-                                      isUnlocked={isRecordUnlocked}
-                                      onDownload={handleDownload}
-                                      isDownloading={isDownloadingPdf}
-                                    />
-                                  </ReceiptPrinter.Paper>
-                                </ReceiptPrinter.Output>
                               </ReceiptPrinter.Machine>
+
+                              <ReceiptPrinter.Output>
+                                <ReceiptPrinter.Paper>
+                                  <TaxpayerCertificateReceiptContent
+                                    pin={isRecordUnlocked ? (formData.rawPin || formData.pin) : (maskPin(formData.pin || formData.rawPin) || "A01*****78Z")}
+                                    name={formData.fullName || "REGISTERED TAXPAYER"}
+                                    idNumber={formData.idNumber}
+                                    station={formData.station}
+                                    registeredDate={formData.registeredDate}
+                                    building={isRecordUnlocked ? formData.building : undefined}
+                                    street={isRecordUnlocked ? formData.street : undefined}
+                                    town={formData.town || formData.county}
+                                    county={formData.county}
+                                    email={isRecordUnlocked ? formData.email : (maskEmail(formData.email) || undefined)}
+                                    phoneNumber={isRecordUnlocked && formData.phoneNumber && !formData.phoneNumber.includes('•') ? formData.phoneNumber : undefined}
+                                    isUnlocked={isRecordUnlocked}
+                                    onDownload={handleDownload}
+                                    isDownloading={isDownloadingPdf}
+                                  />
+                                </ReceiptPrinter.Paper>
+                              </ReceiptPrinter.Output>
                             </ReceiptPrinter.Root>
+
 
                             {/* Micro-interaction controls */}
                             <div className="flex items-center justify-center gap-3 pt-2">

@@ -66,7 +66,7 @@ const receiptToothPoints = Array.from(
 export const receiptClipPath = `polygon(0 0, 100% 0, 100% calc(100% - ${receiptToothDepth}px), ${receiptToothPoints})`;
 
 export const printingTransformKeyframes = [
-  "translateY(calc(-100% + 2px))",
+  "translateY(-100%)",
   "translateY(-91%)",
   "translateY(-91%)",
   "translateY(-81%)",
@@ -86,6 +86,29 @@ export const printingTransformKeyframes = [
   "translateY(-3%)",
   "translateY(-3%)",
   "translateY(0%)",
+];
+
+export const printingYKeyframes = [
+  "-100%",
+  "-91%",
+  "-91%",
+  "-81%",
+  "-81%",
+  "-70%",
+  "-70%",
+  "-58%",
+  "-58%",
+  "-45%",
+  "-45%",
+  "-32%",
+  "-32%",
+  "-20%",
+  "-20%",
+  "-10%",
+  "-10%",
+  "-3%",
+  "-3%",
+  "0%",
 ];
 
 export const printingKeyframeTimes = [
@@ -108,7 +131,7 @@ export function CircleNotchIcon({ size = 18, className }: { size?: number; weigh
 }
 
 const machineClassName =
-  "relative isolate w-full overflow-hidden rounded-[var(--printer-radius)] border border-outline-variant/80 bg-zinc-900 text-zinc-100 p-[var(--printer-inset)] pb-8 shadow-2xl shadow-black/40 [--printer-inner-radius:calc(var(--printer-radius)_-_var(--printer-inset))] [--printer-inset:0.75rem] [--printer-radius:1.5rem] dark:border-zinc-800 dark:bg-zinc-950";
+  "relative isolate w-full overflow-hidden rounded-[var(--printer-radius)] border border-outline-variant/80 bg-zinc-900 text-zinc-100 p-[var(--printer-inset)] pb-8 shadow-2xl shadow-black/40 [--printer-inner-radius:calc(var(--printer-radius)_-_var(--printer-inset))] [--printer-inset:0.75rem] [--printer-radius:1.5rem] before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[inherit] before:bg-[url('/textures/plastic-noise.svg')] before:bg-[length:180px_180px] before:bg-repeat before:opacity-30 before:mix-blend-multiply before:content-[''] dark:border-zinc-800 dark:bg-zinc-950";
 
 export function useReceiptPrinter(component: string) {
   const context = useContext(ReceiptPrinterContext);
@@ -133,9 +156,10 @@ export function ReceiptPrinterRoot({
   const context = {
     animate,
     feedMotion,
-    shouldMove: animate && !shouldReduceMotion,
+    shouldMove: animate,
     stage,
   };
+
 
   return (
     <ReceiptPrinterContext.Provider value={context}>
@@ -348,7 +372,7 @@ export function ReceiptPrinterOutput({
   return (
     <div
       className={cn(
-        "relative z-50 -mt-4 w-[calc(90%+1.5rem)] max-w-full overflow-hidden px-4",
+        "relative z-50 -mt-4 min-h-[32rem] w-[calc(90%+1.5rem)] max-w-full overflow-hidden px-4",
         className,
       )}
       {...props}
@@ -363,22 +387,22 @@ export function ReceiptPrinterOutput({
       <motion.div
         animate={{
           opacity: isReceiptVisible ? 1 : 0,
-          transform:
+          y:
             stage === "printing" && shouldMove
               ? shouldUseSteppedFeed
-                ? printingTransformKeyframes
-                : "translateY(0%)"
+                ? printingYKeyframes
+                : "0%"
               : isReceiptVisible || !shouldMove
-                ? "translateY(0%)"
-                : "translateY(calc(-100% + 2px))",
+                ? "0%"
+                : "-100%",
         }}
         aria-hidden={stage !== "complete"}
-        className="relative isolate"
-        initial={false}
+        className="relative isolate before:pointer-events-none before:absolute before:inset-x-3 before:top-3 before:bottom-4 before:z-0 before:rounded-sm before:shadow-[0_8px_24px_rgba(0,0,0,0.25)] before:content-[''] after:pointer-events-none after:absolute after:right-[8%] after:bottom-0 after:left-[8%] after:z-0 after:h-3 after:translate-y-1.5 after:rounded-full after:bg-black/10 after:blur-lg after:content-['']"
+        initial={{ y: "-100%", opacity: 0 }}
         transition={{
-          opacity: { duration: animate ? 0.16 : 0, ease: easeOut },
-          transform: {
-            duration: shouldMove ? 2.2 : 0,
+          opacity: { duration: animate ? 0.2 : 0, ease: easeOut },
+          y: {
+            duration: shouldMove ? 1.75 : 0,
             ease: shouldUseSteppedFeed ? "linear" : easeInOut,
             times: shouldUseSteppedFeed ? printingKeyframeTimes : undefined,
           },
