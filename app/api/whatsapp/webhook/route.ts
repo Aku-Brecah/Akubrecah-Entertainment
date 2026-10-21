@@ -150,11 +150,10 @@ export async function POST(req: NextRequest) {
       'send',
     ];
 
+    const hasCommandPrefix = trimmed.startsWith('/') || trimmed.startsWith('!') || trimmed.startsWith('.');
     const isAdminTrigger =
-      trimmed.startsWith('!') ||
-      cleanMsg.startsWith('admin') ||
-      hasPin ||
-      adminCmds.includes(rawCmd);
+      (hasCommandPrefix && (rawCmd === 'admin' || adminCmds.includes(rawCmd))) ||
+      hasPin;
 
     // If message was sent from the bot account (fromMe = true):
     // Only process if it is an admin command. All regular outbound bot replies / customer chats are ignored to prevent loops.

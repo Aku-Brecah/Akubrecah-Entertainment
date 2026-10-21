@@ -242,15 +242,14 @@ async function handleAdminBotCommand({
   ];
 
   // Admin trigger should ONLY activate if:
-  // 1. Explicit '!' prefix (e.g. !admin, !stats, !revenue, !link, !lock)
-  // 2. Starts with explicit word 'admin' (e.g. 'admin 8426', 'admin stats')
-  // 3. Message contains the secret admin PIN (e.g. '8426')
-  // 4. User already has an authenticated active admin session and issues an admin command
+  // 1. Explicit command prefix / or ! (e.g. /admin, !admin, /stats, !stats, /revenue, /link, /lock)
+  // 2. Message contains the secret admin PIN (e.g. '8426')
+  // 3. User already has an authenticated active admin session and issues an explicit command
+  const isCommandPrefixed = trimmed.startsWith('/') || trimmed.startsWith('!') || trimmed.startsWith('.');
   const isAdminTrigger =
-    trimmed.startsWith('!') ||
-    clean.toLowerCase().startsWith('admin') ||
+    (isCommandPrefixed && (rawCmd === 'admin' || adminCmds.includes(rawCmd))) ||
     hasPinInText ||
-    (hasActivePinSession && adminCmds.includes(rawCmd));
+    (hasActivePinSession && isCommandPrefixed && adminCmds.includes(rawCmd));
 
   if (!isAdminTrigger) return null;
 
@@ -955,19 +954,134 @@ export async function handleWhatsAppChat(params: {
     }
 
     const lastActiveAt = Number(metadata.lastActiveAt || (conversation.updated_at ? new Date(conversation.updated_at).getTime() : 0));
-    const SESSION_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 hours active session timeout
-    const isSessionExpired = lastActiveAt > 0 && (Date.now() - lastActiveAt) > SESSION_TIMEOUT_MS;
+    const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // Strict 5-minute inactivity timeout (TTL)
+    const isSessionExpired = lastActiveAt > 0 && (Date.now() - lastActiveAt) >= SESSION_TIMEOUT_MS;
 
     let currentStep = metadata.step || 'IDLE';
-    let isSessionActive = Boolean(metadata.activeSession) && currentStep !== 'IDLE' && currentStep !== 'COMPLETED';
+    const wasSessionActive = Boolean(metadata.activeSession) && currentStep !== 'IDLE' && currentStep !== 'COMPLETED';
+    let isSessionActive = wasSessionActive;
 
-    if (isSessionExpired && isSessionActive) {
+    if (isSessionExpired && wasSessionActive) {
       currentStep = 'IDLE';
       isSessionActive = false;
-      await saveConversationState('IDLE', { activeSession: false });
+      await saveConversationState('IDLE', {
+        activeSession: false,
+        pin: null,
+        idNumber: null,
+        taxpayerDetails: null,
+        paymentPhone: null,
+        suggestedPhone: null,
+        checkoutId: null,
+        mpesaReceipt: null,
+      });
     }
 
-    // 0. Check for Admin Bot Commands (!admin, !stats, !revenue, !logs, !link, !bot)
+    const trimmedInput = incomingText.trim();
+    const hasCommandPrefix = trimmedInput.startsWith('/') || trimmedInput.startsWith('!') || trimmedInput.startsWith('.');
+    let cleanCmdText = trimmedInput.replace(/^[!\/.]/, '').trim().toLowerCase();
+    let cleanCmdWord = cleanCmdText.split(/\s+/)[0] || '';
+    let cleanCmdArgs = trimmedInput.trim().includes(' ')
+      ? trimmedInput.trim().substring(trimmedInput.trim().indexOf(' ') + 1).trim()
+      : '';
+
+    const ALLOWLISTED_SLASH_COMMANDS = new Set([
+      'kra',
+      'cyber',
+      'status',
+      'days',
+      'sub',
+      'help',
+      'menu',
+      'start',
+      'admin',
+      'cancel',
+      'reset',
+      'stop',
+      'exit',
+      'abort',
+      'stats',
+      'revenue',
+      'logs',
+      'link',
+      'lock',
+      'logout',
+      'recheck',
+      'verify',
+      'paid',
+      '0',
+    ]);
+
+    // If session just expired and user sent a follow-up answer (not a fresh command), inform them of expiry
+    if (isSessionExpired && wasSessionActive && !hasCommandPrefix) {
+      const expiredReply =
+        `⏱️ *Session Expired*\n` +
+        `─────────────────────────\n` +
+        `Your previous session timed out after 5 minutes of inactivity for your privacy.\n\n` +
+        `To start again, please send a supported command:\n` +
+        `• */kra* - KRA PIN retrieval & certificate\n` +
+        `• */cyber* - Cyber Cafe monthly subscription (KES 500)\n` +
+        `• */status* - Check subscription status\n` +
+        `• */help* - View all commands\n\n` +
+        `🌐 *Web Portal:* https://kra.akubrecah.com`;
+
+      let sendResult = null;
+      if (sendDirect) {
+        sendResult = await sendEvolutionTextMessage(userPhone, expiredReply);
+      }
+      return {
+        success: true,
+        userPhone,
+        step: 'IDLE',
+        reply: expiredReply,
+        metadata,
+        sendResult,
+      };
+    }
+
+    // Reject unknown slash commands with a safe help message instead of falling into workflows
+    if (hasCommandPrefix && !ALLOWLISTED_SLASH_COMMANDS.has(cleanCmdWord)) {
+      const unknownCmdReply =
+        `❓ *Unknown Command*\n` +
+        `─────────────────────────\n` +
+        `The command \`${trimmedInput.split(/\s+/)[0]}\` is not recognized.\n\n` +
+        `*Supported Commands:*\n` +
+        `• */kra* - KRA PIN retrieval & certificate\n` +
+        `• */cyber* - Cyber Cafe monthly subscription (KES 500)\n` +
+        `• */status* - Check subscription status\n` +
+        `• */help* - Instructions & support\n` +
+        `• */cancel* - Cancel active session\n\n` +
+        `🌐 *Web Portal:* https://kra.akubrecah.com`;
+
+      let sendResult = null;
+      if (sendDirect) {
+        sendResult = await sendEvolutionTextMessage(userPhone, unknownCmdReply);
+      }
+      return {
+        success: true,
+        userPhone,
+        step: metadata.step || 'IDLE',
+        reply: unknownCmdReply,
+        metadata,
+        sendResult,
+      };
+    }
+
+    // STRICT TRIGGER RULE:
+    // If not in an active session and no valid command prefix was provided:
+    // Completely ignore random, casual messages (e.g. "kra", "admin", "hello", "good morning")
+    if (!isSessionActive && !hasCommandPrefix) {
+      return {
+        success: true,
+        userPhone,
+        step: 'IDLE',
+        reply: '',
+        shouldReply: false,
+        metadata,
+        sendResult: null,
+      };
+    }
+
+    // 0. Check for Admin Bot Commands (/admin, !admin, /stats, /revenue, /logs, /link, /lock, /logout)
     const adminReply = await handleAdminBotCommand({
       incomingText,
       userPhone,
@@ -993,29 +1107,7 @@ export async function handleWhatsAppChat(params: {
       };
     }
 
-    const trimmedInput = incomingText.trim();
-    const sanitizedDirectInput = trimmedInput.replace(/^(id|national\s*id|pin|kra\s*pin)[\s:]+/i, '').replace(/\s+/g, '').toUpperCase();
-    const isDirectPin = /^[A-Z]\d{9}[A-Z]$/.test(sanitizedDirectInput);
-    const isDirectId = /^\d{5,12}$/.test(sanitizedDirectInput);
-    const isDirectLookupInput = isDirectPin || isDirectId;
-
-    let cleanCmdText = incomingText.replace(/^[\!\/\.]/, '').trim().toLowerCase();
-    let cleanCmdWord = cleanCmdText.split(/\s+/)[0] || '';
-    let cleanCmdArgs = incomingText.trim().includes(' ')
-      ? incomingText.trim().substring(incomingText.trim().indexOf(' ') + 1).trim()
-      : '';
-
-    // Bot is explicitly triggered by either '.' or '/' prefix, or direct ID/PIN submission, or common bot command words
-    let isBotTrigger = incomingText.startsWith('/') || incomingText.startsWith('.') || isDirectLookupInput;
-    if (['kra', 'pin', 'cyber', 'status', 'invoice', 'renew', 'menu', 'start', 'help'].includes(cleanCmdWord) && cleanCmdArgs) {
-      isBotTrigger = true;
-    }
-
-    // If user sent a raw National ID or KRA PIN directly without prefix, treat as direct lookup command
-    if (isDirectLookupInput && !incomingText.startsWith('/') && !incomingText.startsWith('.')) {
-      cleanCmdWord = 'kra';
-      cleanCmdArgs = sanitizedDirectInput;
-    }
+    const isBotTrigger = hasCommandPrefix;
 
     // Universal Cancellation: cancel, .cancel, /cancel, exit, .exit, /exit, stop, reset, 0
     const isCancelRequest =
