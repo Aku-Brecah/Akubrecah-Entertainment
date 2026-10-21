@@ -579,49 +579,52 @@ export function SiteHeader() {
           <div className="flex items-center gap-2 shrink-0 flex-nowrap">
             <ThemeToggle />
 
-            {isLoaded && isSignedIn ? (
-              <div className="flex items-center gap-2 flex-nowrap">
-                <Link href="/admin">
-                  <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all cursor-pointer shrink-0">
-                    <Shield className="h-3 w-3" />
-                    Admin
-                  </span>
-                </Link>
-                <Link href="/dashboard">
-                  <Button size="sm" className="h-8.5 px-3 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
-                    <LayoutDashboard className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Console</span>
-                  </Button>
-                </Link>
-                <UserButton
-                  appearance={{
-                    elements: { avatarBox: "w-8.5 h-8.5 rounded-full ring-2 ring-primary/20" },
-                  }}
-                />
-              </div>
-            ) : isLoaded && !isSignedIn ? (
-              <div className="hidden sm:flex items-center gap-2 flex-nowrap">
-                <Link href="/sign-in">
-                  <Button variant={isKra ? "default" : "ghost"} size="sm" className={`h-9 px-3.5 rounded-xl text-xs font-bold ${isKra ? "bg-primary text-white hover:bg-primary/90" : "text-on-surface hover:text-primary"} shrink-0`}>
-                    Sign In
-                  </Button>
-                </Link>
-                {isKra ? (
+            {isKra ? (
+              isLoaded && isSignedIn ? (
+                <div className="flex items-center gap-2 flex-nowrap">
+                  <Link href="/admin">
+                    <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all cursor-pointer shrink-0">
+                      <Shield className="h-3 w-3" />
+                      Admin
+                    </span>
+                  </Link>
+                  <Link href="/dashboard">
+                    <Button size="sm" className="h-8.5 px-3 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
+                      <LayoutDashboard className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Console</span>
+                    </Button>
+                  </Link>
+                  <UserButton
+                    appearance={{
+                      elements: { avatarBox: "w-8.5 h-8.5 rounded-full ring-2 ring-primary/20" },
+                    }}
+                  />
+                </div>
+              ) : isLoaded && !isSignedIn ? (
+                <div className="hidden sm:flex items-center gap-2 flex-nowrap">
+                  <Link href="/sign-in">
+                    <Button size="sm" className="h-9 px-3.5 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary/90 shrink-0">
+                      Sign In
+                    </Button>
+                  </Link>
                   <a href="https://akubrecah.com" className="hidden xl:block">
                     <Button variant="outline" size="sm" className="h-9 px-3 rounded-xl border-outline-variant text-xs font-semibold text-on-surface hover:text-primary flex items-center gap-1.5 shrink-0">
                       <span>Agency Home</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Button>
                   </a>
-                ) : (
-                  <Link href="/contact" className="hidden xl:block">
-                    <Button size="sm" className="h-9 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/95 shadow-sm flex items-center gap-1.5 shrink-0">
-                      Start a Project <ArrowRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
-                )}
+                </div>
+              ) : null
+            ) : (
+              /* Public Agency Main Domain: No Login UI, Only Public CTA */
+              <div className="hidden sm:flex items-center gap-2 flex-nowrap">
+                <Link href="/contact">
+                  <Button size="sm" className="h-9 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/95 shadow-sm flex items-center gap-1.5 shrink-0">
+                    Start a Project <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
               </div>
-            ) : null}
+            )}
 
             {/* Hamburger (visible on mobile and tablet < lg) */}
             <button
@@ -649,30 +652,34 @@ export function SiteHeader() {
             <div className="p-4 space-y-3.5">
 
               {/* Auth quick row */}
-              {isLoaded && isSignedIn ? (
-                <div className="p-3.5 rounded-2xl bg-surface-container flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-on-surface">{user?.fullName || "Welcome back"}</p>
-                    <p className="text-[11px] text-on-surface-variant truncate max-w-[200px]">{user?.primaryEmailAddress?.emailAddress}</p>
+              {isKra ? (
+                isLoaded && isSignedIn ? (
+                  <div className="p-3.5 rounded-2xl bg-surface-container flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-on-surface">{user?.fullName || "Welcome back"}</p>
+                      <p className="text-[11px] text-on-surface-variant truncate max-w-[200px]">{user?.primaryEmailAddress?.emailAddress}</p>
+                    </div>
+                    <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                      <Button size="sm" className="h-8 px-3.5 rounded-xl text-xs bg-primary text-white font-bold">Console</Button>
+                    </Link>
                   </div>
-                  <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                    <Button size="sm" className="h-8 px-3.5 rounded-xl text-xs bg-primary text-white font-bold">Console</Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  <Link href="/sign-in" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-xl">Sign In</Button>
-                  </Link>
-                  {isKra ? (
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link href="/sign-in" className="w-full" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-xl">Sign In</Button>
+                    </Link>
                     <a href="https://akubrecah.com" className="w-full" onClick={() => setMobileMenuOpen(false)}>
                       <Button size="sm" className="w-full h-10 text-xs font-bold bg-primary text-white rounded-xl">Agency Home</Button>
                     </a>
-                  ) : (
-                    <Link href="/contact" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                      <Button size="sm" className="w-full h-10 text-xs font-bold bg-primary text-white rounded-xl">Start a Project</Button>
-                    </Link>
-                  )}
+                  </div>
+                )
+              ) : (
+                <div className="w-full">
+                  <Link href="/contact" className="w-full" onClick={() => setMobileMenuOpen(false)}>
+                    <Button size="sm" className="w-full h-10 text-xs font-bold bg-primary text-white rounded-xl flex items-center justify-center gap-1.5">
+                      Start a Project <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </Link>
                 </div>
               )}
 
