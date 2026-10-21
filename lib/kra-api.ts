@@ -677,7 +677,7 @@ export async function fetchTaxpayerById(rawId: string, mode: 'api' | 'dwr' | 'au
       const cached = await (prisma as any).kra_pin_cache?.findFirst({
         where: { id_number: idNumber },
       });
-      if (cached && cached.name && cached.name.trim() && cached.name !== 'Registered Taxpayer') {
+      if (cached && cached.name && cached.name.trim() && cached.name !== 'Registered Taxpayer' && cached.id_number === idNumber) {
         const profile = cachedRecordToProfile(cached, idNumber);
         setToMemoryCache(idNumber, profile);
         if (profile.pin) setToMemoryCache(profile.pin, profile);
@@ -715,10 +715,54 @@ export async function fetchTaxpayerById(rawId: string, mode: 'api' | 'dwr' | 'au
           if (response.ok) {
             const data = await response.json();
             if (data.ErrorCode && data.ErrorCode !== '0') continue;
-            const resolvedPin = data.TaxpayerPIN || data.taxpayerpin || data.pin || '';
-            const resolvedName = data.TaxpayerName || data.taxpayername || data.name || '';
+
+            // KRA Gateway can wrap results in PINDATA or pindata (as an object or array)
+            const pinContainer = data.PINDATA || data.pindata || data.data || data;
+            const pinRecord = Array.isArray(pinContainer) ? pinContainer[0] : pinContainer;
+
+            const resolvedPin = (
+              pinRecord?.TaxpayerPIN ||
+              pinRecord?.taxpayerpin ||
+              pinRecord?.KRAPIN ||
+              pinRecord?.krapin ||
+              pinRecord?.PIN ||
+              pinRecord?.pin ||
+              data.TaxpayerPIN ||
+              data.taxpayerpin ||
+              data.KRAPIN ||
+              data.krapin ||
+              data.PIN ||
+              data.pin ||
+              ''
+            ).trim().toUpperCase();
+
+            const resolvedName = (
+              pinRecord?.TaxpayerName ||
+              pinRecord?.taxpayername ||
+              pinRecord?.Name ||
+              pinRecord?.name ||
+              data.TaxpayerName ||
+              data.taxpayername ||
+              data.Name ||
+              data.name ||
+              ''
+            ).trim();
+
+            if (resolvedPin && /^[A-Z0-9]{11}$/.test(resolvedPin)) {
+              try {
+                const profile = await fetchTaxpayerByPin(resolvedPin, mode);
+                profile.idNumber = idNumber;
+                setToMemoryCache(idNumber, profile);
+                setToMemoryCache(resolvedPin, profile);
+                cacheTaxpayerRecord(profile).catch(() => {});
+                return profile;
+              } catch (pinErr: any) {
+                console.warn('[KRA-API] fetchTaxpayerByPin after ID resolution notice:', pinErr.message);
+              }
+            }
+
             if (resolvedPin || resolvedName) {
-              const profile = normalizeKraTaxpayerResponse(data, resolvedPin, 'live_api', idNumber);
+              const profile = normalizeKraTaxpayerResponse(pinRecord || data, resolvedPin, 'live_api', idNumber);
               await enrichTaxpayerProfile(profile);
               setToMemoryCache(idNumber, profile);
               if (profile.pin) setToMemoryCache(profile.pin, profile);

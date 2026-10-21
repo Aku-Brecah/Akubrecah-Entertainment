@@ -645,7 +645,7 @@ export async function POST(req: NextRequest) {
     // ── 2. Resolve PIN & Session Cookies ─────────────────────────────────────
     let fullPin = (engineMode !== 'dwr' && liveApiTaxpayer?.pin)
       ? liveApiTaxpayer.pin
-      : (!cleanId && cleanDirectPin ? cleanDirectPin : null);
+      : (cleanDirectPin || null);
 
     let cookieString = "";
     let freshCookieString = "";

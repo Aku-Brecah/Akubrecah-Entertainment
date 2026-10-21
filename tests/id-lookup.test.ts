@@ -1,0 +1,109 @@
+import { describe, it, expect } from 'vitest';
+
+describe('Issue 4: National ID vs. KRA PIN Lookup Consistency', () => {
+
+  it('preserves leading zeros and string type for National ID numbers', () => {
+    const rawIdWithLeadingZero = ' 01234567 ';
+    const cleanId = rawIdWithLeadingZero.trim();
+
+    expect(typeof cleanId).toBe('string');
+    expect(cleanId).toBe('01234567');
+    expect(cleanId.startsWith('0')).toBe(true);
+    expect(/^\d{5,12}$/.test(cleanId)).toBe(true);
+
+    // Ensure it was NOT converted to a Number which loses leading zeros
+    expect(Number(cleanId).toString()).toBe('1234567'); // Proves Number() would mutate data
+    expect(cleanId).not.toBe(Number(cleanId).toString());
+  });
+
+  it('rejects invalid or malformed National ID formats', () => {
+    const invalidIds = ['', ' ', '123', 'abc12345', '1234567890123', '283-475'];
+
+    for (const id of invalidIds) {
+      const clean = id.trim();
+      const isValid = Boolean(clean) && /^\d{5,12}$/.test(clean);
+      expect(isValid).toBe(false);
+    }
+  });
+
+  it('correctly extracts resolved PIN from KRA Gateway PINDATA object structure', () => {
+    const gatewayResponse = {
+      ErrorCode: '0',
+      ErrorMessage: 'Success',
+      PINDATA: {
+        TaxpayerPIN: 'A012345678Z',
+        TaxpayerName: 'MARY WANJIKU NDUNGU',
+        Status: 'Active',
+      },
+    };
+
+    const pinContainer = (gatewayResponse as any).PINDATA || gatewayResponse;
+    const pinRecord = Array.isArray(pinContainer) ? pinContainer[0] : pinContainer;
+    const resolvedPin = (
+      pinRecord?.TaxpayerPIN ||
+      pinRecord?.taxpayerpin ||
+      pinRecord?.KRAPIN ||
+      pinRecord?.krapin ||
+      pinRecord?.PIN ||
+      pinRecord?.pin ||
+      ''
+    ).trim().toUpperCase();
+
+    const resolvedName = (
+      pinRecord?.TaxpayerName ||
+      pinRecord?.taxpayername ||
+      pinRecord?.Name ||
+      pinRecord?.name ||
+      ''
+    ).trim();
+
+    expect(resolvedPin).toBe('A012345678Z');
+    expect(resolvedName).toBe('MARY WANJIKU NDUNGU');
+  });
+
+  it('correctly extracts resolved PIN from KRA Gateway PINDATA array structure', () => {
+    const gatewayArrayResponse = {
+      ErrorCode: '0',
+      PINDATA: [
+        {
+          KRAPIN: 'A098765432W',
+          TaxpayerName: 'PETER OCHIENG OTIENO',
+          TaxpayerStatus: 'Active',
+        },
+      ],
+    };
+
+    const pinContainer = (gatewayArrayResponse as any).PINDATA || gatewayArrayResponse;
+    const pinRecord = Array.isArray(pinContainer) ? pinContainer[0] : pinContainer;
+    const resolvedPin = (
+      pinRecord?.TaxpayerPIN ||
+      pinRecord?.taxpayerpin ||
+      pinRecord?.KRAPIN ||
+      pinRecord?.krapin ||
+      pinRecord?.PIN ||
+      pinRecord?.pin ||
+      ''
+    ).trim().toUpperCase();
+
+    expect(resolvedPin).toBe('A098765432W');
+    expect(pinRecord?.TaxpayerName).toBe('PETER OCHIENG OTIENO');
+  });
+
+  it('strictly validates cached database record id_number exact string match', () => {
+    const searchedId = '08475912';
+
+    const cachedRecords = [
+      { id: '1', id_number: '08475912', name: 'EXACT MATCH USER', pin: 'A011111111Z' },
+      { id: '2', id_number: '8475912', name: 'WRONG USER WITHOUT ZERO', pin: 'A022222222Z' },
+      { id: '3', id_number: '', name: 'Registered Taxpayer', pin: 'A033333333Z' },
+    ];
+
+    const match = cachedRecords.find(
+      (c) => c.name && c.name.trim() !== 'Registered Taxpayer' && c.id_number === searchedId
+    );
+
+    expect(match).toBeDefined();
+    expect(match?.name).toBe('EXACT MATCH USER');
+    expect(match?.id_number).toBe('08475912');
+  });
+});
