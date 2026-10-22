@@ -193,29 +193,15 @@ const tokenCache: Record<'pin' | 'id', CachedToken | null> = {
   id: null,
 };
 
-// High-speed in-memory LRU-like cache for zero-latency (<1ms) repeated taxpayer lookups
-const memoryTaxpayerCache = new Map<string, { profile: TaxpayerProfile; cachedAt: number }>();
-const MEMORY_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-function getFromMemoryCache(key: string): TaxpayerProfile | null {
-  const cleanKey = key.trim().toUpperCase();
-  const entry = memoryTaxpayerCache.get(cleanKey);
-  if (entry && Date.now() - entry.cachedAt < MEMORY_CACHE_TTL_MS) {
-    return { ...entry.profile };
-  }
-  if (entry) {
-    memoryTaxpayerCache.delete(cleanKey);
-  }
+// Strict Zero-Storage Policy:
+// Searched IDs, PINs, and compliance details are NEVER cached in memory or persisted to database.
+// Every lookup queries KRA in real-time ephemerally for the active session only.
+function getFromMemoryCache(_key: string): TaxpayerProfile | null {
   return null;
 }
 
-function setToMemoryCache(key: string, profile: TaxpayerProfile): void {
-  const cleanKey = key.trim().toUpperCase();
-  memoryTaxpayerCache.set(cleanKey, { profile: { ...profile }, cachedAt: Date.now() });
-  if (memoryTaxpayerCache.size > 2000) {
-    const oldestKey = memoryTaxpayerCache.keys().next().value;
-    if (oldestKey) memoryTaxpayerCache.delete(oldestKey);
-  }
+function setToMemoryCache(_key: string, _profile: TaxpayerProfile): void {
+  return;
 }
 
 /**

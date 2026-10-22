@@ -645,9 +645,18 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 2. Resolve PIN & Session Cookies ─────────────────────────────────────
-    let fullPin = (engineMode !== 'dwr' && liveApiTaxpayer?.pin)
-      ? liveApiTaxpayer.pin
-      : (cleanDirectPin || null);
+    // When cleanId is present, we are searching by National ID: fullPin must ONLY
+    // be derived from authentic KRA ID resolution, NEVER from a stale or external client PIN.
+    let fullPin: string | null = null;
+    if (cleanId) {
+      if (engineMode !== 'dwr' && liveApiTaxpayer?.pin) {
+        fullPin = liveApiTaxpayer.pin;
+      }
+    } else if (cleanDirectPin) {
+      fullPin = (engineMode !== 'dwr' && liveApiTaxpayer?.pin)
+        ? liveApiTaxpayer.pin
+        : cleanDirectPin;
+    }
 
     let cookieString = "";
     let freshCookieString = "";
