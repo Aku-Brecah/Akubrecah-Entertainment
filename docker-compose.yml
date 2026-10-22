@@ -79,8 +79,8 @@ services:
       - CONFIG_SESSION_PHONE_CLIENT=Chrome
       - CONFIG_SESSION_PHONE_NAME=Akubrecah
       - CONFIG_SESSION_PHONE_VERSION=2.3000.1020885143
-      - WEBHOOK_GLOBAL_URL=${NEXT_PUBLIC_APP_URL:-http://akubrecah-app:3000}/api/whatsapp/webhook
-      - WEBHOOK_GLOBAL_ENABLED=false
+      - WEBHOOK_GLOBAL_URL=http://akubrecah-app:3000/api/whatsapp/webhook?token=${EVOLUTION_API_KEY:-akubrecah_secret_whatsapp_key_2026}
+      - WEBHOOK_GLOBAL_ENABLED=true
       - WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=false
       - WEBHOOK_EVENTS_APPLICATION_STARTUP=false
       - WEBHOOK_EVENTS_QRCODE_UPDATED=true

@@ -38,8 +38,9 @@ export async function handleWhatsAppChat(params: {
   sendDirect?: boolean;
   authorPhone?: string;
   isFromBotOwner?: boolean;
+  instanceName?: string;
 }) {
-  const { phone: rawPhone, message: rawMessage, messageId, sendDirect = true, authorPhone, isFromBotOwner } = params;
+  const { phone: rawPhone, message: rawMessage, messageId, sendDirect = true, authorPhone, isFromBotOwner, instanceName } = params;
 
   if (!rawPhone || !rawMessage) {
     return { success: false, error: 'Both phone and message are required.' };
@@ -147,7 +148,7 @@ export async function handleWhatsAppChat(params: {
 
       let sendResult = null;
       if (sendDirect) {
-        sendResult = await sendEvolutionTextMessage(userPhone, expiredReply);
+        sendResult = await sendEvolutionTextMessage(userPhone, expiredReply, instanceName);
       }
       return {
         success: true,
@@ -175,7 +176,7 @@ export async function handleWhatsAppChat(params: {
 
       let sendResult = null;
       if (sendDirect) {
-        sendResult = await sendEvolutionTextMessage(userPhone, unknownCmdReply);
+        sendResult = await sendEvolutionTextMessage(userPhone, unknownCmdReply, instanceName);
       }
       return {
         success: true,
@@ -187,10 +188,48 @@ export async function handleWhatsAppChat(params: {
       };
     }
 
+    // Direct National ID or KRA PIN detection (e.g. 11530093 or A012345678Z)
+    const isDirectPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(trimmedInput);
+    const isDirectId = /^\d{6,9}$/.test(trimmedInput);
+    const isGreeting = ['hi', 'hello', 'habari', 'hey', 'mambo', 'jambo', 'greetings', 'niaje'].includes(cleanCmdWord) && !trimmedInput.includes(' ');
+    const isStandaloneHelp = ['help', 'menu', 'start', 'commands'].includes(cleanCmdWord) && !trimmedInput.includes(' ');
+    const isStandaloneKra = (cleanCmdWord === 'kra' || cleanCmdWord === 'pin');
+    const isStandaloneCyber = ['cyber', 'subscribe', 'package'].includes(cleanCmdWord);
+    const isStandaloneStatus = ['status', 'days', 'sub'].includes(cleanCmdWord);
+
+    // Universal Cancellation: cancel, .cancel, /cancel, exit, .exit, /exit, stop, reset, 0
+    const isCancelRequest =
+      ['cancel', 'exit', 'stop', 'reset', 'abort', '0'].includes(cleanCmdWord) ||
+      ['cancel', 'exit', 'stop', 'reset', 'abort', '0'].includes(lowerText);
+
+    // Universal Payment Recheck Trigger: "paid", "nimepay", "confirm", "recheck", or pasting M-Pesa receipt / Paystack ref
+    const isPaymentRecheckTrigger =
+      ['paid', 'nimepay', 'nimelipa', 'confirm', 'recheck', 'verify', 'payment', 'lipa', 'done'].includes(cleanCmdWord) ||
+      ['paid', 'nimepay', 'nimelipa', 'confirm', 'recheck', 'verify', 'payment', 'lipa', 'done'].includes(lowerText) ||
+      lowerText.startsWith('paid') ||
+      lowerText.startsWith('nimepay') ||
+      lowerText.startsWith('recheck') ||
+      cleanCmdText.startsWith('paid') ||
+      cleanCmdText.startsWith('recheck') ||
+      /^PSTK-[A-Z0-9\-]+$/i.test(trimmedInput) ||
+      /^[A-Z0-9]{10}$/.test(trimmedInput);
+
+    const isRecognizedIntent =
+      hasCommandPrefix ||
+      isDirectPin ||
+      isDirectId ||
+      isGreeting ||
+      isStandaloneHelp ||
+      isStandaloneKra ||
+      isStandaloneCyber ||
+      isStandaloneStatus ||
+      isCancelRequest ||
+      isPaymentRecheckTrigger;
+
     // STRICT TRIGGER RULE:
-    // If not in an active session and no valid command prefix was provided:
-    // Completely ignore random, casual messages (e.g. "kra", "admin", "hello", "good morning")
-    if (!isSessionActive && !hasCommandPrefix) {
+    // If not in an active session and no valid command or intent was provided:
+    // Completely ignore random, casual sentences (e.g. "what is the weather", "good morning")
+    if (!isSessionActive && !isRecognizedIntent) {
       return {
         success: true,
         userPhone,
@@ -216,7 +255,7 @@ export async function handleWhatsAppChat(params: {
     if (adminReply) {
       let sendResult = null;
       if (sendDirect) {
-        sendResult = await sendEvolutionTextMessage(userPhone, adminReply);
+        sendResult = await sendEvolutionTextMessage(userPhone, adminReply, instanceName);
       }
       return {
         success: true,
@@ -228,12 +267,17 @@ export async function handleWhatsAppChat(params: {
       };
     }
 
-    const isBotTrigger = hasCommandPrefix;
-
-    // Universal Cancellation: cancel, .cancel, /cancel, exit, .exit, /exit, stop, reset, 0
-    const isCancelRequest =
-      ['cancel', 'exit', 'stop', 'reset', 'abort', '0'].includes(cleanCmdWord) ||
-      ['cancel', 'exit', 'stop', 'reset', 'abort', '0'].includes(lowerText);
+    const isBotTrigger =
+      hasCommandPrefix ||
+      (!isSessionActive && (
+        isDirectPin ||
+        isDirectId ||
+        isGreeting ||
+        isStandaloneHelp ||
+        isStandaloneKra ||
+        isStandaloneCyber ||
+        isStandaloneStatus
+      ));
 
     if (isCancelRequest) {
       await saveConversationState('IDLE', {
@@ -254,7 +298,7 @@ export async function handleWhatsAppChat(params: {
         `🌐 *Web Portal:* https://kra.akubrecah.com`;
       let sendResult = null;
       if (sendDirect) {
-        sendResult = await sendEvolutionTextMessage(userPhone, cancelReply);
+        sendResult = await sendEvolutionTextMessage(userPhone, cancelReply, instanceName);
       }
       return {
         success: true,
@@ -265,18 +309,6 @@ export async function handleWhatsAppChat(params: {
         sendResult,
       };
     }
-
-    // Universal Payment Recheck Trigger: "paid", "nimepay", "confirm", "recheck", or pasting M-Pesa receipt / Paystack ref
-    const isPaymentRecheckTrigger =
-      ['paid', 'nimepay', 'nimelipa', 'confirm', 'recheck', 'verify', 'payment', 'lipa', 'done'].includes(cleanCmdWord) ||
-      ['paid', 'nimepay', 'nimelipa', 'confirm', 'recheck', 'verify', 'payment', 'lipa', 'done'].includes(lowerText) ||
-      lowerText.startsWith('paid') ||
-      lowerText.startsWith('nimepay') ||
-      lowerText.startsWith('recheck') ||
-      cleanCmdText.startsWith('paid') ||
-      cleanCmdText.startsWith('recheck') ||
-      /^PSTK-[A-Z0-9\-]+$/i.test(trimmedInput) ||
-      /^[A-Z0-9]{10}$/.test(trimmedInput);
 
     if (isPaymentRecheckTrigger && currentStep !== 'AWAITING_PAYMENT' && currentStep !== 'CYBER_AWAITING_PAYMENT') {
       const targetArg = cleanCmdArgs || trimmedInput.split(/\s+/).slice(1).join(' ').trim();
@@ -353,7 +385,7 @@ export async function handleWhatsAppChat(params: {
 
           let sendRes = null;
           if (sendDirect) {
-            sendRes = await sendEvolutionTextMessage(userPhone, successReply);
+            sendRes = await sendEvolutionTextMessage(userPhone, successReply, instanceName);
           }
           return {
             success: true,
@@ -380,7 +412,7 @@ export async function handleWhatsAppChat(params: {
 
           let sendRes = null;
           if (sendDirect) {
-            sendRes = await sendEvolutionTextMessage(userPhone, needPinReply);
+            sendRes = await sendEvolutionTextMessage(userPhone, needPinReply, instanceName);
           }
           return {
             success: true,
@@ -403,7 +435,7 @@ export async function handleWhatsAppChat(params: {
 
         let sendRes = null;
         if (sendDirect) {
-          sendRes = await sendEvolutionTextMessage(userPhone, notFoundReply);
+          sendRes = await sendEvolutionTextMessage(userPhone, notFoundReply, instanceName);
         }
         return {
           success: true,
@@ -430,10 +462,29 @@ export async function handleWhatsAppChat(params: {
       };
     }
 
-    // 3. Process Bot Commands (when triggered with '.' or '/')
+    // 3. Process Bot Commands (when triggered with prefix or recognized standalone commands)
     if (isBotTrigger) {
-      const cmdWord = cleanCmdWord;
-      const cmdArgs = cleanCmdArgs;
+      let cmdWord = cleanCmdWord;
+      let cmdArgs = cleanCmdArgs;
+
+      if (!hasCommandPrefix) {
+        if (isDirectPin || isDirectId) {
+          cmdWord = 'kra';
+          cmdArgs = trimmedInput;
+        } else if (isGreeting || isStandaloneHelp) {
+          cmdWord = 'help';
+          cmdArgs = '';
+        } else if (isStandaloneKra) {
+          cmdWord = 'kra';
+          cmdArgs = trimmedInput.includes(' ') ? trimmedInput.substring(trimmedInput.indexOf(' ') + 1).trim() : '';
+        } else if (isStandaloneCyber) {
+          cmdWord = 'cyber';
+          cmdArgs = '';
+        } else if (isStandaloneStatus) {
+          cmdWord = 'status';
+          cmdArgs = '';
+        }
+      }
 
       // A. Cancellation / Exit / Reset (handled by universal cancel above, safety fallback)
       if (['cancel', 'exit', 'stop', 'reset'].includes(cmdWord)) {
@@ -833,7 +884,7 @@ export async function handleWhatsAppChat(params: {
               step: currentStep,
               reply: replyText,
               metadata,
-              sendResult: sendDirect ? await sendEvolutionTextMessage(userPhone, replyText) : null,
+              sendResult: sendDirect ? await sendEvolutionTextMessage(userPhone, replyText, instanceName) : null,
             };
           }
           targetWa = extracted;
@@ -867,7 +918,7 @@ export async function handleWhatsAppChat(params: {
               step: currentStep,
               reply: replyText,
               metadata,
-              sendResult: sendDirect ? await sendEvolutionTextMessage(userPhone, replyText) : null,
+              sendResult: sendDirect ? await sendEvolutionTextMessage(userPhone, replyText, instanceName) : null,
             };
           }
           targetPay = extracted;
@@ -1286,7 +1337,7 @@ export async function handleWhatsAppChat(params: {
     // 7. Optional Direct Dispatch to Evolution API
     let sendResult: any = null;
     if (sendDirect && replyText) {
-      sendResult = await sendEvolutionTextMessage(userPhone, replyText);
+      sendResult = await sendEvolutionTextMessage(userPhone, replyText, instanceName);
     }
 
     return {

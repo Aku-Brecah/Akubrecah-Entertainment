@@ -181,10 +181,13 @@ export async function POST(req: NextRequest) {
 
     log.info(`[WhatsApp Webhook Inbound] From: ${userPhone} (fromMe: ${Boolean(key.fromMe)}), Text: "${incomingText}"`);
 
+    const instanceName = String(payload.instance || data.instance || '').trim() || undefined;
+
     // Mark message as read (blue ticks)
     await markEvolutionMessageRead({
       remoteJid: rawRemoteJid || `${userPhone}@s.whatsapp.net`,
       messageId: key.id,
+      instanceName,
     });
 
     // Owner identity derives ONLY from the resolved phone number — never from
@@ -201,6 +204,7 @@ export async function POST(req: NextRequest) {
       sendDirect: true,
       authorPhone: userPhone,
       isFromBotOwner: resolvedOwner,
+      instanceName,
     });
 
     const pendingCheckoutId = (chatResult as any)?.metadata?.checkoutId;

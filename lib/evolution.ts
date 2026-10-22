@@ -39,10 +39,10 @@ const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || process.env.EVOLUTION
 
 export function getEvolutionInstanceName(): string {
   const envVal = (process.env.EVOLUTION_INSTANCE_NAME || '').trim();
-  if (!envVal || envVal === 'akubrecah-bot' || envVal === 'akubrecah-kra' || envVal === 'akubrecah-portal') {
-    return 'Akubrecah Entertainment';
+  if (envVal) {
+    return envVal;
   }
-  return envVal;
+  return 'Akubrecah Entertainment';
 }
 
 /**
@@ -67,10 +67,11 @@ export function sanitizeWhatsAppPhone(phone: string): string {
  */
 export async function sendEvolutionTextMessage(
   phone: string,
-  text: string
+  text: string,
+  overrideInstance?: string
 ): Promise<{ success: boolean; error?: string; targetUrl?: string }> {
   const baseUrl = getEvolutionApiUrl();
-  const instanceName = encodeURIComponent(getEvolutionInstanceName());
+  const instanceName = encodeURIComponent(overrideInstance || getEvolutionInstanceName());
   const url = `${baseUrl.replace(/\/$/, '')}/message/sendText/${instanceName}`;
   try {
     const formattedPhone = sanitizeWhatsAppPhone(phone);
@@ -108,13 +109,15 @@ export async function sendEvolutionTextMessage(
 export async function markEvolutionMessageRead({
   remoteJid,
   messageId,
+  instanceName: overrideInstance,
 }: {
   remoteJid: string;
   messageId?: string;
+  instanceName?: string;
 }): Promise<void> {
   try {
     const baseUrl = getEvolutionApiUrl();
-    const instanceName = encodeURIComponent(getEvolutionInstanceName());
+    const instanceName = encodeURIComponent(overrideInstance || getEvolutionInstanceName());
     const url = `${baseUrl.replace(/\/$/, '')}/chat/markMessageAsRead/${instanceName}`;
     await fetch(url, {
       method: 'POST',
@@ -146,17 +149,19 @@ export async function sendEvolutionDocument({
   pdfBuffer,
   fileName,
   caption,
+  instanceName: overrideInstance,
 }: {
   phone: string;
   pdfBuffer: Buffer;
   fileName: string;
   caption?: string;
+  instanceName?: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const baseUrl = getEvolutionApiUrl();
     const formattedPhone = sanitizeWhatsAppPhone(phone);
     const base64Data = pdfBuffer.toString('base64');
-    const instanceName = encodeURIComponent(getEvolutionInstanceName());
+    const instanceName = encodeURIComponent(overrideInstance || getEvolutionInstanceName());
     const url = `${baseUrl.replace(/\/$/, '')}/message/sendMedia/${instanceName}`;
 
     const response = await fetch(url, {
@@ -196,17 +201,19 @@ export async function sendEvolutionImage({
   imageBuffer,
   fileName = 'verification_qr.png',
   caption,
+  instanceName: overrideInstance,
 }: {
   phone: string;
   imageBuffer: Buffer;
   fileName?: string;
   caption?: string;
+  instanceName?: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const baseUrl = getEvolutionApiUrl();
     const formattedPhone = sanitizeWhatsAppPhone(phone);
     const base64Data = imageBuffer.toString('base64');
-    const instanceName = encodeURIComponent(getEvolutionInstanceName());
+    const instanceName = encodeURIComponent(overrideInstance || getEvolutionInstanceName());
     const url = `${baseUrl.replace(/\/$/, '')}/message/sendMedia/${instanceName}`;
 
     const response = await fetch(url, {
