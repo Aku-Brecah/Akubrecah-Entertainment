@@ -13,6 +13,9 @@ akubrecah.com, www.akubrecah.com {
         header_up X-Forwarded-For {remote_host}
         header_up X-Forwarded-Proto {scheme}
         header_up X-Forwarded-Host {host}
+        # Strip proxy-chain headers a client could spoof and prove origin provenance
+        header_up -X-Internal-Proxy-Secret
+        header_up X-Internal-Proxy-Secret {env.INTERNAL_PROXY_SECRET}
     }
 }
 
@@ -26,6 +29,9 @@ kra.akubrecah.com {
         header_up X-Forwarded-For {remote_host}
         header_up X-Forwarded-Proto {scheme}
         header_up X-Forwarded-Host {host}
+        # Strip proxy-chain headers a client could spoof and prove origin provenance
+        header_up -X-Internal-Proxy-Secret
+        header_up X-Internal-Proxy-Secret {env.INTERNAL_PROXY_SECRET}
     }
 }
 
@@ -39,6 +45,9 @@ admin.akubrecah.com {
         header_up X-Forwarded-For {remote_host}
         header_up X-Forwarded-Proto {scheme}
         header_up X-Forwarded-Host {host}
+        # Strip proxy-chain headers a client could spoof and prove origin provenance
+        header_up -X-Internal-Proxy-Secret
+        header_up X-Internal-Proxy-Secret {env.INTERNAL_PROXY_SECRET}
     }
 }
 
