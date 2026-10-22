@@ -97,15 +97,16 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/admin/magic-login
- * Allows direct passcode unlock from the Admin UI using Master PIN (default: 8426)
+ * Allows direct passcode unlock from the Admin UI using the master PIN
+ * configured in ADMIN_BOT_PIN. Fails closed when unset.
  */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const pin = String(body.pin || '').trim();
-    const expectedPin = process.env.ADMIN_BOT_PIN || '8426';
+    const expectedPin = process.env.ADMIN_BOT_PIN || '';
 
-    if (!pin || (pin !== expectedPin && pin !== '8426')) {
+    if (!pin || !expectedPin || pin !== expectedPin) {
       return NextResponse.json(
         { success: false, error: 'Invalid master admin passcode. Please check your PIN.' },
         { status: 401 }

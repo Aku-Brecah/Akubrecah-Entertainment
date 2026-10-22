@@ -26,6 +26,13 @@ export async function GET(
     const callbackResult = registry[checkoutRequestId];
 
     if (!callbackResult) {
+      // Simulated checkouts (ws_CO_MOCK_*) exist for local development and
+      // integration testing only. They are disabled in production so a
+      // crafted checkout id cannot mint a fake paid record.
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ status: 'pending' });
+      }
+
       // Check if it is a mock checkout and check for forced simulation parameters
       const url = new URL(req.url);
       const forceSimulate = url.searchParams.get('simulate');
