@@ -1,4 +1,23 @@
+# Dependencies & build artifacts
 node_modules
 .next
 .git
-.env*.local
+
+# CRITICAL: never bake real secrets into the image (COPY . . picks everything else up)
+.env
+.env.*
+.env.local
+
+# Agent tooling / backups (never ship)
+.agent
+.agents
+.ag-kit-backups
+.sixth
+scratch
+
+# Local artifacts & large binaries
+*.pdf
+*.tsbuildinfo
+eng.traineddata
+tests
+coverage

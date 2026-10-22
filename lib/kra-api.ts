@@ -78,7 +78,7 @@ export function fetchManufacturerDetails(pin: string, cookieString = ''): Promis
       method: 'POST',
       headers,
       timeout: 8000,
-      rejectUnauthorized: false,
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
     }, (res) => {
       const chunks: Buffer[] = [];
       res.on('data', (c) => chunks.push(c));
@@ -280,7 +280,7 @@ export function initKraSession(): Promise<string> {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
       timeout: 5000,
-      rejectUnauthorized: false,
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
     }, (res) => {
       const cookies = ((res.headers['set-cookie'] as string[]) || []).map(c => c.split(';')[0]).join('; ');
       res.resume();
@@ -356,7 +356,7 @@ export async function lookupPinByIdNumber(idNumber: string, cookieString = ''): 
       method: 'POST',
       headers,
       timeout: 6000,
-      rejectUnauthorized: false,
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
     }, (res) => {
       const chunks: Buffer[] = [];
       res.on('data', (c) => chunks.push(c));
