@@ -67,10 +67,20 @@ export default clerkMiddleware(async (auth, request) => {
   if (userId && (pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up'))) {
     const redirectUrl = request.nextUrl.searchParams.get('redirect_url');
     if (redirectUrl) {
-      try {
-        return NextResponse.redirect(new URL(redirectUrl, request.url));
-      } catch {
-        // Fallback to home
+      // Open-redirect guard: only same-origin relative paths are honoured —
+      // absolute URLs (https://evil.com) and protocol-relative (//evil.com)
+      // are rejected and fall back to home.
+      const isSafeRelativePath =
+        redirectUrl.startsWith('/') &&
+        !redirectUrl.startsWith('//') &&
+        !redirectUrl.includes('\\') &&
+        !redirectUrl.includes(':');
+      if (isSafeRelativePath) {
+        try {
+          return NextResponse.redirect(new URL(redirectUrl, request.url));
+        } catch {
+          // Fallback to home
+        }
       }
     }
     return NextResponse.redirect(new URL('/', request.url));

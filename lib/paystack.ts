@@ -165,6 +165,8 @@ export async function verifyPaystackTransaction(reference: string): Promise<Pays
 
 /**
  * Validates the HMAC SHA512 signature from a Paystack webhook request.
+ * Uses a constant-time comparison so attackers cannot recover the signature
+ * byte-by-byte through timing.
  */
 export function verifyPaystackWebhookSignature(rawBody: string, signature: string | null): boolean {
   const secretKey = getPaystackSecretKey();
@@ -175,7 +177,14 @@ export function verifyPaystackWebhookSignature(rawBody: string, signature: strin
     .update(rawBody)
     .digest('hex');
 
-  return expectedSignature === signature;
+  const provided = String(signature).trim().toLowerCase();
+  const expectedBuf = Buffer.from(expectedSignature);
+  const providedBuf = Buffer.from(provided);
+  if (expectedBuf.length !== providedBuf.length) {
+    crypto.timingSafeEqual(expectedBuf, expectedBuf);
+    return false;
+  }
+  return crypto.timingSafeEqual(expectedBuf, providedBuf);
 }
 
 /**
