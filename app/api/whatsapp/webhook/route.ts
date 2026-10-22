@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
     // Check if this is an admin trigger or bot command
     const cleanMsg = trimmed.replace(/^[\!\/]/, '').trim().toLowerCase();
     const rawCmd = cleanMsg.split(/\s+/)[0];
-    const hasPin = cleanMsg.includes('8426') || (Boolean(process.env.ADMIN_BOT_PIN) && cleanMsg.includes(String(process.env.ADMIN_BOT_PIN)));
+    const hasPin = Boolean(process.env.ADMIN_BOT_PIN) && cleanMsg.includes(String(process.env.ADMIN_BOT_PIN));
     const adminCmds = [
       'admin',
       'stats',

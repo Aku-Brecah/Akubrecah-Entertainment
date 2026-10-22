@@ -163,7 +163,7 @@ async function pingEvolutionWhatsApp(): Promise<{ status: string; latency: numbe
   try {
     const res = await fetch("https://wa.akubrecah.com/instance/connectionState/akubrecah-kra", {
       headers: {
-        apikey: process.env.EVOLUTION_API_KEY || "akubrecah_secret_whatsapp_key_2026",
+        apikey: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || "",
       },
       signal: AbortSignal.timeout(3500),
     });

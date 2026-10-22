@@ -978,9 +978,9 @@ export async function handleWhatsAppChat(params: {
 
     const trimmedInput = incomingText.trim();
     const hasCommandPrefix = trimmedInput.startsWith('/') || trimmedInput.startsWith('!') || trimmedInput.startsWith('.');
-    let cleanCmdText = trimmedInput.replace(/^[!\/.]/, '').trim().toLowerCase();
-    let cleanCmdWord = cleanCmdText.split(/\s+/)[0] || '';
-    let cleanCmdArgs = trimmedInput.trim().includes(' ')
+    const cleanCmdText = trimmedInput.replace(/^[!\/.]/, '').trim().toLowerCase();
+    const cleanCmdWord = cleanCmdText.split(/\s+/)[0] || '';
+    const cleanCmdArgs = trimmedInput.trim().includes(' ')
       ? trimmedInput.trim().substring(trimmedInput.trim().indexOf(' ') + 1).trim()
       : '';
 

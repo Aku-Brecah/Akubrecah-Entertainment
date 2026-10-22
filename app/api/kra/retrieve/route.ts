@@ -620,8 +620,11 @@ export async function POST(req: NextRequest) {
     const cleanId = idNumber ? String(idNumber).trim() : '';
     // tryResolveKraPin accepts either a plaintext PIN or an opaque sealed blob
     // returned by an earlier ID-based search (kraseal1:...), resolving both server-side.
+    // Masked display pins ("A01*****78Z") are kept only for internal hint
+    // lookups and do NOT count as proof the caller knows the full PIN.
     const searchPinCandidate = directPin ? String(directPin).trim().toUpperCase() : '';
-    const cleanDirectPin = tryResolveKraPin(searchPinCandidate) || (/^[A-Z0-9*]{6,12}$/.test(searchPinCandidate) ? searchPinCandidate : '');
+    const resolvedSearchPin = tryResolveKraPin(searchPinCandidate);
+    const cleanDirectPin = resolvedSearchPin || (/^[A-Z0-9*]{6,12}$/.test(searchPinCandidate) ? searchPinCandidate : '');
 
     if (!cleanId && !cleanDirectPin) {
       return NextResponse.json({ success: false, error: 'ID Number or PIN is required' }, { status: 400 });
@@ -833,10 +836,10 @@ export async function POST(req: NextRequest) {
     const clientTaxpayerData = maskTaxpayerData(fullTaxpayerRecord, isSubscribed, isAdmin);
 
     // Entitlement guard: a plaintext PIN may only leave the server when the
-    // caller already knows it (searched by PIN) or is subscribed/admin.
-    // Otherwise send an opaque sealed blob the client passes through to the
-    // payment endpoints (resolved server-side there).
-    const callerKnowsPin = Boolean(cleanDirectPin) || isSubscribed || isAdmin;
+    // caller already knows it (typed a real full PIN — NOT a masked display
+    // hint) or is subscribed/admin. Otherwise send an opaque sealed blob the
+    // client passes through to the payment endpoints (resolved server-side there).
+    const callerKnowsPin = Boolean(resolvedSearchPin) || isSubscribed || isAdmin;
     const clientRawPin = callerKnowsPin ? fullPin : sealKraPin(fullPin);
 
     const result = {
