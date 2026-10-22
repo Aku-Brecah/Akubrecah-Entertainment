@@ -123,6 +123,24 @@ export default clerkMiddleware(async (auth, request) => {
   const isKraSubdomain = host.startsWith('kra.') || host.includes('kra.akubrecah.com');
   const isAdminSubdomain = host.startsWith('admin.') || host.includes('admin.akubrecah.com');
 
+  // Case 0: Canonical Domain Enforcement — Permanently redirect legacy *.vercel.app traffic to custom domains
+  if (host.includes('.vercel.app')) {
+    const isKraTarget = host.includes('kra') || host.includes('certificate');
+    const isAdminTarget = host.includes('admin');
+
+    let targetBase = 'https://akubrecah.com';
+    if (isAdminTarget) {
+      targetBase = 'https://admin.akubrecah.com';
+    } else if (isKraTarget) {
+      targetBase = 'https://kra.akubrecah.com';
+    }
+
+    const redirectUrl = new URL(pathname + request.nextUrl.search, targetBase);
+    const redirectResponse = NextResponse.redirect(redirectUrl, 301);
+    redirectResponse.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    return redirectResponse;
+  }
+
   // Case A: Accessing /admin routes on main domain or KRA domain -> redirect to admin.akubrecah.com
   if (!isAdminSubdomain) {
     if (pathname === '/admin' || pathname.startsWith('/admin/')) {

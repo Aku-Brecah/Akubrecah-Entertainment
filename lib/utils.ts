@@ -42,11 +42,9 @@ export function getPublicAppUrl(): string {
   if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
     return envUrl.replace(/\/$/, '');
   }
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`.replace(/\/$/, '');
+  const prodUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (prodUrl && !prodUrl.includes('vercel.app')) {
+    return `https://${prodUrl}`.replace(/\/$/, '');
   }
-  if (process.env.VERCEL_URL && !process.env.VERCEL_URL.includes('localhost')) {
-    return `https://${process.env.VERCEL_URL}`.replace(/\/$/, '');
-  }
-  return 'https://akubrecah.vercel.app';
+  return 'https://akubrecah.com';
 }

@@ -621,7 +621,7 @@ export async function generateCyberInvoicePdfBuffer(opts: {
   drawSummaryRow('TOTAL PAID:', `KES ${totalAmount.toFixed(2)}`, summaryY + 22, true);
 
   // QR Code for verification
-  const verifyUrl = `https://kra-certificate.vercel.app/retrieval-portal?invoice=${encodeURIComponent(cleanInvoice)}&receipt=${encodeURIComponent(cleanReceipt)}`;
+  const verifyUrl = `https://kra.akubrecah.com/retrieval-portal?invoice=${encodeURIComponent(cleanInvoice)}&receipt=${encodeURIComponent(cleanReceipt)}`;
   try {
     const qrPng = await QRCode.toBuffer(verifyUrl, {
       type: 'png',

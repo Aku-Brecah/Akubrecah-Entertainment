@@ -74,7 +74,7 @@ export async function dispatchMpesaStkPush({
 
     // 1. If Safaricom Daraja credentials are fully configured, use Daraja
     if (hasDaraja) {
-      const finalCallbackUrl = process.env.MPESA_CALLBACK_URL || callbackUrl || 'https://kra-certificate.vercel.app/api/mpesa/callback';
+      const finalCallbackUrl = process.env.MPESA_CALLBACK_URL || callbackUrl || 'https://kra.akubrecah.com/api/mpesa/callback';
       const baseUrl = env === 'production' 
         ? 'https://api.safaricom.co.ke' 
         : 'https://sandbox.safaricom.co.ke';
