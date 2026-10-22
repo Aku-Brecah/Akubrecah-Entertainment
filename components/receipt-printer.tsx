@@ -8,7 +8,8 @@ import React, {
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/helpers/classname-helper";
-import { Check, Loader2, QrCode, ShieldCheck, Printer, Download, Sparkles } from "lucide-react";
+import { Check, Loader2, QrCode, ShieldCheck, Printer, Download, Sparkles, Lock, FileText } from "lucide-react";
+import { maskPin } from "@/lib/masking";
 
 export type ReceiptPrinterStage = "processing" | "printing" | "complete";
 export type ReceiptFeedMotion = "smooth" | "stepped";
@@ -372,7 +373,8 @@ export function ReceiptPrinterOutput({
   return (
     <div
       className={cn(
-        "relative z-50 -mt-4 min-h-[32rem] w-[calc(90%+1.5rem)] max-w-full overflow-hidden px-4",
+        "relative z-50 -mt-4 w-[calc(90%+1.5rem)] max-w-full px-2 sm:px-4",
+        stage === "complete" ? "overflow-visible min-h-fit" : "overflow-hidden min-h-[32rem]",
         className,
       )}
       {...props}
@@ -425,8 +427,8 @@ export const ReceiptPrinter = {
 };
 
 /**
- * GovTech Prestige Tax Compliance Certificate Paper Content
- * Perfectly matches website design tokens, Republic of Kenya branding, and KDPA standards
+ * GovTech Prestige Tax Compliance Certificate & Official ETR Fiscal Invoice
+ * Matches Kenya Revenue Authority standards and generated PDF fiscal receipt layout.
  */
 export function TaxpayerCertificateReceiptContent({
   pin,
@@ -441,8 +443,13 @@ export function TaxpayerCertificateReceiptContent({
   email,
   phoneNumber,
   isUnlocked = true,
+  receiptNumber,
+  paymentMethod = "M-PESA EXPRESS",
+  amount = 20,
   onDownload,
   isDownloading = false,
+  onDownloadReceipt,
+  isDownloadingReceipt = false,
 }: {
   pin: string;
   name: string;
@@ -456,100 +463,258 @@ export function TaxpayerCertificateReceiptContent({
   email?: string;
   phoneNumber?: string;
   isUnlocked?: boolean;
+  receiptNumber?: string;
+  paymentMethod?: string;
+  amount?: number;
   onDownload?: () => void;
   isDownloading?: boolean;
+  onDownloadReceipt?: () => void;
+  isDownloadingReceipt?: boolean;
 }) {
+  const cleanReceipt = receiptNumber || "REC-" + (pin ? pin.slice(0, 4) : "2026") + "-ETR";
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  const timeStr = now.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }) + " EAT";
+
+  const numAmount = Number(amount || 20);
+  const taxableAmt = (numAmount / 1.16).toFixed(2);
+  const vatAmt = (numAmount - Number(taxableAmt)).toFixed(2);
+  const resolvedAmount = numAmount.toFixed(2);
+
   return (
-    <div className="space-y-4 text-xs font-mono">
-      {/* Official Government Header */}
-      <div className="text-center border-b-2 border-dashed border-zinc-300 dark:border-zinc-700 pb-3">
-        <div className="flex items-center justify-center gap-1.5 text-primary font-black text-sm tracking-widest uppercase">
+    <div className="space-y-3.5 text-xs font-mono text-zinc-900 dark:text-zinc-100">
+      {/* 1. Official Fiscal Brand Header */}
+      <div className="text-center border-b-2 border-dashed border-zinc-300 dark:border-zinc-700 pb-2.5">
+        <div className="flex items-center justify-center gap-1.5 text-primary font-black text-xs tracking-wider uppercase">
           <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
           <span>REPUBLIC OF KENYA</span>
         </div>
-        <p className="text-[10px] text-zinc-600 dark:text-zinc-400 font-bold uppercase tracking-wider mt-0.5">
-          KENYA REVENUE AUTHORITY (KRA)
+        <p className="text-[11px] font-black tracking-wide text-zinc-900 dark:text-zinc-100 uppercase mt-0.5">
+          AKUBRECAH TECHNOLOGIES LTD
         </p>
-        <p className="text-[11px] font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-wide mt-1">
-          TAX COMPLIANCE CERTIFICATE
+        <p className="text-[9px] text-zinc-600 dark:text-zinc-400 font-bold uppercase tracking-wider">
+          KRA COMPLIANCE & RETRIEVAL PORTAL
         </p>
-        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[9px] font-bold mt-1.5">
-          <Check className="w-3 h-3" /> DIGITAL VERIFICATION SEAL ACTIVE
+        <p className="text-[10px] font-bold text-primary uppercase tracking-wide mt-0.5">
+          OFFICIAL ETR FISCAL TAX INVOICE
+        </p>
+        <p className="text-[8px] text-zinc-500 font-mono mt-0.5">
+          NAIROBI, KENYA | TEL: +254 791 497 858
+        </p>
+        <p className="text-[8px] font-mono text-zinc-600 dark:text-zinc-400 font-bold">
+          PIN: P052184920K | VAT NO: 052184920K
+        </p>
+        <p className="text-[8px] font-mono text-zinc-500">
+          DEVICE CU SERIAL: ACR-TIMS-2026-08426
+        </p>
+
+        <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wide">
+          {isUnlocked ? (
+            <span className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1 px-2 py-0.5 rounded-full">
+              <Check className="w-3 h-3 text-emerald-600" /> DIGITAL FISCAL SEAL ACTIVE
+            </span>
+          ) : (
+            <span className="bg-amber-500/15 text-amber-700 dark:text-amber-400 inline-flex items-center gap-1 px-2 py-0.5 rounded-full">
+              <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400" /> OFFICIAL RECORD · PAYMENT REQUIRED
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Taxpayer Core Fields */}
-      <div className="space-y-2 py-1 text-[11px]">
-        <div className="flex justify-between items-start gap-2">
-          <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px]">PIN:</span>
-          <span className="font-black text-primary font-mono tracking-wider">{pin || "A012345678Z"}</span>
+      {/* 2. Transaction Metadata */}
+      <div className="space-y-1 text-[10px] border-b border-dashed border-zinc-200 dark:border-zinc-800 pb-2">
+        <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
+          <span>DATE: {dateStr}</span>
+          <span>TIME: {timeStr}</span>
         </div>
+        <div className="flex justify-between items-center font-bold">
+          <span className="text-zinc-600 dark:text-zinc-400">RECEIPT NO:</span>
+          <span className="text-zinc-900 dark:text-zinc-100 font-mono tracking-wider">{cleanReceipt}</span>
+        </div>
+        <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
+          <span>CASHIER:</span>
+          <span>JARVIS AUTO-BOT</span>
+        </div>
+      </div>
 
+      {/* 3. Taxpayer / Buyer Details (Only Full Name & ID shown before payment) */}
+      <div className="space-y-1.5 py-1 text-[11px] border-b border-dashed border-zinc-200 dark:border-zinc-800 pb-2.5">
+        {/* Taxpayer Legal Name (Always visible) */}
         <div className="flex justify-between items-start gap-2">
-          <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px]">Name:</span>
+          <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px] shrink-0">TAXPAYER:</span>
           <span className="font-bold text-right truncate max-w-[210px] uppercase text-zinc-900 dark:text-zinc-100">
             {name || "REGISTERED CITIZEN"}
           </span>
         </div>
 
+        {/* National ID Number (Always visible) */}
         {idNumber && (
           <div className="flex justify-between items-start gap-2">
-            <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px]">National ID:</span>
-            <span className="font-mono text-zinc-800 dark:text-zinc-200">{idNumber}</span>
+            <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px] shrink-0">NATIONAL ID:</span>
+            <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">{idNumber}</span>
           </div>
         )}
 
-        {station && (
-          <div className="flex justify-between items-start gap-2">
-            <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px]">Tax Station:</span>
-            <span className="text-zinc-800 dark:text-zinc-200">{station}</span>
-          </div>
-        )}
-
+        {/* KRA PIN (Masked until paid) */}
         <div className="flex justify-between items-start gap-2">
-          <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px]">Date Issued:</span>
-          <span className="text-zinc-800 dark:text-zinc-200">{registeredDate || new Date().toLocaleDateString('en-GB')}</span>
+          <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px] shrink-0">KRA PIN:</span>
+          <span className="font-black text-primary font-mono tracking-wider">
+            {isUnlocked ? (pin || "A012345678Z") : (maskPin(pin) || "A01*****78Z")}
+          </span>
         </div>
 
-        {(building || street || town || county) && (
-          <div className="flex justify-between items-start gap-2">
-            <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px]">Location:</span>
-            <span className="text-right text-[10px] text-zinc-800 dark:text-zinc-200 max-w-[200px]">
-              {[building, street, town || county].filter(Boolean).join(", ")}
+        {/* Tax Station (Masked / blurred until paid) */}
+        <div className="flex justify-between items-start gap-2">
+          <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px] shrink-0">TAX STATION:</span>
+          {isUnlocked ? (
+            <span className="font-bold text-zinc-900 dark:text-zinc-100">{station || "Eldoret TSO"}</span>
+          ) : (
+            <span className="inline-flex items-center gap-1 font-mono text-zinc-500">
+              <span className="blur-xs select-none">••••••••••</span>
+              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded">[LOCKED]</span>
             </span>
-          </div>
-        )}
+          )}
+        </div>
 
-        {email && (
-          <div className="flex justify-between items-start gap-2">
-            <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px]">Email:</span>
-            <span className="text-right text-[10px] text-zinc-800 dark:text-zinc-200 truncate max-w-[200px]">
-              {email}
+        {/* Date Issued (Masked / blurred until paid) */}
+        <div className="flex justify-between items-start gap-2">
+          <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px] shrink-0">DATE ISSUED:</span>
+          {isUnlocked ? (
+            <span className="text-zinc-900 dark:text-zinc-100 font-medium">{registeredDate || "31/12/2012"}</span>
+          ) : (
+            <span className="inline-flex items-center gap-1 font-mono text-zinc-500">
+              <span className="blur-xs select-none">••/••/••••</span>
+              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded">[LOCKED]</span>
             </span>
-          </div>
-        )}
+          )}
+        </div>
 
-        {phoneNumber && (
-          <div className="flex justify-between items-start gap-2">
-            <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px]">Phone:</span>
-            <span className="font-mono text-zinc-800 dark:text-zinc-200">{phoneNumber}</span>
-          </div>
-        )}
+        {/* Location (Masked / blurred until paid) */}
+        <div className="flex justify-between items-start gap-2">
+          <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px] shrink-0">LOCATION:</span>
+          {isUnlocked ? (
+            <span className="text-right text-[10px] text-zinc-900 dark:text-zinc-100 max-w-[200px]">
+              {[building, street, town || county].filter(Boolean).join(", ") || (town || county || "KAPENGURIA")}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 font-mono text-zinc-500">
+              <span className="blur-xs select-none">••••••••••••</span>
+              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded">[LOCKED]</span>
+            </span>
+          )}
+        </div>
+
+        {/* Phone (Masked until paid) */}
+        <div className="flex justify-between items-start gap-2">
+          <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px] shrink-0">PHONE:</span>
+          {isUnlocked ? (
+            <span className="font-mono text-zinc-900 dark:text-zinc-100">{phoneNumber || "0791497858"}</span>
+          ) : (
+            <span className="inline-flex items-center gap-1 font-mono text-zinc-500">
+              <span className="blur-xs select-none">••••••••••</span>
+              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded">[LOCKED]</span>
+            </span>
+          )}
+        </div>
+
+        {/* Email (Masked until paid) */}
+        <div className="flex justify-between items-start gap-2">
+          <span className="text-zinc-500 dark:text-zinc-400 uppercase text-[10px] shrink-0">EMAIL:</span>
+          {isUnlocked ? (
+            <span className="text-right text-[10px] text-zinc-900 dark:text-zinc-100 truncate max-w-[190px]">
+              {email || "registered@akubrecah.com"}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 font-mono text-zinc-500">
+              <span className="blur-xs select-none">••••••••••</span>
+              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1 py-0.5 rounded">[LOCKED]</span>
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Barcode & Security Validation */}
-      <div className="border-t border-dashed border-zinc-300 dark:border-zinc-700 pt-3 text-center space-y-2">
+      {/* 4. Line Items Table */}
+      <div className="space-y-1 text-[10px] border-b border-dashed border-zinc-200 dark:border-zinc-800 pb-2">
+        <div className="flex justify-between items-center text-zinc-500 dark:text-zinc-400 font-bold uppercase text-[9px]">
+          <span>DESCRIPTION</span>
+          <span>QTY  PRICE  TOTAL</span>
+        </div>
+        <div className="border-t border-dotted border-zinc-200 dark:border-zinc-800 pt-1 flex justify-between items-center font-bold">
+          <span>KRA PIN CERTIFICATE</span>
+          <span className="font-mono">1   {resolvedAmount}  {resolvedAmount}</span>
+        </div>
+        <p className="text-[8px] text-zinc-500 font-mono">* STATUTORY COMPLIANCE *</p>
+      </div>
+
+      {/* 5. Totals */}
+      <div className="space-y-1 text-[10px] border-b border-dashed border-zinc-200 dark:border-zinc-800 pb-2">
+        <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
+          <span>SUBTOTAL (KES):</span>
+          <span className="font-mono">{resolvedAmount}</span>
+        </div>
+        <div className="flex justify-between items-center font-black text-xs text-primary">
+          <span>TOTAL PAID (KES):</span>
+          <span className="font-mono">{resolvedAmount}</span>
+        </div>
+        <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
+          <span>TENDERED ({paymentMethod}):</span>
+          <span className="font-mono">{resolvedAmount}</span>
+        </div>
+        <div className="flex justify-between items-center text-zinc-600 dark:text-zinc-400">
+          <span>CHANGE:</span>
+          <span className="font-mono">0.00</span>
+        </div>
+      </div>
+
+      {/* 6. Tax Breakdown (16% VAT Inclusive) */}
+      <div className="space-y-1 text-[9px] border-b border-dashed border-zinc-200 dark:border-zinc-800 pb-2 text-center">
+        <p className="font-bold text-zinc-700 dark:text-zinc-300">TAX ANALYSIS (16% VAT INCLUSIVE)</p>
+        <div className="flex justify-between items-center text-zinc-500 font-mono text-[8.5px]">
+          <span>RATE CODE</span>
+          <span>TAXABLE   VAT   TOTAL</span>
+        </div>
+        <div className="flex justify-between items-center font-mono font-bold text-zinc-800 dark:text-zinc-200 text-[9px]">
+          <span>A - 16%</span>
+          <span>{taxableAmt}  {vatAmt}  {resolvedAmount}</span>
+        </div>
+      </div>
+
+      {/* 7. Fiscal / M-Pesa Signatures */}
+      <div className="space-y-1 text-[9.5px] border-b border-dashed border-zinc-200 dark:border-zinc-800 pb-2">
+        <div className="flex justify-between items-center">
+          <span className="text-zinc-500 font-bold">M-PESA / REF:</span>
+          <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200">{cleanReceipt}</span>
+        </div>
+        <div className="flex justify-between items-center text-zinc-500">
+          <span>PAYMENT MODE:</span>
+          <span className="font-bold text-zinc-700 dark:text-zinc-300">{paymentMethod}</span>
+        </div>
+        <div className="flex justify-between items-center text-zinc-500">
+          <span>TIMS SIGNATURE:</span>
+          <span className="font-mono text-zinc-600 dark:text-zinc-400">8F3A-C94B-20E1-77FA</span>
+        </div>
+      </div>
+
+      {/* 8. Barcode & Security Validation */}
+      <div className="pt-1 text-center space-y-2">
         <div className="flex items-center justify-center gap-3">
           <QrCode className="w-12 h-12 text-zinc-800 dark:text-zinc-200 p-1 border border-zinc-300 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800 shrink-0" />
           <div className="text-left text-[9px] text-zinc-500 dark:text-zinc-400 space-y-0.5">
-            <p className="font-bold text-zinc-800 dark:text-zinc-200">AUTHENTICITY VERIFIED</p>
-            <p>KDPA Compliance Token</p>
-            <p className="font-mono text-[8px] text-zinc-400">HASH: SHA256-KRA-SEC-OK</p>
+            <p className="font-bold text-zinc-800 dark:text-zinc-200">SCAN TO VERIFY FISCAL AUTHENTICITY</p>
+            <p className="text-[8px] text-primary font-mono">https://kra.akubrecah.com</p>
+            <p className="font-mono text-[8px] text-zinc-400">KDPA TOKEN: SHA256-KRA-SEC-OK</p>
           </div>
         </div>
 
-        {/* Decorative barcode */}
-        <div className="flex justify-center items-end gap-[1.5px] h-6 px-4 opacity-80" aria-hidden="true">
+        {/* Decorative fiscal barcode */}
+        <div className="flex justify-center items-end gap-[1.5px] h-5 px-4 opacity-80" aria-hidden="true">
           {[2, 1, 3, 1, 2, 4, 1, 3, 2, 1, 4, 2, 1, 3, 1, 2, 3, 1, 4, 1, 2, 3, 2, 1, 4, 1, 3].map((w, i) => (
             <div
               key={i}
@@ -559,33 +724,69 @@ export function TaxpayerCertificateReceiptContent({
           ))}
         </div>
         <p className="text-[8px] text-zinc-400 font-mono tracking-widest">
-          * {pin || "KRA-OFFICIAL-2026"} *
+          * {cleanReceipt} *
         </p>
       </div>
 
-      {/* Action Buttons on Paper */}
-      {onDownload && (
-        <div className="pt-2">
+      {/* 9. Tear Line & Notice */}
+      <div className="text-center text-[8px] text-zinc-500 space-y-0.5 pt-1">
+        <p className="font-bold uppercase text-zinc-700 dark:text-zinc-300">THANK YOU FOR YOUR BUSINESS</p>
+        <p>KEEP THIS RECEIPT FOR TAX COMPLIANCE</p>
+        <p className="text-[7.5px] text-zinc-400">*** END OF LEGAL FISCAL RECEIPT ***</p>
+        <p className="text-[7.5px] font-mono text-zinc-400 tracking-wider pt-1">
+          - - - - - - [ CUT HERE ] - - - - - -
+        </p>
+      </div>
+
+      {/* 10. Action Buttons on Paper */}
+      <div className="pt-2 space-y-2">
+        {onDownload && (
           <button
             type="button"
             onClick={onDownload}
             disabled={isDownloading}
-            className="w-full h-10 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-md shadow-primary/25 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full h-11 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-md shadow-primary/25 flex items-center justify-center gap-2 cursor-pointer"
           >
             {isDownloading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Downloading PDF...</span>
+                <span>Downloading Official PDF...</span>
+              </>
+            ) : isUnlocked ? (
+              <>
+                <Download className="w-4 h-4" />
+                <span>Download Official KRA Certificate</span>
               </>
             ) : (
               <>
-                <Download className="w-4 h-4" />
-                <span>{isUnlocked ? "Download Official PDF" : "Pay KES 20 & Download"}</span>
+                <Lock className="w-4 h-4" />
+                <span>Pay KES 20 to Unlock All Details & Download</span>
               </>
             )}
           </button>
-        </div>
-      )}
+        )}
+
+        {isUnlocked && onDownloadReceipt && (
+          <button
+            type="button"
+            onClick={onDownloadReceipt}
+            disabled={isDownloadingReceipt}
+            className="w-full h-10 rounded-xl bg-surface-variant hover:bg-surface-variant/80 text-on-surface text-xs font-bold transition-all border border-outline-variant flex items-center justify-center gap-2 cursor-pointer"
+          >
+            {isDownloadingReceipt ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Downloading ETR Receipt...</span>
+              </>
+            ) : (
+              <>
+                <Printer className="w-3.5 h-3.5 text-primary" />
+                <span>Download Official ETR Receipt (PDF)</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

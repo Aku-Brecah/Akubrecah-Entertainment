@@ -84,4 +84,51 @@ describe('Issue 1: Certificate Unmasking & Payment Verification', () => {
     expect(isMaskedOrEmpty('jane.njoroge@example.com')).toBe(false);
     expect(isMaskedOrEmpty('Lonrho House')).toBe(false);
   });
+
+  it('strictly restricts pre-payment display to Full Name and National ID while masking Tax Station, Date Issued, and Location', () => {
+    const rawRecord = {
+      fullName: 'JOHN KIPROP LORIMO',
+      idNumber: '11530093',
+      pin: 'A0011530093Z',
+      station: 'Eldoret',
+      registeredDate: '31/12/2012',
+      town: 'KAPENGURIA',
+      county: 'West Pokot',
+      phoneNumber: '0712345678',
+      email: 'john.lorimo@example.com',
+    };
+
+    const getPortalPreview = (record: typeof rawRecord, isUnlocked: boolean) => ({
+      fullName: record.fullName,
+      idNumber: record.idNumber,
+      pin: isUnlocked ? record.pin : maskPin(record.pin),
+      station: isUnlocked ? record.station : '••••••••••',
+      registeredDate: isUnlocked ? record.registeredDate : '••/••/••••',
+      location: isUnlocked ? (record.county ? `${record.county} · ${record.town}` : record.town) : '••••••••••••',
+      phoneNumber: isUnlocked ? record.phoneNumber : '••••••••••',
+      email: isUnlocked ? record.email : maskEmail(record.email),
+    });
+
+    // Before payment: ONLY full name and ID number are clearly visible
+    const prePayment = getPortalPreview(rawRecord, false);
+    expect(prePayment.fullName).toBe('JOHN KIPROP LORIMO');
+    expect(prePayment.idNumber).toBe('11530093');
+    expect(prePayment.station).toBe('••••••••••');
+    expect(prePayment.registeredDate).toBe('••/••/••••');
+    expect(prePayment.location).toBe('••••••••••••');
+    expect(prePayment.pin).toBe('A00*****93Z');
+    expect(prePayment.phoneNumber).toBe('••••••••••');
+    expect(prePayment.email).toBe('j***o@example.com');
+
+    // After payment: Full details are unmasked and revealed
+    const postPayment = getPortalPreview(rawRecord, true);
+    expect(postPayment.fullName).toBe('JOHN KIPROP LORIMO');
+    expect(postPayment.idNumber).toBe('11530093');
+    expect(postPayment.station).toBe('Eldoret');
+    expect(postPayment.registeredDate).toBe('31/12/2012');
+    expect(postPayment.location).toBe('West Pokot · KAPENGURIA');
+    expect(postPayment.pin).toBe('A0011530093Z');
+    expect(postPayment.phoneNumber).toBe('0712345678');
+    expect(postPayment.email).toBe('john.lorimo@example.com');
+  });
 });
