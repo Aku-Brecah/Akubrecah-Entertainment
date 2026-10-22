@@ -7,10 +7,8 @@ import prisma, { createSystemLog } from '@/lib/prisma';
 import { getOrCreateDbUser } from '@/lib/subscription';
 import { sanitizeWhatsAppPhone, sendEvolutionDocument, sendEvolutionImage, sendEvolutionTextMessage } from '@/lib/evolution';
 
-try {
-  const dns = require('dns');
-  dns.setDefaultResultOrder?.('ipv4first');
-} catch {}
+import dns from 'dns';
+dns.setDefaultResultOrder?.('ipv4first');
 
 export interface TaxpayerPdfData {
   pin: string;
@@ -669,7 +667,7 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
           appUrl: 'https://kra.akubrecah.com',
           evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
           instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment',
-          serviceSecret: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
+          serviceSecret: process.env.N8N_DISPATCH_SECRET || process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
           apiKey: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
         }),
       });

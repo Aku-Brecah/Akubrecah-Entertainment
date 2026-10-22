@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     log.error('[API /api/kra/live-verify/pin Error]:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to verify KRA PIN with live gateway.' },
+      { success: false, error: 'Failed to verify KRA PIN with live gateway. Please try again shortly.' },
       { status: 500 }
     );
   }

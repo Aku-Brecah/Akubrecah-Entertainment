@@ -119,11 +119,35 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      // Fail closed on underpayment: the KES 20 floor is enforced here too,
+      // not just on the M-Pesa path, so a modified-checkout transaction can
+      // never mint a full-price certificate.
+      const floorKes = Number(process.env.PAYSTACK_DOWNLOAD_FEE_KES) || 20;
+      if (verification.amountKes + 1e-9 < floorKes) {
+        log.error(`[Paystack Verify] REJECTED underpaid success (KES ${verification.amountKes} < ${floorKes}) for ${reference}`);
+        return NextResponse.json({
+          success: false,
+          verified: true,
+          error: `Payment amount (KES ${verification.amountKes}) is below the required certificate fee (KES ${floorKes}).`,
+        }, { status: 402 });
+      }
+
+      // Fail closed: without server-side PIN metadata no certificate can be
+      // issued (the placeholder 'KRA_CERT' previously unlocked any PIN).
+      if (!pin) {
+        log.error(`[Paystack Verify] REJECTED: success for ${reference} without PIN metadata — no download record minted`);
+        return NextResponse.json({
+          success: false,
+          verified: true,
+          error: 'Payment is missing KRA PIN details on the server side. Contact support with your reference to be issued manually.',
+        }, { status: 400 });
+      }
+
       const downloadRecord = await db.certificateDownload?.create({
         data: {
           userId: dbUser.id,
           clerkId: dbUser.clerkId,
-          pin: pin || 'KRA_CERT',
+          pin,
           downloadType: 'pay_per_download',
           amountCharged: verification.amountKes,
           currency: 'KES',

@@ -51,14 +51,23 @@ export async function POST(req: NextRequest) {
 
     // 3. Server-side authorization: require a valid downloadId, verified admin access, or service secret (n8n/workers)
     // No hardcoded fallbacks — if the env vars are unset, service access fails closed.
-    const expectedSecret = process.env.EVOLUTION_WEBHOOK_SECRET || process.env.EVOLUTION_API_KEY || '';
+    // Secrets are compared timing-safe against each accepted credential.
+    const acceptedServiceSecrets = [
+      process.env.EVOLUTION_WEBHOOK_SECRET,
+      process.env.EVOLUTION_API_KEY,
+      // Dedicated scoped credential for n8n dispatch (rotate off the shared
+      // Evolution key onto this so n8n never holds the bot's master key).
+      process.env.N8N_DISPATCH_SECRET,
+    ].filter(Boolean) as string[];
     const providedHeaderSecret =
       req.headers.get('x-service-secret') ||
       req.headers.get('apikey') ||
       req.headers.get('x-api-key') ||
       req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
-    const isServiceAuthorized = Boolean(
-      expectedSecret && (providedHeaderSecret === expectedSecret || body.serviceSecret === expectedSecret)
+    const { safeCompare } = await import('@/lib/admin-auth');
+    const isServiceAuthorized = acceptedServiceSecrets.length > 0 && (
+      (providedHeaderSecret && acceptedServiceSecrets.some((s) => safeCompare(providedHeaderSecret, s))) ||
+      (typeof body.serviceSecret === 'string' && acceptedServiceSecrets.some((s) => safeCompare(body.serviceSecret, s)))
     );
 
     if (!downloadId && !isServiceAuthorized) {
@@ -123,11 +132,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Enforce that payment for certificate A cannot download certificate B
+    // Enforce that payment for certificate A cannot download certificate B.
+    // Fail closed: the legacy 'KRA_CERT'/empty placeholder no longer bypasses
+    // the lock — only service dispatch (secret-gated, payload PIN is the
+    // authority) and admin-created records may resolve through it.
     const recordPin = (downloadRecord?.pin || '').toUpperCase().trim();
-    const payloadPin = clientResolvedPin || (pin || '').toUpperCase().trim();
-    if (recordPin && recordPin !== 'KRA_CERT' && payloadPin && !payloadPin.includes('*')) {
-      if (recordPin !== payloadPin) {
+    const payloadPin = (clientResolvedPin || (pin || '')).toUpperCase().trim();
+    const recordPinPlaceholder = !recordPin || recordPin === 'KRA_CERT';
+    if (!isServiceAuthorized) {
+      if (recordPinPlaceholder && downloadRecord?.downloadType !== 'admin') {
+        return NextResponse.json(
+          { success: false, error: 'This download token is not bound to a KRA PIN. Please initiate a new payment so the certificate is issued for your KRA PIN.' },
+          { status: 403 }
+        );
+      }
+      if (recordPin && !recordPinPlaceholder && payloadPin && !payloadPin.includes('*') && recordPin !== payloadPin) {
         return NextResponse.json(
           { success: false, error: 'Download token is not authorized for this KRA PIN.' },
           { status: 403 }

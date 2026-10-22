@@ -29,7 +29,7 @@ export default function AcceptableUsePolicyPage() {
 
       <Section title="1. Purpose">
         <p>
-          This Acceptable Use Policy ("<strong>AUP</strong>") defines the rules for lawful and appropriate use of
+          This Acceptable Use Policy (&quot;<strong>AUP</strong>&quot;) defines the rules for lawful and appropriate use of
           the Akubrecah platform. It applies to all users, visitors, and account holders. This AUP supplements
           and is incorporated into our{" "}
           <a href="/legal/terms" className="text-primary underline underline-offset-4">Terms of Service</a>.

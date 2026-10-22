@@ -107,7 +107,7 @@ export default function CookiePolicyPage() {
 
       <Section title="6. Changes to This Policy">
         <p>
-          We may update this Cookie Policy from time to time. Changes will be posted with a revised "Last Updated"
+          We may update this Cookie Policy from time to time. Changes will be posted with a revised &quot;Last Updated&quot;
           date. Continued use of the Service after changes constitutes acceptance.
         </p>
       </Section>

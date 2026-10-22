@@ -56,6 +56,20 @@ export async function POST(req: NextRequest) {
             log.info(`[Paystack Webhook] Subscription activated for ${dbUser.email}`);
           }
         } else if (type === 'pay_per_download') {
+          // Fail closed: an underpaid "success" must never mint a download.
+          const floorKes = Number(process.env.PAYSTACK_DOWNLOAD_FEE_KES) || 20;
+          if (amountKes + 1e-9 < floorKes) {
+            log.error(`[Paystack Webhook] REJECTED underpaid "success" (KES ${amountKes} < ${floorKes}) for ${reference}`);
+            return NextResponse.json({ success: true, message: 'Underpaid transaction skipped' });
+          }
+          // Fail closed: without PIN metadata the record cannot be pinned to a
+          // specific certificate (the legacy 'KRA_CERT' placeholder enabled
+          // cross-PIN unlocks). Initialize always sets PIN metadata, so this
+          // only triggers for externally-forged/malformed transactions.
+          if (!pin) {
+            log.error(`[Paystack Webhook] REJECTED: pay_per_download success for ${reference} without PIN metadata — no download record minted`);
+            return NextResponse.json({ success: true, message: 'Missing PIN metadata — no download record created' });
+          }
           const existingDownload = await db.certificateDownload?.findFirst({
             where: { checkoutId: reference },
           });
@@ -65,7 +79,7 @@ export async function POST(req: NextRequest) {
               data: {
                 userId: dbUser.id,
                 clerkId: dbUser.clerkId,
-                pin: pin || 'KRA_CERT',
+                pin,
                 downloadType: 'pay_per_download',
                 amountCharged: amountKes,
                 currency: 'KES',
@@ -79,7 +93,7 @@ export async function POST(req: NextRequest) {
             let waTargetPhone: string | null = null;
             let taxpayerName = metadata.customerName || 'WhatsApp Customer';
             let taxpayerDetails: any = null;
-            let targetPin = pin || 'KRA_CERT';
+            let targetPin = pin;
 
             try {
               const conversations = await db.ai_conversations?.findMany({
@@ -140,7 +154,7 @@ export async function POST(req: NextRequest) {
                     appUrl: 'https://kra.akubrecah.com',
                     evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
                     instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment',
-                    serviceSecret: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
+                    serviceSecret: process.env.N8N_DISPATCH_SECRET || process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
                     apiKey: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
                   }),
                 });

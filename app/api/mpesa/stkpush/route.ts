@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     log.error('[M-Pesa STK Catch Error]:', error.message);
     return NextResponse.json({
       success: false,
-      error: error.message || 'Internal server error while processing M-Pesa STK Push',
+      error: 'Unable to process the M-Pesa STK Push right now. Please try again shortly.',
     }, { status: 500 });
   }
 }

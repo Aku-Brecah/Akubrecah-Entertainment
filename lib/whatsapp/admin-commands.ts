@@ -39,26 +39,39 @@ export async function handleAdminBotCommand({
   const rawArg = parts.slice(1).join(' ').trim();
 
   const expectedPin = process.env.ADMIN_BOT_PIN || '';
-  const hasPinInText = Boolean(expectedPin) && clean.includes(expectedPin);
+  // Tokenized containment: a PIN embedded inside a longer number (e.g. inside
+  // a phone number or a payment reference that happens to contain the PIN
+  // digits) must NOT authenticate. The PIN has to be a standalone token.
+  const messageTokens = clean
+    .toLowerCase()
+    .split(/[\s,.!;:()[\]{}]+/)
+    .map((t) => t.replace(/^[^0-9a-z]+|[^0-9a-z]+$/g, ''))
+    .filter(Boolean);
+  const hasPinInText = Boolean(expectedPin) && messageTokens.includes(expectedPin.toLowerCase());
 
   const BOT_NUMBER = '254791497858';
-  const effectivePhone = authorPhone || userPhone;
+  const effectivePhoneDigits = String(authorPhone || userPhone || '').replace(/[^0-9]/g, '');
+  const userPhoneDigits = String(userPhone || '').replace(/[^0-9]/g, '');
+  const botNumberDigits = BOT_NUMBER.replace(/[^0-9]/g, '');
+  // Exact equality only — suffix matching ("858", "497858") is spoofable, so
+  // any partial phone must never authorize owner/admin status.
   const isOwner = Boolean(
     isFromBotOwner ||
-    effectivePhone === BOT_NUMBER ||
-    userPhone === BOT_NUMBER ||
-    effectivePhone.endsWith(BOT_NUMBER) ||
-    BOT_NUMBER.endsWith(effectivePhone)
+    effectivePhoneDigits === botNumberDigits ||
+    userPhoneDigits === botNumberDigits
   );
 
   const adminNumbersEnv = process.env.ADMIN_WHATSAPP_NUMBERS || process.env.SUPER_ADMIN_PHONE || '';
   const configuredAdmins = adminNumbersEnv.split(',').map((s) => s.replace(/[^0-9]/g, '').trim()).filter(Boolean);
   const adminList = Array.from(new Set([BOT_NUMBER, ...configuredAdmins]));
 
+  // Whitelist only via exact, digits-normalized equality.
   const isWhitelisted =
     isOwner ||
-    adminList.includes(effectivePhone) ||
-    adminList.some((p) => effectivePhone.endsWith(p) || p.endsWith(effectivePhone));
+    adminList.some((p) => {
+      const digits = p.replace(/[^0-9]/g, '');
+      return digits && (effectivePhoneDigits === digits || userPhoneDigits === digits);
+    });
 
   const hasActivePinSession = Boolean(
     metadata.isAdminAuthenticated && metadata.adminAuthExpiry && Date.now() < metadata.adminAuthExpiry
@@ -145,8 +158,20 @@ export async function handleAdminBotCommand({
   }
 
   // 2. 1-Click Magic Link
+  // Highest-value action: mints a 4h Super Admin web session. A whitelisted
+  // phone alone is not enough — the phone identity on WhatsApp webhooks is
+  // claimed, not proven. Require a live PIN-authenticated session so a
+  // spoofed sender must still know the secret PIN to mint admin links.
   if (cmd === 'link' || cmd === 'magic' || cmd === 'web') {
-    const magicToken = createAdminMagicToken(effectivePhone || BOT_NUMBER);
+    if (!hasActivePinSession && !hasPinInText) {
+      return (
+        `🔐 *Admin Verification Required for Web Access*\n\n` +
+        `To prevent impersonation, first authenticate with the master PIN:\n\n` +
+        `*!admin <your ADMIN_BOT_PIN>*\n\n` +
+        `...then request the link again (the session stays unlocked 24h).`
+      );
+    }
+    const magicToken = createAdminMagicToken(effectivePhoneDigits || BOT_NUMBER);
     const magicUrl = `${appUrl}/api/admin/magic-login?token=${magicToken}`;
     return (
       `👑 *1-Click Admin Web Access*\n\n` +

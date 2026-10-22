@@ -37,6 +37,8 @@ function safeCompare(a: string, b: string): boolean {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
+export { safeCompare };
+
 export async function verifyAdminCaller(req?: NextRequest): Promise<AdminCaller | null> {
   // 1. Check direct PIN header (no query params — headers only)
   if (req) {

@@ -247,7 +247,7 @@ function FlagshipPortalContent() {
                 >
                   <div className="flex items-start gap-2 text-xs">
                     <span className="font-mono font-black text-primary px-1.5 py-0.5 rounded bg-primary/10 text-[10px]">01</span>
-                    <span className="text-on-surface-variant text-[11px]">Reverse National ID lookup means you don't even need your PIN or iTax password.</span>
+                    <span className="text-on-surface-variant text-[11px]">Reverse National ID lookup means you don&apos;t even need your PIN or iTax password.</span>
                   </div>
                   <div className="flex items-start gap-2 text-xs">
                     <span className="font-mono font-black text-primary px-1.5 py-0.5 rounded bg-primary/10 text-[10px]">02</span>

@@ -42,7 +42,7 @@ export default function RefundPolicyPage() {
           at{" "}
           <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4">
             itax.kra.go.ke
-          </a>. Akubrecah's fee is solely for the convenience and automation service we provide.
+          </a>. Akubrecah&apos;s fee is solely for the convenience and automation service we provide.
         </p>
       </Section>
 
@@ -69,7 +69,7 @@ export default function RefundPolicyPage() {
         <ul>
           <li>
             The service was successfully completed and your certificate or confirmation was delivered, even if you
-            are dissatisfied with KRA's underlying data (e.g. wrong address on file at KRA).
+            are dissatisfied with KRA&apos;s underlying data (e.g. wrong address on file at KRA).
           </li>
           <li>
             The retrieval failed due to <strong>incorrect credentials</strong> provided by you (wrong ID number,
