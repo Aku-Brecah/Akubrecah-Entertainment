@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { createSystemLog } from '@/lib/prisma';
 import { getOrCreateDbUser } from '@/lib/subscription';
+import { tryResolveKraPin } from '@/lib/masking';
 import fs from 'fs';
 import path from 'path';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -40,20 +41,23 @@ export async function POST(req: NextRequest) {
       downloadId: incomingDownloadId,
     } = body;
 
+    // Resolve sealed transport blobs (kraseal1:...) to plaintext PINs server-side
+    const clientResolvedPin = tryResolveKraPin(pin) || '';
+
     let downloadId = incomingDownloadId;
     const prismaModule = await import('@/lib/prisma');
     const db = prismaModule.default as any;
 
     // 3. Server-side authorization: require a valid downloadId, verified admin access, or service secret (n8n/workers)
-    const expectedSecret = process.env.EVOLUTION_WEBHOOK_SECRET || process.env.EVOLUTION_API_KEY || 'akubrecah_secret_whatsapp_key_2026';
+    // No hardcoded fallbacks — if the env vars are unset, service access fails closed.
+    const expectedSecret = process.env.EVOLUTION_WEBHOOK_SECRET || process.env.EVOLUTION_API_KEY || '';
     const providedHeaderSecret =
       req.headers.get('x-service-secret') ||
       req.headers.get('apikey') ||
       req.headers.get('x-api-key') ||
       req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
     const isServiceAuthorized = Boolean(
-      (providedHeaderSecret && (providedHeaderSecret === expectedSecret || providedHeaderSecret === 'akubrecah_secret_whatsapp_key_2026')) ||
-      (body.serviceSecret && (body.serviceSecret === expectedSecret || body.serviceSecret === 'akubrecah_secret_whatsapp_key_2026'))
+      expectedSecret && (providedHeaderSecret === expectedSecret || body.serviceSecret === expectedSecret)
     );
 
     if (!downloadId && !isServiceAuthorized) {
@@ -66,7 +70,7 @@ export async function POST(req: NextRequest) {
           data: {
             userId: dbUser.id,
             clerkId: effectiveClerkId,
-            pin: String(pin || 'KRA_CERT').toUpperCase().trim(),
+            pin: clientResolvedPin || String(pin || 'KRA_CERT').toUpperCase().trim(),
             downloadType: 'admin',
             amountCharged: 0,
             currency: 'KES',
@@ -93,7 +97,7 @@ export async function POST(req: NextRequest) {
     if (!downloadRecord && isServiceAuthorized) {
       // Try to auto-provision download record for internal service dispatch (e.g. n8n workflow)
       try {
-        const effectivePin = String(pin || 'KRA_CERT').toUpperCase().trim();
+        const effectivePin = clientResolvedPin || String(pin || 'KRA_CERT').toUpperCase().trim();
         const dbUser = await getOrCreateDbUser('service_n8n', 'service@akubrecah.co.ke', 'n8n Dispatcher');
         downloadRecord = await db.certificateDownload?.create({
           data: {
@@ -120,7 +124,7 @@ export async function POST(req: NextRequest) {
 
     // Enforce that payment for certificate A cannot download certificate B
     const recordPin = (downloadRecord?.pin || '').toUpperCase().trim();
-    const payloadPin = (pin || '').toUpperCase().trim();
+    const payloadPin = clientResolvedPin || (pin || '').toUpperCase().trim();
     if (recordPin && recordPin !== 'KRA_CERT' && payloadPin && !payloadPin.includes('*')) {
       if (recordPin !== payloadPin) {
         return NextResponse.json(
@@ -141,6 +145,8 @@ export async function POST(req: NextRequest) {
     let cleanPin = '';
     if (downloadRecord?.pin && !downloadRecord.pin.includes('*') && downloadRecord.pin !== 'KRA_CERT') {
       cleanPin = downloadRecord.pin.toUpperCase().trim();
+    } else if (clientResolvedPin) {
+      cleanPin = clientResolvedPin;
     } else if (pin && !pin.includes('*')) {
       cleanPin = pin.toUpperCase().trim();
     }
@@ -148,28 +154,12 @@ export async function POST(req: NextRequest) {
     // Helper to detect masked or empty placeholder values
     const isMaskedOrEmpty = (val: any) => !val || typeof val !== 'string' || val.includes('•') || val.includes('***') || val.includes('*****');
 
-    // Retrieve cached full details from kra_pin_cache
-    let cachedRecord: any = null;
-    try {
-      if (db.kra_pin_cache) {
-        if (cleanPin) {
-          cachedRecord = await db.kra_pin_cache.findFirst({
-            where: { pin: cleanPin },
-          });
-        }
-        if (!cachedRecord && idNumber) {
-          cachedRecord = await db.kra_pin_cache.findFirst({
-            where: { id_number: String(idNumber).trim() },
-          });
-        }
-      }
-    } catch (e: any) {
-      console.warn('[generate-certificate] Cache lookup warning:', e.message);
-    }
+    // Strict Zero-Storage: Never rely on persistent kra_pin_cache.
+    const cachedRecord: any = null;
 
-    // If cache is missing or address fields are masked, fetch live unmasked details
+    // If passed address fields are masked, fetch live unmasked details directly from KRA
     let liveProfile: any = null;
-    const needsAuthoritativeFetch = cleanPin && (!cachedRecord || isMaskedOrEmpty(cachedRecord.building) || isMaskedOrEmpty(cachedRecord.station));
+    const needsAuthoritativeFetch = cleanPin && (isMaskedOrEmpty(building) || isMaskedOrEmpty(station));
     if (needsAuthoritativeFetch) {
       try {
         const { fetchTaxpayerByPin } = await import('@/lib/kra-api');
@@ -179,7 +169,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const resolvedPin = cleanPin || cachedRecord?.pin || liveProfile?.pin || (pin && !pin.includes('*') ? pin.toUpperCase() : 'KRA_CERT');
+    const resolvedPin = cleanPin || clientResolvedPin || cachedRecord?.pin || liveProfile?.pin || (pin && !pin.includes('*') ? pin.toUpperCase() : 'KRA_CERT');
     const resolvedName = !isMaskedOrEmpty(name)
       ? name
       : (cachedRecord?.name || liveProfile?.taxpayerName || [dbUser?.firstName, dbUser?.lastName].filter(Boolean).join(' ') || 'Registered Taxpayer');

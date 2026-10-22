@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { initializePaystackTransaction } from '@/lib/paystack';
 import { getOrCreateDbUser, isAdminUser } from '@/lib/subscription';
+import { tryResolveKraPin } from '@/lib/masking';
 
 export const maxDuration = 15;
 
@@ -29,7 +30,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { type = 'pay_per_download', pin, callbackUrl } = body;
+    const { type = 'pay_per_download', pin: incomingPin, callbackUrl } = body;
+    // Accept plaintext PINs or opaque sealed blobs from the retrieval flow
+    // (kraseal1:... → resolved server-side; never stored/forwarded as ciphertext).
+    const pin = tryResolveKraPin(incomingPin) || (incomingPin ? String(incomingPin).toUpperCase().trim() : '');
 
     // Monthly subscriptions have been decommissioned in favor of a single transparent KES 20 fee
     if (type === 'subscription') {

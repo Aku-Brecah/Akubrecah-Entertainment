@@ -560,29 +560,14 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
   console.log(`[Fulfillment] Initiating WhatsApp document delivery for PIN ${cleanPin} to ${userPhone}`);
 
   try {
-    // 1. Resolve taxpayer details: Always merge cached kra_pin_cache with passed in-memory taxpayerDetails
-    let cachedRecord: any = null;
-    if (db.kra_pin_cache && cleanPin) {
-      try {
-        cachedRecord = await db.kra_pin_cache.findFirst({
-          where: { pin: cleanPin },
-        });
-        if (!cachedRecord && (opts.taxpayerDetails?.idNumber || opts.taxpayerDetails?.id_number)) {
-          const idNum = String(opts.taxpayerDetails?.idNumber || opts.taxpayerDetails?.id_number).trim();
-          cachedRecord = await db.kra_pin_cache.findFirst({
-            where: { id_number: idNum },
-          });
-        }
-      } catch (cacheErr: any) {
-        console.warn('[Fulfillment] Cache query notice:', cacheErr.message);
-      }
-    }
-
+    // 1. Resolve taxpayer details: Strict Zero-Storage, never rely on persistent kra_pin_cache
+    const cachedRecord: any = null;
     const isMaskedVal = (val: any) => !val || typeof val !== 'string' || val.includes('•') || val.includes('***') || val.includes('*****');
 
-    // If cache is missing or address fields are masked, fetch live unmasked details
+    // If address fields are masked in passed details, fetch live unmasked details
     let liveProfile: any = null;
-    const needsFetch = cleanPin && (!cachedRecord || isMaskedVal(cachedRecord.building) || isMaskedVal(cachedRecord.station));
+    const passed = opts.taxpayerDetails || {};
+    const needsFetch = cleanPin && (isMaskedVal(passed.building) || isMaskedVal(passed.station));
     if (needsFetch) {
       try {
         const { fetchTaxpayerByPin } = await import('@/lib/kra-api');
@@ -591,8 +576,6 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
         console.warn('[Fulfillment] Live profile fetch notice:', err.message);
       }
     }
-
-    const passed = opts.taxpayerDetails || {};
     const authenticRegDate = resolveAuthenticRegistrationDate(
       cleanPin,
       !isMaskedVal(passed.registeredDate) ? passed.registeredDate :

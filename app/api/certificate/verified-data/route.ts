@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
 import { fetchTaxpayerByPin } from '@/lib/kra-api';
 import { isAdminUser, getUserSubscriptionStatus } from '@/lib/subscription';
+import { tryResolveKraPin } from '@/lib/masking';
 
 export const maxDuration = 15;
 
@@ -94,45 +95,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Resolve authoritative unmasked details (check database cache first, then live API)
+    // 3. Resolve authoritative unmasked details directly via live KRA API (Strict Zero-Storage)
     let profile: any = null;
     try {
-      if (db.kra_pin_cache) {
-        const cached = await db.kra_pin_cache.findFirst({
-          where: { pin: verifiedPin },
-        });
-        if (cached && cached.name && cached.name !== 'Registered Taxpayer') {
-          profile = {
-            pin: cached.pin,
-            name: cached.name,
-            taxpayerName: cached.name,
-            fullName: cached.name,
-            idNumber: cached.id_number || '',
-            email: cached.email || '',
-            phoneNumber: cached.phone_number || '',
-            building: cached.building || '',
-            street: cached.street || '',
-            town: cached.city || '',
-            city: cached.city || '',
-            county: cached.county || '',
-            district: cached.district || '',
-            taxArea: cached.tax_area || '',
-            station: cached.station || '',
-            poBox: cached.po_box || '',
-            postalCode: cached.postal_code || '',
-            registeredDate: cached.registered_date || '',
-          };
-        }
-      }
-    } catch (e: any) {
-      console.warn('[verified-data] Cache lookup warning:', e.message);
-    }
-
-    // If cache does not have all address details, fetch live
-    const needsLive = !profile || !profile.station || !profile.building || profile.building.includes('•');
-    if (needsLive) {
-      try {
-        const live = await fetchTaxpayerByPin(verifiedPin);
+      const live = await fetchTaxpayerByPin(verifiedPin);
         if (live && live.taxpayerName) {
           profile = {
             pin: live.pin || verifiedPin,
@@ -158,7 +124,6 @@ export async function POST(req: NextRequest) {
       } catch (err: any) {
         console.warn('[verified-data] Live lookup notice:', err.message);
       }
-    }
 
     if (!profile) {
       return NextResponse.json(

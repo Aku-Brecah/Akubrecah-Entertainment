@@ -235,7 +235,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
     setIdSearchStatus("searching")
     setError(null)
-    trackEvent({ activityType: "search_pin", pin: formData.pin || formData.idNumber })
+    trackEvent({ activityType: activeTab === "id" ? "search_id" : "search_pin" })
 
     try {
       const response = await fetch('/api/kra/retrieve', {
@@ -301,11 +301,14 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       setCaptchaImage(null)
       setCaptchaAnswer("")
       setCurrentStep(4)
-      trackEvent({ activityType: "view_masked", pin: result.data?.pin || formData.pin })
+      trackEvent({ activityType: "view_masked" })
       toast.success("KRA Taxpayer Details Found!")
     } else {
       setIdSearchStatus("idle")
       setError(result.error || "Details not found. Please check your credentials.")
+      if (result.maskedPin) {
+        setActiveTab("pin")
+      }
       toast.error(result.error || "Retrieval Failed")
     }
   } catch {
@@ -576,7 +579,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         downloadId: targetDownloadId,
       }
 
-      trackEvent({ activityType: 'download_certificate', pin: payload.pin })
+      trackEvent({ activityType: 'download_certificate' })
       const response = await fetch('/api/generate-certificate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

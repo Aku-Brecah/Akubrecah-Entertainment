@@ -76,16 +76,12 @@ export async function POST(req: NextRequest) {
     await createSystemLog({
       level: 'info',
       service: 'KRA-Live-ID-Checker',
-      message: `Verified ID ${cleanId}, resolve PIN ${taxpayerData.pin} for ${taxpayerData.taxpayerName} (Subscribed: ${isSubscribed})`,
+      message: `National ID lookup executed (Subscribed: ${isSubscribed})`,
       actor: userEmail,
       ip,
       details: {
-        idNumber: cleanId,
-        pin: taxpayerData.pin,
-        name: taxpayerData.taxpayerName,
-        station: isSubscribed ? taxpayerData.station : 'MASKED',
-        source: taxpayerData.source,
         isSubscribed,
+        source: taxpayerData.source,
       },
     });
     return NextResponse.json({

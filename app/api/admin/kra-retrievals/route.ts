@@ -32,11 +32,8 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    const cachedTaxpayers = await db.kra_pin_cache?.findMany({
-      where: whereCache,
-      orderBy: { updated_at: "desc" },
-      take: limit,
-    }) || [];
+    // Zero-storage privacy policy: Taxpayer personal details are never persisted
+    const cachedTaxpayers: any[] = [];
 
     // 2. Fetch certificate downloads audit records
     const whereDownloads: any = {};
@@ -77,8 +74,8 @@ export async function GET(req: NextRequest) {
       take: 50,
     }) || [];
 
-    // 4. Calculate KPIs
-    const totalTaxpayers = await db.kra_pin_cache?.count() || 0;
+    // 4. Calculate KPIs (Zero-storage architecture active)
+    const totalTaxpayers = 0;
     const totalDownloads = await db.certificateDownload?.count() || 0;
 
     const revenueAggregate = await db.certificateDownload?.aggregate({

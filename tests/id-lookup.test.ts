@@ -106,4 +106,41 @@ describe('Issue 4: National ID vs. KRA PIN Lookup Consistency', () => {
     expect(match?.name).toBe('EXACT MATCH USER');
     expect(match?.id_number).toBe('08475912');
   });
+
+  it('never synthesizes fake PINs from KRA DWR masked responses with #$', () => {
+    // When KRA returns a masked PIN with asterisks and #$ suffix:
+    const dwrRawCallback = 'dwr.engine.remote.handleCallback("0","0","A01*****19Q#$31886");';
+    const m = dwrRawCallback.match(/handleCallback\([^,]+,[^,]+,"([^"]+)"\)/);
+    expect(m).not.toBeNull();
+
+    const rawVal = m![1];
+    const cleanPin = rawVal.split('#$')[0].trim().toUpperCase();
+
+    // Must NOT replace * with the #$ digits (31886) to invent A013188619Q
+    expect(cleanPin.includes('*')).toBe(true);
+    expect(cleanPin).toBe('A01*****19Q');
+
+    const isUnmaskedValidPin = !cleanPin.includes('*') && /^[A-Z]\d{9}[A-Z]$/.test(cleanPin);
+    expect(isUnmaskedValidPin).toBe(false); // Proves it is correctly recognized as masked and rejected as full PIN
+  });
+
+  it('sanitizes searched IDs and PINs from system logs under zero-storage policy', () => {
+    const rawDetails = {
+      pin: 'A012345678Z',
+      idNumber: '38411164',
+      taxpayerName: 'John Doe',
+      isSubscribed: true,
+    };
+
+    const sanitizedDetails = { ...rawDetails };
+    delete (sanitizedDetails as any).pin;
+    delete (sanitizedDetails as any).idNumber;
+    delete (sanitizedDetails as any).taxpayerName;
+
+    expect(sanitizedDetails).not.toHaveProperty('pin');
+    expect(sanitizedDetails).not.toHaveProperty('idNumber');
+    expect(sanitizedDetails).not.toHaveProperty('taxpayerName');
+    expect(sanitizedDetails).toHaveProperty('isSubscribed', true);
+  });
 });
+

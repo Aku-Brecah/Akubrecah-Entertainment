@@ -11,27 +11,45 @@ export interface AdminCaller {
 /**
  * Universal Admin Authentication Verifier
  * Supports:
- * 1. Master PIN header (x-admin-pin) or query parameter (?pin=8426)
- * 2. Service secret (x-service-secret)
+ * 1. Master PIN header (x-admin-pin) — value MUST come from ADMIN_BOT_PIN env
+ * 2. Service secret (x-service-secret) — value MUST come from env
  * 3. WhatsApp / Passcode magic cookie (admin_magic_auth)
- * 4. Clerk session (Super Admin email poweldayck@gmail.com or role)
+ * 4. Clerk session (Super Admin email / role metadata)
+ *
+ * Security notes:
+ * - Secrets are accepted via headers ONLY (never query parameters — they leak
+ *   into access logs, browser history and referrers).
+ * - No hardcoded fallback secrets: if the env vars are unset, auth fails closed.
+ * - Comparisons are timing-safe.
  */
+import crypto from 'crypto';
+
+/** Constant-time string comparison (safe for secrets of differing length). */
+function safeCompare(a: string, b: string): boolean {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) {
+    // Still burn comparable time before returning false.
+    crypto.timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 export async function verifyAdminCaller(req?: NextRequest): Promise<AdminCaller | null> {
-  // 1. Check direct PIN header or query
+  // 1. Check direct PIN header (no query params — headers only)
   if (req) {
-    const providedPin = req.headers.get("x-admin-pin") || req.nextUrl?.searchParams?.get("pin");
-    const expectedPin = process.env.ADMIN_BOT_PIN || "8426";
-    if (providedPin && (providedPin === expectedPin || providedPin === "8426")) {
+    const providedPin = req.headers.get("x-admin-pin");
+    const expectedPin = process.env.ADMIN_BOT_PIN || "";
+    if (providedPin && expectedPin && safeCompare(providedPin, expectedPin)) {
       return { userId: "admin_pin_user", email: "admin@akubrecah.co.ke", role: "Super Admin" };
     }
 
-    // 2. Check service secret
-    const serviceSecret = req.headers.get("x-service-secret") || req.nextUrl?.searchParams?.get("secret");
-    if (
-      serviceSecret &&
-      (serviceSecret === "akubrecah_secret_whatsapp_key_2026" ||
-        serviceSecret === process.env.EVOLUTION_API_KEY)
-    ) {
+    // 2. Check service secret (headers only, env-configured, timing-safe)
+    const serviceSecret = req.headers.get("x-service-secret");
+    const expectedServiceSecret =
+      process.env.EVOLUTION_WEBHOOK_SECRET || process.env.EVOLUTION_API_KEY || "";
+    if (serviceSecret && expectedServiceSecret && safeCompare(serviceSecret, expectedServiceSecret)) {
       return { userId: "service_admin", email: "admin@akubrecah.co.ke", role: "Super Admin" };
     }
 
@@ -61,8 +79,7 @@ export async function verifyAdminCaller(req?: NextRequest): Promise<AdminCaller 
         email === configAdminEmail ||
         email === configPublicAdminEmail ||
         role === "Super Admin" ||
-        role === "Admin" ||
-        process.env.NODE_ENV === "development"
+        role === "Admin"
       ) {
         return { userId, email: email || "admin@akubrecah.co.ke", role: role || "Super Admin" };
       }
