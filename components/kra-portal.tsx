@@ -132,33 +132,16 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     trackEvent({ activityType: 'page_view' });
     loadCaptcha()
 
-    // Only restore formData if actively returning from a Paystack redirect callback
+    // Strict Zero-Storage Policy: Purge any stale taxpayer credentials from storage
     if (typeof window !== "undefined") {
+      try {
+        sessionStorage.removeItem("kra_active_form_data");
+        localStorage.removeItem("kra_active_form_data");
+      } catch {}
+
       const urlParams = new URLSearchParams(window.location.search)
       const paystackRef = urlParams.get("paystack_ref") || urlParams.get("reference")
       const payType = urlParams.get("type")
-
-      if (paystackRef) {
-        try {
-          const savedForm = sessionStorage.getItem("kra_active_form_data")
-          if (savedForm) {
-            const parsed = JSON.parse(savedForm)
-            if (parsed && (parsed.pin || parsed.fullName || parsed.idNumber)) {
-              setFormData(prev => ({ ...prev, ...parsed }))
-              setIsVerified(true)
-              setIdSearchStatus("found")
-              setCurrentStep(4)
-            }
-          }
-        } catch (e) {
-          console.warn("Failed to restore saved form state:", e)
-        }
-      } else {
-        // Ephemeral session: clear previous data so user always searches for another PIN fresh
-        try {
-          sessionStorage.removeItem("kra_active_form_data")
-        } catch {}
-      }
 
       if (paystackRef) {
         handleVerifyPaystackReference(paystackRef, payType)
@@ -190,11 +173,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         updated.idNumber = ''
         updated.rawPin = ''
         updated.fullName = ''
-      }
-      if (typeof window !== "undefined") {
-        try {
-          sessionStorage.setItem("kra_active_form_data", JSON.stringify(updated))
-        } catch {}
       }
       return updated
     })
@@ -243,7 +221,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           idNumber: activeTab === "id" ? formData.idNumber.trim() : "",
-          pin: activeTab === "pin" ? formData.pin.trim().toUpperCase() : (formData.rawPin || formData.pin || "").trim().toUpperCase(),
+          pin: activeTab === "pin" ? formData.pin.trim().toUpperCase() : "",
           captchaAnswer: captchaAnswer.trim(),
           sessionToken,
           engineMode,
@@ -287,11 +265,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             postalCode: result.data?.postalCode || '',
             phoneNumber: result.data?.phoneNumber || '',
             registeredDate: result.data?.registeredDate || '',
-          }
-          if (typeof window !== "undefined") {
-            try {
-              sessionStorage.setItem("kra_active_form_data", JSON.stringify(updatedData))
-            } catch {}
           }
           return updatedData
         })
@@ -354,11 +327,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             phoneNumber: result.data.phoneNumber || prev.phoneNumber,
             registeredDate: result.data.registeredDate || prev.registeredDate,
           }
-          if (typeof window !== "undefined") {
-            try {
-              sessionStorage.setItem("kra_active_form_data", JSON.stringify(updated))
-            } catch {}
-          }
           return updated
         })
       }
@@ -406,15 +374,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     }
   }
 
-  // Initiates Paystack checkout for official certificate download (KES 20)
   const handlePaystackPayment = async (type: 'subscription' | 'pay_per_download' = 'pay_per_download') => {
-    // Persist current active form data to survive redirects
-    if (typeof window !== "undefined") {
-      try {
-        sessionStorage.setItem("kra_active_form_data", JSON.stringify(formData))
-      } catch {}
-    }
-
     setIsInitializingPaystack(true)
     setPaymentError(null)
     setPaymentStep("waiting")
@@ -551,14 +511,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     try {
       setTimeout(() => setPrinterStage("printing"), 350)
 
-      let activeForm = { ...formData }
-      if ((!activeForm.pin || !activeForm.fullName) && typeof window !== "undefined") {
-        try {
-          const saved = sessionStorage.getItem("kra_active_form_data")
-          if (saved) activeForm = { ...activeForm, ...JSON.parse(saved) }
-        } catch {}
-      }
-
+      const activeForm = { ...formData }
       const certPin = activeForm.rawPin || activeForm.pin
       const payload = {
         pin: certPin,
@@ -847,7 +800,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                 ? "bg-red-600 text-white font-extrabold shadow-xs" 
                                 : "text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white font-bold"
                             )}
-                            onClick={() => { setActiveTab("id"); handleInputChange('pin', ''); }}
+                            onClick={() => {
+                              setActiveTab("id");
+                              setFormData(prev => ({ ...prev, pin: '', rawPin: '', fullName: '' }));
+                              setError(null);
+                            }}
                           >
                               <BadgeIcon className="w-3.5 h-3.5 shrink-0" />
                               <span>National ID<span className="hidden sm:inline"> Number</span></span>
@@ -860,7 +817,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                 ? "bg-red-600 text-white font-extrabold shadow-xs" 
                                 : "text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white font-bold"
                             )}
-                            onClick={() => { setActiveTab("pin"); handleInputChange('idNumber', ''); }}
+                            onClick={() => {
+                              setActiveTab("pin");
+                              setFormData(prev => ({ ...prev, idNumber: '', rawPin: '', fullName: '' }));
+                              setError(null);
+                            }}
                           >
                               <MapPinIcon className="w-3.5 h-3.5 shrink-0" />
                               <span>KRA PIN</span>

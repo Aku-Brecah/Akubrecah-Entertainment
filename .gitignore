@@ -53,3 +53,5 @@ next-env.d.ts
 /training cv/
 /training cv
 scratch/
+.next-auditbuild
+.next-verify

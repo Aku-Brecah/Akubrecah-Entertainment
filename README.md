@@ -1,38 +1,67 @@
-# Akubrecah KRA Certificate Portal (BETA Version)
+# Akubrecah KRA Portal
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Kenya Revenue Authority (KRA) retrieval and certificate services — a Next.js 16 web portal and WhatsApp bot that lets Kenyan taxpayers look up KRA records by National ID or KRA PIN and pay for full, unmasked certificate downloads via M-Pesa (Daraja STK Push) or Paystack.
 
-## Getting Started
+## What it does
 
-First, run the development server:
+- **Taxpayer retrieval** (`/pin-checker`, `/api/kra/*`): DWR/API lookups against KRA endpoints through a configurable egress proxy, TSO station resolution, arithmetical captcha.
+- **KDPA-compliant masking** (`lib/masking.ts`): pre-payment data is masked; the full PIN never leaves the server in plaintext for ID-based searches — it is sealed client-side (AES-256-GCM, `kraseal1:` blobs) and resolved server-side only inside payment endpoints.
+- **Payments**: fixed KES 20 per certificate download. M-Pesa STK Push via Safaricom Daraja with callback token validation and underpayment rejection, Paystack checkout with raw-body HMAC verification and idempotent webhook processing.
+- **WhatsApp bot** (`/api/whatsapp/chat`): Evolution API integration — slash-command strict TSO flow, KRA lookups, M-Pesa/Paystack payments, cyber café subscriptions, admin commands gated by `ADMIN_BOT_PIN` (with per-phone admin sessions and magic-link login).
+- **Admin console** (`/admin`): role-access UI on `admin.akubrecah.com`, system logs, settings, inquiries, articles (CMS), user management.
+- **Cyber café** subscriptions with monthly invoices delivered to WhatsApp.
+
+## Stack
+
+| Layer | Tech |
+|---|---|
+| Framework | Next.js 16 (App Router, Turbopack), React 19 |
+| Auth | Clerk (`proxy.ts` = Next 16 middleware), magic-token admin cookies (HMAC) |
+| Data | Prisma 6 + Neon PostgreSQL, Redis-backed rate limiting (`lib/rate-limit`), in-memory graceful fallback |
+| Payments | Safaricom Daraja (primary), Paystack (fallback) |
+| Bot | Evolution API (WhatsApp) + n8n delivery webhooks |
+| Observability | Sentry (server/edge/client via `instrumentation.ts`), `lib/monitoring` error tracker, `lib/telemetry` PII sanitizer |
+| Tests | Vitest (`tests/`) — masking/seal crypto, rate limiting, feature flags, env schema, webhooks |
+
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npx prisma generate          # generate the Prisma client
+npm run dev                  # http://localhost:3000
+npm test                     # vitest
+npm run typecheck            # tsc --noEmit
+npm run lint                 # eslint
+npm run build                # prisma generate && next build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Environment variables: see `.env.example` (documented and grouped: DB, Clerk, Paystack, Daraja/M-Pesa, Evolution, Sentry, rate limiting, crypto, feature flags). Production boot must set `ENCRYPTION_KEY`/`JWT_SECRET` (sealed-PIN transport + admin magic tokens), `ADMIN_BOT_PIN`, `EVOLUTION_API_KEY`, `INTERNAL_PROXY_SECRET` and `MPESA_CALLBACK_TOKEN` among others.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Vercel** (primary): CI on GitHub Actions builds and deploys on push to `main` (`.github/workflows/`).
+- **Self-host VPS/Docker** (secondary): `Dockerfile` + `deploy/docker-compose.yml` (app + Caddy + Evolution + Redis + Postgres), served by Caddy. `deploy/Caddyfile` injects `X-Internal-Proxy-Secret` so the app can trust `cf-connecting-ip`/`X-Forwarded-For` for rate limiting; the M-Pesa callback URL must be registered as `/api/mpesa/callback?token=<MPESA_CALLBACK_TOKEN>` in the Daraja portal.
+- Data model changes: `npx prisma db push && npx prisma generate`.
 
-## Learn More
+## Security posture (what's hardened and why)
 
-To learn more about Next.js, take a look at the following resources:
+- No hardcoded secrets — all admin/service credentials come from env and **fail closed**; secrets are never accepted via URL query params on admin endpoints.
+- Timing-safe comparisons for admin PIN, service secrets, Paystack webhook HMAC, and magic-token signatures.
+- Payment records obey the PIN-lock rule (a payment for PIN A never unlocks PIN B) with idempotent webhooks, verified amounts (KES 20 floor), and no fake-success paths in production.
+- TLS verification for KRA scraping defaults to secure (`KRA_ALLOW_INSECURE_TLS` is an explicit escape hatch).
+- `scratch/`, `.env*` and agent tooling are gitignored; `.dockerignore` keeps real env files out of images.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Repo layout
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/            App Router pages + API routes (kra, paystack, mpesa, whatsapp, admin, cyber…)
+components/     UI (KRA portal, remotion certificate preview, admin tables)
+lib/            Domain services: kra-api, paystack, certificate-fulfillment, cyber-subscription,
+                masking, rate-limit, magic-token, monitoring, telemetry, feature-flags
+deploy/         Caddyfile + docker-compose for the VPS stack
+prisma/         Prisma schema (Postgres)
+tests/          Vitest suites
+scripts/        Ops scripts; scripts/legacy/ = one-off VPS/migration tools
+```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Historical audit/implementation notes live in `docs/` and the root `*.md` files (`TASKS.md` is the running implementation log).

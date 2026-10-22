@@ -1,6 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { isFeatureEnabled, clearFeatureFlagCache } from '@/lib/feature-flags/engine';
 import { FEATURE_FLAGS } from '@/lib/feature-flags/flags';
+
+vi.mock('@/lib/prisma', () => ({
+  default: {
+    service_settings: {
+      findUnique: vi.fn().mockResolvedValue(null),
+      upsert: vi.fn().mockResolvedValue({}),
+    },
+  },
+}));
 
 describe('Feature Flags Engine', () => {
   beforeEach(() => {
