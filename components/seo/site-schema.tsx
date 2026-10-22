@@ -1,4 +1,5 @@
 import React from 'react';
+import type { JSX } from 'react';
 
 /**
  * Site-wide Schema.org JSON-LD Structured Data

@@ -1,4 +1,5 @@
 import Link from "next/link"
+import type { JSX } from "react"
 import { Logo } from "@/components/logo"
 import { GooglePreferredSourceButton } from "@/components/google-preferred-source-button"
 import { Code2, Laptop, Smartphone, Cloud, FileCheck2, ShieldCheck, Mail, MapPin } from "lucide-react"

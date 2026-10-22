@@ -2,7 +2,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 // Real dependency — if the build-time source-map upload can't be wired, the
 // build should fail loudly rather than silently shipping untested maps.
-import { withSentryConfig } from '@sentry/nextjs';
+// (@sentry packages are CommonJS: destructure from the default export.)
+import sentryPkg from '@sentry/nextjs/config';
+const { withSentryConfig } = sentryPkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,6 +13,8 @@ const __dirname = path.dirname(__filename);
 const nextConfig = {
   devIndicators: false,
   poweredByHeader: false,
+  // Allow isolated CI/AI verification builds without racing other builds on .next
+  distDir: process.env.BUILD_DIST_DIR || '.next',
   turbopack: {
     root: __dirname,
   },
