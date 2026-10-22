@@ -35,6 +35,8 @@ model ai_task_logs {
   metadata   Json     @default("{}")
   created_at DateTime @default(now())
   ai_tasks   ai_tasks @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@index([task_id])
 }
 
 model ai_tasks {
@@ -62,6 +64,10 @@ model ai_tasks {
   ai_tasks         ai_tasks?         @relation("ai_tasksToai_tasks", fields: [parent_task_id], references: [id])
   other_ai_tasks   ai_tasks[]        @relation("ai_tasksToai_tasks")
   tickets          tickets[]
+
+  @@index([conversation_id])
+  @@index([parent_task_id])
+  @@index([status])
 }
 
 model app_settings {
@@ -148,6 +154,8 @@ model session_activities {
   metadata      Json     @default("{}")
   created_at    DateTime @default(now())
   sessions      sessions @relation(fields: [session_id], references: [id], onDelete: Cascade)
+
+  @@index([session_id])
 }
 
 model sessions {
@@ -165,6 +173,8 @@ model sessions {
   created_at         DateTime             @default(now())
   user_id            String?
   session_activities session_activities[]
+
+  @@index([user_id])
 }
 
 model ticket_messages {
@@ -207,6 +217,10 @@ model tickets {
   ticket_messages         ticket_messages[]
   ai_conversations        ai_conversations? @relation(fields: [conversation_id], references: [id])
   ai_tasks                ai_tasks?         @relation(fields: [task_id], references: [id])
+
+  @@index([conversation_id])
+  @@index([task_id])
+  @@index([status])
 }
 
 model user_activities {
@@ -218,6 +232,8 @@ model user_activities {
   metadata      Json     @default("{}")
   created_at    DateTime @default(now())
   users         users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
 }
 
 model users {
@@ -337,6 +353,9 @@ model SystemLog {
   ip        String
   details   Json?
 
+  @@index([timestamp])
+  @@index([level])
+  @@index([service])
   @@map("system_logs")
 }
 
