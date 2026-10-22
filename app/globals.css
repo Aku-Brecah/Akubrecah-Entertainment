@@ -1,6 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind CSS v4 — CSS-first; legacy theme/content/plugins kept via @config compat layer */
+@import "tailwindcss";
+@config "../tailwind.config.ts";
 
 /* KRA Red Design System - GovTech Crisp Prestige Theme */
 :root {
