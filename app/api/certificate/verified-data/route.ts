@@ -32,7 +32,9 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}));
     const downloadId = body.downloadId ? String(body.downloadId).trim() : '';
-    const requestedPin = body.pin ? String(body.pin).trim().toUpperCase() : '';
+    // Accept plaintext PINs or opaque sealed blobs from the retrieval flow
+    const requestedRawPin = body.pin ? String(body.pin).trim().toUpperCase() : '';
+    const requestedPin = tryResolveKraPin(requestedRawPin) || requestedRawPin;
 
     if (!downloadId && !authUserId) {
       return NextResponse.json(
@@ -55,15 +57,16 @@ export async function POST(req: NextRequest) {
       if (downloadRecord) {
         // Enforce PIN lock: Payment for certificate A cannot unlock certificate B
         const recordPin = (downloadRecord.pin || '').toUpperCase().trim();
+        const recordPinResolved = tryResolveKraPin(recordPin) || recordPin;
         if (recordPin && recordPin !== 'KRA_CERT' && requestedPin) {
-          if (recordPin !== requestedPin) {
+          if (recordPinResolved !== requestedPin) {
             return NextResponse.json(
               { success: false, error: 'Payment record does not match the requested certificate PIN.' },
               { status: 403 }
             );
           }
         }
-        verifiedPin = recordPin && recordPin !== 'KRA_CERT' ? recordPin : requestedPin;
+        verifiedPin = recordPinResolved && recordPinResolved !== 'KRA_CERT' ? recordPinResolved : requestedPin;
         isAuthorized = true;
       }
     }

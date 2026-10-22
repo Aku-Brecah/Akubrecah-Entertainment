@@ -34,7 +34,7 @@ export function getEvolutionApiUrl(): string {
   return envUrl;
 }
 
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || 'akubrecah_secret_whatsapp_key_2026';
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '';
 
 export function getEvolutionInstanceName(): string {
   const envVal = (process.env.EVOLUTION_INSTANCE_NAME || '').trim();

@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
     const payload = await req.json().catch(() => ({}));
 
     // Shared secret check: Ensure only authorized Evolution instance can trigger chat events
-    const expectedSecret = process.env.EVOLUTION_WEBHOOK_SECRET || process.env.EVOLUTION_API_KEY || 'akubrecah_secret_whatsapp_key_2026';
+    // No hardcoded fallback — fails closed when env is unset (all known callers send headers).
+    const expectedSecret = process.env.EVOLUTION_WEBHOOK_SECRET || process.env.EVOLUTION_API_KEY || '';
     const expectedInstance = getEvolutionInstanceName().toLowerCase().trim();
 
     const providedHeaderSecret =
@@ -42,9 +43,10 @@ export async function POST(req: NextRequest) {
       ''
     ).toLowerCase().trim();
 
-    const isSecretValid =
-      (providedHeaderSecret && (providedHeaderSecret === expectedSecret || providedHeaderSecret === 'akubrecah_secret_whatsapp_key_2026')) ||
-      (providedBodySecret && (providedBodySecret === expectedSecret || providedBodySecret === 'akubrecah_secret_whatsapp_key_2026'));
+    const isSecretValid = Boolean(expectedSecret) && (
+      (providedHeaderSecret && providedHeaderSecret === expectedSecret) ||
+      (providedBodySecret && providedBodySecret === expectedSecret)
+    );
 
     const isInstanceValid = payloadInstance && (payloadInstance === expectedInstance || expectedInstance.includes(payloadInstance) || payloadInstance.includes(expectedInstance));
 

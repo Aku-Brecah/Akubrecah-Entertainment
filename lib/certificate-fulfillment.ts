@@ -668,8 +668,8 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
           appUrl: 'https://kra.akubrecah.com',
           evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
           instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment',
-          serviceSecret: 'akubrecah_secret_whatsapp_key_2026',
-          apiKey: 'akubrecah_secret_whatsapp_key_2026',
+          serviceSecret: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
+          apiKey: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
         }),
       });
 
