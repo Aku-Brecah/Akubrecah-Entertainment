@@ -1,6 +1,7 @@
 services:
   # Main Next.js application
   akubrecah-app:
+    container_name: akubrecah_app
     build:
       context: .
       args:
@@ -38,6 +39,7 @@ services:
 
   # Redis for rate limiting and caching (internal only, prevents host port 6379 collision)
   redis:
+    container_name: redis_cache
     image: redis:7-alpine
     expose:
       - "6379"
@@ -48,6 +50,7 @@ services:
 
   # Evolution API for WhatsApp
   evolution:
+    container_name: evolution_api
     image: evoapicloud/evolution-api:latest
     env_file:
       - path: .env
