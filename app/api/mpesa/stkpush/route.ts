@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { chargePaystackMpesa, formatPaystackKenyaPhone } from '@/lib/paystack';
+import { tryResolveKraPin } from '@/lib/masking';
 
 export const maxDuration = 30;
 
@@ -72,6 +73,10 @@ export async function dispatchMpesaStkPush({
       !consumerSecret.includes('your-')
     );
 
+    // Resolve sealed-PIN blobs (kraseal1:...) possibly embedded in the reference
+    const resolvedRefPin = tryResolveKraPin(reference);
+    const effectiveReference = resolvedRefPin ? `CERT-${resolvedRefPin}` : reference;
+
     // 1. If Safaricom Daraja credentials are fully configured, use Daraja
     if (hasDaraja) {
       const finalCallbackUrl = process.env.MPESA_CALLBACK_URL || callbackUrl || 'https://kra.akubrecah.com/api/mpesa/callback';
@@ -110,7 +115,7 @@ export async function dispatchMpesaStkPush({
           PartyB: parseInt(shortCode),
           PhoneNumber: parseInt(normalizedPhone),
           CallBackURL: finalCallbackUrl,
-          AccountReference: reference.substring(0, 12),
+          AccountReference: (resolvedRefPin || reference.replace(/^CERT-/, '')).substring(0, 12),
           TransactionDesc: description || 'KRA Certificate Payment',
         };
 
@@ -143,7 +148,7 @@ export async function dispatchMpesaStkPush({
     // 2. Paystack M-Pesa STK Push
     if (process.env.PAYSTACK_SECRET_KEY) {
       console.log('[M-Pesa STK] Dispatching real STK Push via Paystack Charge API for phone:', normalizedPhone);
-      const cleanPin = reference.replace(/^CERT-/, '').trim().toUpperCase();
+      const cleanPin = (resolvedRefPin || tryResolveKraPin(reference) || reference.replace(/^CERT-/, '').trim().toUpperCase());
 
       const paystackRes = await chargePaystackMpesa({
         phone: formatPaystackKenyaPhone(normalizedPhone),

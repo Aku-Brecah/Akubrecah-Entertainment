@@ -38,7 +38,7 @@ function createProxyAgent(proxyUrl: string): any {
             const secureSocket = tls.connect({
               socket,
               servername: opts.host,
-              rejectUnauthorized: false,
+              rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
             });
             callback(null, secureSocket);
           } else {
@@ -142,7 +142,7 @@ function initKraSession(proxyUrl: string): Promise<Record<string, string>> {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
       timeout: 10000,
-      rejectUnauthorized: false,
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
       agent
     } as any;
 
@@ -181,7 +181,7 @@ function fetchCaptchaImage(cookieString: string, randNum: number, proxyUrl: stri
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
       },
       timeout: 10000,
-      rejectUnauthorized: false,
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
       agent
     } as any;
 

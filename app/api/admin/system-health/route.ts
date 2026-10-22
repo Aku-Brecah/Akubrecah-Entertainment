@@ -39,7 +39,7 @@ function createProxyAgent(proxyUrl: string): any {
             const secureSocket = tls.connect({
               socket,
               servername: opts.host,
-              rejectUnauthorized: false,
+              rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
             });
             callback(null, secureSocket);
           } else {

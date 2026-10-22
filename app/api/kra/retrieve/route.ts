@@ -46,7 +46,7 @@ function createProxyAgent(proxyUrl: string): any {
             const secureSocket = tls.connect({
               socket,
               servername: opts.host,
-              rejectUnauthorized: false,
+              rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
             });
             callback(null, secureSocket);
           } else {
@@ -81,7 +81,7 @@ function initKraSession(proxyUrl?: string): Promise<Record<string, string>> {
       method: 'GET',
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
       timeout: 8000,
-      rejectUnauthorized: false,
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
       agent
     } as any, (res) => {
       const cookieMap: Record<string, string> = {};
@@ -127,7 +127,7 @@ function httpsPost(path: string, body: string, cookieString: string, contentType
       method: 'POST',
       headers,
       timeout: 10000,
-      rejectUnauthorized: false,
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
       agent
     } as any, (res) => {
       const chunks: Buffer[] = [];

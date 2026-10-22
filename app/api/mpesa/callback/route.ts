@@ -14,6 +14,21 @@ const getCallbackRegistry = (): Record<string, any> => {
 
 export async function POST(req: NextRequest) {
   try {
+    // Security: validate the Daraja callback with the secret token embedded in
+    // the registered callback URL (.../api/mpesa/callback?token=<secret>).
+    // Validation activates once MPESA_CALLBACK_TOKEN is configured in the
+    // environment AND the Daraja portal callback URL is updated; until then a
+    // loud warning is logged so the gate is visible in system health.
+    const callbackToken = process.env.MPESA_CALLBACK_TOKEN;
+    if (callbackToken) {
+      if (req.nextUrl.searchParams.get('token') !== callbackToken) {
+        console.error('[M-Pesa Callback] REJECTED: missing/invalid callback token — unauthenticated callback attempt');
+        return NextResponse.json({ success: false, error: 'Unauthorized callback' }, { status: 401 });
+      }
+    } else {
+      console.warn('[M-Pesa Callback] WARNING: MPESA_CALLBACK_TOKEN not configured — callback origin is unvalidated');
+    }
+
     const payload = await req.json();
     console.log('[M-Pesa Callback] Received payload:', JSON.stringify(payload));
 
@@ -32,9 +47,33 @@ export async function POST(req: NextRequest) {
 
     const registry = getCallbackRegistry();
 
+    // Parse callback metadata first so amount tampering can be validated
+    // before anything is marked as paid.
+    let amount = 0;
+    if (CallbackMetadata && Array.isArray(CallbackMetadata.Item)) {
+      for (const item of CallbackMetadata.Item) {
+        if (item.Name === 'Amount' && typeof item.Value === 'number') amount = item.Value;
+      }
+    }
+
     // Check if the payment was successful
+    // A "success" callback under the KES 20 certificate price is rejected:
+    // the amount tampering must not grant a free download. (amount === 0 means
+    // the gateway sent no metadata — treated as unresolved, not rejected.)
+    const underpaid = ResultCode === 0 && amount > 0 && amount < 20;
+
+    if (underpaid) {
+      console.error(`[M-Pesa Callback] REJECTED underpaid "success" (KES ${amount}) for ${CheckoutRequestID}`);
+      registry[CheckoutRequestID] = {
+        status: 'failed',
+        resultCode: ResultCode,
+        resultDesc: `Underpaid amount KES ${amount}`,
+        timestamp: Date.now()
+      };
+      return NextResponse.json({ success: true, message: 'Underpaid callback rejected' });
+    }
+
     if (ResultCode === 0) {
-      let amount = 0;
       let mpesaReceipt = '';
       let transactionDate = '';
       let phoneNumber = '';
@@ -42,9 +81,6 @@ export async function POST(req: NextRequest) {
       if (CallbackMetadata && Array.isArray(CallbackMetadata.Item)) {
         for (const item of CallbackMetadata.Item) {
           switch (item.Name) {
-            case 'Amount':
-              amount = item.Value;
-              break;
             case 'MpesaReceiptNumber':
               mpesaReceipt = item.Value;
               break;
@@ -266,8 +302,8 @@ export async function POST(req: NextRequest) {
               appUrl: 'https://kra.akubrecah.com',
               evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
               instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment',
-              serviceSecret: 'akubrecah_secret_whatsapp_key_2026',
-              apiKey: 'akubrecah_secret_whatsapp_key_2026',
+              serviceSecret: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
+              apiKey: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
             }),
           });
         } catch (n8nErr: any) {

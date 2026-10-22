@@ -1,7 +1,8 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import sentryPkg from '@sentry/nextjs';
-const withSentryConfig = sentryPkg.withSentryConfig || ((cfg) => cfg);
+// Real dependency — if the build-time source-map upload can't be wired, the
+// build should fail loudly rather than silently shipping untested maps.
+import { withSentryConfig } from '@sentry/nextjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,6 +10,7 @@ const __dirname = path.dirname(__filename);
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   devIndicators: false,
+  poweredByHeader: false,
   turbopack: {
     root: __dirname,
   },

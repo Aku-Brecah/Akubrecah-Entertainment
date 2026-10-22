@@ -189,8 +189,8 @@ async function handleAdminBotCommand({
   const rawCmd = parts[0]?.toLowerCase() || '';
   const rawArg = parts.slice(1).join(' ').trim();
 
-  const expectedPin = process.env.ADMIN_BOT_PIN || '8426';
-  const hasPinInText = clean.includes(expectedPin) || clean.includes('8426');
+  const expectedPin = process.env.ADMIN_BOT_PIN || '';
+  const hasPinInText = Boolean(expectedPin) && clean.includes(expectedPin);
 
   const BOT_NUMBER = '254791497858';
   const effectivePhone = authorPhone || userPhone;
@@ -278,8 +278,8 @@ async function handleAdminBotCommand({
       `🔐 *Akubrecah KRA — Admin Verification Required*\n\n` +
       `Your phone is not yet unlocked for admin operations.\n\n` +
       `To unlock, reply:\n` +
-      `*!admin 8426* or simply *8426*\n\n` +
-      `_(Default master PIN is 8426)_`
+      `*!admin* followed by the master PIN\n\n` +
+      `_(Master PIN is required — ask the system owner if you do not have it)_`
     );
   }
 
@@ -292,7 +292,7 @@ async function handleAdminBotCommand({
       isAdminAuthenticated: false,
       adminAuthExpiry: 0,
     });
-    return `🔒 *Admin Session Locked.*\nSend *!admin 8426* anytime to re-authenticate.`;
+    return `🔒 *Admin Session Locked.*\nSend *!admin* plus your master PIN anytime to re-authenticate.`;
   }
 
   // 2. 1-Click Magic Link
@@ -2190,7 +2190,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     // Shared secret check: Ensure only authorized Evolution instance can trigger chat events
-    const expectedSecret = process.env.EVOLUTION_WEBHOOK_SECRET || process.env.EVOLUTION_API_KEY || 'akubrecah_secret_whatsapp_key_2026';
+    // No hardcoded fallback — fails closed when env is unset.
+    const expectedSecret = process.env.EVOLUTION_WEBHOOK_SECRET || process.env.EVOLUTION_API_KEY || '';
     const providedSecret =
       req.headers.get('x-webhook-secret') ||
       req.headers.get('apikey') ||
@@ -2201,7 +2202,7 @@ export async function POST(req: NextRequest) {
       body.apikey ||
       body.secret;
 
-    if (!providedSecret || (providedSecret !== expectedSecret && providedSecret !== 'akubrecah_secret_whatsapp_key_2026')) {
+    if (!providedSecret || !expectedSecret || providedSecret !== expectedSecret) {
       console.warn('[WhatsApp Chat] Blocked unauthorized chat trigger request. Missing or invalid secret.');
       return NextResponse.json(
         { success: false, error: 'Unauthorized: Invalid Evolution webhook secret.' },
