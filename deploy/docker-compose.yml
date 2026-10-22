@@ -6,6 +6,10 @@ services:
     restart: unless-stopped
     profiles:
       - caddy
+    environment:
+      # Shared between Caddy and the app; Caddy injects it into proxied requests
+      # so the app can trust override headers (rate-limit IP provenance).
+      - INTERNAL_PROXY_SECRET=${INTERNAL_PROXY_SECRET}
     ports:
       - "80:80"
       - "443:443"

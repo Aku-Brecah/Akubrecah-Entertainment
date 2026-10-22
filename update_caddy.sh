@@ -80,13 +80,27 @@ akubrecah.com, www.akubrecah.com {
 kra.akubrecah.com {
     tls /etc/caddy/origin.pem /etc/caddy/origin.key
     encode zstd gzip
-    reverse_proxy 172.23.0.1:3005
+    reverse_proxy 172.23.0.1:3005 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up -X-Internal-Proxy-Secret
+        header_up X-Internal-Proxy-Secret {env.INTERNAL_PROXY_SECRET}
+    }
 }
 
 admin.akubrecah.com {
     tls /etc/caddy/origin.pem /etc/caddy/origin.key
     encode zstd gzip
-    reverse_proxy 172.23.0.1:3005
+    reverse_proxy 172.23.0.1:3005 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up -X-Internal-Proxy-Secret
+        header_up X-Internal-Proxy-Secret {env.INTERNAL_PROXY_SECRET}
+    }
 }
 
 wa.akubrecah.com {
