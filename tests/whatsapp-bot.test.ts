@@ -97,3 +97,23 @@ describe('WhatsApp phone parsing (lib/whatsapp/phone.ts + mpesa-dispatch)', () =
     expect(normalizePhoneNumber('254712345678')).toBe('254712345678');
   });
 });
+
+describe('WhatsApp Direct ID & PIN detection regexes', () => {
+  it('correctly matches valid KRA PIN format', () => {
+    const pinRegex = /^[A-Za-z]\d{9}[A-Za-z]$/;
+    expect(pinRegex.test('A012345678Z')).toBe(true);
+    expect(pinRegex.test('P051234567X')).toBe(true);
+    expect(pinRegex.test('a012345678z')).toBe(true);
+    expect(pinRegex.test('11530093')).toBe(false);
+    expect(pinRegex.test('invalid')).toBe(false);
+  });
+
+  it('correctly matches valid National ID format', () => {
+    const idRegex = /^\d{6,9}$/;
+    expect(idRegex.test('11530093')).toBe(true);
+    expect(idRegex.test('28374619')).toBe(true);
+    expect(idRegex.test('123456789')).toBe(true);
+    expect(idRegex.test('12345')).toBe(false); // too short
+    expect(idRegex.test('A012345678Z')).toBe(false); // is PIN
+  });
+});
