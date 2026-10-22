@@ -22,7 +22,7 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - EVOLUTION_API_URL=http://evolution:8080
-      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY:-}
+      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY:-akubrecah_secret_whatsapp_key_2026}
       - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME:-Akubrecah Entertainment}
       - PAYSTACK_DOWNLOAD_FEE_KES=${PAYSTACK_DOWNLOAD_FEE_KES:-20}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
@@ -36,11 +36,11 @@ services:
     volumes:
       - ./temp:/app/temp
 
-  # Redis for rate limiting and caching
+  # Redis for rate limiting and caching (internal only, prevents host port 6379 collision)
   redis:
     image: redis:7-alpine
-    ports:
-      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    expose:
+      - "6379"
     volumes:
       - redis-data:/data
     restart: unless-stopped
@@ -55,7 +55,7 @@ services:
     ports:
       - "${EVOLUTION_PORT:-8085}:8080"
     environment:
-      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-akubrecah_secret_whatsapp_key_2026}
       - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
       - DEL_INSTANCE=false
       - STORE_MESSAGES=true
