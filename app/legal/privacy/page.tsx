@@ -29,8 +29,8 @@ export default function PrivacyPolicyPage() {
 
       <Section title="1. Who We Are">
         <p>
-          Akubrecah ("<strong>we</strong>", "<strong>us</strong>", or "<strong>our</strong>") operates the website at{" "}
-          <strong>akubrecah.com</strong> and its subdomains (the "<strong>Service</strong>"). We provide an independent
+          Akubrecah (&quot;<strong>we</strong>&quot;, &quot;<strong>us</strong>&quot;, or &quot;<strong>our</strong>&quot;) operates the website at{" "}
+          <strong>akubrecah.com</strong> and its subdomains (the &quot;<strong>Service</strong>&quot;). We provide an independent
           third-party convenience service for retrieving Kenya Revenue Authority (KRA) PIN and Compliance Certificates.
           We are <strong>not affiliated with, endorsed by, or officially connected to the Kenya Revenue Authority</strong>.
         </p>
@@ -85,7 +85,7 @@ export default function PrivacyPolicyPage() {
         <p>We share your data with:</p>
         <ul>
           <li>
-            <strong>Kenya Revenue Authority (KRA)</strong> — your ID/PIN is transmitted to KRA's systems solely to
+            <strong>Kenya Revenue Authority (KRA)</strong> — your ID/PIN is transmitted to KRA&apos;s systems solely to
             retrieve your requested document. We act as your authorised agent for this purpose.
           </li>
           <li>

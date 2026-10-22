@@ -1486,7 +1486,7 @@ export default function AdminOverviewPage() {
                 <Zap className="w-4 h-4" /> Direct Mobile WhatsApp Management
               </span>
               <p className="text-xs text-on-surface-variant">
-                Send <code className="font-bold text-primary">!admin 8426</code> to the bot from your phone to unlock live reports, revenue stats, and one-click magic login links on-demand.
+                Send <code className="font-bold text-primary">!admin &lt;ADMIN_BOT_PIN&gt;</code> to the bot from your phone to unlock live reports, revenue stats, and one-click magic login links on-demand.
               </p>
             </div>
           </div>
@@ -1558,9 +1558,9 @@ export default function AdminOverviewPage() {
 
             <div className="space-y-2 text-xs font-mono">
               <div className="p-2.5 rounded-xl bg-surface-container border border-outline-variant/50">
-                <strong className="text-primary">!admin 8426</strong>
+                <strong className="text-primary">!admin &lt;ADMIN_BOT_PIN&gt;</strong>
                 <p className="text-[11px] text-on-surface-variant font-sans mt-0.5">
-                  Authenticates your phone as Super Admin (default PIN is 8426 or set in ADMIN_BOT_PIN).
+                  Authenticates your phone as Super Admin (the value is set via the ADMIN_BOT_PIN environment variable — never a shipped default).
                 </p>
               </div>
 

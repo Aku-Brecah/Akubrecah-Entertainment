@@ -493,7 +493,7 @@ export function CustomSignIn() {
 
           {/* Toggle to Sign Up */}
           <div className="mt-6 text-center text-xs text-muted-foreground">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link href="/sign-up" className="text-primary hover:underline font-bold ml-1">
               Create an Account
             </Link>

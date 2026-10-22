@@ -324,7 +324,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (res.ok && data.success) {
         setHasMagicAuth(true);
       } else {
-        setPinError(data.error || "Incorrect PIN. Default is 8426.");
+        setPinError(data.error || "Incorrect PIN. Check the admin credentials in your environment.");
       }
     } catch {
       setPinError("Network error. Please try again.");
@@ -420,7 +420,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   setPinInput(e.target.value);
                   setPinError("");
                 }}
-                placeholder="Enter 4-digit PIN (default: 8426)"
+                placeholder="Enter admin PIN"
                 autoFocus
                 className="w-full h-12 px-4 rounded-xl bg-surface-container text-center font-mono text-lg font-black tracking-widest text-on-surface placeholder:text-muted-foreground border-2 border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary shadow-xs"
               />

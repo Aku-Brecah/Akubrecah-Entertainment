@@ -61,11 +61,21 @@ export function extractClientIp(req: NextRequest | Request): string {
     }
   }
   if (!internalSecret && !onVercel) {
-    // Development / misconfigured self-host: headers are attacker-controllable,
-    // but collapsing all users into one bucket would break passing traffic.
-    // Preserve legacy behaviour and flag the missing configuration once.
+    // Headers like cf-connecting-ip are attacker-controllable here. Fail
+    // closed in production: every direct-origin caller shares one bucket so
+    // rate limits keep their teeth instead of letting IP rotation mint
+    // unlimited identities. Dev keeps legacy header behaviour for DX, and a
+    // self-host that explicitly opts in via RATE_LIMIT_TRUST_HEADERS=1
+    // preserves the previous behaviour with a loud flag.
+    if (process.env.NODE_ENV === 'production' && process.env.RATE_LIMIT_TRUST_HEADERS !== '1') {
+      if (!warnedMissingSecret) {
+        log.error('[rate-limit] INTERNAL_PROXY_SECRET not set in production — failing closed: proxy headers treated as untrusted. Set INTERNAL_PROXY_SECRET (via Caddy) or RATE_LIMIT_TRUST_HEADERS=1 to opt in explicitly.');
+        warnedMissingSecret = true;
+      }
+      return 'untrusted-shared-bucket';
+    }
     if (!warnedMissingSecret && process.env.NODE_ENV === 'production') {
-      log.warn('[rate-limit] INTERNAL_PROXY_SECRET not set — treating proxy headers as trusted (insecure)');
+      log.warn('[rate-limit] RATE_LIMIT_TRUST_HEADERS=1 — proxy headers trusted by explicit opt-in (insecure)');
       warnedMissingSecret = true;
     }
   }

@@ -56,19 +56,23 @@ export async function POST(req: NextRequest) {
       });
 
       if (downloadRecord) {
-        // Enforce PIN lock: Payment for certificate A cannot unlock certificate B
         const recordPin = (downloadRecord.pin || '').toUpperCase().trim();
         const recordPinResolved = tryResolveKraPin(recordPin) || recordPin;
-        if (recordPin && recordPin !== 'KRA_CERT' && requestedPin) {
-          if (recordPinResolved !== requestedPin) {
+        const recordPinPlaceholder = !recordPin || recordPin === 'KRA_CERT';
+        if (!recordPinPlaceholder) {
+          // Enforce PIN lock: Payment for certificate A cannot unlock certificate B
+          if (requestedPin && recordPinResolved !== requestedPin) {
             return NextResponse.json(
               { success: false, error: 'Payment record does not match the requested certificate PIN.' },
               { status: 403 }
             );
           }
+          verifiedPin = recordPinResolved;
+          isAuthorized = true;
         }
-        verifiedPin = recordPinResolved && recordPinResolved !== 'KRA_CERT' ? recordPinResolved : requestedPin;
-        isAuthorized = true;
+        // Placeholder records (no usable PIN) are NOT proof of a purchased
+        // certificate — do not mint verifiedPin from the request body; fall
+        // through to the admin/subscription authorization checks (fail closed).
       }
     }
 

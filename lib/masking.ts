@@ -95,7 +95,7 @@ export function maskTaxpayerData<T extends TaxpayerData>(
   data: T,
   isSubscribed: boolean = false,
   isAdmin: boolean = false
-): T & { isSubscribed: boolean } {
+): T & { isSubscribed: boolean; fullName: string } {
   if (isAdmin || isSubscribed) {
     const name = data.name || data.taxpayerName || data.fullName || '';
     return {

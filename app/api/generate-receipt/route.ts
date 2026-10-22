@@ -2,60 +2,84 @@ import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { generateReceiptPdfBuffer } from '@/lib/certificate-fulfillment';
+import { verifyAdminCaller } from '@/lib/admin-auth';
 
 export const maxDuration = 30;
 
+/**
+ * POST /api/generate-receipt
+ *
+ * Renders the KES 20 ETR fiscal receipt for a COMPLETED download payment.
+ * Server-authoritative: every printed field (PIN, receipt number, amount)
+ * is sourced from the matching certificateDownload record — the request body
+ * can only point at an existing record. Without admin credentials, an
+ * attacker-chosen name/receipt/amount can no longer fabricate "official"
+ * fiscal invoices (historically this endpoint was fully unauthenticated).
+ */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const {
-      downloadId,
-      mpesaReceipt,
-      pin,
-      name,
-      amount = 20,
-      phone,
-    } = body;
+    const body = await req.json().catch(() => ({}));
+    const { downloadId } = body;
 
     const db = prisma as any;
-    let taxpayerPin = pin;
-    const taxpayerName = name;
-    let receiptNumber = mpesaReceipt;
-    const userPhone = phone;
+    const admin = await verifyAdminCaller(req);
 
-    if (downloadId) {
-      const downloadRecord = await db.certificateDownload?.findFirst({
-        where: { id: downloadId },
+    let downloadRecord: any = null;
+    const incomingDownloadId = typeof downloadId === 'string' ? downloadId.trim() : '';
+    if (incomingDownloadId) {
+      downloadRecord = await db.certificateDownload?.findFirst({
+        where: { id: incomingDownloadId },
       });
-      if (downloadRecord) {
-        taxpayerPin = taxpayerPin || downloadRecord.pin;
-        receiptNumber = receiptNumber || downloadRecord.mpesaReceipt || 'MPESA_REF';
-      }
     }
 
+    if (!admin && !downloadRecord) {
+      return NextResponse.json(
+        { success: false, error: 'Download authorization required. Receipts can only be issued for confirmed payments.' },
+        { status: 403 }
+      );
+    }
 
-    const resolvedName = taxpayerName || 'Registered Taxpayer';
-    const resolvedPin = taxpayerPin ? String(taxpayerPin).toUpperCase() : 'N/A';
-    const resolvedReceipt = receiptNumber || 'REC-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+    // Bind the printed receipt number to the actual payment trail.
+    const receiptNumber: string =
+      downloadRecord?.mpesaReceipt || downloadRecord?.checkoutId || (admin ? 'MANUAL-' + Date.now() : '');
+
+    if (!receiptNumber || (!admin && receiptNumber.startsWith('dl_'))) {
+      return NextResponse.json(
+        { success: false, error: 'No confirmed payment reference on record for this download.' },
+        { status: 403 }
+      );
+    }
+
+    // Resolve the taxpayer name from the paying user, not from the request.
+    let taxpayerName = '';
+    try {
+      const user = await db.users?.findUnique({ where: { id: downloadRecord.userId } });
+      taxpayerName = user?.name || '';
+    } catch (nameErr: any) {
+      log.warn('[generate-receipt] User lookup notice:', nameErr.message);
+    }
+
+    const isAdminRecord = downloadRecord?.downloadType === 'admin' || downloadRecord?.downloadType === 'service_dispatch';
+    const resolvedPin = downloadRecord?.pin && isAdminRecord ? downloadRecord.pin.toUpperCase() : (downloadRecord?.pin || '').toUpperCase();
 
     const pdfBuffer = await generateReceiptPdfBuffer({
-      receiptNumber: resolvedReceipt,
-      pin: resolvedPin,
-      name: resolvedName,
-      amount: Number(amount || 20),
-      phone: userPhone,
-      paymentMethod: 'M-PESA EXPRESS',
+      receiptNumber,
+      pin: resolvedPin || 'N/A',
+      name: taxpayerName || 'Registered Taxpayer',
+      amount: Number(downloadRecord?.amountCharged ?? 20),
+      phone: undefined,
+      paymentMethod: downloadRecord?.checkoutId && !downloadRecord?.mpesaReceipt ? 'PAYSTACK' : 'M-PESA EXPRESS',
     });
 
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="ETR_Receipt_${resolvedReceipt}.pdf"`,
+        'Content-Disposition': `attachment; filename="ETR_Receipt_${receiptNumber}.pdf"`,
       },
     });
   } catch (error: any) {
-    log.error('[generate-receipt Error]:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    log.error('[generate-receipt Error]:', error.message);
+    return NextResponse.json({ success: false, error: 'Receipt generation failed' }, { status: 500 });
   }
 }

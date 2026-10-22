@@ -1,6 +1,7 @@
 import { log } from '@/lib/monitoring/logger';
+import { safeCompare } from '@/lib/admin-auth';
 import { NextRequest, NextResponse, after } from 'next/server';
-import { sanitizeWhatsAppPhone, markEvolutionMessageRead, getEvolutionInstanceName } from '@/lib/evolution';
+import { sanitizeWhatsAppPhone, markEvolutionMessageRead } from '@/lib/evolution';
 import { handleWhatsAppChat } from '@/app/api/whatsapp/chat/route';
 import { isDuplicateWhatsAppMessage } from '@/lib/whatsapp-dedup';
 
@@ -20,8 +21,8 @@ export async function POST(req: NextRequest) {
     // Shared secret check: Ensure only authorized Evolution instance can trigger chat events
     // No hardcoded fallback — fails closed when env is unset (all known callers send headers).
     const expectedSecret = process.env.EVOLUTION_WEBHOOK_SECRET || process.env.EVOLUTION_API_KEY || '';
-    const expectedInstance = getEvolutionInstanceName().toLowerCase().trim();
-
+    // Note: the Evolution instance name is intentionally NOT an auth input —
+    // it is public knowledge and can be forged in event bodies.
     const providedHeaderSecret =
       req.headers.get('x-webhook-secret') ||
       req.headers.get('apikey') ||
@@ -36,27 +37,21 @@ export async function POST(req: NextRequest) {
       payload.token ||
       payload.webhook_secret;
 
-    const payloadInstance = String(
-      payload.instance ||
-      payload.instanceName ||
-      payload.data?.instance ||
-      payload.data?.instanceName ||
-      ''
-    ).toLowerCase().trim();
-
     const isSecretValid = Boolean(expectedSecret) && (
-      (providedHeaderSecret && providedHeaderSecret === expectedSecret) ||
-      (providedBodySecret && providedBodySecret === expectedSecret)
+      safeCompare(providedHeaderSecret || '', expectedSecret) ||
+      safeCompare(providedBodySecret || '', expectedSecret)
     );
 
-    const isInstanceValid = payloadInstance && (payloadInstance === expectedInstance || expectedInstance.includes(payloadInstance) || payloadInstance.includes(expectedInstance));
-
-    if (!isSecretValid && !isInstanceValid) {
+    // FAIL CLOSED: the secret is required. An instance-name match is never an
+    // acceptable substitute — the instance name is public knowledge, so
+    // accepting it alone would let anyone forge webhook events, spook the
+    // bot-owner workflow, and mint admin magic links.
+    if (!isSecretValid) {
       log.warn(
-        `[WhatsApp Webhook] Blocked unauthorized request. Provided secret: ${Boolean(providedHeaderSecret || providedBodySecret)}, Instance: ${payloadInstance || 'none'}`
+        `[WhatsApp Webhook] Blocked unauthorized request. Secret provided: ${Boolean(providedHeaderSecret || providedBodySecret)}`
       );
       return NextResponse.json(
-        { success: false, error: 'Unauthorized: Invalid Evolution webhook secret or instance.' },
+        { success: false, error: 'Unauthorized: Invalid Evolution webhook secret.' },
         { status: 401 }
       );
     }
@@ -167,10 +162,18 @@ export async function POST(req: NextRequest) {
     const BOT_OWNER_NUMBER = '254791497858';
     let userPhone = sanitizeWhatsAppPhone(rawRemoteJid);
 
-    // If sent from the bot device itself, default to BOT_OWNER_NUMBER if remoteJid was empty or self
+    // Attribute the sender only when the jid actually resolves to a phone.
+    // The legacy behavior defaulted fromMe events with an empty jid to the
+    // BOT OWNER — a forged event could then pose as the owner. Those events
+    // are now ignored instead of attributed.
     if (key.fromMe) {
-      if (!userPhone || userPhone === BOT_OWNER_NUMBER || rawRemoteJid.includes(BOT_OWNER_NUMBER)) {
+      if (rawRemoteJid.includes(BOT_OWNER_NUMBER)) {
         userPhone = BOT_OWNER_NUMBER;
+      } else if (!userPhone) {
+        return NextResponse.json(
+          { success: true, message: 'Ignored unattributable outbound message' },
+          { status: 200 }
+        );
       }
     } else if (!userPhone) {
       return NextResponse.json({ success: false, error: 'Could not resolve sender phone' }, { status: 400 });
@@ -184,14 +187,20 @@ export async function POST(req: NextRequest) {
       messageId: key.id,
     });
 
+    // Owner identity derives ONLY from the resolved phone number — never from
+    // the client-supplied `key.fromMe` flag alone. An attacker who reaches
+    // this endpoint must not be able to promote themselves to Super Admin by
+    // writing fromMe: true into the event body.
+    const resolvedOwner = Boolean(userPhone === BOT_OWNER_NUMBER || rawRemoteJid.includes(BOT_OWNER_NUMBER));
+
     // Execute state machine directly in-process
     const chatResult = await handleWhatsAppChat({
       phone: userPhone,
       message: incomingText,
       messageId,
       sendDirect: true,
-      authorPhone: key.fromMe ? BOT_OWNER_NUMBER : userPhone,
-      isFromBotOwner: Boolean(key.fromMe || userPhone === BOT_OWNER_NUMBER || rawRemoteJid.includes(BOT_OWNER_NUMBER)),
+      authorPhone: userPhone,
+      isFromBotOwner: resolvedOwner,
     });
 
     const pendingCheckoutId = (chatResult as any)?.metadata?.checkoutId;

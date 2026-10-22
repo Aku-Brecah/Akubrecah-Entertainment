@@ -492,7 +492,7 @@ export function DisclaimerView() {
                 Akubrecah makes <strong>no representations, warranties, or guarantees</strong> regarding the accuracy,
                 completeness, or legal validity of the records returned by KRA. If your name, station, county, or
                 identity documents on the generated certificate contain spelling errors or outdated addresses, these
-                reflect historical entries in KRA's database, not an error by Akubrecah.
+                reflect historical entries in KRA&apos;s database, not an error by Akubrecah.
               </p>
               <p>
                 To rectify statutory errors in your official KRA record, you must submit a formal Amendment of PIN
@@ -630,9 +630,9 @@ export function DisclaimerView() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground pt-1">
-                <strong>Important Notice:</strong> These fees are for Akubrecah's software automation, server hosting,
+                <strong>Important Notice:</strong> These fees are for Akubrecah&apos;s software automation, server hosting,
                 and technical delivery service only. They do NOT represent a tax fee charged by KRA. Any citizen who
-                wishes to download their certificate without a convenience fee can do so for free on KRA's official website.
+                wishes to download their certificate without a convenience fee can do so for free on KRA&apos;s official website.
               </p>
             </div>
           </article>

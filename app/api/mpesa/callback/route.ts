@@ -1,5 +1,6 @@
 import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 
 export const maxDuration = 10;
 
@@ -17,17 +18,29 @@ export async function POST(req: NextRequest) {
   try {
     // Security: validate the Daraja callback with the secret token embedded in
     // the registered callback URL (.../api/mpesa/callback?token=<secret>).
-    // Validation activates once MPESA_CALLBACK_TOKEN is configured in the
-    // environment AND the Daraja portal callback URL is updated; until then a
-    // loud warning is logged so the gate is visible in system health.
+    // FAIL CLOSED: without a configured token the callback origin cannot be
+    // authenticated, so every request is rejected. A forged 'success' payload
+    // would otherwise mint a paid certificateDownload record for free.
+    // (Daraja portals let you register the query-param token; boot must set it.)
     const callbackToken = process.env.MPESA_CALLBACK_TOKEN;
-    if (callbackToken) {
-      if (req.nextUrl.searchParams.get('token') !== callbackToken) {
+    if (!callbackToken) {
+      log.error('[M-Pesa Callback] REJECTED: MPESA_CALLBACK_TOKEN is not configured — callbacks are fail-closed');
+      return NextResponse.json(
+        { success: false, error: 'Callback token not configured server-side' },
+        { status: 503 }
+      );
+    }
+    {
+      // Timing-safe compare so the token cannot be probed character-wise.
+      const providedToken = req.nextUrl.searchParams.get('token') || '';
+      const providedBuf = Buffer.from(providedToken);
+      const expectedBuf = Buffer.from(callbackToken);
+      const mismatch = providedBuf.length !== expectedBuf.length
+        || !crypto.timingSafeEqual(providedBuf, expectedBuf);
+      if (mismatch) {
         log.error('[M-Pesa Callback] REJECTED: missing/invalid callback token — unauthenticated callback attempt');
         return NextResponse.json({ success: false, error: 'Unauthorized callback' }, { status: 401 });
       }
-    } else {
-      log.warn('[M-Pesa Callback] WARNING: MPESA_CALLBACK_TOKEN not configured — callback origin is unvalidated');
     }
 
     const payload = await req.json();
@@ -303,7 +316,7 @@ export async function POST(req: NextRequest) {
               appUrl: 'https://kra.akubrecah.com',
               evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
               instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment',
-              serviceSecret: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
+              serviceSecret: process.env.N8N_DISPATCH_SECRET || process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
               apiKey: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
             }),
           });
@@ -368,6 +381,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     log.error('[M-Pesa Callback Catch Error]:', error.message);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Callback processing failed' }, { status: 500 });
   }
 }

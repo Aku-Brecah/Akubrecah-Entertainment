@@ -29,13 +29,13 @@ export default function TermsOfServicePage() {
 
       <Section title="1. Acceptance of Terms">
         <p>
-          By accessing or using the Akubrecah website and services (the "<strong>Service</strong>"), you agree to be
-          legally bound by these Terms of Service ("<strong>Terms</strong>"). If you do not agree to all of these
+          By accessing or using the Akubrecah website and services (the &quot;<strong>Service</strong>&quot;), you agree to be
+          legally bound by these Terms of Service (&quot;<strong>Terms</strong>&quot;). If you do not agree to all of these
           Terms, you must not use the Service.
         </p>
         <p>
-          These Terms constitute a legally binding agreement between you ("<strong>User</strong>", "<strong>you</strong>")
-          and Akubrecah ("<strong>we</strong>", "<strong>us</strong>", "<strong>our</strong>").
+          These Terms constitute a legally binding agreement between you (&quot;<strong>User</strong>&quot;, &quot;<strong>you</strong>&quot;)
+          and Akubrecah (&quot;<strong>we</strong>&quot;, &quot;<strong>us</strong>&quot;, &quot;<strong>our</strong>&quot;).
         </p>
       </Section>
 
@@ -43,12 +43,12 @@ export default function TermsOfServicePage() {
         <p>
           Akubrecah provides an <strong>independent, third-party convenience service</strong> that assists users in
           retrieving KRA PIN Certificates and Tax Compliance Certificates from the Kenya Revenue Authority (KRA) portal,
-          and submitting Change of Particulars requests on users' behalf.
+          and submitting Change of Particulars requests on users&apos; behalf.
         </p>
         <p>
           <strong>Important:</strong> Akubrecah is <strong>not</strong> the Kenya Revenue Authority. We are not
           an official KRA service, agent, or representative. We are not affiliated with, endorsed by, or approved by
-          the Kenya Revenue Authority. The KRA's official portal is{" "}
+          the Kenya Revenue Authority. The KRA&apos;s official portal is{" "}
           <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4">
             itax.kra.go.ke
           </a>.
@@ -69,7 +69,7 @@ export default function TermsOfServicePage() {
         </ul>
         <p>
           By using this Service, you represent and warrant that you meet all of the above requirements. Misuse of this
-          Service to access another person's KRA information without authorisation may constitute an offence under
+          Service to access another person&apos;s KRA information without authorisation may constitute an offence under
           the Computer Misuse and Cybercrimes Act 2018 and the Data Protection Act 2019.
         </p>
       </Section>
@@ -117,7 +117,7 @@ export default function TermsOfServicePage() {
           agents shall not be liable for:
         </p>
         <ul>
-          <li>Any failure, delay, or error caused by the KRA's own systems, downtime, or changes to the KRA portal</li>
+          <li>Any failure, delay, or error caused by the KRA&apos;s own systems, downtime, or changes to the KRA portal</li>
           <li>Inaccuracies in certificates issued by KRA</li>
           <li>Any loss arising from your use or inability to use the Service</li>
           <li>Indirect, incidental, special, consequential, or punitive damages</li>
@@ -148,7 +148,7 @@ export default function TermsOfServicePage() {
 
       <Section title="9. Disclaimer of Warranties">
         <p>
-          The Service is provided on an "<strong>as is</strong>" and "<strong>as available</strong>" basis, without
+          The Service is provided on an &quot;<strong>as is</strong>&quot; and &quot;<strong>as available</strong>&quot; basis, without
           any warranties of any kind, either express or implied, including but not limited to implied warranties of
           merchantability, fitness for a particular purpose, or non-infringement.
         </p>
@@ -181,7 +181,7 @@ export default function TermsOfServicePage() {
       <Section title="12. Changes to Terms">
         <p>
           We reserve the right to modify these Terms at any time. Updated Terms will be posted with a revised
-          "Last Updated" date. Your continued use of the Service after changes are posted constitutes your
+          &quot;Last Updated&quot; date. Your continued use of the Service after changes are posted constitutes your
           acceptance of the modified Terms. We will provide reasonable notice of material changes.
         </p>
       </Section>
