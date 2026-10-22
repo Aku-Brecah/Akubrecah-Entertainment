@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminCaller } from '@/lib/admin-auth';
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, services });
   } catch (error: any) {
-    console.error('[API Admin Services GET Error]:', error);
+    log.error('[API Admin Services GET Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, service });
   } catch (error: any) {
-    console.error('[API Admin Services POST Error]:', error);
+    log.error('[API Admin Services POST Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -83,7 +84,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true, service });
   } catch (error: any) {
-    console.error('[API Admin Services PUT Error]:', error);
+    log.error('[API Admin Services PUT Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -106,7 +107,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Service deleted successfully.' });
   } catch (error: any) {
-    console.error('[API Admin Services DELETE Error]:', error);
+    log.error('[API Admin Services DELETE Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { z } from 'zod';
 
 /**
@@ -88,10 +89,10 @@ export function getAppConfig(): AppConfig {
   const parsed = envSchema.safeParse(rawEnv);
 
   if (!parsed.success) {
-    console.error('❌ [Config Error] Invalid environment variables:', parsed.error.format());
+    log.error('❌ [Config Error] Invalid environment variables:', parsed.error.format());
     // In production, log warning; in development, throw or supply safe fallback
     if (process.env.NODE_ENV === 'production') {
-      console.warn('⚠️ [Config Notice] Defaulting to safe fallbacks to prevent container crash.');
+      log.warn('⚠️ [Config Notice] Defaulting to safe fallbacks to prevent container crash.');
     }
     // Return parsed with defaults as far as possible
     cachedConfig = envSchema.parse({});

@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
@@ -124,7 +125,7 @@ export async function POST(req: NextRequest) {
     }
 
   } catch (error: any) {
-    console.error('[record-download] Error:', error.message);
+    log.error('[record-download] Error:', error.message);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

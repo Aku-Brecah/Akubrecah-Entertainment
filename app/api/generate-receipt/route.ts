@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { generateReceiptPdfBuffer } from '@/lib/certificate-fulfillment';
@@ -18,9 +19,9 @@ export async function POST(req: NextRequest) {
 
     const db = prisma as any;
     let taxpayerPin = pin;
-    let taxpayerName = name;
+    const taxpayerName = name;
     let receiptNumber = mpesaReceipt;
-    let userPhone = phone;
+    const userPhone = phone;
 
     if (downloadId) {
       const downloadRecord = await db.certificateDownload?.findFirst({
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('[generate-receipt Error]:', error);
+    log.error('[generate-receipt Error]:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

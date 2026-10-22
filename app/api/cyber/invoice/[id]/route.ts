@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { generateCyberInvoicePdfBuffer } from '@/lib/cyber-subscription';
@@ -47,7 +48,7 @@ export async function GET(
       },
     });
   } catch (error: any) {
-    console.error('[api/cyber/invoice/[id]] Error:', error.message);
+    log.error('[api/cyber/invoice/[id]] Error:', error.message);
     return NextResponse.json({ success: false, error: 'Failed to generate invoice PDF' }, { status: 500 });
   }
 }

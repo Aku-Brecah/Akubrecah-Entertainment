@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import crypto from 'crypto';
 
 /**
@@ -166,7 +167,7 @@ export function sealKraPin(pin?: string | null): string {
   if (!looksLikeKraPin(value)) return '';
   const key = getPinSealKey();
   if (!key) {
-    console.warn('[masking] sealKraPin: ENCRYPTION_KEY/JWT_SECRET not configured — PIN withheld from client');
+    log.warn('[masking] sealKraPin: ENCRYPTION_KEY/JWT_SECRET not configured — PIN withheld from client');
     return '';
   }
   try {
@@ -176,7 +177,7 @@ export function sealKraPin(pin?: string | null): string {
     const tag = cipher.getAuthTag();
     return `${PIN_SEAL_PREFIX}${iv.toString('base64url')}.${ciphertext.toString('base64url')}.${tag.toString('base64url')}`;
   } catch (e: any) {
-    console.warn('[masking] sealKraPin failed:', e.message);
+    log.warn('[masking] sealKraPin failed:', e.message);
     return '';
   }
 }
@@ -195,7 +196,7 @@ export function tryResolveKraPin(input?: string | null): string | null {
   if (value.startsWith(PIN_SEAL_PREFIX)) {
     const key = getPinSealKey();
     if (!key) {
-      console.warn('[masking] tryResolveKraPin: sealed PIN received but no server secrecy configured');
+      log.warn('[masking] tryResolveKraPin: sealed PIN received but no server secrecy configured');
       return null;
     }
     try {

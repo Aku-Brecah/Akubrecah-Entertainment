@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { getPublicGithubRepos } from '@/lib/github';
 
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
       repos: filtered,
     });
   } catch (error: any) {
-    console.error('[API /api/github/repos Error]:', error);
+    log.error('[API /api/github/repos Error]:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to load GitHub repositories' },
       { status: 500 }

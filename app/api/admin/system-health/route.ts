@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from "next/server";
 import os from "os";
 import net from "net";
@@ -235,7 +236,7 @@ async function pingEvolutionWhatsApp(): Promise<{ status: string; latency: numbe
       systemTime: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error("[API System Health GET Error]:", error);
+    log.error("[API System Health GET Error]:", error);
     return NextResponse.json({ success: false, error: error.message || "Internal server error" }, { status: 500 });
   }
 }

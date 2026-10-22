@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const maxDuration = 10;
@@ -74,7 +75,7 @@ export async function GET(
     return NextResponse.json(callbackResult);
 
   } catch (error: any) {
-    console.error('[M-Pesa Status Catch Error]:', error.message);
+    log.error('[M-Pesa Status Catch Error]:', error.message);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

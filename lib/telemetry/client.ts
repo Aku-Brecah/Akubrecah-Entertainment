@@ -1,6 +1,6 @@
 /**
- * Client-Side Analytics Tracker for Akubrecah KRA Portal
- * Backward-compatible wrapper over the centralized lib/telemetry engine.
+ * Client-Side Analytics Adapter for Akubrecah KRA Portal
+ * Maps legacy {activityType} payloads onto the telemetry engine (lib/telemetry/analytics.ts).
  */
 
 import {
@@ -8,7 +8,7 @@ import {
   getOrCreateSessionId,
   getClientDeviceInfo,
   TelemetryEvent,
-} from './telemetry';
+} from './analytics';
 
 export interface TrackingPayload {
   activityType:

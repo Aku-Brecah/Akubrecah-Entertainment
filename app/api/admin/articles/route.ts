@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminCaller } from '@/lib/admin-auth';
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, articles });
   } catch (error: any) {
-    console.error('[API Admin Articles GET Error]:', error);
+    log.error('[API Admin Articles GET Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, article });
   } catch (error: any) {
-    console.error('[API Admin Articles POST Error]:', error);
+    log.error('[API Admin Articles POST Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -99,7 +100,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true, article });
   } catch (error: any) {
-    console.error('[API Admin Articles PUT Error]:', error);
+    log.error('[API Admin Articles PUT Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -122,7 +123,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Article deleted successfully.' });
   } catch (error: any) {
-    console.error('[API Admin Articles DELETE Error]:', error);
+    log.error('[API Admin Articles DELETE Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

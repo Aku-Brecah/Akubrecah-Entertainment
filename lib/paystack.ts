@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import crypto from 'crypto';
 
 export interface PaystackInitializeOptions {
@@ -32,7 +33,7 @@ export interface PaystackVerifyResult {
 function getPaystackSecretKey(): string {
   const key = process.env.PAYSTACK_SECRET_KEY || '';
   if (!key) {
-    console.warn('[Paystack] PAYSTACK_SECRET_KEY is not configured in environment variables.');
+    log.warn('[Paystack] PAYSTACK_SECRET_KEY is not configured in environment variables.');
   }
   return key;
 }
@@ -94,7 +95,7 @@ export async function initializePaystackTransaction(
       reference: data.data.reference,
     };
   } catch (error: any) {
-    console.error('[Paystack] Error initializing transaction:', error.message);
+    log.error('[Paystack] Error initializing transaction:', error.message);
     return {
       success: false,
       error: error.message || 'Network error connecting to Paystack.',
@@ -152,7 +153,7 @@ export async function verifyPaystackTransaction(reference: string): Promise<Pays
       metadata: tx.metadata || {},
     };
   } catch (error: any) {
-    console.error('[Paystack] Error verifying transaction:', error.message);
+    log.error('[Paystack] Error verifying transaction:', error.message);
     return {
       success: false,
       status: 'failed',
@@ -283,7 +284,7 @@ export async function chargePaystackMpesa(opts: {
       displayText: txData.display_text || 'Please complete authorization on your mobile phone',
     };
   } catch (error: any) {
-    console.error('[Paystack Charge M-Pesa Error]:', error.message);
+    log.error('[Paystack Charge M-Pesa Error]:', error.message);
     return {
       success: false,
       reference,

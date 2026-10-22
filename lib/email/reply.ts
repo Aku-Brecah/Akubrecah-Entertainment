@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import nodemailer from 'nodemailer';
 
 export interface SendReplyParams {
@@ -161,7 +162,7 @@ export async function sendInquiryReply(params: SendReplyParams): Promise<SendRep
       providerId: info.messageId || `msg_${Date.now()}`,
     };
   } catch (err: any) {
-    console.error('[sendInquiryReply Error]:', err);
+    log.error('[sendInquiryReply Error]:', err);
     return {
       success: false,
       deliveryStatus: 'failed',
@@ -200,6 +201,6 @@ export async function sendAdminNotification(inquiry: {
       text: `New Client Inquiry Received:\n\nName: ${inquiry.name}\nEmail: ${inquiry.email}\nPhone: ${inquiry.phone || 'N/A'}\nCompany: ${inquiry.company || 'N/A'}\nProject: ${inquiry.projectType}\nBudget: ${inquiry.budget || 'N/A'}\n\nMessage:\n${inquiry.message}\n\nManage at: https://akubrecah.com/admin/inquiries`,
     });
   } catch (err) {
-    console.warn('[Admin Notification Email Error]:', err);
+    log.warn('[Admin Notification Email Error]:', err);
   }
 }

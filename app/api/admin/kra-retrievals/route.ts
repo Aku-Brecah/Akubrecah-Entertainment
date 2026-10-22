@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyAdminCaller } from "@/lib/admin-auth";
@@ -103,7 +104,7 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error("[admin/kra-retrievals GET] Error:", error.message);
+    log.error("[admin/kra-retrievals GET] Error:", error.message);
     return NextResponse.json({ success: false, error: "Internal server error fetching retrieval data." }, { status: 500 });
   }
 }

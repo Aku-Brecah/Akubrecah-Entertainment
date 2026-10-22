@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import crypto from 'crypto';
 import { NextRequest } from 'next/server';
 
@@ -64,7 +65,7 @@ export function extractClientIp(req: NextRequest | Request): string {
     // but collapsing all users into one bucket would break passing traffic.
     // Preserve legacy behaviour and flag the missing configuration once.
     if (!warnedMissingSecret && process.env.NODE_ENV === 'production') {
-      console.warn('[rate-limit] INTERNAL_PROXY_SECRET not set — treating proxy headers as trusted (insecure)');
+      log.warn('[rate-limit] INTERNAL_PROXY_SECRET not set — treating proxy headers as trusted (insecure)');
       warnedMissingSecret = true;
     }
   }

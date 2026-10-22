@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from "next/server";
 import prisma, { createSystemLog } from "@/lib/prisma";
 import { verifyAdminCaller } from "@/lib/admin-auth";
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, logs });
   } catch (error: any) {
-    console.error("[API System Logs GET Error]:", error);
+    log.error("[API System Logs GET Error]:", error);
     // If the database has not been initialized yet (tables not pushed), return an empty list or clear error
     if (error.code === "P2021" || error.message?.includes("relation") || error.message?.includes("does not exist")) {
       return NextResponse.json({ 
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, log });
   } catch (error: any) {
-    console.error("[API System Logs POST Error]:", error);
+    log.error("[API System Logs POST Error]:", error);
     return NextResponse.json({ success: false, error: error.message || "Internal server error" }, { status: 500 });
   }
 }

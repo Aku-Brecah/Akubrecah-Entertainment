@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { clerkClient } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminCaller } from "@/lib/admin-auth";
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
 
     const rawUsers = Array.isArray(response) ? response : ((response as any).data || []);
     
-    console.log("[API Admin Users GET] Fetching users list:", {
+    log.info("[API Admin Users GET] Fetching users list:", {
       totalReturned: rawUsers.length,
       publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
       rawIds: rawUsers.map((u: any) => u.id)
@@ -58,7 +59,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, users: formattedUsers });
   } catch (error: any) {
-    console.error("[API Admin Users GET Error]:", error);
+    log.error("[API Admin Users GET Error]:", error);
     return NextResponse.json({ success: false, error: error.message || "Internal server error" }, { status: 500 });
   }
 }
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
   } catch (error: any) {
-    console.error("[API Admin Users POST Error]:", error);
+    log.error("[API Admin Users POST Error]:", error);
     return NextResponse.json({ success: false, error: error.message || "Internal server error" }, { status: 500 });
   }
 }

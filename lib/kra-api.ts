@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 /**
  * KRA Live API Client Module
  * Provides OAuth2 Token Management, PIN Checking, and ID Checking against KRA Gateway APIs
@@ -176,7 +177,7 @@ async function enrichTaxpayerProfile(profile: TaxpayerProfile): Promise<void> {
         }
       }
       } catch (err: any) {
-        console.warn('[KRA-API] Failed to enrich with manufacturer details:', err.message);
+        log.warn('[KRA-API] Failed to enrich with manufacturer details:', err.message);
       }
     }
   }
@@ -207,7 +208,7 @@ function setToMemoryCache(_key: string, _profile: TaxpayerProfile): void {
 /**
  * Maps a cached database record from kra_pin_cache into a complete TaxpayerProfile
  */
-function cachedRecordToProfile(cached: any, fallbackId?: string): TaxpayerProfile {
+export function cachedRecordToProfile(cached: any, fallbackId?: string): TaxpayerProfile {
   const county = cached.county || '';
   const town = cached.city || cached.town || '';
   const taxArea = sanitizeTaxArea(cached.tax_area || '', county, town);
@@ -359,7 +360,7 @@ export async function lookupPinByIdNumber(idNumber: string, cookieString = ''): 
               return;
             }
             // If KRA returned asterisks, the PIN is masked. Never guess, splice, or fabricate middle digits.
-            console.log('[KRA-API] iTax returned masked PIN callback:', cleanVal);
+            log.info('[KRA-API] iTax returned masked PIN callback:', cleanVal);
           }
         } catch {}
         resolve(null);
@@ -512,7 +513,7 @@ export async function fetchTaxpayerByPin(rawPin: string, mode: 'api' | 'dwr' | '
       return profile;
     }
   } catch (err: any) {
-    console.warn('[KRA-API] Direct manufacturer endpoint attempt notice:', err.message);
+    log.warn('[KRA-API] Direct manufacturer endpoint attempt notice:', err.message);
   }
 
   // 4. Fallback: Official KRA GavaConnect Gateway (only if consumer credentials exist, with 2s timeout)
@@ -583,7 +584,7 @@ export async function fetchTaxpayerById(rawId: string, mode: 'api' | 'dwr' | 'au
         return profile;
       }
     } catch (err: any) {
-      console.warn('[KRA-API] Direct DWR ID lookup attempt notice:', err.message);
+      log.warn('[KRA-API] Direct DWR ID lookup attempt notice:', err.message);
     }
   }
 
@@ -665,7 +666,7 @@ export async function fetchTaxpayerById(rawId: string, mode: 'api' | 'dwr' | 'au
                 cacheTaxpayerRecord(profile).catch(() => {});
                 return profile;
               } catch (pinErr: any) {
-                console.warn('[KRA-API] fetchTaxpayerByPin after ID resolution notice:', pinErr.message);
+                log.warn('[KRA-API] fetchTaxpayerByPin after ID resolution notice:', pinErr.message);
               }
             }
 
@@ -689,7 +690,7 @@ export async function fetchTaxpayerById(rawId: string, mode: 'api' | 'dwr' | 'au
 /**
  * Normalizes varied JSON responses from KRA API Gateway into a unified TaxpayerProfile
  */
-function normalizeKraTaxpayerResponse(
+export function normalizeKraTaxpayerResponse(
   raw: any,
   fallbackPin: string,
   source: 'live_api' | 'gateway_cached' | 'itax_live',
@@ -706,7 +707,8 @@ function normalizeKraTaxpayerResponse(
     }
     Object.entries(obj).forEach(([k, v]) => {
       if (v !== undefined && v !== null) {
-        if (typeof v === 'object' && !Array.isArray(v)) {
+        if (typeof v === 'object') {
+          // Recurse both nested objects AND arrays (e.g. PINDATA: [...])
           collect(v);
         } else {
           merged[k.toLowerCase()] = String(v).trim();

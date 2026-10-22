@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const maxDuration = 30;
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
       message: 'ID document verified in-memory. Zero server disk retention enforced.',
     });
   } catch (error: any) {
-    console.error('[upload-id] Error:', error.message);
+    log.error('[upload-id] Error:', error.message);
     return NextResponse.json(
       { success: false, error: 'Upload failed. Please try again.' },
       { status: 500 }

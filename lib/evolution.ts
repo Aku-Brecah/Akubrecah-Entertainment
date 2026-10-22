@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 /**
  * Evolution API Client (Self-Hosted Free WhatsApp Integration)
  * Compatible with atendai/evolution-api:latest
@@ -89,14 +90,14 @@ export async function sendEvolutionTextMessage(
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('[Evolution API] Failed to send text message:', response.status, errText);
+      log.error('[Evolution API] Failed to send text message:', response.status, errText);
       return { success: false, error: `Evolution API returned ${response.status}: ${errText}`, targetUrl: url };
     }
 
     return { success: true, targetUrl: url };
   } catch (error: any) {
     const causeMsg = error.cause ? ` (cause: ${error.cause?.code || error.cause?.message || JSON.stringify(error.cause)})` : '';
-    console.error('[Evolution API Exception] sendEvolutionTextMessage:', error.message, causeMsg);
+    log.error('[Evolution API Exception] sendEvolutionTextMessage:', error.message, causeMsg);
     return { success: false, error: `${error.message}${causeMsg}`, targetUrl: url };
   }
 }
@@ -133,7 +134,7 @@ export async function markEvolutionMessageRead({
       signal: AbortSignal.timeout(6000),
     });
   } catch (err: any) {
-    console.error('[Evolution API] markEvolutionMessageRead error:', err.message);
+    log.error('[Evolution API] markEvolutionMessageRead error:', err.message);
   }
 }
 
@@ -176,13 +177,13 @@ export async function sendEvolutionDocument({
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('[Evolution API] Failed to send document:', response.status, errText);
+      log.error('[Evolution API] Failed to send document:', response.status, errText);
       return { success: false, error: `Evolution API returned ${response.status}: ${errText}` };
     }
 
     return { success: true };
   } catch (error: any) {
-    console.error('[Evolution API Exception] sendEvolutionDocument:', error.message);
+    log.error('[Evolution API Exception] sendEvolutionDocument:', error.message);
     return { success: false, error: error.message };
   }
 }
@@ -226,13 +227,13 @@ export async function sendEvolutionImage({
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('[Evolution API] Failed to send image:', response.status, errText);
+      log.error('[Evolution API] Failed to send image:', response.status, errText);
       return { success: false, error: `Evolution API returned ${response.status}: ${errText}` };
     }
 
     return { success: true };
   } catch (error: any) {
-    console.error('[Evolution API Exception] sendEvolutionImage:', error.message);
+    log.error('[Evolution API Exception] sendEvolutionImage:', error.message);
     return { success: false, error: error.message };
   }
 }

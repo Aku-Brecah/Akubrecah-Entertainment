@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { fetchTaxpayerByPin } from '@/lib/kra-api';
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
       isSubscribed,
     });
   } catch (error: any) {
-    console.error('[API /api/kra/live-verify/pin Error]:', error);
+    log.error('[API /api/kra/live-verify/pin Error]:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to verify KRA PIN with live gateway.' },
       { status: 500 }

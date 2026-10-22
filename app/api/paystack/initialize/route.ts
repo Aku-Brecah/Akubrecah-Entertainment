@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { initializePaystackTransaction } from '@/lib/paystack';
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
         userEmail = clerkUser.primaryEmailAddress?.emailAddress || userEmail;
         userName = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || userName;
       } catch (e: any) {
-        console.warn('[Paystack Initialize] Clerk user fetch fallback:', e.message);
+        log.warn('[Paystack Initialize] Clerk user fetch fallback:', e.message);
       }
     }
 
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
       type,
     });
   } catch (error: any) {
-    console.error('[Paystack Initialize] Error:', error.message);
+    log.error('[Paystack Initialize] Error:', error.message);
     return NextResponse.json(
       { success: false, error: 'Internal server error initializing payment.' },
       { status: 500 }

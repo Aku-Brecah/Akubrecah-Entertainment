@@ -1,7 +1,8 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
-import { dispatchMpesaStkPush, normalizePhoneNumber } from '@/app/api/mpesa/stkpush/route';
+import { dispatchMpesaStkPush, normalizePhoneNumber } from '@/lib/whatsapp/mpesa-dispatch';
 import { initializePaystackTransaction } from '@/lib/paystack';
 
 export const maxDuration = 30;
@@ -143,7 +144,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: false, error: 'Invalid payment method selected.' }, { status: 400 });
   } catch (error: any) {
-    console.error('[api/cyber/subscribe-web] Error:', error.message);
+    log.error('[api/cyber/subscribe-web] Error:', error.message);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

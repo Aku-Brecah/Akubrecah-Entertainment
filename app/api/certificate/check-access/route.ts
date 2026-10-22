@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { isAdminUser } from '@/lib/subscription';
@@ -53,7 +54,7 @@ export async function GET(req: NextRequest) {
       subscription: null,
     });
   } catch (error: any) {
-    console.error('[check-access] Error:', error.message);
+    log.error('[check-access] Error:', error.message);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

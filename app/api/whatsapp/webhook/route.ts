@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse, after } from 'next/server';
 import { sanitizeWhatsAppPhone, markEvolutionMessageRead, getEvolutionInstanceName } from '@/lib/evolution';
 import { handleWhatsAppChat } from '@/app/api/whatsapp/chat/route';
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
     const isInstanceValid = payloadInstance && (payloadInstance === expectedInstance || expectedInstance.includes(payloadInstance) || payloadInstance.includes(expectedInstance));
 
     if (!isSecretValid && !isInstanceValid) {
-      console.warn(
+      log.warn(
         `[WhatsApp Webhook] Blocked unauthorized request. Provided secret: ${Boolean(providedHeaderSecret || providedBodySecret)}, Instance: ${payloadInstance || 'none'}`
       );
       return NextResponse.json(
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
     // Deduplication check: Discard duplicated webhook dispatches for the same WhatsApp message
     const messageId = String(key.id || data.id || payload.id || '').trim();
     if (messageId && isDuplicateWhatsAppMessage(messageId)) {
-      console.log(`[WhatsApp Webhook] Duplicate message ${messageId} ignored.`);
+      log.info(`[WhatsApp Webhook] Duplicate message ${messageId} ignored.`);
       return NextResponse.json({ success: true, message: 'Duplicate message already handled' });
     }
 
@@ -175,7 +176,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Could not resolve sender phone' }, { status: 400 });
     }
 
-    console.log(`[WhatsApp Webhook Inbound] From: ${userPhone} (fromMe: ${Boolean(key.fromMe)}), Text: "${incomingText}"`);
+    log.info(`[WhatsApp Webhook Inbound] From: ${userPhone} (fromMe: ${Boolean(key.fromMe)}), Text: "${incomingText}"`);
 
     // Mark message as read (blue ticks)
     await markEvolutionMessageRead({
@@ -203,7 +204,7 @@ export async function POST(req: NextRequest) {
     // the moment the user enters their PIN on their phone!
     if (isAwaitingPayment && pendingCheckoutId) {
       after(async () => {
-        console.log(`[WhatsApp Webhook after] Actively monitoring M-Pesa payment for ${pendingCheckoutId} (${userPhone})`);
+        log.info(`[WhatsApp Webhook after] Actively monitoring M-Pesa payment for ${pendingCheckoutId} (${userPhone})`);
         const { fulfillWhatsAppCertificateDelivery } = await import('@/lib/certificate-fulfillment');
         const prismaModule = await import('@/lib/prisma');
         const db = prismaModule.default as any;
@@ -223,7 +224,7 @@ export async function POST(req: NextRequest) {
             });
 
             if (conv && conv.metadata?.step === 'COMPLETED') {
-              console.log(`[WhatsApp Webhook after] Session already COMPLETED for ${pendingCheckoutId}. Exiting.`);
+              log.info(`[WhatsApp Webhook after] Session already COMPLETED for ${pendingCheckoutId}. Exiting.`);
               break;
             }
 
@@ -296,12 +297,12 @@ export async function POST(req: NextRequest) {
             }
 
             if (isPaid) {
-              console.log(`[WhatsApp Webhook after] Payment verified for ${pendingCheckoutId}! Initiating fulfillment.`);
+              log.info(`[WhatsApp Webhook after] Payment verified for ${pendingCheckoutId}! Initiating fulfillment.`);
 
               const isCyberPayment = conv?.metadata?.step === 'CYBER_AWAITING_PAYMENT';
 
               if (isCyberPayment) {
-                console.log(`[WhatsApp Webhook after] Activating Cyber Cafe subscription for ${userPhone} (ref: ${mpesaReceipt})`);
+                log.info(`[WhatsApp Webhook after] Activating Cyber Cafe subscription for ${userPhone} (ref: ${mpesaReceipt})`);
                 const { activateCyberCafeSubscription, deliverCyberInvoiceToWhatsApp } = await import('@/lib/cyber-subscription');
                 const { sendEvolutionTextMessage } = await import('@/lib/evolution');
 
@@ -385,7 +386,7 @@ export async function POST(req: NextRequest) {
               break;
             }
           } catch (pollErr: any) {
-            console.warn('[WhatsApp Webhook after polling notice]:', pollErr.message);
+            log.warn('[WhatsApp Webhook after polling notice]:', pollErr.message);
           }
         }
       });
@@ -393,7 +394,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(chatResult);
   } catch (error: any) {
-    console.error('[WhatsApp Webhook Handler Error]:', error);
+    log.error('[WhatsApp Webhook Handler Error]:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

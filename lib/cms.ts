@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import prisma from '@/lib/prisma';
 import fs from 'fs';
 import path from 'path';
@@ -10,7 +11,7 @@ function getFallbackArticles(): any[] {
       return JSON.parse(data);
     }
   } catch (err) {
-    console.warn('[Fallback Articles Error]:', err);
+    log.warn('[Fallback Articles Error]:', err);
   }
   return [];
 }
@@ -119,7 +120,7 @@ export async function getPublishedProjects() {
     });
     if (Array.isArray(list) && list.length > 0) return list;
   } catch (error) {
-    console.warn('[getPublishedProjects DB Notice - Using Flagship Fallback]:', (error as any)?.message);
+    log.warn('[getPublishedProjects DB Notice - Using Flagship Fallback]:', (error as any)?.message);
   }
   return FALLBACK_FLAGSHIP_PROJECTS;
 }
@@ -131,7 +132,7 @@ export async function getProjectBySlug(slug: string) {
     });
     if (project) return project;
   } catch (error) {
-    console.warn(`[getProjectBySlug DB Notice for ${slug} - Checking Flagship Fallback]`);
+    log.warn(`[getProjectBySlug DB Notice for ${slug} - Checking Flagship Fallback]`);
   }
   return FALLBACK_FLAGSHIP_PROJECTS.find((p) => p.slug.toLowerCase() === slug.toLowerCase()) || null;
 }
@@ -163,7 +164,7 @@ export async function getPublishedArticles() {
       return merged;
     }
   } catch (error) {
-    console.warn('[getPublishedArticles DB Notice - Using Fallback]:', (error as any)?.message);
+    log.warn('[getPublishedArticles DB Notice - Using Fallback]:', (error as any)?.message);
   }
   return fallbackList;
 }
@@ -182,7 +183,7 @@ export async function getArticleBySlug(slug: string) {
       };
     }
   } catch (error) {
-    console.warn(`[getArticleBySlug DB Notice for ${slug} - Using Fallback]`);
+    log.warn(`[getArticleBySlug DB Notice for ${slug} - Using Fallback]`);
   }
   return matchingFallback;
 }
@@ -200,7 +201,7 @@ export async function getSkillsByCategory() {
       },
     });
   } catch (error) {
-    console.error('[getSkillsByCategory Error]:', error);
+    log.error('[getSkillsByCategory Error]:', error);
     return [];
   }
 }
@@ -211,7 +212,7 @@ export async function getWorkExperiences() {
       orderBy: { displayOrder: 'asc' },
     });
   } catch (error) {
-    console.error('[getWorkExperiences Error]:', error);
+    log.error('[getWorkExperiences Error]:', error);
     return [];
   }
 }
@@ -223,7 +224,7 @@ export async function getServiceOfferings() {
       orderBy: { displayOrder: 'asc' },
     });
   } catch (error) {
-    console.error('[getServiceOfferings Error]:', error);
+    log.error('[getServiceOfferings Error]:', error);
     return [];
   }
 }
@@ -237,7 +238,7 @@ export async function getSiteSettings(): Promise<Record<string, any>> {
     }
     return map;
   } catch (error) {
-    console.error('[getSiteSettings Error]:', error);
+    log.error('[getSiteSettings Error]:', error);
     return {};
   }
 }

@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getPaystackBalances, getPaystackLiveTransactions, getPaystackPayouts } from "@/lib/paystack";
@@ -365,7 +366,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error("[Admin Overview API Error]:", error);
+    log.error("[Admin Overview API Error]:", error);
     return NextResponse.json(
       { success: false, error: error.message || "Failed to load admin overview metrics" },
       { status: 500 }

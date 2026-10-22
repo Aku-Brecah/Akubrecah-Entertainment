@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
           };
         }
       } catch (err: any) {
-        console.warn('[verified-data] Live lookup notice:', err.message);
+        log.warn('[verified-data] Live lookup notice:', err.message);
       }
 
     if (!profile) {
@@ -146,7 +147,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('[verified-data] Error:', error.message);
+    log.error('[verified-data] Error:', error.message);
     return NextResponse.json(
       { success: false, error: 'Internal server error while resolving verified data.' },
       { status: 500 }

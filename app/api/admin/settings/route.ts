@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminCaller } from '@/lib/admin-auth';
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, settings: settingsMap });
   } catch (error: any) {
-    console.error('[API Admin Settings GET Error]:', error);
+    log.error('[API Admin Settings GET Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Site settings updated successfully.' });
   } catch (error: any) {
-    console.error('[API Admin Settings POST Error]:', error);
+    log.error('[API Admin Settings POST Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 export interface GithubRepo {
   id: number;
   name: string;
@@ -77,7 +78,7 @@ export async function getAllGithubRepos(username = DEFAULT_USERNAME): Promise<{
       );
 
       if (!res.ok) {
-        console.warn(`[GitHub API] Fetch returned status ${res.status} for page ${page}`);
+        log.warn(`[GitHub API] Fetch returned status ${res.status} for page ${page}`);
         break;
       }
 
@@ -94,7 +95,7 @@ export async function getAllGithubRepos(username = DEFAULT_USERNAME): Promise<{
       }
     }
   } catch (err: any) {
-    console.error('[GitHub API Error]:', err.message);
+    log.error('[GitHub API Error]:', err.message);
   }
 
   // Fallback to cached snapshot if GitHub API returned 0 items (e.g. rate limit 403 or network error)
@@ -119,7 +120,7 @@ export async function getAllGithubRepos(username = DEFAULT_USERNAME): Promise<{
         }
       }
     } catch (cacheErr: any) {
-      console.warn('[GitHub Cache Read Fallback Warning]:', cacheErr.message);
+      log.warn('[GitHub Cache Read Fallback Warning]:', cacheErr.message);
     }
   }
 
@@ -258,7 +259,7 @@ export async function saveRepoVisibilitySettings(settings: {
       create: { key: 'github_repo_visibility', value: payload as any },
     });
   } catch (dbErr: any) {
-    console.warn('[saveRepoVisibilitySettings DB Warning]:', dbErr.message);
+    log.warn('[saveRepoVisibilitySettings DB Warning]:', dbErr.message);
   }
 
   // 2. Save to filesystem fallback
@@ -272,7 +273,7 @@ export async function saveRepoVisibilitySettings(settings: {
     const filePath = path.join(dataDir, 'repo-visibility.json');
     fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf-8');
   } catch (fsErr: any) {
-    console.warn('[saveRepoVisibilitySettings FS Warning]:', fsErr.message);
+    log.warn('[saveRepoVisibilitySettings FS Warning]:', fsErr.message);
   }
 
   return true;
@@ -363,7 +364,7 @@ export async function getRepoReadme(repoName: string, defaultBranch = 'main'): P
       raw = await res.text();
     }
   } catch (err: any) {
-    console.warn(`[GitHub Readme API Error for ${repoName}]:`, err.message);
+    log.warn(`[GitHub Readme API Error for ${repoName}]:`, err.message);
   }
 
   // 2. Fallback to raw.githubusercontent.com on main / master

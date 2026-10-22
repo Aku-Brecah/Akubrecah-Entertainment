@@ -56,7 +56,7 @@ import { cn } from "@/lib/utils"
 import { toast } from "react-hot-toast"
 import { useUser } from "@clerk/nextjs"
 import { maskPin, maskEmail, maskPhone } from "@/lib/masking"
-import { trackEvent } from "@/lib/analytics"
+import { trackEvent } from "@/lib/telemetry/client"
 
 export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { isLoaded: authLoaded, isSignedIn, user } = useUser()
