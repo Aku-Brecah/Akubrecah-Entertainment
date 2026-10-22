@@ -292,7 +292,7 @@ async function handleAdminBotCommand({
       isAdminAuthenticated: false,
       adminAuthExpiry: 0,
     });
-    return `🔒 *Admin Session Locked.*\nSend *!admin 8426* anytime to re-authenticate.`;
+    return `🔒 *Admin Session Locked.*\nSend *!admin* plus your master PIN anytime to re-authenticate.`;
   }
 
   // 2. 1-Click Magic Link
