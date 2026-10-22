@@ -1,6 +1,17 @@
 import crypto from 'crypto';
 
-const SECRET = process.env.JWT_SECRET || process.env.ENCRYPTION_KEY || 'akubrecah_kra_admin_magic_token_secret_key_2026';
+/**
+ * The HMAC secret for admin magic tokens. No hardcoded fallback: if neither
+ * JWT_SECRET nor ENCRYPTION_KEY is configured, token creation/verification
+ * fails closed instead of accepting forgeries with a public default key.
+ */
+function getMagicSecret(): string {
+  const secret = process.env.JWT_SECRET || process.env.ENCRYPTION_KEY;
+  if (!secret || secret.length < 16) {
+    throw new Error('JWT_SECRET or ENCRYPTION_KEY (>=16 chars) must be configured for admin magic tokens');
+  }
+  return secret;
+}
 
 export interface MagicTokenPayload {
   phone: string;
@@ -22,11 +33,22 @@ export function createAdminMagicToken(phone: string, durationMinutes = 240): str
 
   const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
   const signature = crypto
-    .createHmac('sha256', SECRET)
+    .createHmac('sha256', getMagicSecret())
     .update(payloadBase64)
     .digest('base64url');
 
   return `${payloadBase64}.${signature}`;
+}
+
+/** Constant-time signature comparison. */
+function signaturesMatch(provided: string, expected: string): boolean {
+  const bufA = Buffer.from(provided);
+  const bufB = Buffer.from(expected);
+  if (bufA.length !== bufB.length) {
+    crypto.timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
 }
 
 /**
@@ -38,11 +60,11 @@ export function verifyAdminMagicToken(token: string): MagicTokenPayload | null {
     const [payloadBase64, signature] = token.split('.');
 
     const expectedSignature = crypto
-      .createHmac('sha256', SECRET)
+      .createHmac('sha256', getMagicSecret())
       .update(payloadBase64)
       .digest('base64url');
 
-    if (signature !== expectedSignature) {
+    if (!signaturesMatch(signature, expectedSignature)) {
       return null;
     }
 

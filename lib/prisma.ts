@@ -31,14 +31,32 @@ export async function createSystemLog(data: {
     if (typeof db.systemLog?.create !== "function") {
       return null;
     }
+
+    // Strict Zero-Storage Privacy Policy:
+    // Never persist searched IDs, PINs, or taxpayer personal details in SystemLog
+    const sanitizedDetails = { ...(data.details || {}) };
+    delete (sanitizedDetails as any).pin;
+    delete (sanitizedDetails as any).idNumber;
+    delete (sanitizedDetails as any).id_number;
+    delete (sanitizedDetails as any).name;
+    delete (sanitizedDetails as any).taxpayerName;
+    delete (sanitizedDetails as any).station;
+    delete (sanitizedDetails as any).county;
+    delete (sanitizedDetails as any).email;
+    delete (sanitizedDetails as any).phoneNumber;
+
+    const sanitizedMessage = (data.message || '')
+      .replace(/[A-Z]\d{9}[A-Z]/gi, '[PIN-MASKED]')
+      .replace(/\b\d{7,10}\b/g, '[ID-MASKED]');
+
     const log = await db.systemLog.create({
       data: {
         level: data.level,
         service: data.service,
-        message: data.message,
+        message: sanitizedMessage,
         actor: data.actor || "System",
         ip: data.ip || "127.0.0.1",
-        details: data.details || {},
+        details: sanitizedDetails,
       },
     });
     return log;

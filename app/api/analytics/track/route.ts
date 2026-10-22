@@ -44,14 +44,14 @@ export async function POST(req: NextRequest) {
         where: { id: sessionId },
         update: {
           last_activity: new Date(),
-          pin: pin || undefined,
+          pin: null,
           user_agent: userAgent,
           is_mobile: Boolean(isMobile),
           device_info: deviceInfo,
         },
         create: {
           id: sessionId,
-          pin: pin || null,
+          pin: null,
           status: 'prospect',
           is_mobile: Boolean(isMobile),
           ip_address: ip,
@@ -62,13 +62,18 @@ export async function POST(req: NextRequest) {
       });
 
       if (typeof db.session_activities?.create === 'function') {
+        const sanitizedMetadata = { ...(metadata || {}) };
+        delete (sanitizedMetadata as any).pin;
+        delete (sanitizedMetadata as any).idNumber;
+        delete (sanitizedMetadata as any).id_number;
+
         await db.session_activities.create({
           data: {
             id: 'act_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now(),
             session_id: sessionId,
             activity_type: String(activityType).substring(0, 50),
             description: description ? String(description).substring(0, 255) : null,
-            metadata: metadata || {},
+            metadata: sanitizedMetadata,
           },
         });
       }

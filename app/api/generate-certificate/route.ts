@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { createSystemLog } from '@/lib/prisma';
 import { getOrCreateDbUser } from '@/lib/subscription';
+import { tryResolveKraPin } from '@/lib/masking';
 import fs from 'fs';
 import path from 'path';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -40,20 +41,23 @@ export async function POST(req: NextRequest) {
       downloadId: incomingDownloadId,
     } = body;
 
+    // Resolve sealed transport blobs (kraseal1:...) to plaintext PINs server-side
+    const clientResolvedPin = tryResolveKraPin(pin) || '';
+
     let downloadId = incomingDownloadId;
     const prismaModule = await import('@/lib/prisma');
     const db = prismaModule.default as any;
 
     // 3. Server-side authorization: require a valid downloadId, verified admin access, or service secret (n8n/workers)
-    const expectedSecret = process.env.EVOLUTION_WEBHOOK_SECRET || process.env.EVOLUTION_API_KEY || 'akubrecah_secret_whatsapp_key_2026';
+    // No hardcoded fallbacks — if the env vars are unset, service access fails closed.
+    const expectedSecret = process.env.EVOLUTION_WEBHOOK_SECRET || process.env.EVOLUTION_API_KEY || '';
     const providedHeaderSecret =
       req.headers.get('x-service-secret') ||
       req.headers.get('apikey') ||
       req.headers.get('x-api-key') ||
       req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
     const isServiceAuthorized = Boolean(
-      (providedHeaderSecret && (providedHeaderSecret === expectedSecret || providedHeaderSecret === 'akubrecah_secret_whatsapp_key_2026')) ||
-      (body.serviceSecret && (body.serviceSecret === expectedSecret || body.serviceSecret === 'akubrecah_secret_whatsapp_key_2026'))
+      expectedSecret && (providedHeaderSecret === expectedSecret || body.serviceSecret === expectedSecret)
     );
 
     if (!downloadId && !isServiceAuthorized) {
@@ -66,7 +70,7 @@ export async function POST(req: NextRequest) {
           data: {
             userId: dbUser.id,
             clerkId: effectiveClerkId,
-            pin: String(pin || 'KRA_CERT').toUpperCase().trim(),
+            pin: clientResolvedPin || String(pin || 'KRA_CERT').toUpperCase().trim(),
             downloadType: 'admin',
             amountCharged: 0,
             currency: 'KES',
@@ -93,7 +97,7 @@ export async function POST(req: NextRequest) {
     if (!downloadRecord && isServiceAuthorized) {
       // Try to auto-provision download record for internal service dispatch (e.g. n8n workflow)
       try {
-        const effectivePin = String(pin || 'KRA_CERT').toUpperCase().trim();
+        const effectivePin = clientResolvedPin || String(pin || 'KRA_CERT').toUpperCase().trim();
         const dbUser = await getOrCreateDbUser('service_n8n', 'service@akubrecah.co.ke', 'n8n Dispatcher');
         downloadRecord = await db.certificateDownload?.create({
           data: {
@@ -118,6 +122,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Enforce that payment for certificate A cannot download certificate B
+    const recordPin = (downloadRecord?.pin || '').toUpperCase().trim();
+    const payloadPin = clientResolvedPin || (pin || '').toUpperCase().trim();
+    if (recordPin && recordPin !== 'KRA_CERT' && payloadPin && !payloadPin.includes('*')) {
+      if (recordPin !== payloadPin) {
+        return NextResponse.json(
+          { success: false, error: 'Download token is not authorized for this KRA PIN.' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Resolve or auto-provision DB user
     const effectiveClerkId = userId || downloadRecord?.clerkId || 'guest_user';
     let dbUser: any = null;
@@ -129,44 +145,67 @@ export async function POST(req: NextRequest) {
     let cleanPin = '';
     if (downloadRecord?.pin && !downloadRecord.pin.includes('*') && downloadRecord.pin !== 'KRA_CERT') {
       cleanPin = downloadRecord.pin.toUpperCase().trim();
+    } else if (clientResolvedPin) {
+      cleanPin = clientResolvedPin;
     } else if (pin && !pin.includes('*')) {
       cleanPin = pin.toUpperCase().trim();
     }
 
-    // Retrieve cached full details from kra_pin_cache
-    let cachedRecord: any = null;
-    try {
-      if (db.kra_pin_cache) {
-        if (cleanPin) {
-          cachedRecord = await db.kra_pin_cache.findFirst({
-            where: { pin: cleanPin },
-          });
-        }
-        if (!cachedRecord && idNumber) {
-          cachedRecord = await db.kra_pin_cache.findFirst({
-            where: { id_number: String(idNumber).trim() },
-          });
-        }
+    // Helper to detect masked or empty placeholder values
+    const isMaskedOrEmpty = (val: any) => !val || typeof val !== 'string' || val.includes('•') || val.includes('***') || val.includes('*****');
+
+    // Strict Zero-Storage: Never rely on persistent kra_pin_cache.
+    const cachedRecord: any = null;
+
+    // If passed address fields are masked, fetch live unmasked details directly from KRA
+    let liveProfile: any = null;
+    const needsAuthoritativeFetch = cleanPin && (isMaskedOrEmpty(building) || isMaskedOrEmpty(station));
+    if (needsAuthoritativeFetch) {
+      try {
+        const { fetchTaxpayerByPin } = await import('@/lib/kra-api');
+        liveProfile = await fetchTaxpayerByPin(cleanPin);
+      } catch (err: any) {
+        console.warn('[generate-certificate] Live profile fetch notice:', err.message);
       }
-    } catch (e: any) {
-      console.warn('[generate-certificate] Cache lookup warning:', e.message);
     }
 
-    const resolvedPin = cleanPin || cachedRecord?.pin || (pin ? pin.toUpperCase() : 'KRA_CERT');
-    const resolvedName = (name && !name.includes('***')) 
-      ? name 
-      : (cachedRecord?.name || [dbUser?.firstName, dbUser?.lastName].filter(Boolean).join(' ') || 'Registered Taxpayer');
-    const resolvedEmail = email && !email.includes('***') ? email : (cachedRecord?.email || dbUser?.email || '');
-    const resolvedBuilding = building || cachedRecord?.building || '';
-    const resolvedStreet = street || cachedRecord?.street || '';
-    const resolvedCity = city || cachedRecord?.city || '';
-    const resolvedCounty = county || cachedRecord?.county || '';
-    const resolvedDistrict = district || cachedRecord?.district || '';
-    const resolvedTaxArea = taxArea || cachedRecord?.tax_area || '';
-    const resolvedStation = station || cachedRecord?.station || '';
-    const resolvedPoBox = poBox || cachedRecord?.po_box || '';
-    const resolvedPostalCode = postalCode || cachedRecord?.postal_code || '';
-    const resolvedRegDate = registeredDate && !registeredDate.includes('**') ? registeredDate : (cachedRecord?.registered_date || '');
+    const resolvedPin = cleanPin || clientResolvedPin || cachedRecord?.pin || liveProfile?.pin || (pin && !pin.includes('*') ? pin.toUpperCase() : 'KRA_CERT');
+    const resolvedName = !isMaskedOrEmpty(name)
+      ? name
+      : (cachedRecord?.name || liveProfile?.taxpayerName || [dbUser?.firstName, dbUser?.lastName].filter(Boolean).join(' ') || 'Registered Taxpayer');
+    const resolvedEmail = !isMaskedOrEmpty(email)
+      ? email
+      : (cachedRecord?.email || liveProfile?.email || dbUser?.email || '');
+    const resolvedBuilding = !isMaskedOrEmpty(building)
+      ? building
+      : (!isMaskedOrEmpty(cachedRecord?.building) ? cachedRecord.building : (liveProfile?.building || ''));
+    const resolvedStreet = !isMaskedOrEmpty(street)
+      ? street
+      : (!isMaskedOrEmpty(cachedRecord?.street) ? cachedRecord.street : (liveProfile?.street || ''));
+    const resolvedCity = !isMaskedOrEmpty(city)
+      ? city
+      : (!isMaskedOrEmpty(cachedRecord?.city) ? cachedRecord.city : (liveProfile?.town || ''));
+    const resolvedCounty = !isMaskedOrEmpty(county)
+      ? county
+      : (!isMaskedOrEmpty(cachedRecord?.county) ? cachedRecord.county : (liveProfile?.county || ''));
+    const resolvedDistrict = !isMaskedOrEmpty(district)
+      ? district
+      : (!isMaskedOrEmpty(cachedRecord?.district) ? cachedRecord.district : (liveProfile?.district || ''));
+    const resolvedTaxArea = !isMaskedOrEmpty(taxArea)
+      ? taxArea
+      : (!isMaskedOrEmpty(cachedRecord?.tax_area) ? cachedRecord.tax_area : (liveProfile?.taxArea || ''));
+    const resolvedStation = !isMaskedOrEmpty(station)
+      ? station
+      : (!isMaskedOrEmpty(cachedRecord?.station) ? cachedRecord.station : (liveProfile?.station || ''));
+    const resolvedPoBox = !isMaskedOrEmpty(poBox)
+      ? poBox
+      : (!isMaskedOrEmpty(cachedRecord?.po_box) ? cachedRecord.po_box : (liveProfile?.poBox || ''));
+    const resolvedPostalCode = !isMaskedOrEmpty(postalCode)
+      ? postalCode
+      : (!isMaskedOrEmpty(cachedRecord?.postal_code) ? cachedRecord.postal_code : (liveProfile?.postalCode || ''));
+    const resolvedRegDate = !isMaskedOrEmpty(registeredDate)
+      ? registeredDate
+      : (!isMaskedOrEmpty(cachedRecord?.registered_date) ? cachedRecord.registered_date : (liveProfile?.registrationDate || ''));
 
     // 4. Resolve template PDF file path
     let templatePath = path.join(process.cwd(), 'public', 'receipt-template.pdf');

@@ -32,15 +32,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (taxpayerPin && !taxpayerName) {
-      const cached = await db.kra_pin_cache?.findFirst({
-        where: { pin: String(taxpayerPin).toUpperCase().trim() },
-      });
-      if (cached) {
-        taxpayerName = cached.name;
-        userPhone = userPhone || cached.phone_number;
-      }
-    }
 
     const resolvedName = taxpayerName || 'Registered Taxpayer';
     const resolvedPin = taxpayerPin ? String(taxpayerPin).toUpperCase() : 'N/A';

@@ -123,6 +123,24 @@ export default clerkMiddleware(async (auth, request) => {
   const isKraSubdomain = host.startsWith('kra.') || host.includes('kra.akubrecah.com');
   const isAdminSubdomain = host.startsWith('admin.') || host.includes('admin.akubrecah.com');
 
+  // Case 0: Canonical Domain Enforcement — Permanently redirect legacy *.vercel.app traffic to custom domains
+  if (host.includes('.vercel.app')) {
+    const isKraTarget = host.includes('kra') || host.includes('certificate');
+    const isAdminTarget = host.includes('admin');
+
+    let targetBase = 'https://akubrecah.com';
+    if (isAdminTarget) {
+      targetBase = 'https://admin.akubrecah.com';
+    } else if (isKraTarget) {
+      targetBase = 'https://kra.akubrecah.com';
+    }
+
+    const redirectUrl = new URL(pathname + request.nextUrl.search, targetBase);
+    const redirectResponse = NextResponse.redirect(redirectUrl, 301);
+    redirectResponse.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    return redirectResponse;
+  }
+
   // Case A: Accessing /admin routes on main domain or KRA domain -> redirect to admin.akubrecah.com
   if (!isAdminSubdomain) {
     if (pathname === '/admin' || pathname.startsWith('/admin/')) {
@@ -132,8 +150,20 @@ export default clerkMiddleware(async (auth, request) => {
     }
   }
 
-  // Case B: KRA portal routes remain local/flexible while kra.akubrecah.com is in development
-  // (Disabled forced redirect to kra.akubrecah.com so routes stay accessible locally & on dev)
+  // Case B: In production, redirect sign-in, sign-up, and KRA portal routes from main domain to kra.akubrecah.com
+  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+  if (!isKraSubdomain && !isAdminSubdomain && !isLocalhost) {
+    if (pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up')) {
+      const kraAuthUrl = new URL(pathname, 'https://kra.akubrecah.com');
+      kraAuthUrl.search = request.nextUrl.search;
+      return NextResponse.redirect(kraAuthUrl, 307);
+    }
+    if (pathname.startsWith('/retrieval-portal') || pathname.startsWith('/pin-checker')) {
+      const kraPortalUrl = new URL('/', 'https://kra.akubrecah.com');
+      kraPortalUrl.search = request.nextUrl.search;
+      return NextResponse.redirect(kraPortalUrl, 307);
+    }
+  }
 
   // Case C: Accessing on admin.akubrecah.com
   let response: NextResponse;

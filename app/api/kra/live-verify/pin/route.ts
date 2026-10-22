@@ -77,15 +77,12 @@ export async function POST(req: NextRequest) {
     await createSystemLog({
       level: 'info',
       service: 'KRA-Live-PIN-Checker',
-      message: `Verified KRA PIN ${cleanPin} for ${taxpayerData.taxpayerName} (Subscribed: ${isSubscribed})`,
+      message: `Taxpayer PIN lookup verified (Subscribed: ${isSubscribed})`,
       actor: userEmail,
       ip,
       details: {
-        pin: cleanPin,
-        name: taxpayerData.taxpayerName,
-        station: isSubscribed ? taxpayerData.station : 'MASKED',
-        source: taxpayerData.source,
         isSubscribed,
+        source: taxpayerData.source,
       },
     });
 

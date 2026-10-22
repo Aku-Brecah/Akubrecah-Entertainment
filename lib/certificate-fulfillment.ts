@@ -560,31 +560,34 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
   console.log(`[Fulfillment] Initiating WhatsApp document delivery for PIN ${cleanPin} to ${userPhone}`);
 
   try {
-    // 1. Resolve taxpayer details: Always merge cached kra_pin_cache with passed in-memory taxpayerDetails
-    let cachedRecord: any = null;
-    if (db.kra_pin_cache && cleanPin) {
+    // 1. Resolve taxpayer details: Strict Zero-Storage, never rely on persistent kra_pin_cache
+    const cachedRecord: any = null;
+    const isMaskedVal = (val: any) => !val || typeof val !== 'string' || val.includes('•') || val.includes('***') || val.includes('*****');
+
+    // If address fields are masked in passed details, fetch live unmasked details
+    let liveProfile: any = null;
+    const passed = opts.taxpayerDetails || {};
+    const needsFetch = cleanPin && (isMaskedVal(passed.building) || isMaskedVal(passed.station));
+    if (needsFetch) {
       try {
-        cachedRecord = await db.kra_pin_cache.findFirst({
-          where: { pin: cleanPin },
-        });
-        if (!cachedRecord && (opts.taxpayerDetails?.idNumber || opts.taxpayerDetails?.id_number)) {
-          const idNum = String(opts.taxpayerDetails?.idNumber || opts.taxpayerDetails?.id_number).trim();
-          cachedRecord = await db.kra_pin_cache.findFirst({
-            where: { id_number: idNum },
-          });
-        }
-      } catch (cacheErr: any) {
-        console.warn('[Fulfillment] Cache query notice:', cacheErr.message);
+        const { fetchTaxpayerByPin } = await import('@/lib/kra-api');
+        liveProfile = await fetchTaxpayerByPin(cleanPin);
+      } catch (err: any) {
+        console.warn('[Fulfillment] Live profile fetch notice:', err.message);
       }
     }
-
-    const passed = opts.taxpayerDetails || {};
     const authenticRegDate = resolveAuthenticRegistrationDate(
       cleanPin,
-      passed.registeredDate || passed.registered_date || passed.registrationDate || cachedRecord?.registered_date
+      !isMaskedVal(passed.registeredDate) ? passed.registeredDate :
+      (!isMaskedVal(passed.registered_date) ? passed.registered_date :
+      (!isMaskedVal(passed.registrationDate) ? passed.registrationDate :
+      (!isMaskedVal(cachedRecord?.registered_date) ? cachedRecord.registered_date : (liveProfile?.registrationDate || null))))
     );
 
-    const resolvedName = opts.taxpayerName || passed.name || passed.taxpayerName || cachedRecord?.name || 'Registered Taxpayer';
+    const resolvedName = !isMaskedVal(opts.taxpayerName) ? opts.taxpayerName :
+      (!isMaskedVal(passed.name) ? passed.name :
+      (!isMaskedVal(passed.taxpayerName) ? passed.taxpayerName :
+      (!isMaskedVal(cachedRecord?.name) ? cachedRecord.name : (liveProfile?.taxpayerName || 'Registered Taxpayer'))));
 
     // 2. Ensure CertificateDownload record exists in database
     const dbUser = await getOrCreateDbUser(
@@ -612,23 +615,23 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
       });
     }
 
-    // 3. Generate Certificate PDF Buffer (pure in-memory, authentic registration date)
+    // 3. Generate Certificate PDF Buffer (pure in-memory, authentic registration date, fully unmasked)
     const certBuffer = await generateCertificatePdfBuffer({
       pin: cleanPin,
       name: resolvedName,
-      idNumber: passed.id_number || passed.idNumber || cachedRecord?.id_number,
-      email: (passed.email && !passed.email.includes('***')) ? passed.email : (cachedRecord?.email || passed.email || ''),
-      building: passed.building || cachedRecord?.building || '',
-      street: passed.street || cachedRecord?.street || '',
-      city: passed.city || passed.town || cachedRecord?.city || '',
-      county: passed.county || cachedRecord?.county || '',
-      district: passed.district || cachedRecord?.district || '',
-      taxArea: passed.tax_area || passed.taxArea || cachedRecord?.tax_area || '',
-      station: passed.station || cachedRecord?.station || '',
-      poBox: passed.po_box || passed.poBox || cachedRecord?.po_box || '',
-      postalCode: passed.postal_code || passed.postalCode || cachedRecord?.postal_code || '',
+      idNumber: (!isMaskedVal(passed.id_number) ? passed.id_number : (!isMaskedVal(passed.idNumber) ? passed.idNumber : (cachedRecord?.id_number || liveProfile?.idNumber || ''))),
+      email: (!isMaskedVal(passed.email) ? passed.email : (cachedRecord?.email || liveProfile?.email || '')),
+      building: (!isMaskedVal(passed.building) ? passed.building : (cachedRecord?.building || liveProfile?.building || '')),
+      street: (!isMaskedVal(passed.street) ? passed.street : (cachedRecord?.street || liveProfile?.street || '')),
+      city: (!isMaskedVal(passed.city) ? passed.city : (!isMaskedVal(passed.town) ? passed.town : (cachedRecord?.city || liveProfile?.town || ''))),
+      county: (!isMaskedVal(passed.county) ? passed.county : (cachedRecord?.county || liveProfile?.county || '')),
+      district: (!isMaskedVal(passed.district) ? passed.district : (cachedRecord?.district || liveProfile?.district || '')),
+      taxArea: (!isMaskedVal(passed.tax_area) ? passed.tax_area : (!isMaskedVal(passed.taxArea) ? passed.taxArea : (cachedRecord?.tax_area || liveProfile?.taxArea || ''))),
+      station: (!isMaskedVal(passed.station) ? passed.station : (cachedRecord?.station || liveProfile?.station || '')),
+      poBox: (!isMaskedVal(passed.po_box) ? passed.po_box : (!isMaskedVal(passed.poBox) ? passed.poBox : (cachedRecord?.po_box || liveProfile?.poBox || ''))),
+      postalCode: (!isMaskedVal(passed.postal_code) ? passed.postal_code : (!isMaskedVal(passed.postalCode) ? passed.postalCode : (cachedRecord?.postal_code || liveProfile?.postalCode || ''))),
       registeredDate: authenticRegDate,
-      phoneNumber: passed.phone_number || passed.phoneNumber || cachedRecord?.phone_number || userPhone,
+      phoneNumber: (!isMaskedVal(passed.phone_number) ? passed.phone_number : (!isMaskedVal(passed.phoneNumber) ? passed.phoneNumber : (cachedRecord?.phone_number || liveProfile?.phoneNumber || userPhone))),
     });
 
     // 4. Deliver via n8n workflow (so it reflects on n8n) or direct WhatsApp

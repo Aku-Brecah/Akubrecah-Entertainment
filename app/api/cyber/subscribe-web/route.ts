@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Paystack Card / Mobile Money
     if (method === 'paystack') {
-      const origin = req.headers.get('origin') || 'https://kra-certificate.vercel.app';
+      const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'https://kra.akubrecah.com';
       const callbackUrl = `${origin}/retrieval-portal?cyber_ref=true&cafe_id=${cafe.id}`;
 
       const paystackRes = await initializePaystackTransaction({

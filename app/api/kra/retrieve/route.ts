@@ -8,7 +8,7 @@ import { createSystemLog } from '@/lib/prisma';
 import { fetchTaxpayerByPin, fetchTaxpayerById } from '@/lib/kra-api';
 import { getKraStationForCounty, formatKraStation, sanitizeTaxArea } from '@/lib/kra-stations';
 import { getUserSubscriptionStatus } from '@/lib/subscription';
-import { maskTaxpayerData } from '@/lib/masking';
+import { maskTaxpayerData, tryResolveKraPin, sealKraPin } from '@/lib/masking';
 
 export const maxDuration = 60;
 
@@ -147,7 +147,7 @@ function httpsPost(path: string, body: string, cookieString: string, contentType
 // Step 1: Resolve PIN from ID via DWR
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function lookupPinByIdNumber(idNumber: string, cookieString: string, proxyUrl?: string): Promise<string | null> {
+async function lookupPinByIdNumber(idNumber: string, cookieString: string, proxyUrl?: string): Promise<{ pin: string | null; maskedPin: string | null }> {
   const sid = `${randHex(12)}/${randHex(12)}`;
   const wn  = `W${Date.now()}`;
 
@@ -162,25 +162,21 @@ async function lookupPinByIdNumber(idNumber: string, cookieString: string, proxy
     '/KRA-Portal/dwr/call/plaincall/findPinByIdno.findPinByIdnumber.dwr',
     body, cookieString, 'text/plain', proxyUrl
   );
-  console.log('[retrieve] PIN lookup raw:', raw ? raw.substring(0, 350) : 'EMPTY');
+  console.log('[retrieve] PIN lookup raw snippet:', raw ? raw.substring(0, 200) : 'EMPTY');
 
   const m = raw.match(/handleCallback\([^,]+,[^,]+,"([^"]+)"\)/) || raw.match(/s\d+="([^"]+)"/);
   if (m) {
     const val = m[1];
-    if (val.includes('#$')) {
-      const [masked, digits] = val.split('#$');
-      const actualDigits = (digits || '').trim();
-      const pin = masked.replace(/\*+/g, actualDigits).trim().toUpperCase();
-      if (/^[A-Z]\d{9}[A-Z]$/.test(pin)) {
-        return pin;
-      }
+    const cleanPin = val.split('#$')[0].trim().toUpperCase();
+    // Authentic complete PIN must be 11 characters without any masking asterisks
+    if (!cleanPin.includes('*') && /^[A-Z]\d{9}[A-Z]$/.test(cleanPin)) {
+      return { pin: cleanPin, maskedPin: null };
     }
-    const cleanPin = val.trim().toUpperCase();
-    if (/^[A-Z]\d{9}[A-Z]$/.test(cleanPin)) {
-      return cleanPin;
+    if (cleanPin.includes('*')) {
+      return { pin: null, maskedPin: cleanPin };
     }
   }
-  return null;
+  return { pin: null, maskedPin: null };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -622,7 +618,10 @@ export async function POST(req: NextRequest) {
     const { idNumber, pin: directPin, captchaAnswer, sessionToken, engineMode = 'auto' } = body;
 
     const cleanId = idNumber ? String(idNumber).trim() : '';
-    const cleanDirectPin = directPin ? String(directPin).trim().toUpperCase() : '';
+    // tryResolveKraPin accepts either a plaintext PIN or an opaque sealed blob
+    // returned by an earlier ID-based search (kraseal1:...), resolving both server-side.
+    const searchPinCandidate = directPin ? String(directPin).trim().toUpperCase() : '';
+    const cleanDirectPin = tryResolveKraPin(searchPinCandidate) || (/^[A-Z0-9*]{6,12}$/.test(searchPinCandidate) ? searchPinCandidate : '');
 
     if (!cleanId && !cleanDirectPin) {
       return NextResponse.json({ success: false, error: 'ID Number or PIN is required' }, { status: 400 });
@@ -645,7 +644,7 @@ export async function POST(req: NextRequest) {
     // ── 2. Resolve PIN & Session Cookies ─────────────────────────────────────
     let fullPin = (engineMode !== 'dwr' && liveApiTaxpayer?.pin)
       ? liveApiTaxpayer.pin
-      : (!cleanId && cleanDirectPin ? cleanDirectPin : null);
+      : (cleanDirectPin || null);
 
     let cookieString = "";
     let freshCookieString = "";
@@ -676,9 +675,12 @@ export async function POST(req: NextRequest) {
       freshCookieString = Object.entries(freshCookies).map(([k, v]) => `${k}=${v}`).join('; ');
     } catch {}
 
+    let maskedPinHint: string | null = null;
     if (!fullPin && idNumber) {
       try {
-        fullPin = await lookupPinByIdNumber(String(idNumber).trim(), freshCookieString, proxyUrl);
+        const lookup = await lookupPinByIdNumber(String(idNumber).trim(), freshCookieString, proxyUrl);
+        fullPin = lookup.pin;
+        maskedPinHint = lookup.maskedPin;
       } catch (err: any) {
         console.warn('[retrieve] DWR PIN lookup failed:', err.message);
       }
@@ -752,10 +754,14 @@ export async function POST(req: NextRequest) {
     let name = first(man?.name, api?.taxpayerName, pc?.name, '');
 
     if (!fullPin) {
-      console.error('[retrieve] Live & DWR retrieval returned no taxpayer record.');
+      console.warn(`[retrieve] Pin could not be resolved for ID ${cleanId}. Masked hint: ${maskedPinHint}`);
+      const hintMsg = maskedPinHint
+        ? `KRA masks National ID searches for citizen privacy (${maskedPinHint}). To retrieve your exact official compliance certificate with 100% accuracy, please search directly using your KRA PIN (e.g. A012345678Z). If you don't know your PIN, dial *222# on your phone.`
+        : 'KRA record could not be resolved for this National ID. Please search directly using your KRA PIN (e.g. A012345678Z) or check via KRA *222#.';
       return NextResponse.json({
         success: false,
-        error: 'KRA record not found. Please verify the ID number or PIN and try again.'
+        maskedPin: maskedPinHint,
+        error: hintMsg,
       }, { status: 404 });
     }
 
@@ -826,10 +832,17 @@ export async function POST(req: NextRequest) {
     // Apply strict server-side masking if user is not subscribed
     const clientTaxpayerData = maskTaxpayerData(fullTaxpayerRecord, isSubscribed, isAdmin);
 
+    // Entitlement guard: a plaintext PIN may only leave the server when the
+    // caller already knows it (searched by PIN) or is subscribed/admin.
+    // Otherwise send an opaque sealed blob the client passes through to the
+    // payment endpoints (resolved server-side there).
+    const callerKnowsPin = Boolean(cleanDirectPin) || isSubscribed || isAdmin;
+    const clientRawPin = callerKnowsPin ? fullPin : sealKraPin(fullPin);
+
     const result = {
       success: true,
       data: clientTaxpayerData,
-      rawPin: fullPin,
+      rawPin: clientRawPin,
       rawId: cleanId || clientTaxpayerData.idNumber || '',
       isSubscribed,
     };
@@ -838,10 +851,10 @@ export async function POST(req: NextRequest) {
     await createSystemLog({
       level: 'info',
       service: 'KRA-Retrieve',
-      message: `Taxpayer details retrieved (${isSubscribed ? 'Full' : 'Masked'}) for PIN ${fullPin}`,
+      message: `Taxpayer retrieval completed (${isSubscribed ? 'Subscribed' : 'Standard'})`,
       actor: userEmail,
       ip,
-      details: { pin: fullPin, isSubscribed, county, station }
+      details: { isSubscribed }
     });
     return NextResponse.json(result);
 
