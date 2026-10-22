@@ -11,7 +11,7 @@ echo "1. Pulling latest code from origin/main..."
 git pull origin main
 
 echo "2. Rebuilding and restarting akubrecah-app container..."
-docker compose -f deploy/docker-compose.yml up -d --build akubrecah-app
+docker compose up -d --build akubrecah-app
 
 echo "3. Verifying application health..."
 sleep 3
