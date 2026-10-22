@@ -9,7 +9,7 @@ import { createSystemLog } from '@/lib/prisma';
 import { fetchTaxpayerByPin, fetchTaxpayerById } from '@/lib/kra-api';
 import { getKraStationForCounty, formatKraStation, sanitizeTaxArea } from '@/lib/kra-stations';
 import { getUserSubscriptionStatus } from '@/lib/subscription';
-import { maskTaxpayerData, tryResolveKraPin, sealKraPin } from '@/lib/masking';
+import { maskTaxpayerData, tryResolveKraPin, sealKraPin, looksLikeKraPin } from '@/lib/masking';
 
 export const maxDuration = 60;
 
@@ -766,22 +766,22 @@ export async function POST(req: NextRequest) {
     // Prefer unmasked name from manufacturer/API over masked pinChecker name (e.g. "Powel M*****")
     let name = first(man?.name, api?.taxpayerName, pc?.name, '');
 
-    if (!fullPin) {
-      log.warn(`[retrieve] Pin could not be resolved for ID ${cleanId}. Masked hint: ${maskedPinHint}`);
-      const hintMsg = maskedPinHint
-        ? `KRA masks National ID searches for citizen privacy (${maskedPinHint}). To retrieve your exact official compliance certificate with 100% accuracy, please search directly using your KRA PIN (e.g. A012345678Z). If you don't know your PIN, dial *222# on your phone.`
-        : 'KRA record could not be resolved for this National ID. Please search directly using your KRA PIN (e.g. A012345678Z) or check via KRA *222#.';
+    const effectivePin = fullPin || maskedPinHint || '';
+
+    if (!effectivePin && !liveApiTaxpayer) {
+      log.warn(`[retrieve] No record found for ID ${cleanId || cleanDirectPin}`);
       return NextResponse.json({
         success: false,
-        maskedPin: maskedPinHint,
-        error: hintMsg,
+        error: cleanId
+          ? `No KRA record found for National ID ${cleanId}. Please verify your National ID number and try again.`
+          : 'Unable to retrieve taxpayer details. Please verify your KRA credentials and try again.',
       }, { status: 404 });
     }
 
     const registeredDate = first(pc?.registeredDate, pc?.obligationDate, api?.registrationDate, '');
 
-    // If name or registration date is not yet extracted, prompt for CAPTCHA
-    if ((!name || !registeredDate) && (!captchaAnswer || !captchaAnswer.trim())) {
+    // If fullPin is known and authentic, and name or registration date is missing, and no CAPTCHA answer provided
+    if (fullPin && looksLikeKraPin(fullPin) && (!name || !registeredDate) && (!captchaAnswer || !captchaAnswer.trim())) {
       log.info(`[retrieve] PIN ${fullPin} resolved. Prompting for security stamp to retrieve official details.`);
       return NextResponse.json({
         success: false,
@@ -792,7 +792,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!name) {
-      name = first(man?.name, api?.taxpayerName, pc?.name, 'Registered Taxpayer');
+      name = first(man?.name, api?.taxpayerName, pc?.name, 'REGISTERED TAXPAYER');
     }
 
     const county         = first(man?.county, pc?.county, api?.county, '');
@@ -823,12 +823,12 @@ export async function POST(req: NextRequest) {
     const { isSubscribed } = await getUserSubscriptionStatus(clerkId);
 
     const fullTaxpayerRecord = {
-      pin:           fullPin,
+      pin:           effectivePin,
       idNumber:      cleanId || liveApiTaxpayer?.idNumber || man?.idNumber || '',
-      name:          name || '',
+      name:          name || 'REGISTERED TAXPAYER',
       email:         email || '',
       status:        'Active',
-      certificate_url: `https://itax.kra.go.ke/KRA-Portal/dotDownloadCertificate.htm?pin=${fullPin}`,
+      certificate_url: effectivePin ? `https://itax.kra.go.ke/KRA-Portal/dotDownloadCertificate.htm?pin=${effectivePin}` : '',
       building:      building || '',
       street:        street || '',
       town:          town || '',
@@ -850,7 +850,9 @@ export async function POST(req: NextRequest) {
     // hint) or is subscribed/admin. Otherwise send an opaque sealed blob the
     // client passes through to the payment endpoints (resolved server-side there).
     const callerKnowsPin = Boolean(resolvedSearchPin) || isSubscribed || isAdmin;
-    const clientRawPin = callerKnowsPin ? fullPin : sealKraPin(fullPin);
+    const clientRawPin = callerKnowsPin
+      ? effectivePin
+      : (fullPin && looksLikeKraPin(fullPin) ? sealKraPin(fullPin) : effectivePin);
 
     const result = {
       success: true,

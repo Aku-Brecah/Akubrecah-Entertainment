@@ -2,7 +2,7 @@ import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
-import { fetchTaxpayerByPin } from '@/lib/kra-api';
+import { fetchTaxpayerByPin, fetchTaxpayerById } from '@/lib/kra-api';
 import { isAdminUser, getUserSubscriptionStatus } from '@/lib/subscription';
 import { tryResolveKraPin } from '@/lib/masking';
 
@@ -127,6 +127,39 @@ export async function POST(req: NextRequest) {
         }
       } catch (err: any) {
         log.warn('[verified-data] Live lookup notice:', err.message);
+      }
+
+      if (!profile) {
+        const idToLookup = downloadRecord?.idNumber || (/^\d{5,12}$/.test(verifiedPin) ? verifiedPin : '');
+        if (idToLookup) {
+          try {
+            const liveId = await fetchTaxpayerById(idToLookup);
+            if (liveId && liveId.taxpayerName) {
+              profile = {
+                pin: liveId.pin || verifiedPin,
+                name: liveId.taxpayerName,
+                taxpayerName: liveId.taxpayerName,
+                fullName: liveId.taxpayerName,
+                idNumber: liveId.idNumber || idToLookup,
+                email: liveId.email || '',
+                phoneNumber: liveId.phoneNumber || '',
+                building: liveId.building || '',
+                street: liveId.street || '',
+                town: liveId.town || '',
+                city: liveId.town || '',
+                county: liveId.county || '',
+                district: liveId.district || '',
+                taxArea: liveId.taxArea || '',
+                station: liveId.station || '',
+                poBox: liveId.poBox || '',
+                postalCode: liveId.postalCode || '',
+                registeredDate: liveId.registrationDate || '',
+              };
+            }
+          } catch (idErr: any) {
+            log.warn('[verified-data] ID fallback lookup notice:', idErr.message);
+          }
+        }
       }
 
     if (!profile) {
