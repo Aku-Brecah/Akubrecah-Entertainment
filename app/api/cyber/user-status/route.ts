@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
@@ -120,7 +121,7 @@ export async function GET(req: NextRequest) {
       })),
     });
   } catch (error: any) {
-    console.error('[api/cyber/user-status] Error:', error.message);
+    log.error('[api/cyber/user-status] Error:', error.message);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

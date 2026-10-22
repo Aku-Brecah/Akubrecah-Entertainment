@@ -1,136 +1,77 @@
 import { describe, it, expect } from 'vitest';
+import {
+  classifyHost,
+  isSafeRedirectPath,
+  canonicalTargetForLegacyVercelHost,
+} from '@/lib/edge/routing';
 
-describe('Issue 2: Subdomain-Specific Authentication & Routing Isolation', () => {
+/**
+ * Real-module tests for subdomain routing & auth isolation decisions.
+ * Targets lib/edge/routing.ts — the exact helpers proxy.ts (clerk middleware)
+ * uses, not a reimplementation.
+ */
+describe('Subdomain classification (lib/edge/routing.ts)', () => {
+  it('classifies kra.* hosts as the KRA subdomain', () => {
+    const c1 = classifyHost('kra.akubrecah.com');
+    expect(c1.isKraSubdomain).toBe(true);
+    expect(c1.isAdminSubdomain).toBe(false);
 
-  function resolveDomainRouting(host: string, pathname: string, userId: string | null) {
-    const cleanHost = host.toLowerCase();
-    const isKraSubdomain = cleanHost.startsWith('kra.') || cleanHost.includes('kra.akubrecah.com');
-    const isAdminSubdomain = cleanHost.startsWith('admin.') || cleanHost.includes('admin.akubrecah.com');
-    const isLocalhost = cleanHost.includes('localhost') || cleanHost.includes('127.0.0.1');
+    const c2 = classifyHost('kra-betasite.akubrecah.com'.replace('kra-betasite', 'kra')); // kra.* prefix form
+    expect(c2.isKraSubdomain).toBe(true);
+  });
 
-    // Case 0: Canonical Domain Enforcement — Redirect *.vercel.app to custom domains
-    if (cleanHost.includes('.vercel.app')) {
-      const isKraTarget = cleanHost.includes('kra') || cleanHost.includes('certificate');
-      const isAdminTarget = cleanHost.includes('admin');
+  it('classifies admin.* hosts as the admin subdomain', () => {
+    const c = classifyHost('admin.akubrecah.com');
+    expect(c.isAdminSubdomain).toBe(true);
+    expect(c.isKraSubdomain).toBe(false);
+  });
 
-      let targetBase = 'https://akubrecah.com';
-      if (isAdminTarget) {
-        targetBase = 'https://admin.akubrecah.com';
-      } else if (isKraTarget) {
-        targetBase = 'https://kra.akubrecah.com';
-      }
-      return { action: 'redirect', target: targetBase + pathname, permanent: true };
+  it('treats the primary domain and local dev as neutral hosts', () => {
+    for (const host of ['akubrecah.com', 'www.akubrecah.com', 'localhost:3000', '127.0.0.1:3000']) {
+      const c = classifyHost(host);
+      expect(c.isKraSubdomain, host).toBe(false);
+      expect(c.isAdminSubdomain, host).toBe(false);
     }
-
-    // Case A: /admin on non-admin subdomains
-    if (!isAdminSubdomain && (pathname === '/admin' || pathname.startsWith('/admin/'))) {
-      return { action: 'redirect', target: 'https://admin.akubrecah.com' + (pathname === '/admin' ? '/' : pathname) };
-    }
-
-    // Case B: Production main domain isolation
-    if (!isKraSubdomain && !isAdminSubdomain && !isLocalhost) {
-      if (pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up')) {
-        return { action: 'redirect', target: 'https://kra.akubrecah.com' + pathname };
-      }
-      if (pathname.startsWith('/retrieval-portal') || pathname.startsWith('/pin-checker')) {
-        return { action: 'redirect', target: 'https://kra.akubrecah.com/' };
-      }
-    }
-
-    // Case C: kra.akubrecah.com authentication gating
-    if (isKraSubdomain) {
-      const isPublicAuthRoute =
-        pathname.startsWith('/sign-in') ||
-        pathname.startsWith('/sign-up') ||
-        pathname.startsWith('/sso-callback') ||
-        pathname.startsWith('/api/') ||
-        pathname === '/privacy' ||
-        pathname === '/terms';
-
-      if (!userId && !isPublicAuthRoute) {
-        return { action: 'redirect', target: '/sign-in' };
-      }
-      if (pathname === '/') {
-        return { action: 'rewrite', target: '/retrieval-portal' };
-      }
-    }
-
-    // Case D: admin.akubrecah.com
-    if (isAdminSubdomain) {
-      if (pathname === '/') {
-        return { action: 'rewrite', target: '/admin' };
-      }
-    }
-
-    // Public pass-through
-    return { action: 'pass', target: pathname };
-  }
-
-  it('allows public visitors on main domain to access marketing pages without login redirection', () => {
-    const publicPaths = ['/', '/about', '/services', '/products', '/contact', '/blog', '/faq', '/privacy', '/terms'];
-
-    for (const path of publicPaths) {
-      const result = resolveDomainRouting('akubrecah.com', path, null);
-      expect(result.action).toBe('pass');
-      expect(result.target).toBe(path);
-    }
+    expect(classifyHost('localhost:3000').isLocalhost).toBe(true);
+    expect(classifyHost('127.0.0.1').isLocalhost).toBe(true);
+    expect(classifyHost('akubrecah.com').isLocalhost).toBe(false);
   });
 
-  it('redirects /sign-in and /sign-up on production main domain strictly to kra.akubrecah.com', () => {
-    const resultSignIn = resolveDomainRouting('akubrecah.com', '/sign-in', null);
-    expect(resultSignIn.action).toBe('redirect');
-    expect(resultSignIn.target).toBe('https://kra.akubrecah.com/sign-in');
+  it('flags legacy vercel preview hosts for canonical redirection', () => {
+    expect(classifyHost('akubrecah.vercel.app').isLegacyVercelHost).toBe(true);
+    expect(classifyHost('kra.akubrecah.com').isLegacyVercelHost).toBe(false);
+  });
+});
 
-    const resultSignUp = resolveDomainRouting('akubrecah.com', '/sign-up', null);
-    expect(resultSignUp.action).toBe('redirect');
-    expect(resultSignUp.target).toBe('https://kra.akubrecah.com/sign-up');
+describe('Canonical domain enforcement (*.vercel.app → production targets)', () => {
+  it('sends KRA/certificate preview traffic to kra.akubrecah.com', () => {
+    expect(canonicalTargetForLegacyVercelHost('akubrecah-kra.vercel.app')).toBe('https://kra.akubrecah.com');
+    expect(canonicalTargetForLegacyVercelHost('certificate-portal.vercel.app')).toBe('https://kra.akubrecah.com');
   });
 
-  it('enforces authentication gating on kra.akubrecah.com for unauthenticated visitors', () => {
-    const portalResult = resolveDomainRouting('kra.akubrecah.com', '/', null);
-    expect(portalResult.action).toBe('redirect');
-    expect(portalResult.target).toBe('/sign-in');
-
-    const filingResult = resolveDomainRouting('kra.akubrecah.com', '/dashboard/filing', null);
-    expect(filingResult.action).toBe('redirect');
-    expect(filingResult.target).toBe('/sign-in');
+  it('sends admin preview traffic to admin.akubrecah.com', () => {
+    expect(canonicalTargetForLegacyVercelHost('akubrecah-admin.vercel.app')).toBe('https://admin.akubrecah.com');
   });
 
-  it('allows authenticated users to view KRA portal on kra.akubrecah.com', () => {
-    const portalResult = resolveDomainRouting('kra.akubrecah.com', '/', 'user_test_123');
-    expect(portalResult.action).toBe('rewrite');
-    expect(portalResult.target).toBe('/retrieval-portal');
+  it('sends everything else to the primary domain', () => {
+    expect(canonicalTargetForLegacyVercelHost('akubrecah.vercel.app')).toBe('https://akubrecah.com');
+  });
+});
+
+describe('Open-redirect guard on post-auth redirect_url (lib/edge/routing.ts)', () => {
+  it('accepts same-origin relative paths only', () => {
+    expect(isSafeRedirectPath('/dashboard')).toBe(true);
+    expect(isSafeRedirectPath('/pin-checker?x=1')).toBe(true);
   });
 
-  it('redirects /admin on main domain to admin.akubrecah.com', () => {
-    const adminResult = resolveDomainRouting('akubrecah.com', '/admin', 'user_admin_123');
-    expect(adminResult.action).toBe('redirect');
-    expect(adminResult.target).toBe('https://admin.akubrecah.com/');
+  it('rejects absolute and protocol-relative attacker URLs', () => {
+    expect(isSafeRedirectPath('https://evil.com')).toBe(false); // ':' rejected
+    expect(isSafeRedirectPath('//evil.com')).toBe(false); // protocol-relative
   });
 
-  it('permanently redirects generic *.vercel.app requests to akubrecah.com', () => {
-    const result = resolveDomainRouting('akubrecah.vercel.app', '/about', null);
-    expect(result.action).toBe('redirect');
-    expect(result.target).toBe('https://akubrecah.com/about');
-    expect((result as any).permanent).toBe(true);
-  });
-
-  it('permanently redirects KRA *.vercel.app requests to kra.akubrecah.com', () => {
-    const resultKra = resolveDomainRouting('kra-certificate.vercel.app', '/', null);
-    expect(resultKra.action).toBe('redirect');
-    expect(resultKra.target).toBe('https://kra.akubrecah.com/');
-    expect((resultKra as any).permanent).toBe(true);
-
-    const resultPortal = resolveDomainRouting('akubrecah-kra-certificate-portal.vercel.app', '/retrieval-portal', null);
-    expect(resultPortal.action).toBe('redirect');
-    expect(resultPortal.target).toBe('https://kra.akubrecah.com/retrieval-portal');
-  });
-
-  it('allows local development routes without forcing external production redirects', () => {
-    const localSignIn = resolveDomainRouting('localhost:3000', '/sign-in', null);
-    expect(localSignIn.action).toBe('pass');
-
-    const localHome = resolveDomainRouting('127.0.0.1:3000', '/', null);
-    expect(localHome.action).toBe('pass');
+  it('rejects backslash and scheme tricks', () => {
+    expect(isSafeRedirectPath('/\\evil.com')).toBe(false);
+    expect(isSafeRedirectPath('javascript:alert(1)')).toBe(false);
+    expect(isSafeRedirectPath('/redirect:https://evil.com')).toBe(false);
   });
 });

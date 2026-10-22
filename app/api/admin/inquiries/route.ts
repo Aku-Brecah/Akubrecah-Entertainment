@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminCaller } from '@/lib/admin-auth';
@@ -100,7 +101,7 @@ export async function GET(req: NextRequest) {
       stats,
     });
   } catch (error: any) {
-    console.error('[API Admin Inquiries GET Error]:', error);
+    log.error('[API Admin Inquiries GET Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -150,7 +151,7 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ success: true, inquiry: updated });
   } catch (error: any) {
-    console.error('[API Admin Inquiries PATCH Error]:', error);
+    log.error('[API Admin Inquiries PATCH Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -250,7 +251,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, note });
   } catch (error: any) {
-    console.error('[API Admin Inquiries POST Action Error]:', error);
+    log.error('[API Admin Inquiries POST Action Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -285,7 +286,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: false, error: 'Inquiry ID or list of IDs is required.' }, { status: 400 });
   } catch (error: any) {
-    console.error('[API Admin Inquiries DELETE Error]:', error);
+    log.error('[API Admin Inquiries DELETE Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

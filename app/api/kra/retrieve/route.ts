@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import https from 'https';
 import { auth, clerkClient } from '@clerk/nextjs/server';
@@ -162,7 +163,7 @@ async function lookupPinByIdNumber(idNumber: string, cookieString: string, proxy
     '/KRA-Portal/dwr/call/plaincall/findPinByIdno.findPinByIdnumber.dwr',
     body, cookieString, 'text/plain', proxyUrl
   );
-  console.log('[retrieve] PIN lookup raw snippet:', raw ? raw.substring(0, 200) : 'EMPTY');
+  log.info('[retrieve] PIN lookup raw snippet:', raw ? raw.substring(0, 200) : 'EMPTY');
 
   const m = raw.match(/handleCallback\([^,]+,[^,]+,"([^"]+)"\)/) || raw.match(/s\d+="([^"]+)"/);
   if (m) {
@@ -339,7 +340,7 @@ function parsePinCheckerHtml(html: string): PinCheckerResult {
     result.email = '';
   }
 
-  console.log('[retrieve][parse] Parsed result:', JSON.stringify(result));
+  log.info('[retrieve][parse] Parsed result:', JSON.stringify(result));
   return result;
 }
 
@@ -490,7 +491,7 @@ async function fetchManufacturerDetails(pin: string, cookieString?: string, prox
       };
     }
   } catch (e: any) {
-    console.error('[retrieve] Error fetching/parsing manufacturer details:', e.message);
+    log.error('[retrieve] Error fetching/parsing manufacturer details:', e.message);
   }
   return null;
 }
@@ -641,7 +642,7 @@ export async function POST(req: NextRequest) {
         liveApiTaxpayer = await fetchTaxpayerByPin(cleanDirectPin, engineMode);
       }
     } catch (liveApiErr: any) {
-      console.warn('[retrieve] Live API gateway notice:', liveApiErr.message);
+      log.warn('[retrieve] Live API gateway notice:', liveApiErr.message);
     }
 
     // ── 2. Resolve PIN & Session Cookies ─────────────────────────────────────
@@ -666,7 +667,7 @@ export async function POST(req: NextRequest) {
       try {
         cookieString = Buffer.from(sessionToken, 'base64').toString('utf8');
       } catch (err) {
-        console.error('[retrieve] Failed to decode sessionToken:', err);
+        log.error('[retrieve] Failed to decode sessionToken:', err);
       }
     }
 
@@ -676,7 +677,7 @@ export async function POST(req: NextRequest) {
         const cookies = await initKraSession(proxyUrl);
         cookieString = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ');
       } catch (err: any) {
-        console.warn('[retrieve] iTax session init notice:', err.message);
+        log.warn('[retrieve] iTax session init notice:', err.message);
       }
     }
 
@@ -694,7 +695,7 @@ export async function POST(req: NextRequest) {
         fullPin = lookup.pin;
         maskedPinHint = lookup.maskedPin;
       } catch (err: any) {
-        console.warn('[retrieve] DWR PIN lookup failed:', err.message);
+        log.warn('[retrieve] DWR PIN lookup failed:', err.message);
       }
     }
 
@@ -703,7 +704,7 @@ export async function POST(req: NextRequest) {
       try {
         liveApiTaxpayer = await fetchTaxpayerByPin(fullPin);
       } catch (err: any) {
-        console.warn('[retrieve] Post-ID Live API lookup notice:', err.message);
+        log.warn('[retrieve] Post-ID Live API lookup notice:', err.message);
       }
     }
 
@@ -716,21 +717,21 @@ export async function POST(req: NextRequest) {
       try {
         if (captchaAnswer && captchaAnswer.trim()) {
           const postData = `viewType=static&actionCode=checkPin&vo.pinNo=${encodeURIComponent(fullPin)}&captcahText=${encodeURIComponent(captchaAnswer.trim())}`;
-          console.log('[retrieve] Using cookieString for pinChecker:', cookieString);
-          console.log('[retrieve] Posting to pinChecker with postData:', postData);
+          log.info('[retrieve] Using cookieString for pinChecker:', cookieString);
+          log.info('[retrieve] Posting to pinChecker with postData:', postData);
           
           const [pcHtml, manResult] = await Promise.all([
             httpsPost('/KRA-Portal/pinChecker.htm', postData, cookieString, 'application/x-www-form-urlencoded', proxyUrl).catch((e: any) => {
-              console.warn('[retrieve] pinChecker httpsPost error:', e.message);
+              log.warn('[retrieve] pinChecker httpsPost error:', e.message);
               return '';
             }),
             fetchManufacturerDetails(fullPin, freshCookieString, proxyUrl).catch(() => null),
           ]);
 
           if (pcHtml.length > 100) {
-            console.log('[retrieve] pinChecker raw response snippet:', pcHtml.substring(0, 600));
+            log.info('[retrieve] pinChecker raw response snippet:', pcHtml.substring(0, 600));
             pinCheckerData = parsePinCheckerHtml(pcHtml);
-            console.log('[retrieve] pinChecker parsed name:', pinCheckerData.name, 'pin:', pinCheckerData.pin);
+            log.info('[retrieve] pinChecker parsed name:', pinCheckerData.name, 'pin:', pinCheckerData.pin);
             if (pinCheckerData.captchaWrong && !liveApiTaxpayer) {
               await createSystemLog({
                 level: 'warning',
@@ -752,7 +753,7 @@ export async function POST(req: NextRequest) {
           manData = await fetchManufacturerDetails(fullPin, freshCookieString, proxyUrl).catch(() => null);
         }
       } catch (err: any) {
-        console.warn('[retrieve] iTax details fetch notice:', err.message);
+        log.warn('[retrieve] iTax details fetch notice:', err.message);
         parseError = true;
       }
     }
@@ -766,7 +767,7 @@ export async function POST(req: NextRequest) {
     let name = first(man?.name, api?.taxpayerName, pc?.name, '');
 
     if (!fullPin) {
-      console.warn(`[retrieve] Pin could not be resolved for ID ${cleanId}. Masked hint: ${maskedPinHint}`);
+      log.warn(`[retrieve] Pin could not be resolved for ID ${cleanId}. Masked hint: ${maskedPinHint}`);
       const hintMsg = maskedPinHint
         ? `KRA masks National ID searches for citizen privacy (${maskedPinHint}). To retrieve your exact official compliance certificate with 100% accuracy, please search directly using your KRA PIN (e.g. A012345678Z). If you don't know your PIN, dial *222# on your phone.`
         : 'KRA record could not be resolved for this National ID. Please search directly using your KRA PIN (e.g. A012345678Z) or check via KRA *222#.';
@@ -781,7 +782,7 @@ export async function POST(req: NextRequest) {
 
     // If name or registration date is not yet extracted, prompt for CAPTCHA
     if ((!name || !registeredDate) && (!captchaAnswer || !captchaAnswer.trim())) {
-      console.log(`[retrieve] PIN ${fullPin} resolved. Prompting for security stamp to retrieve official details.`);
+      log.info(`[retrieve] PIN ${fullPin} resolved. Prompting for security stamp to retrieve official details.`);
       return NextResponse.json({
         success: false,
         captchaRequired: true,
@@ -859,7 +860,7 @@ export async function POST(req: NextRequest) {
       isSubscribed,
     };
 
-    console.log('[retrieve] Final masked result:', JSON.stringify(result.data));
+    log.info('[retrieve] Final masked result:', JSON.stringify(result.data));
     await createSystemLog({
       level: 'info',
       service: 'KRA-Retrieve',
@@ -871,7 +872,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
 
   } catch (error: any) {
-    console.error('[retrieve] Critical retrieve handler error:', error.message);
+    log.error('[retrieve] Critical retrieve handler error:', error.message);
     return NextResponse.json({
       success: false,
       error: error.message || 'Unable to retrieve details. Please verify your credentials and try again.',

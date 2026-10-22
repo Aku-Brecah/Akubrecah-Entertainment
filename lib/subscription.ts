@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import prisma from '@/lib/prisma';
 
 /**
@@ -156,7 +157,7 @@ export async function getUserSubscriptionStatus(clerkId?: string | null): Promis
       userId: dbUser?.id || clerkId,
     };
   } catch (error: any) {
-    console.error('[getUserSubscriptionStatus] Error verifying subscription:', error.message);
+    log.error('[getUserSubscriptionStatus] Error verifying subscription:', error.message);
     return { isSubscribed: false, subscription: null, userId: null };
   }
 }
@@ -187,7 +188,7 @@ export async function getOrCreateDbUser(clerkId: string, email?: string, fullNam
         resolvedFirst = clerkUser.firstName || resolvedFirst;
         resolvedLast = clerkUser.lastName || undefined;
       } catch (clerkErr: any) {
-        console.warn('[getOrCreateDbUser] Notice fetching Clerk profile:', clerkErr?.message);
+        log.warn('[getOrCreateDbUser] Notice fetching Clerk profile:', clerkErr?.message);
       }
     }
 
@@ -229,7 +230,7 @@ export async function getOrCreateDbUser(clerkId: string, email?: string, fullNam
 
     return dbUser;
   } catch (error: any) {
-    console.error('[getOrCreateDbUser] Error ensuring DB user record:', error.message);
+    log.error('[getOrCreateDbUser] Error ensuring DB user record:', error.message);
     // Fallback: try finding again in case of race condition
     return await db.users?.findFirst({ where: { clerkId } }).catch(() => null);
   }

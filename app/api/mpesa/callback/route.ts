@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const maxDuration = 10;
@@ -22,26 +23,26 @@ export async function POST(req: NextRequest) {
     const callbackToken = process.env.MPESA_CALLBACK_TOKEN;
     if (callbackToken) {
       if (req.nextUrl.searchParams.get('token') !== callbackToken) {
-        console.error('[M-Pesa Callback] REJECTED: missing/invalid callback token — unauthenticated callback attempt');
+        log.error('[M-Pesa Callback] REJECTED: missing/invalid callback token — unauthenticated callback attempt');
         return NextResponse.json({ success: false, error: 'Unauthorized callback' }, { status: 401 });
       }
     } else {
-      console.warn('[M-Pesa Callback] WARNING: MPESA_CALLBACK_TOKEN not configured — callback origin is unvalidated');
+      log.warn('[M-Pesa Callback] WARNING: MPESA_CALLBACK_TOKEN not configured — callback origin is unvalidated');
     }
 
     const payload = await req.json();
-    console.log('[M-Pesa Callback] Received payload:', JSON.stringify(payload));
+    log.info('[M-Pesa Callback] Received payload:', JSON.stringify(payload));
 
     const body = payload?.Body;
     if (!body || !body.stkCallback) {
-      console.warn('[M-Pesa Callback] Invalid payload structure');
+      log.warn('[M-Pesa Callback] Invalid payload structure');
       return NextResponse.json({ success: false, error: 'Invalid payload structure' }, { status: 400 });
     }
 
     const { CheckoutRequestID, ResultCode, ResultDesc, CallbackMetadata } = body.stkCallback;
 
     if (!CheckoutRequestID) {
-      console.warn('[M-Pesa Callback] Missing CheckoutRequestID');
+      log.warn('[M-Pesa Callback] Missing CheckoutRequestID');
       return NextResponse.json({ success: false, error: 'Missing CheckoutRequestID' }, { status: 400 });
     }
 
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
     const underpaid = ResultCode === 0 && amount > 0 && amount < 20;
 
     if (underpaid) {
-      console.error(`[M-Pesa Callback] REJECTED underpaid "success" (KES ${amount}) for ${CheckoutRequestID}`);
+      log.error(`[M-Pesa Callback] REJECTED underpaid "success" (KES ${amount}) for ${CheckoutRequestID}`);
       registry[CheckoutRequestID] = {
         status: 'failed',
         resultCode: ResultCode,
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      console.log(`[M-Pesa Callback] Payment Success! Receipt: ${mpesaReceipt}, Amount: ${amount}`);
+      log.info(`[M-Pesa Callback] Payment Success! Receipt: ${mpesaReceipt}, Amount: ${amount}`);
 
       registry[CheckoutRequestID] = {
         status: 'success',
@@ -129,7 +130,7 @@ export async function POST(req: NextRequest) {
             return meta?.checkoutId === CheckoutRequestID || meta?.paymentPhone === phoneNumber;
           });
         } catch (e: any) {
-          console.warn('[M-Pesa Callback] Conversation lookup notice:', e.message);
+          log.warn('[M-Pesa Callback] Conversation lookup notice:', e.message);
         }
 
         const resolvedPin = conversation?.metadata?.pin || 'KRA_CERT';
@@ -139,7 +140,7 @@ export async function POST(req: NextRequest) {
         // 1b. Check if this payment was for a Cyber Cafe Monthly Subscription
         const isCyber = conversation?.metadata?.step === 'CYBER_AWAITING_PAYMENT';
         if (isCyber) {
-          console.log(`[M-Pesa Callback] Activating Cyber Cafe subscription for ${targetPhone} (receipt: ${mpesaReceipt})`);
+          log.info(`[M-Pesa Callback] Activating Cyber Cafe subscription for ${targetPhone} (receipt: ${mpesaReceipt})`);
           const { activateCyberCafeSubscription, deliverCyberInvoiceToWhatsApp } = await import('@/lib/cyber-subscription');
           const { sendEvolutionTextMessage } = await import('@/lib/evolution');
 
@@ -190,7 +191,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (pendingCafe && (amount >= 500 || amount === 0)) {
-          console.log(`[M-Pesa Callback] Activating Web Cyber Cafe subscription for ${pendingCafe.cafeName}`);
+          log.info(`[M-Pesa Callback] Activating Web Cyber Cafe subscription for ${pendingCafe.cafeName}`);
           const { activateCyberCafeSubscription, deliverCyberInvoiceToWhatsApp } = await import('@/lib/cyber-subscription');
           const activation = await activateCyberCafeSubscription({
             cafeName: pendingCafe.cafeName,
@@ -212,7 +213,7 @@ export async function POST(req: NextRequest) {
                 daysRemaining: activation.daysRemaining,
               });
             } catch (err: any) {
-              console.warn('[M-Pesa Callback] WhatsApp delivery notice:', err.message);
+              log.warn('[M-Pesa Callback] WhatsApp delivery notice:', err.message);
             }
           }
 
@@ -228,7 +229,7 @@ export async function POST(req: NextRequest) {
             taxpayerName || 'WhatsApp Taxpayer'
           );
         } catch (uErr: any) {
-          console.warn('[M-Pesa Callback] User lookup notice:', uErr.message);
+          log.warn('[M-Pesa Callback] User lookup notice:', uErr.message);
         }
 
         let downloadRecord: any = null;
@@ -247,7 +248,7 @@ export async function POST(req: NextRequest) {
               },
             });
           } catch (dlErr: any) {
-            console.warn('[M-Pesa Callback] Download record creation notice:', dlErr.message);
+            log.warn('[M-Pesa Callback] Download record creation notice:', dlErr.message);
           }
         }
 
@@ -282,7 +283,7 @@ export async function POST(req: NextRequest) {
             taxpayerDetails: conversation?.metadata?.taxpayerDetails,
           });
         } catch (fulErr: any) {
-          console.error('[M-Pesa Callback] Direct fulfillment error:', fulErr.message);
+          log.error('[M-Pesa Callback] Direct fulfillment error:', fulErr.message);
         }
 
         // Trigger n8n Workflow so executions visibly reflect in n8n
@@ -307,13 +308,13 @@ export async function POST(req: NextRequest) {
             }),
           });
         } catch (n8nErr: any) {
-          console.warn('[M-Pesa Callback] n8n delivery webhook notice:', n8nErr.message);
+          log.warn('[M-Pesa Callback] n8n delivery webhook notice:', n8nErr.message);
         }
       } catch (dbErr: any) {
-        console.error('[M-Pesa Callback DB Handler Error]:', dbErr.message);
+        log.error('[M-Pesa Callback DB Handler Error]:', dbErr.message);
       }
     } else {
-      console.warn(`[M-Pesa Callback] Payment Failed! Code: ${ResultCode}, Desc: ${ResultDesc}`);
+      log.warn(`[M-Pesa Callback] Payment Failed! Code: ${ResultCode}, Desc: ${ResultDesc}`);
 
       registry[CheckoutRequestID] = {
         status: 'failed',
@@ -348,7 +349,7 @@ export async function POST(req: NextRequest) {
             await sendEvolutionTextMessage(targetPhone, failMsg);
           }
         } catch (err: any) {
-          console.warn('[M-Pesa Callback Fail Notify Notice]:', err.message);
+          log.warn('[M-Pesa Callback Fail Notify Notice]:', err.message);
         }
       })().catch(() => {});
     }
@@ -366,7 +367,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, message: 'Callback received successfully' });
 
   } catch (error: any) {
-    console.error('[M-Pesa Callback Catch Error]:', error.message);
+    log.error('[M-Pesa Callback Catch Error]:', error.message);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

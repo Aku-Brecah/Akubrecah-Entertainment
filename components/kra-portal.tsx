@@ -56,7 +56,7 @@ import { cn } from "@/lib/utils"
 import { toast } from "react-hot-toast"
 import { useUser } from "@clerk/nextjs"
 import { maskPin, maskEmail, maskPhone } from "@/lib/masking"
-import { trackEvent } from "@/lib/analytics"
+import { trackEvent } from "@/lib/telemetry/client"
 
 export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { isLoaded: authLoaded, isSignedIn, user } = useUser()
@@ -116,10 +116,10 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [verifiedDownloadId, setVerifiedDownloadId] = useState<string | null>(null)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false)
   const [verifiedReceipt, setVerifiedReceipt] = useState<string | null>(null)
   const [previewMode, setPreviewMode] = useState<"printer" | "card">("printer")
   const [printerStage, setPrinterStage] = useState<ReceiptPrinterStage>("complete")
-
 
   // Subscription & Paystack state
   const [isSubscribed, setIsSubscribed] = useState(false)
@@ -127,6 +127,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const [selectedTier, setSelectedTier] = useState<"download" | "subscription">("download")
   const [paystackAuthUrl, setPaystackAuthUrl] = useState<string | null>(null)
   const [isInitializingPaystack, setIsInitializingPaystack] = useState(false)
+
+  const isRecordUnlocked = Boolean(verifiedDownloadId || isAdmin || isSubscribed)
 
   useEffect(() => {
     trackEvent({ activityType: 'page_view' });
@@ -149,7 +151,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     }
   }, [])
 
-  // Auto-trigger stepped receipt printer feed animation when navigating to Step 4
+  // Auto-trigger stepped receipt printer feed animation when navigating to Step 4 or upon payment unlocking
   useEffect(() => {
     if (currentStep === 4) {
       setPrinterStage("processing")
@@ -160,7 +162,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         clearTimeout(t2)
       }
     }
-  }, [currentStep])
+  }, [currentStep, isRecordUnlocked])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => {
@@ -568,6 +570,54 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       toast.error(err.message || "Download failed. Please check your connection.", { id: loadingToast })
     } finally {
       setIsDownloadingPdf(false)
+    }
+  }
+
+  // Generates and downloads the official ETR fiscal tax invoice matching the on-screen preview
+  const handleDownloadReceipt = async () => {
+    setIsDownloadingReceipt(true)
+    const toastId = toast.loading("Generating your official fiscal ETR receipt...")
+    try {
+      const activeForm = { ...formData }
+      const certPin = activeForm.rawPin || activeForm.pin
+      const res = await fetch('/api/generate-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          downloadId: verifiedDownloadId,
+          mpesaReceipt: verifiedReceipt || 'REC-' + (certPin ? certPin.slice(0, 4) : '2026') + '-ETR',
+          pin: certPin,
+          name: activeForm.fullName,
+          amount: accessInfo?.feeKes || 20,
+          phone: activeForm.phoneNumber,
+        }),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || "Failed to generate receipt PDF")
+      }
+
+      const blob = await res.blob()
+      if (blob.size < 100) {
+        throw new Error("Received an invalid or empty receipt file.")
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `ETR_Receipt_${verifiedReceipt || 'OFFICIAL'}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      setTimeout(() => {
+        a.remove()
+        window.URL.revokeObjectURL(url)
+      }, 1500)
+      toast.success("Official ETR receipt downloaded!", { id: toastId })
+    } catch (err: any) {
+      toast.error(err.message || "Failed to download receipt", { id: toastId })
+    } finally {
+      setIsDownloadingReceipt(false)
     }
   }
 
@@ -1228,9 +1278,21 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                       </span>
                                     </div>
                                     <div className="flex items-center justify-between text-zinc-200">
+                                      <span>NATIONAL ID:</span>
+                                      <span className="font-bold font-mono text-zinc-100">
+                                        {formData.idNumber || "ON FILE"}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-zinc-200">
                                       <span>PIN:</span>
                                       <span className="font-bold font-mono text-primary">
                                         {isRecordUnlocked ? (formData.rawPin || formData.pin) : (maskPin(formData.pin || formData.rawPin) || "A01*****78Z")}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-zinc-200">
+                                      <span>STATION:</span>
+                                      <span className="font-bold text-zinc-300">
+                                        {isRecordUnlocked ? (formData.station || "Station on file") : "••••••••••"}
                                       </span>
                                     </div>
                                   </div>
@@ -1252,8 +1314,13 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                     email={isRecordUnlocked ? formData.email : (maskEmail(formData.email) || undefined)}
                                     phoneNumber={isRecordUnlocked && formData.phoneNumber && !formData.phoneNumber.includes('•') ? formData.phoneNumber : undefined}
                                     isUnlocked={isRecordUnlocked}
+                                    receiptNumber={verifiedReceipt || undefined}
+                                    paymentMethod={paymentMethod === 'mpesa' ? 'M-PESA EXPRESS' : 'PAYSTACK SECURE'}
+                                    amount={accessInfo?.feeKes || 20}
                                     onDownload={handleDownload}
                                     isDownloading={isDownloadingPdf}
+                                    onDownloadReceipt={handleDownloadReceipt}
+                                    isDownloadingReceipt={isDownloadingReceipt}
                                   />
                                 </ReceiptPrinter.Paper>
                               </ReceiptPrinter.Output>
@@ -1310,7 +1377,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                     "font-semibold text-[9px] px-1.5 py-0.5 rounded",
                                     isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                                   )}>
-                                    {isRecordUnlocked ? "Verified & Paid" : "Partial Mask"}
+                                    {isRecordUnlocked ? "Verified & Paid" : "Protected PIN"}
                                   </span>
                                 </div>
                                 <p className="text-xs sm:text-sm font-mono font-black text-primary tracking-wider">
@@ -1320,14 +1387,26 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                 </p>
                               </div>
 
-                              {/* 4. Tax Station (Unmasked - Fully Visible) */}
+                              {/* 4. Tax Station (Masked until paid) */}
                               <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
                                 <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
                                   <span>Tax Station</span>
-                                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[9px] bg-emerald-500/10 px-1.5 py-0.5 rounded">Station Match</span>
+                                  <span className={cn(
+                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                  )}>
+                                    {isRecordUnlocked ? "Station Match" : "Protected Station"}
+                                  </span>
                                 </div>
                                 <p className="text-xs sm:text-sm font-bold text-on-surface truncate">
-                                  {formData.station || "Kitale TSO"}
+                                  {isRecordUnlocked ? (
+                                    formData.station || "Kitale TSO"
+                                  ) : (
+                                    <span className="blur-xs select-none font-mono text-on-surface-variant flex items-center gap-1.5">
+                                      <Lock className="w-3.5 h-3.5 text-primary inline shrink-0" />
+                                      •••••••••• (Protected)
+                                    </span>
+                                  )}
                                 </p>
                               </div>
 
@@ -1367,25 +1446,49 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                 </p>
                               </div>
 
-                              {/* 7. Region & City */}
+                              {/* 7. Region & City (Location - Masked until paid) */}
                               <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
                                 <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                  <span>County & Town</span>
-                                  <span className="text-on-surface-variant font-semibold text-[9px] bg-surface-variant px-1.5 py-0.5 rounded">Location</span>
+                                  <span>Location</span>
+                                  <span className={cn(
+                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                  )}>
+                                    {isRecordUnlocked ? "Verified Location" : "Protected Location"}
+                                  </span>
                                 </div>
                                 <p className="text-xs sm:text-sm font-medium text-on-surface truncate">
-                                  {formData.county ? `${formData.county} · ${formData.town || formData.county}` : (formData.town || "Nairobi")}
+                                  {isRecordUnlocked ? (
+                                    formData.county ? `${formData.county} · ${formData.town || formData.county}` : (formData.town || "Nairobi")
+                                  ) : (
+                                    <span className="blur-xs select-none font-mono text-on-surface-variant flex items-center gap-1.5">
+                                      <Lock className="w-3.5 h-3.5 text-primary inline shrink-0" />
+                                      •••••••••••• (Protected)
+                                    </span>
+                                  )}
                                 </p>
                               </div>
 
-                              {/* 8. Registration Date */}
+                              {/* 8. Registration Date (Date Issued - Masked until paid) */}
                               <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
                                 <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                  <span>Registration Date</span>
-                                  <span className="text-on-surface-variant font-semibold text-[9px] bg-surface-variant px-1.5 py-0.5 rounded">Statutory</span>
+                                  <span>Date Issued</span>
+                                  <span className={cn(
+                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                  )}>
+                                    {isRecordUnlocked ? "Statutory Match" : "Protected Date"}
+                                  </span>
                                 </div>
                                 <p className="text-xs sm:text-sm font-medium text-on-surface">
-                                  {formData.registeredDate || "On Official File"}
+                                  {isRecordUnlocked ? (
+                                    formData.registeredDate || "On Official File"
+                                  ) : (
+                                    <span className="blur-xs select-none font-mono text-on-surface-variant flex items-center gap-1.5">
+                                      <Lock className="w-3.5 h-3.5 text-primary inline shrink-0" />
+                                      ••/••/•••• (Protected)
+                                    </span>
+                                  )}
                                 </p>
                               </div>
 

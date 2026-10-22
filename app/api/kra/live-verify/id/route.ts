@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { fetchTaxpayerById } from '@/lib/kra-api';
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
       isSubscribed,
     });
   } catch (error: any) {
-    console.error('[API /api/kra/live-verify/id Error]:', error);
+    log.error('[API /api/kra/live-verify/id Error]:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to verify National ID with KRA live gateway.' },
       { status: 500 }

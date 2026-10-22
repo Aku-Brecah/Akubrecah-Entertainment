@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { clerkClient } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
@@ -117,7 +118,7 @@ export async function POST(req: NextRequest) {
     // METHOD 1: Direct Clerk Dev API Sync
     // =========================================================
     if (devSecretKey) {
-      console.log("[User Migration] Initiating direct Clerk API migration with dev secret key...");
+      log.info("[User Migration] Initiating direct Clerk API migration with dev secret key...");
       const devRes = await fetch("https://api.clerk.com/v1/users?limit=500&order_by=-created_at", {
         headers: {
           Authorization: `Bearer ${devSecretKey}`,
@@ -182,7 +183,7 @@ export async function POST(req: NextRequest) {
           results.success.push(`${email} (${created.id})`);
           targetEmails.add(email.toLowerCase());
         } catch (err: any) {
-          console.error(`[User Migration] Failed to create ${email}:`, err);
+          log.error(`[User Migration] Failed to create ${email}:`, err);
           let errorMsg = err.message || "Failed to create user in production";
           if (err.errors && Array.isArray(err.errors)) {
             errorMsg = err.errors.map((e: any) => `${e.code}: ${e.message}`).join(" | ");
@@ -258,7 +259,7 @@ export async function POST(req: NextRequest) {
           results.success.push(`${email} (${created.id})`);
           targetEmails.add(email.toLowerCase());
         } catch (err: any) {
-          console.error(`[User Migration CSV] Failed to create ${email}:`, err);
+          log.error(`[User Migration CSV] Failed to create ${email}:`, err);
           let errorMsg = err.message || "Failed to create user in production";
           if (err.errors && Array.isArray(err.errors)) {
             errorMsg = err.errors.map((e: any) => `${e.code}: ${e.message}`).join(" | ");
@@ -287,7 +288,7 @@ export async function POST(req: NextRequest) {
         },
       });
     } catch (logErr) {
-      console.warn("[User Migration] Failed to write database log:", logErr);
+      log.warn("[User Migration] Failed to write database log:", logErr);
     }
 
     return NextResponse.json({
@@ -296,7 +297,7 @@ export async function POST(req: NextRequest) {
       results,
     });
   } catch (error: any) {
-    console.error("[User Migration Error]:", error);
+    log.error("[User Migration Error]:", error);
     return NextResponse.json(
       { success: false, error: error.message || "Internal server error during migration." },
       { status: 500 }

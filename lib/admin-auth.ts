@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextRequest } from "next/server";
 import { verifyAdminMagicToken } from "./magic-token";
@@ -85,7 +86,7 @@ export async function verifyAdminCaller(req?: NextRequest): Promise<AdminCaller 
       }
     }
   } catch (err: any) {
-    console.error("[verifyAdminCaller] Clerk check error:", err?.message);
+    log.error("[verifyAdminCaller] Clerk check error:", err?.message);
   }
 
   return null;

@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendEvolutionTextMessage } from '@/lib/evolution';
@@ -130,11 +131,11 @@ export async function POST(req: NextRequest) {
       `_Status: NEW. View and manage in your Admin Portal at /admin/inquiries_`;
 
     sendEvolutionTextMessage(adminPhone, alertText).catch((err) => {
-      console.warn('[Inquiries WhatsApp Alert Error]:', err.message);
+      log.warn('[Inquiries WhatsApp Alert Error]:', err.message);
     });
 
     sendAdminNotification(inquiry).catch((err) => {
-      console.warn('[Inquiries Admin Email Alert Error]:', err.message);
+      log.warn('[Inquiries Admin Email Alert Error]:', err.message);
     });
 
     return NextResponse.json({
@@ -143,7 +144,7 @@ export async function POST(req: NextRequest) {
       inquiryId: inquiry.id,
     });
   } catch (error: any) {
-    console.error('[API Inquiries POST Error]:', error);
+    log.error('[API Inquiries POST Error]:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to submit inquiry. Please try again.' },
       { status: 500 }

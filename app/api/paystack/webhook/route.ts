@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma, { createSystemLog } from '@/lib/prisma';
 import { verifyPaystackWebhookSignature } from '@/lib/paystack';
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest) {
 
     const isValid = verifyPaystackWebhookSignature(rawBody, signature);
     if (!isValid) {
-      console.warn('[Paystack Webhook] Invalid webhook signature detected.');
+      log.warn('[Paystack Webhook] Invalid webhook signature detected.');
       return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 401 });
     }
 
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
                 expiresAt,
               },
             });
-            console.log(`[Paystack Webhook] Subscription activated for ${dbUser.email}`);
+            log.info(`[Paystack Webhook] Subscription activated for ${dbUser.email}`);
           }
         } else if (type === 'pay_per_download') {
           const existingDownload = await db.certificateDownload?.findFirst({
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
                 checkoutId: reference,
               },
             });
-            console.log(`[Paystack Webhook] Download recorded for PIN ${pin}`);
+            log.info(`[Paystack Webhook] Download recorded for PIN ${pin}`);
 
             // Dispatch to WhatsApp if paid by a WhatsApp user
             let waTargetPhone: string | null = null;
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
                 waTargetPhone = clerkId.replace(/^wa_/, '');
               }
             } catch (convErr: any) {
-              console.warn('[Paystack Webhook] Conversation lookup notice:', convErr.message);
+              log.warn('[Paystack Webhook] Conversation lookup notice:', convErr.message);
               if (clerkId && clerkId.startsWith('wa_')) {
                 waTargetPhone = clerkId.replace(/^wa_/, '');
               }
@@ -120,7 +121,7 @@ export async function POST(req: NextRequest) {
                   taxpayerDetails,
                 });
               } catch (fulErr: any) {
-                console.error('[Paystack Webhook] Direct fulfillment error:', fulErr.message);
+                log.error('[Paystack Webhook] Direct fulfillment error:', fulErr.message);
               }
               // Secondary n8n trigger to reflect in workflow
               const n8nWebhookUrl = process.env.N8N_KRA_DELIVERY_WEBHOOK || 'https://n8n.akubrecah.com/webhook/kra-delivery';
@@ -144,7 +145,7 @@ export async function POST(req: NextRequest) {
                   }),
                 });
               } catch (n8nErr: any) {
-                console.warn('[Paystack Webhook] n8n delivery notice:', n8nErr.message);
+                log.warn('[Paystack Webhook] n8n delivery notice:', n8nErr.message);
               }
             }
           }
@@ -162,7 +163,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('[Paystack Webhook] Error:', error.message);
+    log.error('[Paystack Webhook] Error:', error.message);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

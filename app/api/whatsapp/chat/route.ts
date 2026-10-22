@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sanitizeWhatsAppPhone, sendEvolutionTextMessage, sendEvolutionDocument } from '@/lib/evolution';
@@ -9,7 +10,7 @@ import {
   getPaystackLiveTransactions,
   findRecentSuccessfulPaystackPayment,
 } from '@/lib/paystack';
-import { dispatchMpesaStkPush, normalizePhoneNumber } from '@/app/api/mpesa/stkpush/route';
+import { dispatchMpesaStkPush, normalizePhoneNumber } from '@/lib/whatsapp/mpesa-dispatch';
 import { createAdminMagicToken } from '@/lib/magic-token';
 import { getPublicAppUrl } from '@/lib/utils';
 import {
@@ -22,862 +23,13 @@ import {
   formatKenyaPhone,
 } from '@/lib/cyber-subscription';
 import { isDuplicateWhatsAppMessage } from '@/lib/whatsapp-dedup';
+import { extractKenyanPhone, formatDisplayPhone } from '@/lib/whatsapp/phone';
+import { triggerInAppMpesaPayment, triggerCyberCafePayment, createPaystackLink } from '@/lib/whatsapp/payments';
+import { handleAdminBotCommand } from '@/lib/whatsapp/admin-commands';
+import { handleTaxpayerFoundFulfillment } from '@/lib/whatsapp/fulfillment';
+import { parseWhatsAppCommand } from '@/lib/whatsapp/commands';
 
 export const maxDuration = 60;
-
-function extractKenyanPhone(text: string): string | null {
-  if (!text) return null;
-  const cleaned = text.replace(/[\s\-\+\(\)]/g, '');
-  const match = cleaned.match(/(?:254|\+254|0)?([71]\d{8})/);
-  if (match && match[1]) {
-    return '254' + match[1];
-  }
-  return null;
-}
-
-function formatDisplayPhone(phone: string): string {
-  if (!phone) return '';
-  if (phone.startsWith('254') && phone.length === 12) {
-    return '0' + phone.substring(3);
-  }
-  return phone;
-}
-
-
-async function triggerInAppMpesaPayment({
-  targetPhone,
-  whatsappUserPhone,
-  pin,
-  amount,
-  taxpayerName,
-}: {
-  targetPhone: string;
-  whatsappUserPhone: string;
-  pin: string;
-  amount: number;
-  taxpayerName?: string;
-}): Promise<{
-  success: boolean;
-  checkoutRequestId?: string;
-  gateway?: string;
-  normalizedPhone: string;
-  error?: string;
-}> {
-  const normalizedPhone = normalizePhoneNumber(targetPhone);
-  const cleanPin = pin.trim().toUpperCase();
-  const reference = `CERT-${cleanPin}-${Date.now()}`;
-
-  try {
-    const result = await dispatchMpesaStkPush({
-      phone: normalizedPhone,
-      amount,
-      reference,
-      description: `KRA Certificate - ${cleanPin}`,
-      userClerkId: `wa_${whatsappUserPhone.replace(/[^a-zA-Z0-9]/g, '')}`,
-      userEmail: `wa_${whatsappUserPhone.replace(/[^a-zA-Z0-9]/g, '')}@akubrecah.co.ke`,
-    });
-
-    return {
-      success: result.success,
-      checkoutRequestId: result.checkoutRequestId || result.CheckoutRequestID,
-      gateway: result.gateway || 'mpesa',
-      normalizedPhone,
-      error: result.error,
-    };
-  } catch (err: any) {
-    console.error('[WhatsApp triggerInAppMpesaPayment Error]:', err.message);
-    return {
-      success: false,
-      normalizedPhone,
-      error: err.message || 'Failed to trigger M-Pesa STK Push',
-    };
-  }
-}
-
-async function triggerCyberCafePayment({
-  targetPhone,
-  whatsappUserPhone,
-  cafeName,
-  ownerName,
-}: {
-  targetPhone: string;
-  whatsappUserPhone: string;
-  cafeName: string;
-  ownerName: string;
-}): Promise<{
-  success: boolean;
-  checkoutRequestId?: string;
-  gateway?: string;
-  normalizedPhone: string;
-  error?: string;
-}> {
-  const normalizedPhone = normalizePhoneNumber(targetPhone);
-  const reference = `CYBER-${Date.now().toString().slice(-6)}`;
-
-  try {
-    const result = await dispatchMpesaStkPush({
-      phone: normalizedPhone,
-      amount: 500,
-      reference,
-      description: `Cyber Sub - ${cafeName.substring(0, 20)}`,
-      userClerkId: `wa_${whatsappUserPhone.replace(/[^a-zA-Z0-9]/g, '')}`,
-      userEmail: `cyber_${whatsappUserPhone.replace(/[^a-zA-Z0-9]/g, '')}@akubrecah.co.ke`,
-    });
-
-    return {
-      success: result.success,
-      checkoutRequestId: result.checkoutRequestId || result.CheckoutRequestID,
-      gateway: result.gateway || 'mpesa',
-      normalizedPhone,
-      error: result.error,
-    };
-  } catch (err: any) {
-    console.error('[WhatsApp triggerCyberCafePayment Error]:', err.message);
-    return {
-      success: false,
-      normalizedPhone,
-      error: err.message || 'Failed to trigger M-Pesa STK Push',
-    };
-  }
-}
-
-async function createPaystackLink(userPhone: string, pin: string, amount: number, customerName?: string) {
-  const appUrl = getPublicAppUrl();
-  const reference = `PSTK-CERT-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-  return await initializePaystackTransaction({
-    email: `wa_${userPhone.replace(/[^a-zA-Z0-9]/g, '')}@akubrecah.co.ke`,
-    amountKes: amount,
-    reference,
-    callbackUrl: `${appUrl}/checkout/success?ref=${reference}&pin=${pin}`,
-    metadata: {
-      clerkId: 'wa_' + userPhone,
-      type: 'pay_per_download',
-      pin,
-      amountKes: amount,
-      phone: userPhone,
-      customerName: customerName || 'WhatsApp Customer',
-    },
-  });
-}
-
-/**
- * Admin Bot Controller for WhatsApp Super Admin
- * Allows checking revenue, stats, recent logs, bot performance, and generating 1-click magic link
- */
-async function handleAdminBotCommand({
-  incomingText,
-  userPhone,
-  metadata,
-  saveConversationState,
-  db,
-  authorPhone,
-  isFromBotOwner,
-}: {
-  incomingText: string;
-  userPhone: string;
-  metadata: Record<string, any>;
-  saveConversationState: (step: string, extra?: Record<string, any>) => Promise<void>;
-  db: any;
-  authorPhone?: string;
-  isFromBotOwner?: boolean;
-}): Promise<string | null> {
-  const trimmed = incomingText.trim();
-
-  // Strip leading ! or /
-  const clean = trimmed.replace(/^[\!\/]/, '').trim();
-  const parts = clean.split(/\s+/);
-  const rawCmd = parts[0]?.toLowerCase() || '';
-  const rawArg = parts.slice(1).join(' ').trim();
-
-  const expectedPin = process.env.ADMIN_BOT_PIN || '';
-  const hasPinInText = Boolean(expectedPin) && clean.includes(expectedPin);
-
-  const BOT_NUMBER = '254791497858';
-  const effectivePhone = authorPhone || userPhone;
-  const isOwner = Boolean(
-    isFromBotOwner ||
-    effectivePhone === BOT_NUMBER ||
-    userPhone === BOT_NUMBER ||
-    effectivePhone.endsWith(BOT_NUMBER) ||
-    BOT_NUMBER.endsWith(effectivePhone)
-  );
-
-  const adminNumbersEnv = process.env.ADMIN_WHATSAPP_NUMBERS || process.env.SUPER_ADMIN_PHONE || '';
-  const configuredAdmins = adminNumbersEnv.split(',').map((s) => s.replace(/[^0-9]/g, '').trim()).filter(Boolean);
-  const adminList = Array.from(new Set([BOT_NUMBER, ...configuredAdmins]));
-
-  const isWhitelisted =
-    isOwner ||
-    adminList.includes(effectivePhone) ||
-    adminList.some((p) => effectivePhone.endsWith(p) || p.endsWith(effectivePhone));
-
-  const hasActivePinSession = Boolean(
-    metadata.isAdminAuthenticated && metadata.adminAuthExpiry && Date.now() < metadata.adminAuthExpiry
-  );
-
-  // Check if this message is intended for admin bot
-  const adminCmds = [
-    'admin',
-    'stats',
-    'kpi',
-    'revenue',
-    'rev',
-    'logs',
-    'tx',
-    'transactions',
-    'bot',
-    'link',
-    'magic',
-    'lock',
-    'logout',
-    'failed',
-    'pending',
-    'issues',
-    'recheck',
-    'check',
-    'verify',
-    'deliver',
-    'fulfill',
-    'send',
-  ];
-
-  // Admin trigger should ONLY activate if:
-  // 1. Explicit command prefix / or ! (e.g. /admin, !admin, /stats, !stats, /revenue, /link, /lock)
-  // 2. Message contains the secret admin PIN (e.g. '8426')
-  // 3. User already has an authenticated active admin session and issues an explicit command
-  const isCommandPrefixed = trimmed.startsWith('/') || trimmed.startsWith('!') || trimmed.startsWith('.');
-  const isAdminTrigger =
-    (isCommandPrefixed && (rawCmd === 'admin' || adminCmds.includes(rawCmd))) ||
-    hasPinInText ||
-    (hasActivePinSession && isCommandPrefixed && adminCmds.includes(rawCmd));
-
-  if (!isAdminTrigger) return null;
-
-  // Authenticate if owner, whitelisted, active session, OR if message contains the master PIN!
-  let isAdminAuthenticated = isWhitelisted || hasActivePinSession || hasPinInText;
-
-  if (hasPinInText && !hasActivePinSession) {
-    await saveConversationState(metadata.step || 'IDLE', {
-      isAdminAuthenticated: true,
-      adminAuthExpiry: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-    });
-    isAdminAuthenticated = true;
-  }
-
-  // Handle nested sub-commands like "admin stats", "admin revenue", "admin logs", "admin link"
-  let cmd = rawCmd;
-  let arg = rawArg;
-  if (cmd === 'admin' && arg && adminCmds.includes(arg.toLowerCase())) {
-    cmd = arg.toLowerCase();
-    arg = '';
-  }
-
-  // If user entered admin command without authentication and without PIN
-  if (!isAdminAuthenticated) {
-    return (
-      `🔐 *Akubrecah KRA — Admin Verification Required*\n\n` +
-      `Your phone is not yet unlocked for admin operations.\n\n` +
-      `To unlock, reply:\n` +
-      `*!admin* followed by the master PIN\n\n` +
-      `_(Master PIN is required — ask the system owner if you do not have it)_`
-    );
-  }
-
-  // From here on, caller is fully authenticated!
-  const appUrl = getPublicAppUrl();
-
-  // 1. Lock command
-  if (cmd === 'lock' || cmd === 'logout') {
-    await saveConversationState(metadata.step || 'IDLE', {
-      isAdminAuthenticated: false,
-      adminAuthExpiry: 0,
-    });
-    return `🔒 *Admin Session Locked.*\nSend *!admin* plus your master PIN anytime to re-authenticate.`;
-  }
-
-  // 2. 1-Click Magic Link
-  if (cmd === 'link' || cmd === 'magic' || cmd === 'web') {
-    const magicToken = createAdminMagicToken(effectivePhone || BOT_NUMBER);
-    const magicUrl = `${appUrl}/api/admin/magic-login?token=${magicToken}`;
-    return (
-      `👑 *1-Click Admin Web Access*\n\n` +
-      `Tap the link below to open your Executive Admin Dashboard directly without entering any password:\n\n` +
-      `👉 ${magicUrl}\n\n` +
-      `⏳ _This cryptographically signed token is valid for 4 hours._`
-    );
-  }
-
-  // 3. !stats
-  if (cmd === 'stats' || cmd === 'kpi') {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    let downloads: any[] = [];
-    if (typeof db.certificateDownload?.findMany === 'function') {
-      downloads = await db.certificateDownload.findMany({ take: 1000, orderBy: { createdAt: 'desc' } });
-    }
-
-    const totalRev = downloads.reduce((acc, c) => acc + (Number(c.amountCharged) || 0), 0);
-    const todayRev = downloads
-      .filter((d) => new Date(d.createdAt) >= startOfToday)
-      .reduce((acc, c) => acc + (Number(c.amountCharged) || 0), 0);
-
-    const waDownloads = downloads.filter((d) => d.clerkId?.startsWith('wa_')).length;
-
-    let totalSessions = 0;
-    let pcSessions = 0;
-    if (typeof db.sessions?.findMany === 'function') {
-      const s = await db.sessions.findMany({ take: 500 });
-      totalSessions = s.length;
-      pcSessions = s.filter((sess: any) => !sess.is_mobile).length;
-    }
-    const pcPct = totalSessions > 0 ? Math.round((pcSessions / totalSessions) * 100) : 65;
-    const mobPct = 100 - pcPct;
-
-    let botUsers = 0;
-    if (typeof db.ai_conversations?.count === 'function') {
-      botUsers = await db.ai_conversations.count({ where: { channel: 'whatsapp' } });
-    }
-
-    return (
-      `📊 *AKUBRECAH KRA — LIVE EXECUTIVE STATS*\n\n` +
-      `💰 *Total Revenue:* KES ${totalRev.toLocaleString()}\n` +
-      `📈 *Today's Revenue:* KES ${todayRev.toLocaleString()}\n` +
-      `📜 *Total Downloads:* ${downloads.length}\n` +
-      `🤖 *WhatsApp Bot Downloads:* ${waDownloads} (${downloads.length > 0 ? Math.round((waDownloads / downloads.length) * 100) : 0}%)\n` +
-      `💬 *WhatsApp Bot Users:* ${botUsers}\n` +
-      `💻 *Web Traffic:* ${pcPct}% PC (Desktop) / ${mobPct}% Mobile\n\n` +
-      `_Reply *!revenue* for financial details or *!link* for web dashboard._`
-    );
-  }
-
-  // 4. !revenue
-  if (cmd === 'revenue' || cmd === 'rev') {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-    let downloads: any[] = [];
-    if (typeof db.certificateDownload?.findMany === 'function') {
-      downloads = await db.certificateDownload.findMany({ take: 1000 });
-    }
-
-    const totalRev = downloads.reduce((acc, c) => acc + (Number(c.amountCharged) || 0), 0);
-    const todayRev = downloads.filter((d) => new Date(d.createdAt) >= startOfToday).reduce((acc, c) => acc + (Number(c.amountCharged) || 0), 0);
-    const sevenDayRev = downloads.filter((d) => new Date(d.createdAt) >= sevenDaysAgo).reduce((acc, c) => acc + (Number(c.amountCharged) || 0), 0);
-    const thirtyDayRev = downloads.filter((d) => new Date(d.createdAt) >= thirtyDaysAgo).reduce((acc, c) => acc + (Number(c.amountCharged) || 0), 0);
-
-    const mpesaRev = downloads.filter((d) => Boolean(d.mpesaReceipt)).reduce((acc, c) => acc + (Number(c.amountCharged) || 0), 0);
-    const paystackRev = totalRev - mpesaRev;
-
-    return (
-      `💰 *REVENUE BREAKDOWN REPORT*\n\n` +
-      `• *Total Lifetime:* KES ${totalRev.toLocaleString()}\n` +
-      `• *Today:* KES ${todayRev.toLocaleString()}\n` +
-      `• *Last 7 Days:* KES ${sevenDayRev.toLocaleString()}\n` +
-      `• *Last 30 Days:* KES ${thirtyDayRev.toLocaleString()}\n\n` +
-      `💳 *By Payment Gateway:*\n` +
-      `• *M-Pesa STK:* KES ${mpesaRev.toLocaleString()} (${totalRev > 0 ? Math.round((mpesaRev / totalRev) * 100) : 0}%)\n` +
-      `• *Paystack Card/Bank:* KES ${paystackRev.toLocaleString()} (${totalRev > 0 ? Math.round((paystackRev / totalRev) * 100) : 0}%)\n\n` +
-      `_Reply *!logs* to view recent transaction receipts._`
-    );
-  }
-
-  // 5. !logs
-  if (cmd === 'logs' || cmd === 'transactions' || cmd === 'tx') {
-    let recent: any[] = [];
-    if (typeof db.certificateDownload?.findMany === 'function') {
-      recent = await db.certificateDownload.findMany({
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-      });
-    }
-
-    if (recent.length === 0) {
-      return `🧾 *TRANSACTION LOGS*\n\nNo certificate downloads or transactions recorded yet.`;
-    }
-
-    let report = `🧾 *LATEST 5 TRANSACTIONS*\n\n`;
-    recent.forEach((item, index) => {
-      const isWa = item.clerkId?.startsWith('wa_');
-      const channel = isWa ? '🤖 WhatsApp' : '🌐 Web Portal';
-      const receipt = item.mpesaReceipt || item.checkoutId || 'STK-VERIFIED';
-      const timeStr = new Date(item.createdAt).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' });
-
-      report +=
-        `*${index + 1}. PIN:* ${item.pin}\n` +
-        `   • Amount: *KES ${item.amountCharged}.00*\n` +
-        `   • Channel: ${channel}\n` +
-        `   • Receipt: \`${receipt}\`\n` +
-        `   • Time: ${timeStr}\n\n`;
-    });
-
-    report += `_Reply *!link* for full searchable transaction table on web._`;
-    return report;
-  }
-
-  // 6. !bot
-  if (cmd === 'bot' || cmd === 'whatsapp') {
-    let totalBotUsers = 0;
-    let totalConversations = 0;
-    if (typeof db.ai_conversations?.findMany === 'function') {
-      const chats = await db.ai_conversations.findMany({ where: { channel: 'whatsapp' } });
-      totalConversations = chats.length;
-      totalBotUsers = new Set(chats.map((c: any) => c.user_phone).filter(Boolean)).size;
-    }
-
-    let waDownloads = 0;
-    let waRevenue = 0;
-    if (typeof db.certificateDownload?.findMany === 'function') {
-      const dl = await db.certificateDownload.findMany({ where: { clerkId: { startsWith: 'wa_' } } });
-      waDownloads = dl.length;
-      waRevenue = dl.reduce((acc: number, c: any) => acc + (Number(c.amountCharged) || 0), 0);
-    }
-
-    const conversionRate = totalBotUsers > 0 ? ((waDownloads / totalBotUsers) * 100).toFixed(1) : '0.0';
-
-    return (
-      `🤖 *WHATSAPP BOT ADOPTION & PERFORMANCE*\n\n` +
-      `• *Unique Users:* ${totalBotUsers}\n` +
-      `• *Total Conversations:* ${totalConversations}\n` +
-      `• *Certificates Delivered via Bot:* ${waDownloads}\n` +
-      `• *Bot Revenue Generated:* KES ${waRevenue.toLocaleString()}\n` +
-      `• *Conversion Rate:* ${conversionRate}%\n\n` +
-      `_Reply *!stats* for global metrics or *!logs* for recent receipts._`
-    );
-  }
-
-  // 7. !failed or !pending or !issues
-  if (cmd === 'failed' || cmd === 'pending' || cmd === 'issues') {
-    let recentTx: any[] = [];
-    try {
-      const txRes = await getPaystackLiveTransactions(30, 1);
-      if (txRes.success && Array.isArray(txRes.items)) {
-        recentTx = txRes.items.filter((t: any) => t.status !== 'success').slice(0, 5);
-      }
-    } catch (err: any) {
-      console.warn('[Admin !failed] Paystack live fetch notice:', err.message);
-    }
-
-    let awaitingConvs: any[] = [];
-    try {
-      const convs = await db.ai_conversations?.findMany({
-        where: {
-          channel: 'whatsapp',
-          status: 'active',
-        },
-        orderBy: { updated_at: 'desc' },
-        take: 10,
-      });
-      awaitingConvs = (convs || []).filter((c: any) => {
-        const step = c.metadata?.step;
-        return step === 'AWAITING_PAYMENT' || step === 'CYBER_AWAITING_PAYMENT';
-      }).slice(0, 5);
-    } catch (err: any) {
-      console.warn('[Admin !failed] DB conversations lookup notice:', err.message);
-    }
-
-    let report = `⚠️ *DIAGNOSTIC: FAILED & PENDING SESSIONS*\n─────────────────────────\n`;
-
-    if (awaitingConvs.length > 0) {
-      report += `⏳ *ACTIVE SESSIONS AWAITING PAYMENT (${awaitingConvs.length}):*\n`;
-      awaitingConvs.forEach((c: any, i: number) => {
-        const m = c.metadata || {};
-        const phone = c.user_phone;
-        const payPhone = m.paymentPhone || phone;
-        const pin = m.pin || 'Unknown PIN';
-        const ref = m.checkoutId || 'None';
-        const time = new Date(c.updated_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' });
-
-        report +=
-          `*${i + 1}. Phone:* \`${formatDisplayPhone(payPhone)}\`\n` +
-          `   • PIN: \`${pin}\`\n` +
-          `   • Ref: \`${ref}\`\n` +
-          `   • Updated: ${time}\n` +
-          `   • 👉 *!recheck ${payPhone}* or *!deliver ${payPhone}*\n\n`;
-      });
-    }
-
-    if (recentTx.length > 0) {
-      report += `❌ *RECENT GATEWAY FAILURES (${recentTx.length}):*\n`;
-      recentTx.forEach((t: any, i: number) => {
-        const phone = t.customerPhone || 'Unknown Phone';
-        const pin = t.pin || 'KRA';
-        const time = new Date(t.createdAt).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' });
-
-        report +=
-          `*${i + 1}. Phone:* \`${formatDisplayPhone(phone)}\`\n` +
-          `   • Amount: KES ${t.amountKes}.00\n` +
-          `   • PIN: \`${pin}\`\n` +
-          `   • Gateway Status: _${t.status}_\n` +
-          `   • Ref: \`${t.reference}\`\n` +
-          `   • Time: ${time}\n\n`;
-      });
-    }
-
-    if (awaitingConvs.length === 0 && recentTx.length === 0) {
-      report += `✅ All systems green! No pending sessions or gateway failures in the last 24 hours.\n\n`;
-    }
-
-    report += `─────────────────────────\n_Commands: *!recheck <phone/PIN>* | *!deliver <phone>*_`;
-    return report;
-  }
-
-  // 8. !recheck <phone, PIN, or reference>
-  if (cmd === 'recheck' || cmd === 'check' || cmd === 'verify') {
-    const query = (arg || '').trim();
-    if (!query) {
-      return (
-        `⚠️ *Please provide a target to recheck:*\n` +
-        `• Example: *!recheck 0719299900*\n` +
-        `• Example: *!recheck A016881319Q*\n` +
-        `• Example: *!recheck PSTK-MPESA-...*`
-      );
-    }
-
-    const cleanQuery = query.replace(/[^0-9a-zA-Z]/g, '');
-
-    // 1. Search for successful payment on Paystack
-    const payment = await findRecentSuccessfulPaystackPayment({
-      phone: query,
-      pin: query,
-      reference: query,
-      maxAgeMinutes: 180, // last 3 hours
-      skipCache: true,
-    });
-
-    // 2. Lookup conversation in DB
-    let conv: any = null;
-    try {
-      conv = await db.ai_conversations?.findFirst({
-        where: {
-          channel: 'whatsapp',
-          OR: [
-            { user_phone: { contains: cleanQuery } },
-            { user_phone: query },
-          ],
-        },
-        orderBy: { updated_at: 'desc' },
-      });
-    } catch {}
-
-    if (payment.found && payment.reference) {
-      const rawPin = payment.pin || conv?.metadata?.pin || 'KRA_CERT';
-      const pin = /^[A-Z]\d{9}[A-Z]/i.test(rawPin)
-        ? rawPin.match(/^[A-Z]\d{9}[A-Z]/i)![0].toUpperCase()
-        : rawPin.split('-')[0].trim().toUpperCase();
-      const phone = conv?.user_phone || payment.customerPhone || query;
-      const name = conv?.metadata?.taxpayerName || 'Registered Taxpayer';
-
-      // Auto-trigger delivery!
-      try {
-        const { fulfillWhatsAppCertificateDelivery } = await import('@/lib/certificate-fulfillment');
-        await fulfillWhatsAppCertificateDelivery({
-          phone,
-          pin,
-          checkoutId: payment.reference,
-          mpesaReceipt: payment.reference,
-          amount: payment.amountKes || 20,
-          taxpayerName: name,
-          skipDirectWhatsAppDocument: false,
-        });
-
-        if (conv) {
-          const meta = conv.metadata || {};
-          meta.step = 'COMPLETED';
-          meta.activeSession = false;
-          meta.mpesaReceipt = payment.reference;
-          await db.ai_conversations.update({
-            where: { id: conv.id },
-            data: { metadata: meta },
-          }).catch(() => {});
-        }
-      } catch (delErr: any) {
-        console.error('[Admin !recheck] Delivery error:', delErr.message);
-      }
-
-      return (
-        `✅ *PAYMENT CONFIRMED & AUTO-DELIVERED!*\n` +
-        `─────────────────────────\n` +
-        `• *Customer Handset:* \`${formatDisplayPhone(phone)}\`\n` +
-        `• *Taxpayer:* *${name}*\n` +
-        `• *KRA PIN:* \`${pin}\`\n` +
-        `• *Amount Paid:* KES ${payment.amountKes || 20}.00\n` +
-        `• *Receipt Reference:* \`${payment.reference}\`\n` +
-        `• *Fulfillment Status:* 🟢 DELIVERED\n` +
-        `─────────────────────────\n` +
-        `📄 Certificate PDF and fiscal receipt have been generated and dispatched directly to the customer's WhatsApp chat.`
-      );
-    } else {
-      // Fetch last attempt from Paystack
-      let lastAttempt: any = null;
-      try {
-        const txList = await getPaystackLiveTransactions(30, 1);
-        lastAttempt = (txList.items || []).find((t: any) => {
-          const ph = String(t.customerPhone || '').replace(/[^0-9]/g, '');
-          const cleanQ = query.replace(/[^0-9]/g, '');
-          return (cleanQ && ph.includes(cleanQ)) || (t.reference && t.reference.includes(query)) || (t.pin && t.pin.includes(query.toUpperCase()));
-        });
-      } catch {}
-
-      return (
-        `⏳ *PAYMENT NOT VERIFIED FOR \`${query}\`*\n` +
-        `─────────────────────────\n` +
-        `• *Gateway Status:* ${lastAttempt ? `❌ ${lastAttempt.status}` : 'No matching payment record'}\n` +
-        `• *Last Reference:* \`${lastAttempt?.reference || 'N/A'}\`\n` +
-        `• *Time:* ${lastAttempt?.createdAt ? new Date(lastAttempt.createdAt).toLocaleTimeString('en-KE') : 'N/A'}\n` +
-        `─────────────────────────\n` +
-        `👉 If client claims they paid, reply *!deliver ${query}* to force-fulfill.`
-      );
-    }
-  }
-
-  // 9. !deliver <phone or PIN>
-  if (cmd === 'deliver' || cmd === 'fulfill' || cmd === 'send') {
-    const target = (arg || '').trim();
-    if (!target) {
-      return (
-        `⚠️ *Please specify phone or PIN to deliver to:*\n` +
-        `• Example: *!deliver 0719299900*\n` +
-        `• Example: *!deliver A016881319Q*`
-      );
-    }
-
-    const cleanTarget = target.replace(/[^0-9]/g, '');
-    let conv: any = null;
-    try {
-      conv = await db.ai_conversations?.findFirst({
-        where: {
-          channel: 'whatsapp',
-          OR: [
-            { user_phone: { contains: cleanTarget } },
-            { user_phone: target },
-          ],
-        },
-        orderBy: { updated_at: 'desc' },
-      });
-    } catch {}
-
-    const isPinArg = /^[A-Z]\d{9}[A-Z]$/i.test(target);
-    const pin = conv?.metadata?.pin || (isPinArg ? target.toUpperCase() : null);
-    const phone = conv?.user_phone || target;
-    const name = conv?.metadata?.taxpayerName || 'Registered Taxpayer';
-
-    if (!pin) {
-      return `⚠️ Could not resolve KRA PIN for *${target}*. Please ensure the customer has initiated a lookup or specify their PIN.`;
-    }
-
-    const manualReceipt = `ADMIN-MANUAL-${Date.now().toString(36).toUpperCase()}`;
-    try {
-      const { fulfillWhatsAppCertificateDelivery } = await import('@/lib/certificate-fulfillment');
-      await fulfillWhatsAppCertificateDelivery({
-        phone,
-        pin,
-        checkoutId: manualReceipt,
-        mpesaReceipt: manualReceipt,
-        amount: 20,
-        taxpayerName: name,
-        taxpayerDetails: conv?.metadata?.taxpayerDetails,
-        skipDirectWhatsAppDocument: false,
-      });
-
-      if (conv) {
-        const meta = conv.metadata || {};
-        meta.step = 'COMPLETED';
-        meta.activeSession = false;
-        meta.mpesaReceipt = manualReceipt;
-        await db.ai_conversations.update({
-          where: { id: conv.id },
-          data: { metadata: meta },
-        }).catch(() => {});
-      }
-
-      return (
-        `🚀 *MANUAL DELIVERY EXECUTED!*\n` +
-        `─────────────────────────\n` +
-        `• *Recipient:* \`${formatDisplayPhone(phone)}\`\n` +
-        `• *KRA PIN:* \`${pin}\`\n` +
-        `• *Taxpayer:* *${name}*\n` +
-        `• *Manual Ref:* \`${manualReceipt}\`\n` +
-        `─────────────────────────\n` +
-        `📄 Official KRA PIN Certificate and fiscal receipt have been generated and dispatched directly to the customer's WhatsApp chat.`
-      );
-    } catch (err: any) {
-      return `❌ *Delivery failed:* ${err.message}`;
-    }
-  }
-
-  // 10. Menu / Help / Default
-  return (
-    `👑 *AKUBRECAH KRA — ADMIN COMMAND CENTER*\n\n` +
-    `• *!stats* — Real-time Executive KPIs (Revenue, Users, PC vs Mobile)\n` +
-    `• *!revenue* — Revenue Breakdown (Today, 7d, Gateways)\n` +
-    `• *!logs* — Last 5 Transactions & Receipts\n` +
-    `• *!failed* — View Failed/Pending Client Sessions & Gateway Errors\n` +
-    `• *!recheck <target>* — Verify Client Payment & Auto-Deliver\n` +
-    `• *!deliver <phone>* — Force-Deliver KRA Certificate to Client\n` +
-    `• *!bot* — WhatsApp Bot Adoption & Stats\n` +
-    `• *!link* — 1-Click Web Dashboard Login Link\n` +
-    `• *!lock* — Lock session\n\n` +
-    `_Reply with any command (e.g. *!failed* or *!recheck 0719299900*) to run immediately._`
-  );
-}
-
-/**
- * Handles taxpayer fulfillment:
- * If caller is an active Cyber Cafe subscriber, delivers certificate instantly with zero payment prompt!
- * Otherwise, triggers the standard KES 20 M-Pesa STK push.
- */
-async function handleTaxpayerFoundFulfillment({
-  userPhone,
-  taxpayer,
-  idOrPinInput,
-  saveConversationState,
-}: {
-  userPhone: string;
-  taxpayer: any;
-  idOrPinInput: string;
-  saveConversationState: (step: string, extra?: Record<string, any>) => Promise<string | void>;
-}): Promise<string> {
-  const cleanPin = taxpayer.pin ? taxpayer.pin.toUpperCase().trim() : '';
-  const masked = maskTaxpayerData(taxpayer);
-
-  // 1. Check if user belongs to an active Cyber Cafe subscription
-  const cyberStatus = await getCyberCafeStatus(userPhone);
-
-  if (cyberStatus.isActive && cyberStatus.cafe) {
-    if (cyberStatus.dailyQuotaExceeded) {
-      await saveConversationState('IDLE', { activeSession: false });
-      return (
-        `⚠️ *Daily Fair-Use Limit Reached (100/100)*\n\n` +
-        `Your cyber cafe (*${cyberStatus.cafe.cafeName}*) has reached today's limit of 100 certificate downloads. It automatically resets at midnight.\n\n` +
-        `_Days remaining on package: ${cyberStatus.daysRemaining} days_`
-      );
-    }
-
-    // Fulfill instantly without payment prompt!
-    await incrementCyberCafeDownloadCount(cyberStatus.cafe.id);
-    const { fulfillWhatsAppCertificateDelivery } = await import('@/lib/certificate-fulfillment');
-    await fulfillWhatsAppCertificateDelivery({
-      phone: userPhone,
-      pin: cleanPin,
-      checkoutId: `CYBER_${Date.now()}`,
-      mpesaReceipt: 'CYBER_SUB_ACTIVE',
-      amount: 0,
-      taxpayerName: taxpayer.taxpayerName,
-      taxpayerDetails: taxpayer,
-      isCyberSubscription: true,
-      daysRemaining: cyberStatus.daysRemaining,
-    });
-
-    await saveConversationState('IDLE', {
-      activeSession: false,
-      lastPin: cleanPin,
-      pin: null,
-      taxpayerDetails: null,
-    });
-
-    return '';
-  }
-
-  // 2. Regular pay-per-download flow (KES 20 STK push)
-  const downloadFee = Number(process.env.PAYSTACK_DOWNLOAD_FEE_KES || 20);
-
-  // Check if client already paid (e.g. recent approved payment or retry)
-  try {
-    const { findRecentSuccessfulPaystackPayment } = await import('@/lib/paystack');
-    const existingPayment = await findRecentSuccessfulPaystackPayment({
-      phone: userPhone,
-      pin: cleanPin,
-      maxAgeMinutes: 90,
-      skipCache: true,
-    });
-
-    if (existingPayment.found && existingPayment.reference) {
-      const { fulfillWhatsAppCertificateDelivery } = await import('@/lib/certificate-fulfillment');
-      await fulfillWhatsAppCertificateDelivery({
-        phone: userPhone,
-        pin: cleanPin,
-        checkoutId: existingPayment.reference,
-        mpesaReceipt: existingPayment.reference,
-        amount: existingPayment.amountKes || downloadFee,
-        taxpayerName: taxpayer.taxpayerName,
-        taxpayerDetails: taxpayer,
-        skipDirectWhatsAppDocument: false,
-      });
-
-      await saveConversationState('COMPLETED', {
-        activeSession: false,
-        mpesaReceipt: existingPayment.reference,
-      });
-
-      return (
-        `✅ *PAYMENT CONFIRMED & CERTIFICATE DELIVERED!* 🎉\n` +
-        `─────────────────────────\n` +
-        `👤 *Taxpayer:* *${masked.taxpayerName}*\n` +
-        `🆔 *KRA PIN:* \`${masked.pin}\`\n` +
-        `🧾 *Receipt / Ref:* \`${existingPayment.reference}\`\n` +
-        `💰 *Amount Paid:* KES ${(existingPayment.amountKes || downloadFee).toFixed(2)}\n\n` +
-        `📄 Official KRA PIN Certificate and fiscal receipt have been generated and sent above!\n\n` +
-        `🌐 *Web Portal:* https://kra.akubrecah.com`
-      );
-    }
-  } catch (err: any) {
-    console.warn('[Fulfillment Existing Payment Check Notice]:', err.message);
-  }
-
-  const stkRes = await triggerInAppMpesaPayment({
-    targetPhone: userPhone,
-    whatsappUserPhone: userPhone,
-    pin: cleanPin,
-    amount: downloadFee,
-    taxpayerName: taxpayer.taxpayerName,
-  });
-
-  await saveConversationState('AWAITING_PAYMENT', {
-    activeSession: true,
-    pin: cleanPin,
-    idNumber: taxpayer.idNumber || idOrPinInput,
-    taxpayerName: taxpayer.taxpayerName,
-    checkoutId: stkRes.checkoutRequestId || '',
-    paymentPhone: stkRes.normalizedPhone,
-    stkGateway: stkRes.gateway,
-    taxpayerDetails: taxpayer,
-    pushedAt: Date.now(),
-  });
-
-  if (stkRes.success) {
-    return (
-      `🇰🇪 *TAX COMPLIANCE RECORD FOUND*\n` +
-      `─────────────────────────\n` +
-      `👤 *Taxpayer:* *${masked.taxpayerName}*\n` +
-      `🆔 *KRA PIN:* \`${masked.pin}\`\n` +
-      `💰 *Certificate Fee:* KES ${downloadFee}.00\n` +
-      `─────────────────────────\n` +
-      `📲 *M-PESA PAYMENT PROMPT SENT*\n` +
-      `A prompt for *KES ${downloadFee}.00* has been sent to \`${stkRes.normalizedPhone}\`.\n` +
-      `👉 *Enter your M-Pesa PIN* on your phone to complete retrieval.\n\n` +
-      `Your official KRA PIN Certificate and ETR Tax Receipt will be delivered right here.\n\n` +
-      `🌐 *Web Portal:* https://kra.akubrecah.com\n` +
-      `─────────────────────────\n` +
-      `_Reply 1 to resend prompt | Send another number | Reply 0 to cancel_`
-    );
-  } else {
-    return (
-      `🇰🇪 *TAX COMPLIANCE RECORD FOUND*\n` +
-      `─────────────────────────\n` +
-      `👤 *Taxpayer:* *${masked.taxpayerName}*\n` +
-      `🆔 *KRA PIN:* \`${masked.pin}\`\n` +
-      `💰 *Certificate Fee:* KES ${downloadFee}.00\n` +
-      `─────────────────────────\n` +
-      `⚠️ *Could not send M-Pesa prompt:* ${stkRes.error || 'Network error'}.\n\n` +
-      `👉 Send another Safaricom phone number (e.g. *0712345678*) or reply *0* to cancel.\n\n` +
-      `🌐 Prefer web download? Visit:\n` +
-      `🔗 https://kra.akubrecah.com`
-    );
-  }
-}
 
 export async function handleWhatsAppChat(params: {
   phone: string;
@@ -901,7 +53,7 @@ export async function handleWhatsAppChat(params: {
 
     // Deduplication check: If this exact message ID was already processed, ignore to prevent duplicate responses
     if (messageId && isDuplicateWhatsAppMessage(messageId)) {
-      console.log(`[WhatsApp Chat] Duplicate message ${messageId} from ${userPhone} ignored.`);
+      log.info(`[WhatsApp Chat] Duplicate message ${messageId} from ${userPhone} ignored.`);
       return {
         success: true,
         userPhone,
@@ -977,39 +129,8 @@ export async function handleWhatsAppChat(params: {
     }
 
     const trimmedInput = incomingText.trim();
-    const hasCommandPrefix = trimmedInput.startsWith('/') || trimmedInput.startsWith('!') || trimmedInput.startsWith('.');
-    const cleanCmdText = trimmedInput.replace(/^[!\/.]/, '').trim().toLowerCase();
-    const cleanCmdWord = cleanCmdText.split(/\s+/)[0] || '';
-    const cleanCmdArgs = trimmedInput.trim().includes(' ')
-      ? trimmedInput.trim().substring(trimmedInput.trim().indexOf(' ') + 1).trim()
-      : '';
-
-    const ALLOWLISTED_SLASH_COMMANDS = new Set([
-      'kra',
-      'cyber',
-      'status',
-      'days',
-      'sub',
-      'help',
-      'menu',
-      'start',
-      'admin',
-      'cancel',
-      'reset',
-      'stop',
-      'exit',
-      'abort',
-      'stats',
-      'revenue',
-      'logs',
-      'link',
-      'lock',
-      'logout',
-      'recheck',
-      'verify',
-      'paid',
-      '0',
-    ]);
+    const { hasCommandPrefix, cleanCmdText, cleanCmdWord, cleanCmdArgs, isAllowlisted } =
+      parseWhatsAppCommand(incomingText);
 
     // If session just expired and user sent a follow-up answer (not a fresh command), inform them of expiry
     if (isSessionExpired && wasSessionActive && !hasCommandPrefix) {
@@ -1039,7 +160,7 @@ export async function handleWhatsAppChat(params: {
     }
 
     // Reject unknown slash commands with a safe help message instead of falling into workflows
-    if (hasCommandPrefix && !ALLOWLISTED_SLASH_COMMANDS.has(cleanCmdWord)) {
+    if (hasCommandPrefix && !isAllowlisted) {
       const unknownCmdReply =
         `❓ *Unknown Command*\n` +
         `─────────────────────────\n` +
@@ -1191,7 +312,7 @@ export async function handleWhatsAppChat(params: {
           });
         }
       } catch (err: any) {
-        console.warn('[Payment Recheck Trigger] DB lookup notice:', err.message);
+        log.warn('[Payment Recheck Trigger] DB lookup notice:', err.message);
       }
 
       if (payment.found && payment.reference) {
@@ -1504,7 +625,7 @@ export async function handleWhatsAppChat(params: {
                 taxpayer = await fetchTaxpayerById(cleanArg);
               }
             } catch (kraError: any) {
-              console.warn('[WhatsApp KRA Direct Lookup Notice]:', kraError.message);
+              log.warn('[WhatsApp KRA Direct Lookup Notice]:', kraError.message);
             }
 
             if (!taxpayer || !taxpayer.taxpayerName) {
@@ -1635,7 +756,7 @@ export async function handleWhatsAppChat(params: {
             taxpayer = await fetchTaxpayerById(cleanInput);
           }
         } catch (kraError: any) {
-          console.warn('[WhatsApp KRA Lookup Notice]:', kraError.message);
+          log.warn('[WhatsApp KRA Lookup Notice]:', kraError.message);
         }
 
         if (!taxpayer || !taxpayer.taxpayerName) {
@@ -1898,7 +1019,7 @@ export async function handleWhatsAppChat(params: {
               verifiedReceipt = foundPaystack.reference || metadata.checkoutId;
             }
           } catch (err: any) {
-            console.warn('[Cyber Paystack Verify Notice]:', err.message);
+            log.warn('[Cyber Paystack Verify Notice]:', err.message);
           }
         }
 
@@ -2076,7 +1197,7 @@ export async function handleWhatsAppChat(params: {
             }
           }
         } catch (dbErr: any) {
-          console.warn('[WhatsApp Chat] DB payment check notice:', dbErr.message);
+          log.warn('[WhatsApp Chat] DB payment check notice:', dbErr.message);
         }
 
         // 2. Check global mpesaCallbacks (Daraja in-memory safe access)
@@ -2105,7 +1226,7 @@ export async function handleWhatsAppChat(params: {
               verifiedReceipt = foundPaystack.reference;
             }
           } catch (err: any) {
-            console.warn('[WhatsApp Chat] Paystack verify notice:', err.message);
+            log.warn('[WhatsApp Chat] Paystack verify notice:', err.message);
           }
         }
 
@@ -2177,7 +1298,7 @@ export async function handleWhatsAppChat(params: {
       sendResult,
     };
   } catch (error: any) {
-    console.error('[WhatsApp Chat Route Error]:', error);
+    log.error('[WhatsApp Chat Route Error]:', error);
     return { success: false, error: error.message };
   }
 }
@@ -2203,7 +1324,7 @@ export async function POST(req: NextRequest) {
       body.secret;
 
     if (!providedSecret || !expectedSecret || providedSecret !== expectedSecret) {
-      console.warn('[WhatsApp Chat] Blocked unauthorized chat trigger request. Missing or invalid secret.');
+      log.warn('[WhatsApp Chat] Blocked unauthorized chat trigger request. Missing or invalid secret.');
       return NextResponse.json(
         { success: false, error: 'Unauthorized: Invalid Evolution webhook secret.' },
         { status: 401 }
@@ -2214,7 +1335,7 @@ export async function POST(req: NextRequest) {
     const status = result.success ? 200 : 400;
     return NextResponse.json(result, { status });
   } catch (error: any) {
-    console.error('[WhatsApp Chat POST Handler Error]:', error);
+    log.error('[WhatsApp Chat POST Handler Error]:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

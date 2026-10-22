@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import https from 'https';
 import net from 'net';
@@ -103,7 +104,7 @@ export async function GET(req: NextRequest) {
         ip
       });
     } catch (err: any) {
-      console.error('[captcha] Connection to KRA failed:', err.message);
+      log.error('[captcha] Connection to KRA failed:', err.message);
       await createSystemLog({
         level: 'error',
         service: 'KRA-Captcha',
@@ -124,7 +125,7 @@ export async function GET(req: NextRequest) {
       sessionToken,
     });
   } catch (error: any) {
-    console.error('[captcha] Critical Error:', error.message);
+    log.error('[captcha] Critical Error:', error.message);
     return NextResponse.json({ success: false, error: 'Failed to load CAPTCHA. Please try again.' }, { status: 500 });
   }
 }

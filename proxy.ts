@@ -48,6 +48,11 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 import { checkRateLimit, extractClientIp } from '@/lib/rate-limit';
+import {
+  classifyHost,
+  isSafeRedirectPath,
+  canonicalTargetForLegacyVercelHost,
+} from '@/lib/edge/routing';
 
 const BLOCKED_SCANNERS = [/sqlmap/i, /nikto/i, /nessus/i, /dirbuster/i, /acunetix/i, /havij/i];
 const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'poweldayck@gmail.com';
@@ -70,11 +75,7 @@ export default clerkMiddleware(async (auth, request) => {
       // Open-redirect guard: only same-origin relative paths are honoured —
       // absolute URLs (https://evil.com) and protocol-relative (//evil.com)
       // are rejected and fall back to home.
-      const isSafeRelativePath =
-        redirectUrl.startsWith('/') &&
-        !redirectUrl.startsWith('//') &&
-        !redirectUrl.includes('\\') &&
-        !redirectUrl.includes(':');
+      const isSafeRelativePath = isSafeRedirectPath(redirectUrl);
       if (isSafeRelativePath) {
         try {
           return NextResponse.redirect(new URL(redirectUrl, request.url));
@@ -130,20 +131,11 @@ export default clerkMiddleware(async (auth, request) => {
 
   // 6. Subdomain routing & Strict Domain Isolation
   const host = (request.headers.get('x-forwarded-host') || request.headers.get('host') || '').toLowerCase();
-  const isKraSubdomain = host.startsWith('kra.') || host.includes('kra.akubrecah.com');
-  const isAdminSubdomain = host.startsWith('admin.') || host.includes('admin.akubrecah.com');
+  const { isKraSubdomain, isAdminSubdomain } = classifyHost(host);
 
   // Case 0: Canonical Domain Enforcement — Permanently redirect legacy *.vercel.app traffic to custom domains
   if (host.includes('.vercel.app')) {
-    const isKraTarget = host.includes('kra') || host.includes('certificate');
-    const isAdminTarget = host.includes('admin');
-
-    let targetBase = 'https://akubrecah.com';
-    if (isAdminTarget) {
-      targetBase = 'https://admin.akubrecah.com';
-    } else if (isKraTarget) {
-      targetBase = 'https://kra.akubrecah.com';
-    }
+    const targetBase = canonicalTargetForLegacyVercelHost(host);
 
     const redirectUrl = new URL(pathname + request.nextUrl.search, targetBase);
     const redirectResponse = NextResponse.redirect(redirectUrl, 301);
@@ -161,7 +153,7 @@ export default clerkMiddleware(async (auth, request) => {
   }
 
   // Case B: In production, redirect sign-in, sign-up, and KRA portal routes from main domain to kra.akubrecah.com
-  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+  const { isLocalhost } = classifyHost(host);
   if (!isKraSubdomain && !isAdminSubdomain && !isLocalhost) {
     if (pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up')) {
       const kraAuthUrl = new URL(pathname, 'https://kra.akubrecah.com');

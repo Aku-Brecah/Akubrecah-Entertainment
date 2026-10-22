@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 /**
  * IndexNow Protocol Client
  * Instantly alerts Bing, Yandex, Seznam, and Naver whenever URLs are created or updated.
@@ -74,7 +75,7 @@ export async function submitToIndexNow(urls: string[]): Promise<IndexNowResult> 
       submittedUrls: normalizedUrls,
     };
   } catch (error) {
-    console.error('[IndexNow] Submission failed:', error);
+    log.error('[IndexNow] Submission failed:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Unknown network failure during IndexNow submission.',

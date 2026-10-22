@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import prisma from '@/lib/prisma';
 import QRCode from 'qrcode';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
@@ -113,7 +114,7 @@ export async function getCyberCafeStatus(whatsappPhone: string): Promise<CyberCa
       dailyLimit: 100,
     };
   } catch (error: any) {
-    console.error('[getCyberCafeStatus] Error checking cyber cafe status:', error.message);
+    log.error('[getCyberCafeStatus] Error checking cyber cafe status:', error.message);
     return {
       isRegistered: false,
       isActive: false,
@@ -149,7 +150,7 @@ export async function incrementCyberCafeDownloadCount(cafeId: string): Promise<v
       },
     });
   } catch (err: any) {
-    console.warn('[incrementCyberCafeDownloadCount] Notice:', err.message);
+    log.warn('[incrementCyberCafeDownloadCount] Notice:', err.message);
   }
 }
 
@@ -281,7 +282,7 @@ export async function activateCyberCafeSubscription(params: {
       isRenewal,
     };
   } catch (error: any) {
-    console.error('[activateCyberCafeSubscription] Error:', error.message);
+    log.error('[activateCyberCafeSubscription] Error:', error.message);
     return {
       success: false,
       cafe: null,
@@ -646,7 +647,7 @@ export async function generateCyberInvoicePdfBuffer(opts: {
       color: PRIMARY,
     });
   } catch (qrErr: any) {
-    console.warn('[generateCyberInvoicePdfBuffer] QR generation notice:', qrErr.message);
+    log.warn('[generateCyberInvoicePdfBuffer] QR generation notice:', qrErr.message);
   }
 
   // Terms and Official Seal
@@ -725,7 +726,7 @@ export async function deliverCyberInvoiceToWhatsApp(params: {
 
     return res.success;
   } catch (err: any) {
-    console.error('[deliverCyberInvoiceToWhatsApp] Error delivering invoice:', err.message);
+    log.error('[deliverCyberInvoiceToWhatsApp] Error delivering invoice:', err.message);
     return false;
   }
 }

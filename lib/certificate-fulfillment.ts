@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import fs from 'fs';
 import path from 'path';
 import QRCode from 'qrcode';
@@ -243,7 +244,7 @@ export async function generateReceiptPdfBuffer(opts: {
       });
     }
   } catch (err: any) {
-    console.warn('[generateReceiptPdfBuffer] Logo embed notice:', err.message);
+    log.warn('[generateReceiptPdfBuffer] Logo embed notice:', err.message);
   }
 
   // 1. Header (Authentic Kenyan ETR / TIMS Fiscal Structure)
@@ -327,7 +328,7 @@ export async function generateReceiptPdfBuffer(opts: {
       height: qrSize,
     });
   } catch (qrErr: any) {
-    console.warn('[generateReceiptPdfBuffer] QR code embed notice:', qrErr.message);
+    log.warn('[generateReceiptPdfBuffer] QR code embed notice:', qrErr.message);
   }
 
   // 9. Verification Notice & Thermal Tear Line
@@ -405,7 +406,7 @@ export async function generateEtrReceiptImageBuffer(opts: {
         kraLogoDataUrl = `data:image/png;base64,${fs.readFileSync(kraLogoPath).toString('base64')}`;
       }
     } catch (logoErr: any) {
-      console.warn('[generateEtrReceiptImageBuffer] Logo read notice:', logoErr.message);
+      log.warn('[generateEtrReceiptImageBuffer] Logo read notice:', logoErr.message);
     }
 
     const displayTaxpayerName = cleanName.length > 25 ? cleanName.substring(0, 25) : cleanName;
@@ -528,7 +529,7 @@ export async function generateEtrReceiptImageBuffer(opts: {
 
     return await sharp(Buffer.from(svg)).png().toBuffer();
   } catch (err: any) {
-    console.warn('[generateEtrReceiptImageBuffer] Image generation notice:', err.message);
+    log.warn('[generateEtrReceiptImageBuffer] Image generation notice:', err.message);
     return null;
   }
 }
@@ -557,7 +558,7 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
     : rawPin.split('-')[0].trim();
   const receiptNum = opts.mpesaReceipt || (isCyberSubscription ? 'CYBER-SUB-ACTIVE' : `REC-${Date.now().toString(36).toUpperCase()}`);
 
-  console.log(`[Fulfillment] Initiating WhatsApp document delivery for PIN ${cleanPin} to ${userPhone}`);
+  log.info(`[Fulfillment] Initiating WhatsApp document delivery for PIN ${cleanPin} to ${userPhone}`);
 
   try {
     // 1. Resolve taxpayer details: Strict Zero-Storage, never rely on persistent kra_pin_cache
@@ -573,7 +574,7 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
         const { fetchTaxpayerByPin } = await import('@/lib/kra-api');
         liveProfile = await fetchTaxpayerByPin(cleanPin);
       } catch (err: any) {
-        console.warn('[Fulfillment] Live profile fetch notice:', err.message);
+        log.warn('[Fulfillment] Live profile fetch notice:', err.message);
       }
     }
     const authenticRegDate = resolveAuthenticRegistrationDate(
@@ -648,7 +649,7 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
       });
 
       if (!certRes.success) {
-        console.error('[Fulfillment] Failed to send certificate document:', certRes.error);
+        log.error('[Fulfillment] Failed to send certificate document:', certRes.error);
       }
     }
 
@@ -675,7 +676,7 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
 
       if (!n8nRes.ok && opts.skipDirectWhatsAppDocument) {
         // Fallback: Send directly if n8n returned error
-        console.warn('[Fulfillment] n8n webhook returned status', n8nRes.status, '- executing direct fallback');
+        log.warn('[Fulfillment] n8n webhook returned status', n8nRes.status, '- executing direct fallback');
         await sendEvolutionDocument({
           phone: userPhone,
           pdfBuffer: certBuffer,
@@ -684,7 +685,7 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
         });
       }
     } catch (n8nErr: any) {
-      console.warn('[Fulfillment] n8n delivery webhook error:', n8nErr.message);
+      log.warn('[Fulfillment] n8n delivery webhook error:', n8nErr.message);
       if (opts.skipDirectWhatsAppDocument) {
         await sendEvolutionDocument({
           phone: userPhone,
@@ -717,7 +718,7 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
           return meta?.checkoutId === checkoutId;
         });
       } catch (findErr: any) {
-        console.warn('[Fulfillment] Conversation checkoutId fallback lookup notice:', findErr.message);
+        log.warn('[Fulfillment] Conversation checkoutId fallback lookup notice:', findErr.message);
       }
     }
 
@@ -746,7 +747,7 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
 
     return { success: true };
   } catch (error: any) {
-    console.error('[Fulfillment Exception]:', error.message);
+    log.error('[Fulfillment Exception]:', error.message);
     return { success: false, error: error.message };
   }
 }

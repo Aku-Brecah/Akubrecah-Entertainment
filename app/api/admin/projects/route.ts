@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminCaller } from '@/lib/admin-auth';
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, projects });
   } catch (error: any) {
-    console.error('[API Admin Projects GET Error]:', error);
+    log.error('[API Admin Projects GET Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, project });
   } catch (error: any) {
-    console.error('[API Admin Projects POST Error]:', error);
+    log.error('[API Admin Projects POST Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -123,7 +124,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true, project });
   } catch (error: any) {
-    console.error('[API Admin Projects PUT Error]:', error);
+    log.error('[API Admin Projects PUT Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
@@ -146,7 +147,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Project deleted successfully.' });
   } catch (error: any) {
-    console.error('[API Admin Projects DELETE Error]:', error);
+    log.error('[API Admin Projects DELETE Error]:', error);
     return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

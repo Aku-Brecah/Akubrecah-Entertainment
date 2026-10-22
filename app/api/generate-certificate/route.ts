@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { createSystemLog } from '@/lib/prisma';
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest) {
           },
         });
       } catch (err: any) {
-        console.warn('[generate-certificate] Service record creation note:', err.message);
+        log.warn('[generate-certificate] Service record creation note:', err.message);
       }
     }
 
@@ -165,7 +166,7 @@ export async function POST(req: NextRequest) {
         const { fetchTaxpayerByPin } = await import('@/lib/kra-api');
         liveProfile = await fetchTaxpayerByPin(cleanPin);
       } catch (err: any) {
-        console.warn('[generate-certificate] Live profile fetch notice:', err.message);
+        log.warn('[generate-certificate] Live profile fetch notice:', err.message);
       }
     }
 
@@ -219,7 +220,7 @@ export async function POST(req: NextRequest) {
         if (fs.existsSync(relativeFallback)) {
           templatePath = relativeFallback;
         } else {
-          console.error(`[generate-certificate] Template file not found: ${templatePath}`);
+          log.error(`[generate-certificate] Template file not found: ${templatePath}`);
           return NextResponse.json({ success: false, error: 'Certificate template not found on server.' }, { status: 500 });
         }
       }
@@ -295,7 +296,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('[generate-certificate] Error:', error.message);
+    log.error('[generate-certificate] Error:', error.message);
     return NextResponse.json({ success: false, error: 'Internal server error during certificate generation' }, { status: 500 });
   }
 }

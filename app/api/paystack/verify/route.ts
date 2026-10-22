@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import prisma, { createSystemLog } from '@/lib/prisma';
@@ -149,7 +150,7 @@ export async function POST(req: NextRequest) {
     }
 
   } catch (error: any) {
-    console.error('[Paystack Verify] Error:', error.message);
+    log.error('[Paystack Verify] Error:', error.message);
     return NextResponse.json(
       { success: false, error: 'Internal server error verifying payment.' },
       { status: 500 }

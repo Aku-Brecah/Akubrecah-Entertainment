@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { 
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
       visibilitySettings,
     });
   } catch (error: any) {
-    console.error('[API Admin GitHub Repos GET Error]:', error);
+    log.error('[API Admin GitHub Repos GET Error]:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to fetch repositories' },
       { status: 500 }
@@ -127,7 +128,7 @@ export async function POST(req: NextRequest) {
       revalidatePath('/', 'page');
       revalidatePath('/projects', 'page');
     } catch (revErr: any) {
-      console.warn('[Admin GitHub Repos Revalidate Warning]:', revErr.message);
+      log.warn('[Admin GitHub Repos Revalidate Warning]:', revErr.message);
     }
 
     await createSystemLog({
@@ -147,7 +148,7 @@ export async function POST(req: NextRequest) {
       visibilitySettings: updatedSettings,
     });
   } catch (error: any) {
-    console.error('[API Admin GitHub Repos POST Error]:', error);
+    log.error('[API Admin GitHub Repos POST Error]:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to update repository visibility' },
       { status: 500 }

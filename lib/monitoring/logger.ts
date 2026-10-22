@@ -44,3 +44,42 @@ export const logger = pino({
 });
 
 export default logger;
+
+/**
+ * Console-API-shaped adapter over pino.
+ * Call sites were converted mechanically from console.* and commonly use the
+ * `('text', data)` form. pino's raw methods reject that shape (and would drop
+ * the data at runtime), so this wrapper routes string-first calls with extra
+ * arguments through an object-first form, preserving every argument.
+ */
+type LogMethod = (msg: string, ...args: unknown[]) => void;
+
+function makeLogMethod(
+  level: 'info' | 'warn' | 'error' | 'debug' | 'fatal',
+  emit: (obj: object, msg: string) => void,
+): LogMethod {
+  return (msg: string, ...args: unknown[]) => {
+    if (args.length === 0) {
+      if (typeof msg === 'string') emit({ msg }, msg);
+      else logger[level](msg as object);
+      return;
+    }
+    const data = args.length === 1 ? args[0] : args;
+    if (typeof msg === 'string') {
+      emit({ data, msg }, msg);
+    } else {
+      logger[level](msg as object);
+    }
+  };
+}
+
+const emitFor = (level: 'info' | 'warn' | 'error' | 'debug' | 'fatal') => (obj: object, msg: string) =>
+  logger[level](obj, msg);
+
+export const log = {
+  info: makeLogMethod('info', emitFor('info')),
+  warn: makeLogMethod('warn', emitFor('warn')),
+  error: makeLogMethod('error', emitFor('error')),
+  debug: makeLogMethod('debug', emitFor('debug')),
+  fatal: makeLogMethod('fatal', emitFor('fatal')),
+} as const;

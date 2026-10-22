@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import prisma from '@/lib/prisma';
 import { FEATURE_FLAGS, FeatureFlagKey } from './flags';
 
@@ -103,7 +104,7 @@ export async function setFeatureFlag(
       return true;
     }
   } catch (err: any) {
-    console.error('[FeatureFlag set error]:', err.message);
+    log.error('[FeatureFlag set error]:', err.message);
   }
 
   return false;

@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import Redis from 'ioredis';
 import { getTierForRoute, RateTier } from './tiers';
 
@@ -48,7 +49,7 @@ function getRedisClient(): Redis | null {
     client.on('error', (err) => {
       // Graceful notice without throwing unhandled exceptions
       if (!isRedisFailed) {
-        console.warn('[RateLimiter notice] Redis unreachable, falling back to in-memory limiter:', err.message);
+        log.warn('[RateLimiter notice] Redis unreachable, falling back to in-memory limiter:', err.message);
         isRedisFailed = true;
       }
     });

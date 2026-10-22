@@ -1,3 +1,4 @@
+import { log } from '@/lib/monitoring/logger';
 import { PrismaClient } from "@prisma/client";
 
 const prismaClientSingleton = () => {
@@ -63,7 +64,7 @@ export async function createSystemLog(data: {
   } catch (error: any) {
     // Gracefully handle un-migrated tables or connection timeouts
     if (error?.code !== "P2021") {
-      console.warn("[SystemLog notice]:", error?.message || error);
+      log.warn("[SystemLog notice]:", error?.message || error);
     }
     return null;
   }

@@ -29,7 +29,7 @@ export const FEATURE_FLAGS: Record<string, FeatureFlagDefinition> = {
   enable_cyber_cafe_subscription: {
     key: 'enable_cyber_cafe_subscription',
     name: 'Cyber Cafe Monthly Subscription',
-    description: 'Allows cyber cafes to subscribe for KES 300 unlimited retrieval packages.',
+    description: 'Allows cyber cafes to subscribe for KES 500 monthly unlimited retrieval packages.',
     defaultValue: true,
     category: 'services',
   },
