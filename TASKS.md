@@ -295,3 +295,18 @@
   - [x] **Root Cause 3 (Owner Test Command Drop):** In `app/api/whatsapp/webhook/route.ts`, `fromMe: true` was dropping all messages unless `rawCmd` matched `adminCmds`. When the owner tested `/help`, `/kra`, `/cyber`, `/status`, or sent test IDs, the bot discarded them as routine outbound messages. Added `isExplicitBotIntent` checking so owner testing executes while loopback replies remain suppressed.
   - [x] **Root Cause 4 (Missing Allowlist Commands):** Added missing `/invoice`, `/invoices`, `/receipt`, and `/renew` to `ALLOWLISTED_SLASH_COMMANDS` in `lib/whatsapp/commands.ts`.
   - [x] **Verified:** Evolution instance settings and webhook reconfigured live via API, all 92 Vitest tests passing, `npm run typecheck` clean (0 errors).
+
+- [x] **Task 55: Comprehensive n8n Workflows Audit & Live Restoration**
+  - [x] **Workflow `QbapSuJ2ql46b6W8` (KRA Payment and Document Delivery):**
+    - Root cause: Webhook trigger was defaulted to `HTTP GET` instead of `POST`, and `Normalize Payload` crashed with `"access to env vars denied"` because accessing `$env` in Code nodes is blocked by n8n security policy.
+    - Fixed: Set trigger to `HTTP POST`, replaced `$env` lookups with safe payload defaults, added `onError: "continueRegularOutput"` to WhatsApp media dispatch nodes.
+    - Verified: Execution `16808` completed end-to-end with status `success` (Certificate PDF generated, base64 encoded, dispatched via WhatsApp, receipt PDF generated and sent, confirmation text sent).
+  - [x] **Workflow `mGDFTPrBjWOI5wvS` (WhatsApp Inbound Chat Router):**
+    - Root cause: `Extract WhatsApp Message` unconditionally discarded messages with `key.fromMe === true`, preventing owner testing; `Send WhatsApp Reply` crashed on LID recipients because it stripped `@lid` without routing via the JID; `Send WhatsApp Reply` lacked `onError: "continueRegularOutput"`.
+    - Fixed: Permitted owner test commands while suppressing automated loopback replies; routed LIDs to `destinationNumber` (`@lid`); forwarded `isFromBotOwner` to chat engine; added error continuation.
+    - Verified: Execution `16807` completed end-to-end with status `success`.
+  - [x] **Workflow `qqXDhxzsYoWTD3W4` (GitHub Push to Social Media with Human Approval):**
+    - Root cause: Webhook trigger was set to `GET` instead of `POST`; `Parse LLM Draft` omitted `linkedinIntent`, `xIntent`, `threadsIntent`, producing empty Markdown links in Telegram approval cards.
+    - Fixed: Updated trigger to `HTTP POST`, generated proper URL intents for LinkedIn, X (Twitter), and Threads.
+    - Verified: Execution `16809` completed end-to-end with status `success`.
+
