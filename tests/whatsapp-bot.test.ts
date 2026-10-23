@@ -117,3 +117,15 @@ describe('WhatsApp Direct ID & PIN detection regexes', () => {
     expect(idRegex.test('A012345678Z')).toBe(false); // is PIN
   });
 });
+
+describe('Evolution API phone & LID destination normalization (lib/evolution.ts)', () => {
+  it('strips WhatsApp domain suffixes and formats Kenyan numbers properly', async () => {
+    const { sanitizeWhatsAppPhone, getEvolutionDestinationNumber } = await import('@/lib/evolution');
+    expect(sanitizeWhatsAppPhone('254791497858@s.whatsapp.net')).toBe('254791497858');
+    expect(sanitizeWhatsAppPhone('0791497858')).toBe('254791497858');
+    expect(sanitizeWhatsAppPhone('+254 791 497 858')).toBe('254791497858');
+    expect(sanitizeWhatsAppPhone('168646622089229@lid')).toBe('168646622089229');
+    expect(getEvolutionDestinationNumber('254791497858')).toBe('254791497858');
+    expect(getEvolutionDestinationNumber('168646622089229@lid')).toBe('168646622089229@lid');
+  });
+});

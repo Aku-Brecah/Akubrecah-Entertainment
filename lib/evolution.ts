@@ -52,7 +52,11 @@ export function getEvolutionInstanceName(): string {
  *      254712345678@s.whatsapp.net -> 254712345678
  */
 export function sanitizeWhatsAppPhone(phone: string): string {
-  const cleaned = phone.replace(/@s\.whatsapp\.net/g, '').replace(/[\s\-\+\(\)]/g, '');
+  const cleaned = String(phone || '')
+    .replace(/@s\.whatsapp\.net/g, '')
+    .replace(/@c\.us/g, '')
+    .replace(/@lid/g, '')
+    .replace(/[\s\-\+\(\)]/g, '');
   if ((cleaned.startsWith('7') || cleaned.startsWith('1')) && cleaned.length === 9) {
     return '254' + cleaned;
   }
@@ -60,6 +64,19 @@ export function sanitizeWhatsAppPhone(phone: string): string {
     return '254' + cleaned.substring(1);
   }
   return cleaned;
+}
+
+/**
+ * Returns the destination number for Evolution API:
+ * If the recipient is addressed via WhatsApp LID (@lid) without a resolved phone number,
+ * preserves the '@lid' suffix so Evolution handles it via LID routing instead of failing.
+ */
+export function getEvolutionDestinationNumber(phone: string): string {
+  const sanitized = sanitizeWhatsAppPhone(phone);
+  if (phone.includes('@lid') && !phone.includes('@s.whatsapp.net') && sanitized.length > 12) {
+    return `${sanitized}@lid`;
+  }
+  return sanitized;
 }
 
 /**
@@ -74,7 +91,7 @@ export async function sendEvolutionTextMessage(
   const instanceName = encodeURIComponent(overrideInstance || getEvolutionInstanceName());
   const url = `${baseUrl.replace(/\/$/, '')}/message/sendText/${instanceName}`;
   try {
-    const formattedPhone = sanitizeWhatsAppPhone(phone);
+    const formattedPhone = getEvolutionDestinationNumber(phone);
     
     const response = await fetch(url, {
       method: 'POST',
@@ -159,7 +176,7 @@ export async function sendEvolutionDocument({
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const baseUrl = getEvolutionApiUrl();
-    const formattedPhone = sanitizeWhatsAppPhone(phone);
+    const formattedPhone = getEvolutionDestinationNumber(phone);
     const base64Data = pdfBuffer.toString('base64');
     const instanceName = encodeURIComponent(overrideInstance || getEvolutionInstanceName());
     const url = `${baseUrl.replace(/\/$/, '')}/message/sendMedia/${instanceName}`;
@@ -211,7 +228,7 @@ export async function sendEvolutionImage({
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const baseUrl = getEvolutionApiUrl();
-    const formattedPhone = sanitizeWhatsAppPhone(phone);
+    const formattedPhone = getEvolutionDestinationNumber(phone);
     const base64Data = imageBuffer.toString('base64');
     const instanceName = encodeURIComponent(overrideInstance || getEvolutionInstanceName());
     const url = `${baseUrl.replace(/\/$/, '')}/message/sendMedia/${instanceName}`;

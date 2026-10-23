@@ -73,12 +73,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'Ignored group message' });
     }
 
-    // Deduplication check: Discard duplicated webhook dispatches for the same WhatsApp message
+    // Message ID for deduplication and read receipts
     const messageId = String(key.id || data.id || payload.id || '').trim();
-    if (messageId && isDuplicateWhatsAppMessage(messageId)) {
-      log.info(`[WhatsApp Webhook] Duplicate message ${messageId} ignored.`);
-      return NextResponse.json({ success: true, message: 'Duplicate message already handled' });
-    }
 
     // Unwrap message structure (handles standard, ephemeral, viewOnce, and nested wrappers)
     const msg =
@@ -161,14 +157,27 @@ export async function POST(req: NextRequest) {
     }
 
     const BOT_OWNER_NUMBER = '254791497858';
-    let userPhone = sanitizeWhatsAppPhone(rawRemoteJid);
+
+    // Prefer explicit phone JIDs (@s.whatsapp.net) over WhatsApp local identities (@lid)
+    const rawSender = String(
+      (payload.sender && !String(payload.sender).includes('@lid')) ? payload.sender :
+      (data.sender && !String(data.sender).includes('@lid')) ? data.sender :
+      (key.participant && !String(key.participant).includes('@lid')) ? key.participant :
+      (data.participant && !String(data.participant).includes('@lid')) ? data.participant :
+      rawRemoteJid
+    ).trim();
+
+    let userPhone = sanitizeWhatsAppPhone(rawSender);
+    if (userPhone.includes('@lid')) {
+      userPhone = userPhone.replace(/@lid$/, '');
+    }
 
     // Attribute the sender only when the jid actually resolves to a phone.
     // The legacy behavior defaulted fromMe events with an empty jid to the
     // BOT OWNER — a forged event could then pose as the owner. Those events
     // are now ignored instead of attributed.
     if (key.fromMe) {
-      if (rawRemoteJid.includes(BOT_OWNER_NUMBER)) {
+      if (rawRemoteJid.includes(BOT_OWNER_NUMBER) || rawSender.includes(BOT_OWNER_NUMBER)) {
         userPhone = BOT_OWNER_NUMBER;
       } else if (!userPhone) {
         return NextResponse.json(
@@ -190,7 +199,7 @@ export async function POST(req: NextRequest) {
 
     const instanceName = String(payload.instance || data.instance || '').trim() || undefined;
 
-    // Mark message as read (blue ticks)
+    // Mark message as read (blue ticks) - preserve original remoteJid if LID for thread matching
     await markEvolutionMessageRead({
       remoteJid: rawRemoteJid || `${userPhone}@s.whatsapp.net`,
       messageId: key.id,
@@ -201,7 +210,11 @@ export async function POST(req: NextRequest) {
     // the client-supplied `key.fromMe` flag alone. An attacker who reaches
     // this endpoint must not be able to promote themselves to Super Admin by
     // writing fromMe: true into the event body.
-    const resolvedOwner = Boolean(userPhone === BOT_OWNER_NUMBER || rawRemoteJid.includes(BOT_OWNER_NUMBER));
+    const resolvedOwner = Boolean(
+      userPhone === BOT_OWNER_NUMBER ||
+      rawRemoteJid.includes(BOT_OWNER_NUMBER) ||
+      rawSender.includes(BOT_OWNER_NUMBER)
+    );
 
     // Execute state machine directly in-process
     const chatResult = await handleWhatsAppChat({
@@ -213,6 +226,11 @@ export async function POST(req: NextRequest) {
       isFromBotOwner: resolvedOwner,
       instanceName,
     });
+
+    if ((chatResult as any)?.isDuplicate) {
+      log.info(`[WhatsApp Webhook] Duplicate message ${messageId} already handled.`);
+      return NextResponse.json({ success: true, message: 'Duplicate message already handled' });
+    }
 
     const pendingCheckoutId = (chatResult as any)?.metadata?.checkoutId;
     const isAwaitingPayment =
