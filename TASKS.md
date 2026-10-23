@@ -259,3 +259,23 @@
   - [x] Stripped `error.message` leaks from 5 client-facing API responses (mpesa callback/status/stkpush, kra retrieve, kra live-verify PIN).
   - [x] Fixed `maskTaxpayerData` return type to declare `fullName: string` (runtime already returned it) — resolves typecheck failure in the new `tests/id-masked-retrieval.test.ts`.
   - [x] Verified: lint 0 errors, tsc clean, 88/88 tests, full `next build` pass.
+
+## Feature 13: Production Readiness Audit — Round 2 (Data Protection & Config)
+- [x] **Task 48: M-Pesa Callback Idempotency + DB-Backed Status**
+  - [x] `/api/mpesa/callback`: duplicate Daraja callbacks (routine retries) now ack without re-creating the entitlement, re-sending WhatsApp documents, или re-dispatching n8n — `certificateDownload.findFirst({checkoutId})` anchors the dedupe (unique index).
+  - [x] "Success" callbacks with stripped/no amount metadata fail closed (400) instead of recording a KES 20 charge without payment proof.
+  - [x] `/api/mpesa/status/[checkoutRequestId]`: production lookups fall back to the durable DB entitlement record when the instance-local registry is empty (multi-instance/serverless resilience).
+- [x] **Task 49: KDPA PII Log Scrubbing**
+  - [x] `kra/retrieve`: whitelisted operational summary replaces the full taxpayer `JSON.stringify` dump.
+  - [x] `mpesa/callback`: Daraja payload logging replaced with checkout/result summary (no payer phone).
+  - [x] WhatsApp webhook inbound log: masked phone (`maskPhone`), message length + first command token only — users' National IDs/PINs/references no longer hit logs.
+- [x] **Task 50: Zod Boundary Schemas for the Payment Surface**
+  - [x] New `lib/validation/schemas.ts`; wired into `/api/paystack/initialize`, `/api/paystack/verify`, `/api/mpesa/stkpush`, `/api/certificate/record-download`, `/api/generate-receipt` — PIN bounds, phone/reference/PIN formats, `downloadId` UUID, plus `firstIssueMessage` 400s.
+- [x] **Task 51: Dependency Audit Zeroing**
+  - [x] `npm audit fix` — full tree (dev deps included) now reports 0 vulnerabilities; Prisma client regenerated for 6.2.1.
+- [x] **Task 52: Hardcoded Super-Admin Identity Removed (fail-closed)**
+  - [x] All 15 `poweldayck@gmail.com` identity fallbacks replaced with env-only checks (empty default) across `app/**`, `lib/admin-auth`, `lib/subscription`, `lib/config/env`, `proxy.ts`, `components/**`; demo rows in system-logs use a placeholder address.
+  - [x] `lib/config/env` email validation relaxed to allow the empty default (tests updated).
+  - [x] `.env.example` documents the requirement; `deploy/docker-compose.yml` now passes `SUPER_ADMIN EMAIL`/`NEXT_PUBLIC_SUPER_ADMIN_EMAIL` (server env) and as a Docker **build arg** (client components resolve NEXT_PUBLIC at build time); `Dockerfile` ARG/ENV added.
+  - [x] deploy compose also exports `ADMIN_BOT_PIN`, `N8N_DISPATCH_SECRET`, `MPESA_CALLBACK_TOKEN`, `INTERNAL_PROXY_SECRET` for the split-secret rollout.
+  - [x] Verified: tsc clean, 90/90 tests, lint 0 errors, production build pass.
