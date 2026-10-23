@@ -55,7 +55,7 @@ import {
 } from '@/lib/edge/routing';
 
 const BLOCKED_SCANNERS = [/sqlmap/i, /nikto/i, /nessus/i, /dirbuster/i, /acunetix/i, /havij/i];
-const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'poweldayck@gmail.com';
+const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || '';
 
 export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;

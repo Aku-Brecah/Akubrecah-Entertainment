@@ -272,10 +272,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     // 2. Clerk account Super Admin bypass
     const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
     const userRole = user?.publicMetadata?.role as string;
-    const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || "poweldayck@gmail.com").toLowerCase();
+    const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
 
     if (
-      userEmail === "poweldayck@gmail.com" ||
       userEmail === configPublicAdminEmail ||
       userRole === "Super Admin" ||
       userRole === "Admin"
@@ -380,11 +379,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Enforce Admin Authorization
   const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
   const userRole = user?.publicMetadata?.role as string;
-  const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || "poweldayck@gmail.com").toLowerCase();
+  const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
 
-  const isSuperAdmin = 
+  const isSuperAdmin =
     hasMagicAuth ||
-    userEmail === "poweldayck@gmail.com" || 
     userEmail === configPublicAdminEmail ||
     userRole === "Super Admin" ||
     userRole === "Admin";

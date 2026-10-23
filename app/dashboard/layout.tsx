@@ -61,9 +61,8 @@ export default function DashboardLayout({
 
   const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
   const userRole = user?.publicMetadata?.role as string;
-  const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || "poweldayck@gmail.com").toLowerCase();
+  const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
   const isAdmin =
-    userEmail === "poweldayck@gmail.com" ||
     userEmail === configAdminEmail ||
     userRole === "Super Admin" ||
     userRole === "Admin";

@@ -6,7 +6,8 @@ describe('Environment Configuration Module', () => {
     const config = getAppConfig();
     expect(config).toBeDefined();
     expect(config.NODE_ENV).toBeDefined();
-    expect(config.SUPER_ADMIN_EMAIL).toBe('poweldayck@gmail.com');
+    // No hardcoded fallback identity: unset env means empty (fail closed).
+    expect(config.SUPER_ADMIN_EMAIL).toBe('');
     expect(config.PAYSTACK_SUBSCRIPTION_AMOUNT_KES).toBe(499);
     expect(config.REDIS_URL).toBeDefined();
   });

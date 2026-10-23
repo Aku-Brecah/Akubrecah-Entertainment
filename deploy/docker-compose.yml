@@ -31,6 +31,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ}
+        NEXT_PUBLIC_SUPER_ADMIN_EMAIL: ${NEXT_PUBLIC_SUPER_ADMIN_EMAIL:-}
     container_name: akubrecah_app
     restart: unless-stopped
     env_file:
@@ -70,6 +71,16 @@ services:
       - KRA_PIN_CONSUMER_SECRET=${KRA_PIN_CONSUMER_SECRET:-}
       - KRA_ID_CONSUMER_KEY=${KRA_ID_CONSUMER_KEY:-}
       - KRA_ID_CONSUMER_SECRET=${KRA_ID_CONSUMER_SECRET:-}
+      # Admin identity — REQUIRED (no code fallback): admin surfaces fail
+      # closed without it. Also passes NEXT_PUBLIC via build args? No — this
+      # is a server env var; set SUPER_ADMIN_EMAIL in deploy/.env.
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-}
+      - NEXT_PUBLIC_SUPER_ADMIN_EMAIL=${NEXT_PUBLIC_SUPER_ADMIN_EMAIL:-}
+      # Bot/webhook credential separation and mandatory callback token.
+      - ADMIN_BOT_PIN=${ADMIN_BOT_PIN:-}
+      - N8N_DISPATCH_SECRET=${N8N_DISPATCH_SECRET:-}
+      - MPESA_CALLBACK_TOKEN=${MPESA_CALLBACK_TOKEN:-}
+      - INTERNAL_PROXY_SECRET=${INTERNAL_PROXY_SECRET:-}
     depends_on:
       - redis
     networks:

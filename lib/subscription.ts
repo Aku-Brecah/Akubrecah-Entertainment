@@ -12,10 +12,9 @@ export async function isAdminUser(clerkId?: string | null): Promise<boolean> {
     const client = await clerkClient();
     const user = await client.users.getUser(clerkId);
     const email = user.primaryEmailAddress?.emailAddress?.toLowerCase() || '';
-    const configAdmin = (process.env.SUPER_ADMIN_EMAIL || 'poweldayck@gmail.com').toLowerCase();
-    const publicAdmin = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || 'poweldayck@gmail.com').toLowerCase();
+    const configAdmin = (process.env.SUPER_ADMIN_EMAIL || '').toLowerCase();
+    const publicAdmin = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
     return (
-      email === 'poweldayck@gmail.com' ||
       email === configAdmin ||
       email === publicAdmin ||
       user.publicMetadata?.role === 'Super Admin' ||

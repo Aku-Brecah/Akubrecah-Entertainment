@@ -615,9 +615,9 @@ export async function POST(req: NextRequest) {
         const client = await clerkClient();
         const user = await client.users.getUser(clerkId);
         const email = user.primaryEmailAddress?.emailAddress?.toLowerCase();
-        const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || "poweldayck@gmail.com").toLowerCase();
-        const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || "poweldayck@gmail.com").toLowerCase();
-        if (email === "poweldayck@gmail.com" || email === configAdminEmail || email === configPublicAdminEmail || user.publicMetadata?.role === "Super Admin" || user.publicMetadata?.role === "Admin") {
+        const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || '').toLowerCase();
+        const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
+        if (email === configAdminEmail || email === configPublicAdminEmail || user.publicMetadata?.role === "Super Admin" || user.publicMetadata?.role === "Admin") {
           isAdmin = true;
         }
       } catch {}

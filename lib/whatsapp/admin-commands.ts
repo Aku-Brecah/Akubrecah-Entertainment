@@ -105,7 +105,7 @@ export async function handleAdminBotCommand({
 
   // Admin trigger should ONLY activate if:
   // 1. Explicit command prefix / or ! (e.g. /admin, !admin, /stats, !stats, /revenue, /link, /lock)
-  // 2. Message contains the secret admin PIN (e.g. '8426')
+  // 2. Message contains the secret admin PIN (configured via ADMIN_BOT_PIN)
   // 3. User already has an authenticated active admin session and issues an explicit command
   const isCommandPrefixed = trimmed.startsWith('/') || trimmed.startsWith('!') || trimmed.startsWith('.');
   const isAdminTrigger =

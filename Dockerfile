@@ -45,11 +45,15 @@ RUN npx playwright install chromium --with-deps
 ARG DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres?schema=public"
 ARG DIRECT_URL="postgresql://postgres:postgres@localhost:5432/postgres?schema=public"
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ"
+# Client components read the admin identity at build time (NEXT_PUBLIC_*) —
+# without it the admin UI gates fail closed on self-hosted builds.
+ARG NEXT_PUBLIC_SUPER_ADMIN_EMAIL=""
 ARG CLERK_SECRET_KEY="dummy_build_key"
 
 ENV DATABASE_URL=${DATABASE_URL}
 ENV DIRECT_URL=${DIRECT_URL}
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+ENV NEXT_PUBLIC_SUPER_ADMIN_EMAIL=${NEXT_PUBLIC_SUPER_ADMIN_EMAIL}
 ENV CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
 
 # Generate Prisma client and build Next.js production bundle

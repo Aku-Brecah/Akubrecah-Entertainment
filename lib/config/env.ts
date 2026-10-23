@@ -19,8 +19,10 @@ const envSchema = z.object({
   // Authentication (Clerk)
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional().default('pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ'),
   CLERK_SECRET_KEY: z.string().optional(),
-  SUPER_ADMIN_EMAIL: z.string().email().default('poweldayck@gmail.com'),
-  NEXT_PUBLIC_SUPER_ADMIN_EMAIL: z.string().email().default('poweldayck@gmail.com'),
+  // Fail closed: empty means no admin identity is pre-authorized. Verified at
+  // usage sites (must be a non-empty, lowercased email to grant access).
+  SUPER_ADMIN_EMAIL: z.string().default(''),
+  NEXT_PUBLIC_SUPER_ADMIN_EMAIL: z.string().default(''),
 
   // Distributed Cache & Rate Limiting (Redis)
   REDIS_URL: z.string().optional().default('redis://localhost:6379'),

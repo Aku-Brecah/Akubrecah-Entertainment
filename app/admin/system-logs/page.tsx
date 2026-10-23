@@ -14,7 +14,7 @@ interface LogEntry {
 }
 
 const STATIC_LOGS: LogEntry[] = [
-  { id: "LOG-01", timestamp: "2026-06-25T13:40:12Z", level: "info", service: "AuthService", message: "User clerk_9921 authenticated successfully via standard password flow.", actor: "poweldayck@gmail.com", ip: "102.135.40.89", details: { method: "ClerkSSO", status: "Success", sessionLifetime: "24h" } },
+  { id: "LOG-01", timestamp: "2026-06-25T13:40:12Z", level: "info", service: "AuthService", message: "User clerk_9921 authenticated successfully via standard password flow.", actor: "demo.admin@akubrecah.co.ke", ip: "102.135.40.89", details: { method: "ClerkSSO", status: "Success", sessionLifetime: "24h" } },
   { id: "LOG-02", timestamp: "2026-06-25T13:41:05Z", level: "info", service: "PaymentAPI", message: "M-Pesa STK Push callback received for checkout ID stk_884129A.", actor: "SafaricomWebhook", ip: "196.201.214.200", details: { status: "Paid", amount: 150, phoneNumber: "254712***456", transactionId: "TGF8192KSL" } },
   { id: "LOG-03", timestamp: "2026-06-25T13:41:18Z", level: "error", service: "KRAPortal", message: "Filing failure: KRA portal returned connection timeout response during NIL return post.", actor: "SystemQueue", ip: "41.89.20.10", details: { attempt: 3, errorCode: "ETIMEDOUT", targetUrl: "https://itax.kra.go.ke/iTax/NilReturnSubmit.do" } },
   { id: "LOG-04", timestamp: "2026-06-25T13:42:01Z", level: "warning", service: "UserSession", message: "Multiple sessions detected: User logged in from new IP address within 5 minutes.", actor: "cybercafe_east@net.ke", ip: "197.248.88.99", details: { previousIp: "197.248.12.10", activeSessions: 2 } },
@@ -22,7 +22,7 @@ const STATIC_LOGS: LogEntry[] = [
   { id: "LOG-06", timestamp: "2026-06-25T13:44:10Z", level: "error", service: "MpesaService", message: "STK Push request rejected: Safaricom API returned invalid credentials signature.", actor: "SystemConfig", ip: "localhost", details: { error: "Authentication Failure", rawResponse: "UNAUTHORIZED_ACCESS" } },
 ];
 
-const ACTORS = ["system_daemon", "tax_auditor_02", "poweldayck@gmail.com", "mpesa_callback_worker", "kra_retrieval_agent"];
+const ACTORS = ["system_daemon", "tax_auditor_02", "demo.admin@akubrecah.co.ke", "mpesa_callback_worker", "kra_retrieval_agent"];
 const SERVICES = ["AuthService", "PaymentAPI", "KRAPortal", "Retrieval", "MpesaService", "DatabasePool"];
 const MESSAGES = [
   "Database connection pool size reached 80% capacity.",

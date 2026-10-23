@@ -7,7 +7,6 @@ import {
   ArrowRight, 
   ShieldCheck, 
   Send,
-  Info,
   User,
   ExternalLink,
   Lock
@@ -19,12 +18,7 @@ import prisma, { createSystemLog } from "@/lib/prisma";
 import ProfileWarningPopup from "@/components/profile-warning-popup";
 import { CyberSubscriptionCard } from "@/components/cyber-subscription-card";
 
-interface DashboardPageProps {
-  searchParams?: Promise<{ notice?: string }>;
-}
-
-export default async function TaxpayerDashboard(props: DashboardPageProps) {
-  const searchParams = props.searchParams ? await props.searchParams : {};
+export default async function TaxpayerDashboard() {
   const user = await currentUser();
   const firstName = user?.firstName || "Client";
   const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.fullName || "Taxpayer";
@@ -97,9 +91,8 @@ export default async function TaxpayerDashboard(props: DashboardPageProps) {
   // 4. Admin privilege check
   const userEmail = email?.toLowerCase();
   const userRole = user?.publicMetadata?.role as string;
-  const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || process.env.SUPER_ADMIN_EMAIL || "poweldayck@gmail.com").toLowerCase();
+  const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || process.env.SUPER_ADMIN_EMAIL || '').toLowerCase();
   const isAdmin =
-    userEmail === "poweldayck@gmail.com" ||
     userEmail === configAdminEmail ||
     userRole === "Super Admin" ||
     userRole === "Admin";
@@ -107,21 +100,6 @@ export default async function TaxpayerDashboard(props: DashboardPageProps) {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 w-full font-sans">
       
-      {/* Decommission Notification Banner (if routed from legacy CV builder) */}
-      {searchParams.notice === "cv_builder_decommissioned" && (
-        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex items-start gap-3 text-sm">
-          <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-bold text-on-surface">Service Notice: Legacy Resume Builder Decommissioned</p>
-            <p className="text-on-surface-variant text-xs leading-relaxed">
-              Akubrecah has officially transitioned into a dedicated full-scale Software Engineering & Development company. 
-              All in-house statutory compliance tools (KRA Certificate Retrieval and Returns Filing) 
-              remain fully operational below.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Streamlined Welcome Header & Account Status */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-outline-variant/60">
         <div>

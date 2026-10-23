@@ -68,9 +68,8 @@ export function KraPinChecker() {
   // Derive admin status client-side from Clerk metadata
   const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase() || ''
   const userRole = user?.publicMetadata?.role as string | undefined
-  const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || 'poweldayck@gmail.com').toLowerCase()
+  const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase()
   const isAdmin = (
-    userEmail === 'poweldayck@gmail.com' ||
     userEmail === configPublicAdminEmail ||
     userRole === 'Super Admin' ||
     userRole === 'Admin'

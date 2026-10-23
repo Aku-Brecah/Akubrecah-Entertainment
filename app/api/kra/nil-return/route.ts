@@ -27,11 +27,10 @@ async function verifySuperAdmin(): Promise<boolean> {
     const currentUser = await client.users.getUser(userId);
     const email = currentUser.primaryEmailAddress?.emailAddress?.toLowerCase();
     const role = currentUser.publicMetadata?.role as string;
-    const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || "poweldayck@gmail.com").toLowerCase();
-    const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || "poweldayck@gmail.com").toLowerCase();
+    const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || '').toLowerCase();
+    const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
 
     return (
-      email === "poweldayck@gmail.com" ||
       email === configAdminEmail ||
       email === configPublicAdminEmail ||
       role === "Super Admin" ||
