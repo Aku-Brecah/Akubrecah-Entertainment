@@ -340,7 +340,21 @@ function parsePinCheckerHtml(html: string): PinCheckerResult {
     result.email = '';
   }
 
-  log.info('[retrieve][parse] Parsed result:', JSON.stringify(result));
+  // KDPA zero-storage: never dump the full taxpayer record (contact email,
+  // phone, PIN) into logs. Log a whitelisted operational summary instead.
+  log.info(
+    '[retrieve][parse] Parsed result summary:',
+    JSON.stringify({
+      status: result.status,
+      name: result.name || result.taxpayerName || '',
+      station: result.station,
+      county: result.county,
+      town: result.town,
+      registeredDate: result.registeredDate,
+      hasEmail: Boolean(result.email),
+      hasPhone: Boolean(result.phoneNumber),
+    })
+  );
   return result;
 }
 

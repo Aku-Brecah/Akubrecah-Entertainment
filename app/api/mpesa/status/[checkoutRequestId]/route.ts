@@ -30,7 +30,36 @@ export async function GET(
       // Simulated checkouts (ws_CO_MOCK_*) exist for local development and
       // integration testing only. They are disabled in production so a
       // crafted checkout id cannot mint a fake paid record.
+      // The in-memory registry is instance-local. On multi-instance or
+      // serverless deployments the callback may have been processed by
+      // another instance — fall back to the durable DB entitlement record.
       if (process.env.NODE_ENV === 'production') {
+        try {
+          const prismaModule = await import('@/lib/prisma');
+          const db = prismaModule.default as any;
+          const downloadRecord = await db.certificateDownload?.findFirst({
+            where: { checkoutId: checkoutRequestId },
+          });
+          if (downloadRecord) {
+            return NextResponse.json({
+              status: 'success',
+              resultCode: 0,
+              resultDesc: 'The service request is processed successfully.',
+              metadata: {
+                amount: Number(downloadRecord.amountCharged) || 20,
+                mpesaReceiptNumber: downloadRecord.mpesaReceipt || '',
+                transactionDate: downloadRecord.createdAt
+                  ? new Date(downloadRecord.createdAt).toISOString().replace(/[-:TZ]/g, '').substring(0, 14)
+                  : '',
+                phoneNumber: '',
+              },
+              timestamp: new Date(downloadRecord.createdAt).getTime() || Date.now(),
+              source: 'database',
+            });
+          }
+        } catch (dbFallbackErr: any) {
+          log.warn('[M-Pesa Status] DB fallback lookup notice:', dbFallbackErr?.message);
+        }
         return NextResponse.json({ status: 'pending' });
       }
 

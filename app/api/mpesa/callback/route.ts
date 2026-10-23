@@ -44,7 +44,18 @@ export async function POST(req: NextRequest) {
     }
 
     const payload = await req.json();
-    log.info('[M-Pesa Callback] Received payload:', JSON.stringify(payload));
+    // Daraja payloads carry the payer's phone number — log an operational
+    // summary instead of the raw body (KDPA).
+    const bodyScrub = payload?.Body?.stkCallback || {};
+    log.info(
+      '[M-Pesa Callback] Received callback:',
+      JSON.stringify({
+        checkoutId: bodyScrub.CheckoutRequestID,
+        resultCode: bodyScrub.ResultCode,
+        resultDesc: bodyScrub.ResultDesc,
+        hasMetadata: Boolean(bodyScrub.CallbackMetadata),
+      })
+    );
 
     const body = payload?.Body;
     if (!body || !body.stkCallback) {
@@ -85,6 +96,23 @@ export async function POST(req: NextRequest) {
         timestamp: Date.now()
       };
       return NextResponse.json({ success: true, message: 'Underpaid callback rejected' });
+    }
+
+    // Fail closed on stripped metadata: a "success" callback with no amount
+    // cannot be verified against the KES 20 price, so it must never mint a
+    // paid entitlement (historically it was recorded as a KES 20 charge).
+    if (ResultCode === 0 && amount <= 0) {
+      log.error(`[M-Pesa Callback] REJECTED "success" with no amount metadata for ${CheckoutRequestID}`);
+      registry[CheckoutRequestID] = {
+        status: 'failed',
+        resultCode: ResultCode,
+        resultDesc: 'Payment not verifiable: no amount in callback metadata',
+        timestamp: Date.now()
+      };
+      return NextResponse.json(
+        { success: false, error: 'Payment callback failed verification' },
+        { status: 400 }
+      );
     }
 
     if (ResultCode === 0) {
@@ -233,7 +261,25 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ success: true, message: 'Web Cyber Cafe subscription processed successfully' });
         }
 
-        // 2. Create CertificateDownload record safely
+        // 2. Idempotent CertificateDownload creation — Safaricom routinely
+        // retries callbacks, and each retry must NOT create a second
+        // entitlement, re-send WhatsApp documents, or re-dispatch n8n.
+        // The unique checkoutId on certificateDownload is the dedupe anchor.
+        try {
+          const prismaIdem = await import('@/lib/prisma');
+          const dbIdem = prismaIdem.default as any;
+          const existingDownload = await dbIdem.certificateDownload?.findFirst({
+            where: { checkoutId: CheckoutRequestID },
+          });
+          if (existingDownload) {
+            log.info(`[M-Pesa Callback] Duplicate callback for ${CheckoutRequestID} — download ${existingDownload.id} already issued; ack only`);
+            return NextResponse.json({ success: true, message: 'Already processed' });
+          }
+        } catch (idemErr: any) {
+          log.warn('[M-Pesa Callback] Idempotency lookup notice:', idemErr.message);
+        }
+
+        // 2b. Create CertificateDownload record safely
         let dbUser: any = null;
         try {
           dbUser = await getOrCreateDbUser(
