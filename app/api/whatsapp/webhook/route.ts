@@ -146,13 +146,18 @@ export async function POST(req: NextRequest) {
     ];
 
     const hasCommandPrefix = trimmed.startsWith('/') || trimmed.startsWith('!') || trimmed.startsWith('.');
+    const isDirectPinOrId = /^[A-Za-z]\d{9}[A-Za-z]$/.test(trimmed) || /^\d{6,9}$/.test(trimmed);
+    const isKnownBotCommand = ['kra', 'cyber', 'status', 'days', 'sub', 'help', 'menu', 'start', 'cancel', 'reset', 'stop', 'exit', 'invoice', 'invoices', 'receipt', 'renew', 'recheck', 'verify', 'paid', '0'].includes(rawCmd);
+    const isExplicitBotIntent = hasCommandPrefix || isDirectPinOrId || isKnownBotCommand;
+
     const isAdminTrigger =
       (hasCommandPrefix && (rawCmd === 'admin' || adminCmds.includes(rawCmd))) ||
       hasPin;
 
     // If message was sent from the bot account (fromMe = true):
-    // Only process if it is an admin command. All regular outbound bot replies / customer chats are ignored to prevent loops.
-    if (key.fromMe && !isAdminTrigger) {
+    // Only process if it is an explicit admin command, bot command, or direct lookup trigger.
+    // Regular automated outbound bot replies without command intent are ignored to prevent loops.
+    if (key.fromMe && !isAdminTrigger && !isExplicitBotIntent) {
       return NextResponse.json({ success: true, message: 'Ignored normal outbound message' });
     }
 

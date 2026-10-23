@@ -128,4 +128,11 @@ describe('Evolution API phone & LID destination normalization (lib/evolution.ts)
     expect(getEvolutionDestinationNumber('254791497858')).toBe('254791497858');
     expect(getEvolutionDestinationNumber('168646622089229@lid')).toBe('168646622089229@lid');
   });
+
+  it('recognizes invoice and renew as valid allowlisted commands', () => {
+    expect(parseWhatsAppCommand('/invoice').isAllowlisted).toBe(true);
+    expect(parseWhatsAppCommand('/renew').isAllowlisted).toBe(true);
+    expect(parseWhatsAppCommand('!invoices').isAllowlisted).toBe(true);
+  });
 });
+

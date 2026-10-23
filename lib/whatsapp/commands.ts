@@ -27,6 +27,10 @@ export const ALLOWLISTED_SLASH_COMMANDS = new Set([
   'recheck',
   'verify',
   'paid',
+  'invoice',
+  'invoices',
+  'receipt',
+  'renew',
   '0',
 ]);
 
