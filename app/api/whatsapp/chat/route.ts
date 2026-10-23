@@ -170,6 +170,7 @@ export async function handleWhatsAppChat(params: {
         `• */kra* - KRA PIN retrieval & certificate\n` +
         `• */cyber* - Cyber Cafe monthly subscription (KES 500)\n` +
         `• */status* - Check subscription status\n` +
+        `• */invoice* - Download official tax invoice PDF\n` +
         `• */help* - Instructions & support\n` +
         `• */cancel* - Cancel active session\n\n` +
         `🌐 *Web Portal:* https://kra.akubrecah.com`;
@@ -188,12 +189,44 @@ export async function handleWhatsAppChat(params: {
       };
     }
 
+    // 0. Check for Admin Bot Commands (/admin, !admin, /stats, /revenue, /logs, /link, /lock, /logout)
+    const adminReply = await handleAdminBotCommand({
+      incomingText,
+      userPhone,
+      metadata,
+      saveConversationState,
+      db,
+      authorPhone,
+      isFromBotOwner,
+    });
+
+    if (adminReply) {
+      let sendResult = null;
+      if (sendDirect) {
+        sendResult = await sendEvolutionTextMessage(userPhone, adminReply, instanceName);
+      }
+      return {
+        success: true,
+        userPhone,
+        step: metadata.step || 'IDLE',
+        reply: adminReply,
+        metadata,
+        sendResult,
+      };
+    }
+
     // Direct National ID or KRA PIN detection (e.g. 11530093 or A012345678Z)
     const isDirectPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(trimmedInput);
     const isDirectId = /^\d{6,9}$/.test(trimmedInput);
-    const isGreeting = ['hi', 'hello', 'habari', 'hey', 'mambo', 'jambo', 'greetings', 'niaje'].includes(cleanCmdWord) && !trimmedInput.includes(' ');
-    const isStandaloneHelp = ['help', 'menu', 'start', 'commands'].includes(cleanCmdWord) && !trimmedInput.includes(' ');
-    const isStandaloneKra = (cleanCmdWord === 'kra' || cleanCmdWord === 'pin');
+    const greetingWords = ['hi', 'hello', 'habari', 'hey', 'mambo', 'jambo', 'greetings', 'niaje', 'sasa', 'morning', 'afternoon', 'evening'];
+    const isGreeting = greetingWords.includes(cleanCmdWord) || greetingWords.some((w) => lowerText.startsWith(w));
+    const isStandaloneHelp = ['help', 'menu', 'start', 'commands', 'assist', 'huduma'].includes(cleanCmdWord) || lowerText.startsWith('help');
+    const isStandaloneKra =
+      cleanCmdWord === 'kra' ||
+      cleanCmdWord === 'pin' ||
+      cleanCmdWord === 'certificate' ||
+      lowerText.includes('kra') ||
+      lowerText.includes('certificate');
     const isStandaloneCyber = ['cyber', 'subscribe', 'package'].includes(cleanCmdWord);
     const isStandaloneStatus = ['status', 'days', 'sub'].includes(cleanCmdWord);
 
@@ -226,42 +259,35 @@ export async function handleWhatsAppChat(params: {
       isCancelRequest ||
       isPaymentRecheckTrigger;
 
-    // STRICT TRIGGER RULE:
-    // If not in an active session and no valid command or intent was provided:
-    // Completely ignore random, casual sentences (e.g. "what is the weather", "good morning")
+    // When not in an active session and no specific command was matched, guide general users with allowed commands
     if (!isSessionActive && !isRecognizedIntent) {
-      return {
-        success: true,
-        userPhone,
-        step: 'IDLE',
-        reply: '',
-        shouldReply: false,
-        metadata,
-        sendResult: null,
-      };
-    }
+      const welcomeMenu =
+        `🇰🇪 *AKUBRECAH KRA SELF-SERVICE PORTAL*\n` +
+        `─────────────────────────\n` +
+        `Welcome! Retrieve your official KRA PIN Certificate or manage your Cyber Cafe package.\n\n` +
+        `👉 *How to Retrieve Certificate:*\n` +
+        `Send your *National ID Number* (6–9 digits, e.g. *11530093*) or *KRA PIN* (e.g. *A012345678Z*) directly in this chat.\n\n` +
+        `💰 *Certificate Fee:* Strictly KES 20.00\n\n` +
+        `📋 *Allowed Customer Commands:*\n` +
+        `• */kra* — Start Certificate retrieval\n` +
+        `• */cyber* — Cyber Cafe 30-Day Package (KES 500/Month unlimited)\n` +
+        `• */status* — Check subscription status\n` +
+        `• */invoice* — Download official tax invoice PDF\n` +
+        `• */help* — Customer instructions & support\n` +
+        `• */cancel* — Cancel active session (or reply *0*)\n\n` +
+        `🌐 *Self-Service Web Portal:*\n` +
+        `🔗 https://kra.akubrecah.com\n` +
+        `─────────────────────────`;
 
-    // 0. Check for Admin Bot Commands (/admin, !admin, /stats, /revenue, /logs, /link, /lock, /logout)
-    const adminReply = await handleAdminBotCommand({
-      incomingText,
-      userPhone,
-      metadata,
-      saveConversationState,
-      db,
-      authorPhone,
-      isFromBotOwner,
-    });
-
-    if (adminReply) {
       let sendResult = null;
       if (sendDirect) {
-        sendResult = await sendEvolutionTextMessage(userPhone, adminReply, instanceName);
+        sendResult = await sendEvolutionTextMessage(userPhone, welcomeMenu, instanceName);
       }
       return {
         success: true,
         userPhone,
-        step: metadata.step || 'IDLE',
-        reply: adminReply,
+        step: 'IDLE',
+        reply: welcomeMenu,
         metadata,
         sendResult,
       };
@@ -1119,12 +1145,106 @@ export async function handleWhatsAppChat(params: {
         }
       }
     }
-    // 6. Step AWAITING_PAYMENT / AWAITING_PAYMENT_METHOD / AWAITING_CONFIRMATION / AWAITING_PHONE_NUMBER (Per-download)
+    // 6. Step AWAITING_PAYMENT_PHONE / AWAITING_PHONE_NUMBER: User confirmed record and must enter payment phone number
+    else if (currentStep === 'AWAITING_PAYMENT_PHONE' || currentStep === 'AWAITING_PHONE_NUMBER') {
+      const pinToDownload = metadata.pin;
+      const downloadFee = Number(metadata.fee || process.env.PAYSTACK_DOWNLOAD_FEE_KES || 20);
+
+      // A. Cancellation
+      if (lowerText === '0' || lowerText === 'cancel' || lowerText === 'exit' || lowerText === 'reset') {
+        await saveConversationState('IDLE', {
+          activeSession: false,
+          pin: null,
+          idNumber: null,
+          taxpayerDetails: null,
+          paymentPhone: null,
+          suggestedPhone: null,
+          checkoutId: null,
+        });
+        replyText =
+          `✅ *Operation Cancelled*\n` +
+          `─────────────────────────\n` +
+          `The KRA assistant is now idle.\n\n` +
+          `Send *.kra* or */kra* whenever you want to start again.\n` +
+          `🌐 *Web Portal:* https://kra.akubrecah.com`;
+      } else {
+        let targetPay = userPhone;
+        const isSame = lowerText === 'same' || lowerText === 'this' || lowerText === 'here';
+
+        if (!isSame) {
+          const extracted = extractKenyanPhone(incomingText);
+          if (!extracted) {
+            replyText =
+              `⚠️ *Invalid Phone Number*\n` +
+              `─────────────────────────\n` +
+              `Please reply with a valid 10-digit Kenyan Safaricom phone number to receive the payment prompt:\n\n` +
+              `👉 Example: *0712345678* or *0112345678*\n` +
+              `👉 Or reply *SAME* to use this WhatsApp number (\`${formatDisplayPhone(userPhone)}\`)\n\n` +
+              `─────────────────────────\n` +
+              `_(Reply *0* to cancel)_`;
+
+            let sendResult = null;
+            if (sendDirect) {
+              sendResult = await sendEvolutionTextMessage(userPhone, replyText, instanceName);
+            }
+            return {
+              success: true,
+              userPhone,
+              step: currentStep,
+              reply: replyText,
+              metadata,
+              sendResult,
+            };
+          }
+          targetPay = extracted;
+        }
+
+        const stkRes = await triggerInAppMpesaPayment({
+          targetPhone: targetPay,
+          whatsappUserPhone: userPhone,
+          pin: pinToDownload,
+          amount: downloadFee,
+          taxpayerName: metadata.taxpayerName,
+        });
+
+        await saveConversationState('AWAITING_PAYMENT', {
+          activeSession: true,
+          pin: pinToDownload,
+          idNumber: metadata.idNumber,
+          taxpayerName: metadata.taxpayerName,
+          taxpayerDetails: metadata.taxpayerDetails,
+          checkoutId: stkRes.checkoutRequestId || '',
+          paymentPhone: stkRes.normalizedPhone,
+          stkGateway: stkRes.gateway,
+          pushedAt: Date.now(),
+        });
+
+        if (stkRes.success) {
+          replyText =
+            `📲 *M-PESA PAYMENT PROMPT SENT*\n` +
+            `─────────────────────────\n` +
+            `💰 *Amount:* KES ${downloadFee}.00\n` +
+            `📱 *Payment Handset:* \`${stkRes.normalizedPhone}\`\n` +
+            `🆔 *KRA PIN:* \`${pinToDownload}\`\n` +
+            `─────────────────────────\n` +
+            `👉 *Enter your M-Pesa PIN* on \`${stkRes.normalizedPhone}\` to complete retrieval.\n\n` +
+            `Your official KRA PIN Certificate and fiscal receipt will be delivered right here in this chat.\n\n` +
+            `─────────────────────────\n` +
+            `_Reply 1 to resend prompt | Send another number | Reply 0 to cancel_`;
+        } else {
+          replyText =
+            `⚠️ *Could not send M-Pesa prompt:* ${stkRes.error || 'Network error'}.\n\n` +
+            `👉 Send another Safaricom phone number (e.g. *0712345678*) or reply *0* to cancel.\n\n` +
+            `🌐 Prefer web download? Visit:\n` +
+            `🔗 https://kra.akubrecah.com`;
+        }
+      }
+    }
+    // 7. Step AWAITING_PAYMENT / AWAITING_PAYMENT_METHOD / AWAITING_CONFIRMATION (Per-download)
     else if (
       currentStep === 'AWAITING_PAYMENT' ||
       currentStep === 'AWAITING_PAYMENT_METHOD' ||
-      currentStep === 'AWAITING_CONFIRMATION' ||
-      currentStep === 'AWAITING_PHONE_NUMBER'
+      currentStep === 'AWAITING_CONFIRMATION'
     ) {
       const pinToDownload = metadata.pin;
       const downloadFee = Number(process.env.PAYSTACK_DOWNLOAD_FEE_KES || 20);

@@ -137,11 +137,18 @@ export async function handleAdminBotCommand({
   // If user entered admin command without authentication and without PIN
   if (!isAdminAuthenticated) {
     return (
-      `🔐 *Akubrecah KRA — Admin Verification Required*\n\n` +
-      `Your phone is not yet unlocked for admin operations.\n\n` +
-      `To unlock, reply:\n` +
-      `*!admin* followed by the master PIN\n\n` +
-      `_(Master PIN is required — ask the system owner if you do not have it)_`
+      `🔒 *Admin Access Restricted*\n` +
+      `─────────────────────────\n` +
+      `This command is reserved for authorized system administrators.\n\n` +
+      `👉 *Allowed Customer Commands:*\n` +
+      `• */kra* — Retrieve KRA PIN Certificate (KES 20.00)\n` +
+      `• */cyber* — Cyber Cafe Monthly Package (KES 500/Month)\n` +
+      `• */status* — Check subscription status\n` +
+      `• */invoice* — Download official tax invoice PDF\n` +
+      `• */help* — Instructions & customer guide\n` +
+      `• */cancel* — Cancel active session\n\n` +
+      `🌐 *Web Portal:* https://kra.akubrecah.com\n` +
+      `─────────────────────────`
     );
   }
 
@@ -154,7 +161,13 @@ export async function handleAdminBotCommand({
       isAdminAuthenticated: false,
       adminAuthExpiry: 0,
     });
-    return `🔒 *Admin Session Locked.*\nSend *!admin* plus your master PIN anytime to re-authenticate.`;
+    return (
+      `🔒 *ADMIN SESSION LOCKED*\n` +
+      `─────────────────────────\n` +
+      `Administrative privileges disabled for this phone.\n\n` +
+      `👉 Send *!admin* with your master PIN anytime to re-authenticate.\n` +
+      `─────────────────────────`
+    );
   }
 
   // 2. 1-Click Magic Link
@@ -165,19 +178,23 @@ export async function handleAdminBotCommand({
   if (cmd === 'link' || cmd === 'magic' || cmd === 'web') {
     if (!hasActivePinSession && !hasPinInText) {
       return (
-        `🔐 *Admin Verification Required for Web Access*\n\n` +
+        `🔐 *Admin Verification Required for Web Access*\n` +
+        `─────────────────────────\n` +
         `To prevent impersonation, first authenticate with the master PIN:\n\n` +
         `*!admin <your ADMIN_BOT_PIN>*\n\n` +
-        `...then request the link again (the session stays unlocked 24h).`
+        `...then request the link again (the session stays unlocked 24h).\n` +
+        `─────────────────────────`
       );
     }
     const magicToken = createAdminMagicToken(effectivePhoneDigits || BOT_NUMBER);
     const magicUrl = `${appUrl}/api/admin/magic-login?token=${magicToken}`;
     return (
-      `👑 *1-Click Admin Web Access*\n\n` +
-      `Tap the link below to open your Executive Admin Dashboard directly without entering any password:\n\n` +
+      `👑 *EXECUTIVE ADMIN WEB ACCESS*\n` +
+      `─────────────────────────\n` +
+      `Tap below to open your Executive Admin Dashboard directly:\n\n` +
       `👉 ${magicUrl}\n\n` +
-      `⏳ _This cryptographically signed token is valid for 4 hours._`
+      `⏳ _This cryptographically signed token is valid for 4 hours._\n` +
+      `─────────────────────────`
     );
   }
 
@@ -214,14 +231,20 @@ export async function handleAdminBotCommand({
     }
 
     return (
-      `📊 *AKUBRECAH KRA — LIVE EXECUTIVE STATS*\n\n` +
-      `💰 *Total Revenue:* KES ${totalRev.toLocaleString()}\n` +
-      `📈 *Today's Revenue:* KES ${todayRev.toLocaleString()}\n` +
-      `📜 *Total Downloads:* ${downloads.length}\n` +
-      `🤖 *WhatsApp Bot Downloads:* ${waDownloads} (${downloads.length > 0 ? Math.round((waDownloads / downloads.length) * 100) : 0}%)\n` +
-      `💬 *WhatsApp Bot Users:* ${botUsers}\n` +
-      `💻 *Web Traffic:* ${pcPct}% PC (Desktop) / ${mobPct}% Mobile\n\n` +
-      `_Reply *!revenue* for financial details or *!link* for web dashboard._`
+      `📊 *AKUBRECAH KRA — EXECUTIVE STATS*\n` +
+      `─────────────────────────\n` +
+      `💰 *FINANCIAL OVERVIEW*\n` +
+      `• *Total Revenue:*    KES ${totalRev.toLocaleString()}\n` +
+      `• *Today's Revenue:*  KES ${todayRev.toLocaleString()}\n\n` +
+      `📜 *DOWNLOAD PERFORMANCE*\n` +
+      `• *Total Issued:*     ${downloads.length} certificates\n` +
+      `• *WhatsApp Bot:*     ${waDownloads} (${downloads.length > 0 ? Math.round((waDownloads / downloads.length) * 100) : 0}%)\n` +
+      `• *Active Bot Users:* ${botUsers}\n\n` +
+      `💻 *PLATFORM TRAFFIC*\n` +
+      `• *Desktop Web:*      ${pcPct}%\n` +
+      `• *Mobile Web:*       ${mobPct}%\n` +
+      `─────────────────────────\n` +
+      `_Reply *!revenue* for financials | *!link* for web dashboard_`
     );
   }
 
@@ -246,15 +269,18 @@ export async function handleAdminBotCommand({
     const paystackRev = totalRev - mpesaRev;
 
     return (
-      `💰 *REVENUE BREAKDOWN REPORT*\n\n` +
-      `• *Total Lifetime:* KES ${totalRev.toLocaleString()}\n` +
-      `• *Today:* KES ${todayRev.toLocaleString()}\n` +
-      `• *Last 7 Days:* KES ${sevenDayRev.toLocaleString()}\n` +
-      `• *Last 30 Days:* KES ${thirtyDayRev.toLocaleString()}\n\n` +
-      `💳 *By Payment Gateway:*\n` +
-      `• *M-Pesa STK:* KES ${mpesaRev.toLocaleString()} (${totalRev > 0 ? Math.round((mpesaRev / totalRev) * 100) : 0}%)\n` +
-      `• *Paystack Card/Bank:* KES ${paystackRev.toLocaleString()} (${totalRev > 0 ? Math.round((paystackRev / totalRev) * 100) : 0}%)\n\n` +
-      `_Reply *!logs* to view recent transaction receipts._`
+      `💰 *REVENUE BREAKDOWN REPORT*\n` +
+      `─────────────────────────\n` +
+      `📅 *PERIOD TOTALS*\n` +
+      `• *Today:*         KES ${todayRev.toLocaleString()}\n` +
+      `• *Last 7 Days:*   KES ${sevenDayRev.toLocaleString()}\n` +
+      `• *Last 30 Days:*  KES ${thirtyDayRev.toLocaleString()}\n` +
+      `• *Lifetime:*      KES ${totalRev.toLocaleString()}\n\n` +
+      `💳 *PAYMENT CHANNELS*\n` +
+      `• *M-Pesa STK:*    KES ${mpesaRev.toLocaleString()} (${totalRev > 0 ? Math.round((mpesaRev / totalRev) * 100) : 0}%)\n` +
+      `• *Paystack Card:* KES ${paystackRev.toLocaleString()} (${totalRev > 0 ? Math.round((paystackRev / totalRev) * 100) : 0}%)\n` +
+      `─────────────────────────\n` +
+      `_Reply *!logs* to view recent customer transactions_`
     );
   }
 
@@ -269,10 +295,17 @@ export async function handleAdminBotCommand({
     }
 
     if (recent.length === 0) {
-      return `🧾 *TRANSACTION LOGS*\n\nNo certificate downloads or transactions recorded yet.`;
+      return (
+        `🧾 *TRANSACTION LOGS*\n` +
+        `─────────────────────────\n` +
+        `No certificate downloads or transactions recorded yet.\n` +
+        `─────────────────────────`
+      );
     }
 
-    let report = `🧾 *LATEST 5 TRANSACTIONS*\n\n`;
+    let report =
+      `🧾 *LATEST 5 TRANSACTIONS*\n` +
+      `─────────────────────────\n`;
     recent.forEach((item, index) => {
       const isWa = item.clerkId?.startsWith('wa_');
       const channel = isWa ? '🤖 WhatsApp' : '🌐 Web Portal';
@@ -280,11 +313,12 @@ export async function handleAdminBotCommand({
       const timeStr = new Date(item.createdAt).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' });
 
       report +=
-        `*${index + 1}. PIN:* ${item.pin}\n` +
-        `   • Amount: *KES ${item.amountCharged}.00*\n` +
-        `   • Channel: ${channel}\n` +
-        `   • Receipt: \`${receipt}\`\n` +
-        `   • Time: ${timeStr}\n\n`;
+        `*#${index + 1} — ${item.pin}*\n` +
+        `• *Amount:*   KES ${item.amountCharged}.00\n` +
+        `• *Channel:*  ${channel}\n` +
+        `• *Receipt:*  \`${receipt}\`\n` +
+        `• *Time:*     ${timeStr}\n` +
+        `─────────────────────────\n`;
     });
 
     report += `_Reply *!link* for full searchable transaction table on web._`;
@@ -312,13 +346,15 @@ export async function handleAdminBotCommand({
     const conversionRate = totalBotUsers > 0 ? ((waDownloads / totalBotUsers) * 100).toFixed(1) : '0.0';
 
     return (
-      `🤖 *WHATSAPP BOT ADOPTION & PERFORMANCE*\n\n` +
-      `• *Unique Users:* ${totalBotUsers}\n` +
-      `• *Total Conversations:* ${totalConversations}\n` +
-      `• *Certificates Delivered via Bot:* ${waDownloads}\n` +
-      `• *Bot Revenue Generated:* KES ${waRevenue.toLocaleString()}\n` +
-      `• *Conversion Rate:* ${conversionRate}%\n\n` +
-      `_Reply *!stats* for global metrics or *!logs* for recent receipts._`
+      `🤖 *WHATSAPP BOT PERFORMANCE*\n` +
+      `─────────────────────────\n` +
+      `• *Total Users:*     ${totalBotUsers}\n` +
+      `• *Total Sessions:*  ${totalConversations}\n` +
+      `• *Certificates:*    ${waDownloads}\n` +
+      `• *Bot Revenue:*     KES ${waRevenue.toLocaleString()}\n` +
+      `• *Conversion Rate:* ${conversionRate}%\n` +
+      `─────────────────────────\n` +
+      `_Reply *!stats* for global KPIs | *!logs* for transactions_`
     );
   }
 
@@ -584,16 +620,21 @@ export async function handleAdminBotCommand({
 
   // 10. Menu / Help / Default
   return (
-    `👑 *AKUBRECAH KRA — ADMIN COMMAND CENTER*\n\n` +
-    `• *!stats* — Real-time Executive KPIs (Revenue, Users, PC vs Mobile)\n` +
-    `• *!revenue* — Revenue Breakdown (Today, 7d, Gateways)\n` +
-    `• *!logs* — Last 5 Transactions & Receipts\n` +
-    `• *!failed* — View Failed/Pending Client Sessions & Gateway Errors\n` +
-    `• *!recheck <target>* — Verify Client Payment & Auto-Deliver\n` +
-    `• *!deliver <phone>* — Force-Deliver KRA Certificate to Client\n` +
-    `• *!bot* — WhatsApp Bot Adoption & Stats\n` +
-    `• *!link* — 1-Click Web Dashboard Login Link\n` +
-    `• *!lock* — Lock session\n\n` +
-    `_Reply with any command (e.g. *!failed* or *!recheck 0719299900*) to run immediately._`
+    `👑 *AKUBRECAH KRA — ADMIN COMMAND CENTER*\n` +
+    `─────────────────────────\n` +
+    `📊 *EXECUTIVE METRICS*\n` +
+    `• *!stats*            Live KPIs, revenue & traffic\n` +
+    `• *!revenue*          Financial breakdown (24h/7d/30d)\n` +
+    `• *!bot*              WhatsApp adoption & conversion\n\n` +
+    `🧾 *OPERATIONS & AUDIT*\n` +
+    `• *!logs*             Last 5 customer transactions\n` +
+    `• *!failed*           Pending sessions & errors\n` +
+    `• *!recheck <query>*  Verify M-Pesa & auto-deliver\n` +
+    `• *!deliver <phone>*  Force-generate certificate\n\n` +
+    `🔐 *ACCESS CONTROL*\n` +
+    `• *!link*             1-Click Executive Web login\n` +
+    `• *!lock*             Lock active admin session\n` +
+    `─────────────────────────\n` +
+    `_Send any command above (e.g. *!stats* or *!logs*)_`
   );
 }

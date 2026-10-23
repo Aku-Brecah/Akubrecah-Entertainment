@@ -136,3 +136,89 @@ describe('Evolution API phone & LID destination normalization (lib/evolution.ts)
   });
 });
 
+describe('Taxpayer fulfillment & payment phone prompt (lib/whatsapp/fulfillment.ts)', () => {
+  it('transitions to AWAITING_PAYMENT_PHONE and prompts user for M-Pesa number instead of auto-firing payment', async () => {
+    const { handleTaxpayerFoundFulfillment } = await import('@/lib/whatsapp/fulfillment');
+
+    let savedStep = '';
+    let savedExtra: Record<string, any> = {};
+
+    const mockSaveState = async (step: string, extra?: Record<string, any>) => {
+      savedStep = step;
+      savedExtra = extra || {};
+    };
+
+    const taxpayer = {
+      taxpayerName: 'JOHN DOE KAMAU',
+      pin: 'A012345678Z',
+      idNumber: '11530093',
+      taxpayerDetails: 'Active',
+    };
+
+    const reply = await handleTaxpayerFoundFulfillment({
+      userPhone: '254712345678',
+      taxpayer,
+      idOrPinInput: '11530093',
+      saveConversationState: mockSaveState,
+    });
+
+    // Proves conversation state was set to AWAITING_PAYMENT_PHONE
+    expect(savedStep).toBe('AWAITING_PAYMENT_PHONE');
+    expect(savedExtra.pin).toBe('A012345678Z');
+    expect(savedExtra.fee).toBe(20);
+
+    // Proves message asks user for payment phone number
+    expect(reply).toContain('ENTER M-PESA PHONE NUMBER');
+    expect(reply).toContain('0712345678');
+    expect(reply).toContain('SAME');
+    expect(reply).toContain('KES 20.00');
+  });
+});
+
+describe('Admin command center & access isolation (lib/whatsapp/admin-commands.ts)', () => {
+  it('blocks unauthorized users and directs them exclusively to customer commands', async () => {
+    const { handleAdminBotCommand } = await import('@/lib/whatsapp/admin-commands');
+
+    const reply = await handleAdminBotCommand({
+      incomingText: '!admin',
+      userPhone: '254700000001', // random unauthorized number
+      metadata: {},
+      saveConversationState: async () => {},
+      db: {},
+    });
+
+    expect(reply).not.toBeNull();
+    expect(reply).toContain('Admin Access Restricted');
+    expect(reply).toContain('*/kra*');
+    expect(reply).toContain('*/cyber*');
+    expect(reply).toContain('*/status*');
+    expect(reply).toContain('*/invoice*');
+    expect(reply).toContain('*/help*');
+    // Does NOT leak internal master PIN prompt or stats
+    expect(reply).not.toContain('Your phone is not yet unlocked');
+  });
+
+  it('renders aligned admin command center for authorized master PIN caller', async () => {
+    const { handleAdminBotCommand } = await import('@/lib/whatsapp/admin-commands');
+
+    const masterPin = process.env.ADMIN_BOT_PIN || 'testpin';
+    process.env.ADMIN_BOT_PIN = masterPin;
+
+    const reply = await handleAdminBotCommand({
+      incomingText: `!admin ${masterPin}`,
+      userPhone: '254791497858',
+      metadata: {},
+      saveConversationState: async () => {},
+      db: {},
+    });
+
+    expect(reply).not.toBeNull();
+    expect(reply).toContain('AKUBRECAH KRA — ADMIN COMMAND CENTER');
+    expect(reply).toContain('EXECUTIVE METRICS');
+    expect(reply).toContain('!stats');
+    expect(reply).toContain('!revenue');
+    expect(reply).toContain('!logs');
+    expect(reply).toContain('─────────────────────────');
+  });
+});
+

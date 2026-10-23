@@ -110,54 +110,32 @@ export async function handleTaxpayerFoundFulfillment({
     log.warn('[Fulfillment Existing Payment Check Notice]:', err.message);
   }
 
-  const stkRes = await triggerInAppMpesaPayment({
-    targetPhone: userPhone,
-    whatsappUserPhone: userPhone,
-    pin: cleanPin,
-    amount: downloadFee,
-    taxpayerName: taxpayer.taxpayerName,
-  });
-
-  await saveConversationState('AWAITING_PAYMENT', {
+  await saveConversationState('AWAITING_PAYMENT_PHONE', {
     activeSession: true,
     pin: cleanPin,
     idNumber: taxpayer.idNumber || idOrPinInput,
     taxpayerName: taxpayer.taxpayerName,
-    checkoutId: stkRes.checkoutRequestId || '',
-    paymentPhone: stkRes.normalizedPhone,
-    stkGateway: stkRes.gateway,
     taxpayerDetails: taxpayer,
-    pushedAt: Date.now(),
+    fee: downloadFee,
   });
 
-  if (stkRes.success) {
-    return (
-      `🇰🇪 *TAX COMPLIANCE RECORD FOUND*\n` +
-      `─────────────────────────\n` +
-      `👤 *Taxpayer:* *${masked.taxpayerName}*\n` +
-      `🆔 *KRA PIN:* \`${masked.pin}\`\n` +
-      `💰 *Certificate Fee:* KES ${downloadFee}.00\n` +
-      `─────────────────────────\n` +
-      `📲 *M-PESA PAYMENT PROMPT SENT*\n` +
-      `A prompt for *KES ${downloadFee}.00* has been sent to \`${stkRes.normalizedPhone}\`.\n` +
-      `👉 *Enter your M-Pesa PIN* on your phone to complete retrieval.\n\n` +
-      `Your official KRA PIN Certificate and ETR Tax Receipt will be delivered right here.\n\n` +
-      `🌐 *Web Portal:* https://kra.akubrecah.com\n` +
-      `─────────────────────────\n` +
-      `_Reply 1 to resend prompt | Send another number | Reply 0 to cancel_`
-    );
-  } else {
-    return (
-      `🇰🇪 *TAX COMPLIANCE RECORD FOUND*\n` +
-      `─────────────────────────\n` +
-      `👤 *Taxpayer:* *${masked.taxpayerName}*\n` +
-      `🆔 *KRA PIN:* \`${masked.pin}\`\n` +
-      `💰 *Certificate Fee:* KES ${downloadFee}.00\n` +
-      `─────────────────────────\n` +
-      `⚠️ *Could not send M-Pesa prompt:* ${stkRes.error || 'Network error'}.\n\n` +
-      `👉 Send another Safaricom phone number (e.g. *0712345678*) or reply *0* to cancel.\n\n` +
-      `🌐 Prefer web download? Visit:\n` +
-      `🔗 https://kra.akubrecah.com`
-    );
-  }
+  const { formatDisplayPhone } = await import('@/lib/whatsapp/phone');
+  const formattedWhatsAppPhone = formatDisplayPhone(userPhone);
+
+  return (
+    `🇰🇪 *KRA TAXPAYER RECORD FOUND*\n` +
+    `─────────────────────────\n` +
+    `👤 *Taxpayer:* *${masked.taxpayerName}*\n` +
+    `🆔 *KRA PIN:* \`${masked.pin}\`\n` +
+    `💰 *Certificate Fee:* KES ${downloadFee}.00\n` +
+    `─────────────────────────\n` +
+    `📲 *ENTER M-PESA PHONE NUMBER*\n` +
+    `Please reply with your Safaricom M-Pesa phone number to receive the payment prompt:\n\n` +
+    `👉 Send number (e.g. *0712345678* or *0112345678*)\n` +
+    (formattedWhatsAppPhone ? `👉 Or reply *SAME* to use \`${formattedWhatsAppPhone}\`\n\n` : `\n`) +
+    `Once payment is confirmed, your official KRA PIN Certificate and receipt will be delivered right here in this chat.\n\n` +
+    `🌐 *Web Portal:* https://kra.akubrecah.com\n` +
+    `─────────────────────────\n` +
+    `_(Reply *0* to cancel)_`
+  );
 }
