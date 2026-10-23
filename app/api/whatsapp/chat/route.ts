@@ -653,9 +653,14 @@ export async function handleWhatsAppChat(params: {
       }
       // F. Menu or Direct Lookup: /kra, /menu, /start, /help, /pin
       else if (['kra', 'menu', 'start', 'help', 'pin'].includes(cmdWord)) {
-        // Direct search: /kra <ID_OR_PIN> or /pin <ID_OR_PIN>
+        // Direct search: /kra <ID_OR_PIN> or /pin <ID_OR_PIN> [optional phone]
         if (cmdArgs) {
-          const cleanArg = cmdArgs.replace(/^(id|national\s*id|pin|kra\s*pin)[\s:]+/i, '').replace(/\s+/g, '').trim();
+          const rawTokens = cmdArgs.trim().split(/\s+/);
+          const firstToken = rawTokens[0] ? rawTokens[0].replace(/^(id|national\s*id|pin|kra\s*pin)[\s:]+/i, '').trim() : '';
+          const secondToken = rawTokens[1] ? rawTokens[1].trim() : '';
+          const explicitPhone = extractKenyanPhone(secondToken);
+
+          const cleanArg = firstToken;
           const isPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(cleanArg);
           const isId = /^\d{5,12}$/.test(cleanArg);
 
@@ -697,12 +702,13 @@ export async function handleWhatsAppChat(params: {
                 `─────────────────────────\n` +
                 `_(Reply *0* to cancel)_`;
             } else {
-              // Fulfill instantly if Cyber Cafe subscriber, else prompt KES 20
+              // Fulfill instantly if Cyber Cafe subscriber, else trigger STK push
               replyText = await handleTaxpayerFoundFulfillment({
                 userPhone,
                 taxpayer,
                 idOrPinInput: cleanArg,
                 saveConversationState,
+                explicitPaymentPhone: explicitPhone || undefined,
               });
             }
           }
@@ -756,7 +762,12 @@ export async function handleWhatsAppChat(params: {
     }
     // 4. Step AWAITING_INPUT: User entered bot mode and sends their National ID or PIN
     else if (currentStep === 'AWAITING_INPUT') {
-      const cleanInput = incomingText.replace(/^(id|national\s*id|pin|kra\s*pin)[\s:]+/i, '').replace(/\s+/g, '').trim();
+      const rawTokens = incomingText.trim().split(/\s+/);
+      const firstToken = rawTokens[0] ? rawTokens[0].replace(/^(id|national\s*id|pin|kra\s*pin)[\s:]+/i, '').trim() : '';
+      const secondToken = rawTokens[1] ? rawTokens[1].trim() : '';
+      const explicitPhone = extractKenyanPhone(secondToken);
+
+      const cleanInput = firstToken;
       const isPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(cleanInput);
       const isId = /^\d{5,12}$/.test(cleanInput);
 
@@ -828,12 +839,13 @@ export async function handleWhatsAppChat(params: {
             `─────────────────────────\n` +
             `_(Reply *0* to cancel)_`;
         } else {
-          // Fulfill instantly if Cyber Cafe subscriber, else prompt KES 20
+          // Fulfill instantly if Cyber Cafe subscriber, else trigger STK push
           replyText = await handleTaxpayerFoundFulfillment({
             userPhone,
             taxpayer,
             idOrPinInput: cleanInput,
             saveConversationState,
+            explicitPaymentPhone: explicitPhone || undefined,
           });
         }
       }

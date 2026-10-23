@@ -26,7 +26,7 @@ export async function triggerInAppMpesaPayment({
   error?: string;
 }> {
   const normalizedPhone = normalizePhoneNumber(targetPhone);
-  const cleanPin = pin.trim().toUpperCase();
+  const cleanPin = String(pin || '').trim().toUpperCase() || 'PIN';
   const reference = `CERT-${cleanPin}-${Date.now()}`;
 
   try {

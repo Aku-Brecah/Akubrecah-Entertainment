@@ -163,35 +163,49 @@ export async function POST(req: NextRequest) {
 
     const BOT_OWNER_NUMBER = '254791497858';
 
-    // Prefer explicit phone JIDs (@s.whatsapp.net) over WhatsApp local identities (@lid)
-    const rawSender = String(
-      (payload.sender && !String(payload.sender).includes('@lid')) ? payload.sender :
-      (data.sender && !String(data.sender).includes('@lid')) ? data.sender :
-      (key.participant && !String(key.participant).includes('@lid')) ? key.participant :
-      (data.participant && !String(data.participant).includes('@lid')) ? data.participant :
-      rawRemoteJid
-    ).trim();
+    let userPhone = '';
 
-    let userPhone = sanitizeWhatsAppPhone(rawSender);
-    if (userPhone.includes('@lid')) {
-      userPhone = userPhone.replace(/@lid$/, '');
-    }
-
-    // Attribute the sender only when the jid actually resolves to a phone.
-    // The legacy behavior defaulted fromMe events with an empty jid to the
-    // BOT OWNER — a forged event could then pose as the owner. Those events
-    // are now ignored instead of attributed.
     if (key.fromMe) {
-      if (rawRemoteJid.includes(BOT_OWNER_NUMBER) || rawSender.includes(BOT_OWNER_NUMBER)) {
-        userPhone = BOT_OWNER_NUMBER;
-      } else if (!userPhone) {
-        return NextResponse.json(
-          { success: true, message: 'Ignored unattributable outbound message' },
-          { status: 200 }
-        );
+      // Outbound message or self-chat ("Message Yourself") from the bot instance.
+      // If sent to another WhatsApp user, this is an automated outbound reply — ignore to avoid loops.
+      if (!rawRemoteJid.includes(BOT_OWNER_NUMBER)) {
+        return NextResponse.json({ success: true, message: 'Ignored outbound message to customer' });
       }
-    } else if (!userPhone) {
-      return NextResponse.json({ success: false, error: 'Could not resolve sender phone' }, { status: 400 });
+
+      // If sent in self-chat ("Message Yourself"), only process if it is an explicit admin command or bot intent
+      if (!isAdminTrigger && !isExplicitBotIntent) {
+        return NextResponse.json({ success: true, message: 'Ignored normal outbound message' });
+      }
+
+      userPhone = BOT_OWNER_NUMBER;
+    } else {
+      // Inbound message from a customer/external contact (fromMe = false).
+      // In 1-on-1 chats, rawRemoteJid (key.remoteJid) is the customer's WhatsApp JID.
+      // NOTE: NEVER use root payload.sender here — in Evolution API, payload.sender is the
+      // connected bot instance phone (254791497858), which would hijack customer chats!
+      let resolvedJid = rawRemoteJid;
+
+      // If remoteJid is a WhatsApp local identity (@lid), search for the real phone in data fields
+      if (resolvedJid.includes('@lid')) {
+        const candidatePhone = [
+          data.sender,
+          data.participant,
+          key.participant,
+        ].find((s) => s && String(s).includes('@s.whatsapp.net') && !String(s).includes(BOT_OWNER_NUMBER));
+
+        if (candidatePhone) {
+          resolvedJid = String(candidatePhone);
+        }
+      }
+
+      userPhone = sanitizeWhatsAppPhone(resolvedJid);
+      if (userPhone.includes('@lid')) {
+        userPhone = userPhone.replace(/@lid$/, '');
+      }
+
+      if (!userPhone) {
+        return NextResponse.json({ success: false, error: 'Could not resolve sender phone' }, { status: 400 });
+      }
     }
 
     // KDPA: neither the phone nor the message body (users send National IDs,
@@ -204,15 +218,8 @@ export async function POST(req: NextRequest) {
 
     const instanceName = String(payload.instance || data.instance || '').trim() || undefined;
 
-    // Owner identity derives ONLY from the resolved phone number — never from
-    // the client-supplied `key.fromMe` flag alone. An attacker who reaches
-    // this endpoint must not be able to promote themselves to Super Admin by
-    // writing fromMe: true into the event body.
-    const resolvedOwner = Boolean(
-      userPhone === BOT_OWNER_NUMBER ||
-      rawRemoteJid.includes(BOT_OWNER_NUMBER) ||
-      rawSender.includes(BOT_OWNER_NUMBER)
-    );
+    // Owner identity derives ONLY from the bot owner number when sent via fromMe
+    const resolvedOwner = Boolean(userPhone === BOT_OWNER_NUMBER && key.fromMe);
 
     // Execute state machine directly in-process
     const chatResult = await handleWhatsAppChat({

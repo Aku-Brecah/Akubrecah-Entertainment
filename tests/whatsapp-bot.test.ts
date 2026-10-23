@@ -193,6 +193,38 @@ describe('Taxpayer fulfillment & payment phone prompt (lib/whatsapp/fulfillment.
     expect(reply).toContain('SAME');
     expect(reply).toContain('KES 20.00');
   });
+
+  it('triggers STK push immediately when explicitPaymentPhone is supplied', async () => {
+    const { handleTaxpayerFoundFulfillment } = await import('@/lib/whatsapp/fulfillment');
+
+    let savedStep = '';
+    let savedExtra: Record<string, any> = {};
+
+    const mockSaveState = async (step: string, extra?: Record<string, any>) => {
+      savedStep = step;
+      savedExtra = extra || {};
+    };
+
+    const taxpayer = {
+      taxpayerName: 'JANE WANJIKU',
+      pin: 'A098765432B',
+      idNumber: '28374619',
+      taxpayerDetails: 'Active',
+    };
+
+    const reply = await handleTaxpayerFoundFulfillment({
+      userPhone: '254711223344',
+      taxpayer,
+      idOrPinInput: '28374619',
+      saveConversationState: mockSaveState,
+      explicitPaymentPhone: '0712345678',
+    });
+
+    expect(savedStep).toBe('AWAITING_PAYMENT');
+    expect(savedExtra.paymentPhone).toBe('254712345678');
+    expect(savedExtra.pin).toBe('A098765432B');
+    expect(reply).toContain('M-PESA PAYMENT PROMPT SENT');
+  });
 });
 
 describe('Admin command center & access isolation (lib/whatsapp/admin-commands.ts)', () => {

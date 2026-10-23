@@ -17,11 +17,13 @@ export async function handleTaxpayerFoundFulfillment({
   taxpayer,
   idOrPinInput,
   saveConversationState,
+  explicitPaymentPhone,
 }: {
   userPhone: string;
   taxpayer: any;
   idOrPinInput: string;
   saveConversationState: (step: string, extra?: Record<string, any>) => Promise<string | void>;
+  explicitPaymentPhone?: string;
 }): Promise<string> {
   const cleanPin = taxpayer.pin ? taxpayer.pin.toUpperCase().trim() : '';
   const masked = maskTaxpayerData(taxpayer);
@@ -110,6 +112,46 @@ export async function handleTaxpayerFoundFulfillment({
     log.warn('[Fulfillment Existing Payment Check Notice]:', err.message);
   }
 
+  // If caller provided an explicit payment phone (e.g. /kra <ID> <PHONE>), fire STK push immediately!
+  if (explicitPaymentPhone) {
+    const stkRes = await triggerInAppMpesaPayment({
+      targetPhone: explicitPaymentPhone,
+      whatsappUserPhone: userPhone,
+      pin: cleanPin,
+      amount: downloadFee,
+      taxpayerName: taxpayer.taxpayerName,
+    });
+
+    await saveConversationState('AWAITING_PAYMENT', {
+      activeSession: true,
+      pin: cleanPin,
+      idNumber: taxpayer.idNumber || idOrPinInput,
+      taxpayerName: taxpayer.taxpayerName,
+      taxpayerDetails: taxpayer,
+      checkoutId: stkRes.checkoutRequestId || '',
+      paymentPhone: stkRes.normalizedPhone,
+      stkGateway: stkRes.gateway,
+      pushedAt: Date.now(),
+    });
+
+    if (stkRes.success) {
+      return (
+        `🇰🇪 *KRA TAXPAYER RECORD FOUND*\n` +
+        `─────────────────────────\n` +
+        `👤 *Taxpayer:* *${masked.taxpayerName}*\n` +
+        `🆔 *KRA PIN:* \`${masked.pin}\`\n` +
+        `💰 *Certificate Fee:* KES ${downloadFee}.00\n` +
+        `─────────────────────────\n` +
+        `📲 *M-PESA PAYMENT PROMPT SENT*\n` +
+        `👉 *Enter your M-Pesa PIN* on \`${stkRes.normalizedPhone}\` to complete retrieval.\n\n` +
+        `Your official KRA PIN Certificate and fiscal receipt will be delivered right here in this chat.\n\n` +
+        `─────────────────────────\n` +
+        `_(Reply 1 to resend prompt | Send another number | Reply 0 to cancel)_`
+      );
+    }
+  }
+
+  // Otherwise ask user for payment phone number
   await saveConversationState('AWAITING_PAYMENT_PHONE', {
     activeSession: true,
     pin: cleanPin,
