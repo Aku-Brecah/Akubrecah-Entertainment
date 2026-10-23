@@ -1161,15 +1161,41 @@ export async function handleWhatsAppChat(params: {
         let targetPay = userPhone;
         const isSame = lowerText === 'same' || lowerText === 'this' || lowerText === 'here';
 
-        if (!isSame) {
+        if (isSame) {
+          const extractedSame = extractKenyanPhone(userPhone);
+          if (!extractedSame) {
+            replyText =
+              `⚠️ *Safaricom Number Required*\n` +
+              `─────────────────────────\n` +
+              `Your WhatsApp account is connected via a private link. Please reply with your 10-digit M-Pesa phone number to receive the prompt:\n\n` +
+              `👉 Example: *0712345678* or *0112345678*\n\n` +
+              `─────────────────────────\n` +
+              `_(Reply *0* to cancel)_`;
+
+            let sendResult = null;
+            if (sendDirect) {
+              sendResult = await sendEvolutionTextMessage(userPhone, replyText, instanceName);
+            }
+            return {
+              success: true,
+              userPhone,
+              step: currentStep,
+              reply: replyText,
+              metadata,
+              sendResult,
+            };
+          }
+          targetPay = extractedSame;
+        } else {
           const extracted = extractKenyanPhone(incomingText);
           if (!extracted) {
+            const display = formatDisplayPhone(userPhone);
             replyText =
               `⚠️ *Invalid Phone Number*\n` +
               `─────────────────────────\n` +
               `Please reply with a valid 10-digit Kenyan Safaricom phone number to receive the payment prompt:\n\n` +
               `👉 Example: *0712345678* or *0112345678*\n` +
-              `👉 Or reply *SAME* to use this WhatsApp number (\`${formatDisplayPhone(userPhone)}\`)\n\n` +
+              (display ? `👉 Or reply *SAME* to use this WhatsApp number (\`${display}\`)\n\n` : `\n`) +
               `─────────────────────────\n` +
               `_(Reply *0* to cancel)_`;
 

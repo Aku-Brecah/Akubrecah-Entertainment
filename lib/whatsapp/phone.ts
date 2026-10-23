@@ -14,8 +14,12 @@ export function extractKenyanPhone(text: string): string | null {
 
 export function formatDisplayPhone(phone: string): string {
   if (!phone) return '';
-  if (phone.startsWith('254') && phone.length === 12) {
-    return '0' + phone.substring(3);
+  const cleaned = phone.replace(/[\s\-\+\(\)]/g, '').replace(/@.*$/, '');
+  if (/^254[71]\d{8}$/.test(cleaned)) {
+    return '0' + cleaned.substring(3);
   }
-  return phone;
+  if (/^0[71]\d{8}$/.test(cleaned)) {
+    return cleaned;
+  }
+  return '';
 }

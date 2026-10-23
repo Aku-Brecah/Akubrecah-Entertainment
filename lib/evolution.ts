@@ -72,8 +72,16 @@ export function sanitizeWhatsAppPhone(phone: string): string {
  * preserves the '@lid' suffix so Evolution handles it via LID routing instead of failing.
  */
 export function getEvolutionDestinationNumber(phone: string): string {
-  const sanitized = sanitizeWhatsAppPhone(phone);
-  if (phone.includes('@lid') && !phone.includes('@s.whatsapp.net') && sanitized.length > 12) {
+  const str = String(phone || '').trim();
+  if (str.includes('@lid')) {
+    return str;
+  }
+  if (str.includes('@s.whatsapp.net')) {
+    return sanitizeWhatsAppPhone(str);
+  }
+  const sanitized = sanitizeWhatsAppPhone(str);
+  // Any 14-20 digit number or string originally containing @lid is a WhatsApp LID (Linked Identity)
+  if (str.includes('@lid') || /^\d{14,20}$/.test(sanitized)) {
     return `${sanitized}@lid`;
   }
   return sanitized;

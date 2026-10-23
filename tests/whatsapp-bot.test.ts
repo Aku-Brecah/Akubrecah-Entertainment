@@ -147,12 +147,23 @@ describe('Evolution API phone & LID destination normalization (lib/evolution.ts)
     expect(sanitizeWhatsAppPhone('168646622089229@lid')).toBe('168646622089229');
     expect(getEvolutionDestinationNumber('254791497858')).toBe('254791497858');
     expect(getEvolutionDestinationNumber('168646622089229@lid')).toBe('168646622089229@lid');
+    expect(getEvolutionDestinationNumber('168646622089229')).toBe('168646622089229@lid');
   });
 
-  it('recognizes invoice and renew as valid allowlisted commands', () => {
+  it('recognizes invoice and renew as valid allowlisted commands and handles spaced prefixes', () => {
     expect(parseWhatsAppCommand('/invoice').isAllowlisted).toBe(true);
     expect(parseWhatsAppCommand('/renew').isAllowlisted).toBe(true);
     expect(parseWhatsAppCommand('!invoices').isAllowlisted).toBe(true);
+    expect(parseWhatsAppCommand('. Kra').cleanCmdWord).toBe('kra');
+    expect(parseWhatsAppCommand('. Kra').cleanCmdArgs).toBe('');
+    expect(parseWhatsAppCommand('.kra 12345678').cleanCmdArgs).toBe('12345678');
+  });
+
+  it('formatDisplayPhone only formats valid Kenyan mobiles and returns empty string for LIDs', async () => {
+    const { formatDisplayPhone } = await import('@/lib/whatsapp/phone');
+    expect(formatDisplayPhone('254791497858')).toBe('0791497858');
+    expect(formatDisplayPhone('168646622089229')).toBe('');
+    expect(formatDisplayPhone('168646622089229@lid')).toBe('');
   });
 });
 

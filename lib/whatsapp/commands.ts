@@ -51,11 +51,11 @@ export function parseWhatsAppCommand(text: string): {
   const trimmedInput = String(text ?? '').trim();
   const hasCommandPrefix =
     trimmedInput.startsWith('/') || trimmedInput.startsWith('!') || trimmedInput.startsWith('.');
-  const cleanCmdText = trimmedInput.replace(/^[!\/.]/, '').trim().toLowerCase();
-  const cleanCmdWord = cleanCmdText.split(/\s+/)[0] || '';
-  const cleanCmdArgs = trimmedInput.includes(' ')
-    ? trimmedInput.substring(trimmedInput.indexOf(' ') + 1).trim()
-    : '';
+  const withoutPrefix = trimmedInput.replace(/^[!\/.]\s*/, '');
+  const parts = withoutPrefix.split(/\s+/);
+  const cleanCmdWord = (parts[0] || '').toLowerCase();
+  const cleanCmdArgs = parts.slice(1).join(' ').trim();
+  const cleanCmdText = withoutPrefix.toLowerCase();
   const isAllowlisted = hasCommandPrefix && ALLOWLISTED_SLASH_COMMANDS.has(cleanCmdWord);
   return { trimmedInput, hasCommandPrefix, cleanCmdText, cleanCmdWord, cleanCmdArgs, isAllowlisted };
 }
