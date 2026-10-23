@@ -56,18 +56,38 @@ describe('WhatsApp bot command parsing (lib/whatsapp/commands.ts)', () => {
     expect(parsed.cleanCmdText).toBe('kra');
     expect(parsed.isAllowlisted).toBe(true);
   });
+
+  it('casual inbound messages do not qualify as commands and keep the bot idle', () => {
+    const casualMessages = [
+      'hi',
+      'hello',
+      'habari',
+      'hey there',
+      'mambo vipi',
+      'can you help me with something else',
+      'good morning',
+      'how much is it',
+      'ok thanks',
+    ];
+
+    for (const msg of casualMessages) {
+      const parsed = parseWhatsAppCommand(msg);
+      expect(parsed.hasCommandPrefix).toBe(false);
+      expect(parsed.isAllowlisted).toBe(false);
+    }
+  });
 });
 
 describe('WhatsApp session timeout contract', () => {
-  it('enforces the strict 5-minute inactivity timeout in milliseconds', () => {
+  it('enforces the strict 7-minute inactivity timeout in milliseconds', () => {
     // Imported constant — the route must use this same value, not a local redefinition
-    expect(SESSION_TIMEOUT_MS).toBe(5 * 60 * 1000);
-    expect(SESSION_TIMEOUT_MS).toBe(300_000);
+    expect(SESSION_TIMEOUT_MS).toBe(7 * 60 * 1000);
+    expect(SESSION_TIMEOUT_MS).toBe(420_000);
   });
 
-  it('a reply exactly 1s past the timeout is expired, 4 min later is not', () => {
+  it('a reply exactly 1s past the 7-minute timeout is expired, 6 min later is not', () => {
     const start = 1_000_000;
-    expect(start + 4 * 60 * 1000 - start < SESSION_TIMEOUT_MS).toBe(true); // still valid
+    expect(start + 6 * 60 * 1000 - start < SESSION_TIMEOUT_MS).toBe(true); // still valid
     expect(start + SESSION_TIMEOUT_MS + 1000 - start >= SESSION_TIMEOUT_MS).toBe(true); // expired
   });
 });

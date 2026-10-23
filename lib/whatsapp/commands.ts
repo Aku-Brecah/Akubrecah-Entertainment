@@ -37,8 +37,8 @@ export const ALLOWLISTED_SLASH_COMMANDS = new Set([
 /** Slash/bang/dot command prefixes the bot treats as explicit commands. */
 export const COMMAND_PREFIXES = ['/', '!', '.'];
 
-/** Strict inactivity timeout — enforced by the chat state machine (5 minutes). */
-export const SESSION_TIMEOUT_MS = 5 * 60 * 1000;
+/** Strict inactivity timeout — enforced by the chat state machine (7 minutes). */
+export const SESSION_TIMEOUT_MS = 7 * 60 * 1000;
 
 export function parseWhatsAppCommand(text: string): {
   trimmedInput: string;

@@ -204,13 +204,6 @@ export async function POST(req: NextRequest) {
 
     const instanceName = String(payload.instance || data.instance || '').trim() || undefined;
 
-    // Mark message as read (blue ticks) - preserve original remoteJid if LID for thread matching
-    await markEvolutionMessageRead({
-      remoteJid: rawRemoteJid || `${userPhone}@s.whatsapp.net`,
-      messageId: key.id,
-      instanceName,
-    });
-
     // Owner identity derives ONLY from the resolved phone number — never from
     // the client-supplied `key.fromMe` flag alone. An attacker who reaches
     // this endpoint must not be able to promote themselves to Super Admin by
@@ -235,6 +228,16 @@ export async function POST(req: NextRequest) {
     if ((chatResult as any)?.isDuplicate) {
       log.info(`[WhatsApp Webhook] Duplicate message ${messageId} already handled.`);
       return NextResponse.json({ success: true, message: 'Duplicate message already handled' });
+    }
+
+    // Mark message as read (blue ticks) ONLY when the bot actively handled or responded to the message.
+    // When the bot remains idle (e.g. casual inbound text with no command trigger), do NOT mark as read.
+    if ((chatResult as any)?.shouldReply !== false && (chatResult as any)?.reply) {
+      await markEvolutionMessageRead({
+        remoteJid: rawRemoteJid || `${userPhone}@s.whatsapp.net`,
+        messageId: key.id,
+        instanceName,
+      });
     }
 
     const pendingCheckoutId = (chatResult as any)?.metadata?.checkoutId;

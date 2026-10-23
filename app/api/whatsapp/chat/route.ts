@@ -27,7 +27,7 @@ import { extractKenyanPhone, formatDisplayPhone } from '@/lib/whatsapp/phone';
 import { triggerInAppMpesaPayment, triggerCyberCafePayment, createPaystackLink } from '@/lib/whatsapp/payments';
 import { handleAdminBotCommand } from '@/lib/whatsapp/admin-commands';
 import { handleTaxpayerFoundFulfillment } from '@/lib/whatsapp/fulfillment';
-import { parseWhatsAppCommand } from '@/lib/whatsapp/commands';
+import { parseWhatsAppCommand, SESSION_TIMEOUT_MS } from '@/lib/whatsapp/commands';
 
 export const maxDuration = 60;
 
@@ -107,7 +107,7 @@ export async function handleWhatsAppChat(params: {
     }
 
     const lastActiveAt = Number(metadata.lastActiveAt || (conversation.updated_at ? new Date(conversation.updated_at).getTime() : 0));
-    const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // Strict 5-minute inactivity timeout (TTL)
+    // Strict 7-minute inactivity timeout (TTL) from lib/whatsapp/commands
     const isSessionExpired = lastActiveAt > 0 && (Date.now() - lastActiveAt) >= SESSION_TIMEOUT_MS;
 
     let currentStep = metadata.step || 'IDLE';
@@ -138,7 +138,7 @@ export async function handleWhatsAppChat(params: {
       const expiredReply =
         `⏱️ *Session Expired*\n` +
         `─────────────────────────\n` +
-        `Your previous session timed out after 5 minutes of inactivity for your privacy.\n\n` +
+        `Your previous session timed out after 7 minutes of inactivity for your privacy.\n\n` +
         `To start again, please send a supported command:\n` +
         `• */kra* - KRA PIN retrieval & certificate\n` +
         `• */cyber* - Cyber Cafe monthly subscription (KES 500)\n` +
@@ -218,15 +218,15 @@ export async function handleWhatsAppChat(params: {
     // Direct National ID or KRA PIN detection (e.g. 11530093 or A012345678Z)
     const isDirectPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(trimmedInput);
     const isDirectId = /^\d{6,9}$/.test(trimmedInput);
-    const greetingWords = ['hi', 'hello', 'habari', 'hey', 'mambo', 'jambo', 'greetings', 'niaje', 'sasa', 'morning', 'afternoon', 'evening'];
-    const isGreeting = greetingWords.includes(cleanCmdWord) || greetingWords.some((w) => lowerText.startsWith(w));
-    const isStandaloneHelp = ['help', 'menu', 'start', 'commands', 'assist', 'huduma'].includes(cleanCmdWord) || lowerText.startsWith('help');
+    const isStandaloneHelp =
+      ['help', 'menu', 'start', 'commands', 'assist', 'huduma'].includes(cleanCmdWord) ||
+      lowerText === 'help' ||
+      lowerText === 'menu' ||
+      lowerText === 'start';
     const isStandaloneKra =
       cleanCmdWord === 'kra' ||
       cleanCmdWord === 'pin' ||
-      cleanCmdWord === 'certificate' ||
-      lowerText.includes('kra') ||
-      lowerText.includes('certificate');
+      cleanCmdWord === 'certificate';
     const isStandaloneCyber = ['cyber', 'subscribe', 'package'].includes(cleanCmdWord);
     const isStandaloneStatus = ['status', 'days', 'sub'].includes(cleanCmdWord);
 
@@ -251,7 +251,6 @@ export async function handleWhatsAppChat(params: {
       hasCommandPrefix ||
       isDirectPin ||
       isDirectId ||
-      isGreeting ||
       isStandaloneHelp ||
       isStandaloneKra ||
       isStandaloneCyber ||
@@ -259,37 +258,17 @@ export async function handleWhatsAppChat(params: {
       isCancelRequest ||
       isPaymentRecheckTrigger;
 
-    // When not in an active session and no specific command was matched, guide general users with allowed commands
+    // When customer sends a message while the bot is idle, the bot remains completely silent & idle
+    // until it is explicitly triggered with supported commands (/kra, /cyber, /status, /help, /cancel, direct PIN/ID).
     if (!isSessionActive && !isRecognizedIntent) {
-      const welcomeMenu =
-        `🇰🇪 *AKUBRECAH KRA SELF-SERVICE PORTAL*\n` +
-        `─────────────────────────\n` +
-        `Welcome! Retrieve your official KRA PIN Certificate or manage your Cyber Cafe package.\n\n` +
-        `👉 *How to Retrieve Certificate:*\n` +
-        `Send your *National ID Number* (6–9 digits, e.g. *11530093*) or *KRA PIN* (e.g. *A012345678Z*) directly in this chat.\n\n` +
-        `💰 *Certificate Fee:* Strictly KES 20.00\n\n` +
-        `📋 *Allowed Customer Commands:*\n` +
-        `• */kra* — Start Certificate retrieval\n` +
-        `• */cyber* — Cyber Cafe 30-Day Package (KES 500/Month unlimited)\n` +
-        `• */status* — Check subscription status\n` +
-        `• */invoice* — Download official tax invoice PDF\n` +
-        `• */help* — Customer instructions & support\n` +
-        `• */cancel* — Cancel active session (or reply *0*)\n\n` +
-        `🌐 *Self-Service Web Portal:*\n` +
-        `🔗 https://kra.akubrecah.com\n` +
-        `─────────────────────────`;
-
-      let sendResult = null;
-      if (sendDirect) {
-        sendResult = await sendEvolutionTextMessage(userPhone, welcomeMenu, instanceName);
-      }
       return {
         success: true,
         userPhone,
         step: 'IDLE',
-        reply: welcomeMenu,
+        reply: '',
+        shouldReply: false,
         metadata,
-        sendResult,
+        sendResult: null,
       };
     }
 
@@ -298,7 +277,6 @@ export async function handleWhatsAppChat(params: {
       (!isSessionActive && (
         isDirectPin ||
         isDirectId ||
-        isGreeting ||
         isStandaloneHelp ||
         isStandaloneKra ||
         isStandaloneCyber ||
@@ -497,7 +475,7 @@ export async function handleWhatsAppChat(params: {
         if (isDirectPin || isDirectId) {
           cmdWord = 'kra';
           cmdArgs = trimmedInput;
-        } else if (isGreeting || isStandaloneHelp) {
+        } else if (isStandaloneHelp) {
           cmdWord = 'help';
           cmdArgs = '';
         } else if (isStandaloneKra) {
@@ -1465,6 +1443,7 @@ export async function handleWhatsAppChat(params: {
       userPhone,
       step: nextStep,
       reply: replyText,
+      shouldReply: Boolean(replyText),
       metadata,
       sendResult,
     };
