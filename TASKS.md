@@ -279,3 +279,12 @@
   - [x] `.env.example` documents the requirement; `deploy/docker-compose.yml` now passes `SUPER_ADMIN EMAIL`/`NEXT_PUBLIC_SUPER_ADMIN_EMAIL` (server env) and as a Docker **build arg** (client components resolve NEXT_PUBLIC at build time); `Dockerfile` ARG/ENV added.
   - [x] deploy compose also exports `ADMIN_BOT_PIN`, `N8N_DISPATCH_SECRET`, `MPESA_CALLBACK_TOKEN`, `INTERNAL_PROXY_SECRET` for the split-secret rollout.
   - [x] Verified: tsc clean, 90/90 tests, lint 0 errors, production build pass.
+
+## Feature 14: WhatsApp Bot Inbound & Outbound Pipeline Restoration
+- [x] **Task 53: Deduplication Self-Collision & WhatsApp LID Resolution Fix**
+  - [x] **Root Cause 1 (Internal Deduplication Deadlock):** `app/api/whatsapp/webhook/route.ts` checked `isDuplicateWhatsAppMessage(messageId)` and stored it in the TTL cache, and then passed that same `messageId` to `handleWhatsAppChat` (`app/api/whatsapp/chat/route.ts`), which checked `isDuplicateWhatsAppMessage` again. Every inbound webhook was immediately discarded as a duplicate of itself, causing the bot to remain completely silent.
+  - [x] **Root Cause 2 (WhatsApp LID vs Phone Resolution):** WhatsApp multi-device protocols send `key.remoteJid` with `@lid` (local identity), while the actual sender phone is delivered in `payload.sender` (`254791497858@s.whatsapp.net`). Previous logic stripped `@s.whatsapp.net` but left `@lid`, which caused Evolution API to reject outbound replies with HTTP 400 Bad Request (`exists: false`).
+  - [x] **Next.js Webhook Fixed:** Removed premature deduplication check from `app/api/whatsapp/webhook/route.ts`; added fallback to `payload.sender`/`data.sender`/`key.participant` before `remoteJid`; added `(chatResult as any)?.isDuplicate` handling; added `getEvolutionDestinationNumber` in `lib/evolution.ts`.
+  - [x] **n8n Workflow `mGDFTPrBjWOI5wvS` Fixed:** Updated node `Extract WhatsApp Message` to resolve real sender phone from `body.sender`; updated `Validate Chat Reply` and `Mark Message Read` to pass `remoteJid` for read receipts. Published and verified live.
+  - [x] **Live Testing Proved:** Sent simulated inbound WhatsApp message payload with LID; n8n workflow execution `16739` succeeded end-to-end: extracted phone `254791497858`, routed to `/api/whatsapp/chat`, validated response, sent WhatsApp reply via Evolution API (`status: PENDING`), and marked message read (`status: success`).
+  - [x] Verified: 91/91 Vitest tests passing, TypeScript typecheck passes with 0 errors.
