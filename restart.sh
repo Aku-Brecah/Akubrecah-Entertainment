@@ -20,8 +20,8 @@ fuser -k 8085/tcp 2>/dev/null || true
 echo "3. Pulling latest code from origin/main..."
 git pull origin main 2>/dev/null || echo "⚠️ Git pull skipped or unauthenticated (continuing with synced files)..."
 
-echo "4. Starting clean production stack..."
-docker compose up -d
+echo "4. Starting clean production stack (rebuilding with synced code)..."
+docker compose up -d --build
 
 echo "5. Verifying running containers..."
 sleep 4
