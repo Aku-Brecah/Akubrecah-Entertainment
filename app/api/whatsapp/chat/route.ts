@@ -235,17 +235,22 @@ export async function handleWhatsAppChat(params: {
       ['cancel', 'exit', 'stop', 'reset', 'abort', '0'].includes(cleanCmdWord) ||
       ['cancel', 'exit', 'stop', 'reset', 'abort', '0'].includes(lowerText);
 
+    const isMpesaReceipt =
+      /^[A-Z]{2}[A-Z0-9]{8}$/i.test(trimmedInput) &&
+      !isDirectPin &&
+      !/^(07|01|254|\d)/.test(trimmedInput);
+
     // Universal Payment Recheck Trigger: "paid", "nimepay", "confirm", "recheck", or pasting M-Pesa receipt / Paystack ref
     const isPaymentRecheckTrigger =
       ['paid', 'nimepay', 'nimelipa', 'confirm', 'recheck', 'verify', 'payment', 'lipa', 'done'].includes(cleanCmdWord) ||
       ['paid', 'nimepay', 'nimelipa', 'confirm', 'recheck', 'verify', 'payment', 'lipa', 'done'].includes(lowerText) ||
-      lowerText.startsWith('paid') ||
-      lowerText.startsWith('nimepay') ||
-      lowerText.startsWith('recheck') ||
-      cleanCmdText.startsWith('paid') ||
-      cleanCmdText.startsWith('recheck') ||
+      lowerText.startsWith('paid ') ||
+      lowerText.startsWith('nimepay ') ||
+      lowerText.startsWith('recheck ') ||
+      cleanCmdText.startsWith('paid ') ||
+      cleanCmdText.startsWith('recheck ') ||
       /^PSTK-[A-Z0-9\-]+$/i.test(trimmedInput) ||
-      /^[A-Z0-9]{10}$/.test(trimmedInput);
+      isMpesaReceipt;
 
     const isRecognizedIntent =
       hasCommandPrefix ||
@@ -314,13 +319,26 @@ export async function handleWhatsAppChat(params: {
       };
     }
 
-    if (isPaymentRecheckTrigger && currentStep !== 'AWAITING_PAYMENT' && currentStep !== 'CYBER_AWAITING_PAYMENT') {
+    const isPhoneInputStep =
+      currentStep === 'AWAITING_PAYMENT_PHONE' ||
+      currentStep === 'AWAITING_PHONE_NUMBER' ||
+      currentStep === 'CYBER_REG_PHONE' ||
+      currentStep === 'CYBER_REG_PAYMENT_PHONE';
+
+    if (
+      isPaymentRecheckTrigger &&
+      !isPhoneInputStep &&
+      currentStep !== 'AWAITING_PAYMENT' &&
+      currentStep !== 'CYBER_AWAITING_PAYMENT'
+    ) {
       const targetArg = cleanCmdArgs || trimmedInput.split(/\s+/).slice(1).join(' ').trim();
       const extractedPhone = extractKenyanPhone(targetArg);
       const queryPhone = extractedPhone || metadata.paymentPhone || userPhone;
 
       const isPinArg = /^[A-Z]\d{9}[A-Z]$/i.test(targetArg);
-      const isRefArg = targetArg.startsWith('PSTK-') || /^[A-Z0-9]{10}$/.test(targetArg);
+      const isRefArg =
+        targetArg.startsWith('PSTK-') ||
+        (/^[A-Z]{2}[A-Z0-9]{8}$/i.test(targetArg) && !isDirectPin && !/^(07|01|254|\d)/.test(targetArg));
       const queryPin = (isPinArg ? targetArg.toUpperCase() : null) || metadata.pin;
       const queryRef = (isRefArg ? targetArg : null) || metadata.checkoutId;
 
