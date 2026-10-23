@@ -345,8 +345,7 @@ function parsePinCheckerHtml(html: string): PinCheckerResult {
   log.info(
     '[retrieve][parse] Parsed result summary:',
     JSON.stringify({
-      status: result.status,
-      name: result.name || result.taxpayerName || '',
+      name: result.name || '',
       station: result.station,
       county: result.county,
       town: result.town,

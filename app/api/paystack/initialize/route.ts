@@ -4,6 +4,7 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { initializePaystackTransaction } from '@/lib/paystack';
 import { getOrCreateDbUser, isAdminUser } from '@/lib/subscription';
 import { tryResolveKraPin } from '@/lib/masking';
+import { paystackInitializeSchema, firstIssueMessage } from '@/lib/validation/schemas';
 
 export const maxDuration = 15;
 
@@ -31,7 +32,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { type = 'pay_per_download', pin: incomingPin, callbackUrl } = body;
+    const parsedInit = paystackInitializeSchema.safeParse(body);
+    if (!parsedInit.success) {
+      return NextResponse.json(
+        { success: false, error: `Invalid request — ${firstIssueMessage(parsedInit.error)}` },
+        { status: 400 }
+      );
+    }
+    const { type = 'pay_per_download', pin: incomingPin, callbackUrl } = parsedInit.data;
     // Accept plaintext PINs or opaque sealed blobs from the retrieval flow
     // (kraseal1:... → resolved server-side; never stored/forwarded as ciphertext).
     const pin = tryResolveKraPin(incomingPin) || (incomingPin ? String(incomingPin).toUpperCase().trim() : '');

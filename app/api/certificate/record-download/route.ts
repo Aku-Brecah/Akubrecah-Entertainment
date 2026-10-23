@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
 import { getOrCreateDbUser, isAdminUser } from '@/lib/subscription';
+import { recordDownloadSchema, firstIssueMessage } from '@/lib/validation/schemas';
 
 export const maxDuration = 10;
 
@@ -29,7 +30,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { pin, checkoutId, subscriptionId, downloadType } = body;
+    const parsed = recordDownloadSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { success: false, error: `Invalid request — ${firstIssueMessage(parsed.error)}` },
+        { status: 400 }
+      );
+    }
+    const { pin, checkoutId, subscriptionId, downloadType } = parsed.data;
 
     if (!pin || !downloadType) {
       return NextResponse.json({ success: false, error: 'pin and downloadType are required' }, { status: 400 });

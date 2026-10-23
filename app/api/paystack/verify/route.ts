@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import prisma, { createSystemLog } from '@/lib/prisma';
 import { verifyPaystackTransaction } from '@/lib/paystack';
 import { getOrCreateDbUser } from '@/lib/subscription';
+import { paystackVerifySchema, firstIssueMessage } from '@/lib/validation/schemas';
 
 export const maxDuration = 15;
 
@@ -18,14 +19,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { reference } = body;
-
-    if (!reference || typeof reference !== 'string') {
+    const parsedVerify = paystackVerifySchema.safeParse(body);
+    if (!parsedVerify.success) {
       return NextResponse.json(
-        { success: false, error: 'Payment reference is required.' },
+        { success: false, error: `Invalid request — ${firstIssueMessage(parsedVerify.error)}` },
         { status: 400 }
       );
     }
+    const { reference } = parsedVerify.data;
 
     // Verify with Paystack API
     const verification = await verifyPaystackTransaction(reference);

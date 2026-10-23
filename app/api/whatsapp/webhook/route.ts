@@ -2,6 +2,7 @@ import { log } from '@/lib/monitoring/logger';
 import { safeCompare } from '@/lib/admin-auth';
 import { NextRequest, NextResponse, after } from 'next/server';
 import { sanitizeWhatsAppPhone, markEvolutionMessageRead } from '@/lib/evolution';
+import { maskPhone } from '@/lib/masking';
 import { handleWhatsAppChat } from '@/app/api/whatsapp/chat/route';
 import { isDuplicateWhatsAppMessage } from '@/lib/whatsapp-dedup';
 
@@ -179,7 +180,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Could not resolve sender phone' }, { status: 400 });
     }
 
-    log.info(`[WhatsApp Webhook Inbound] From: ${userPhone} (fromMe: ${Boolean(key.fromMe)}), Text: "${incomingText}"`);
+    // KDPA: neither the phone nor the message body (users send National IDs,
+    // KRA PINs, payment references) goes into logs verbatim. Log a masked
+    // phone, the message length, and the invoking command token only.
+    const commandToken = incomingText.trim().split(/\s+/)[0] || '';
+    log.info(
+      `[WhatsApp Webhook Inbound] From: ${maskPhone(userPhone)} (fromMe: ${Boolean(key.fromMe)}), Len: ${incomingText.length}, Cmd: ${commandToken.slice(0, 16)}`
+    );
 
     const instanceName = String(payload.instance || data.instance || '').trim() || undefined;
 

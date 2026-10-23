@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { chargePaystackMpesa, formatPaystackKenyaPhone } from '@/lib/paystack';
 import { tryResolveKraPin } from '@/lib/masking';
+import { mpesaStkPushSchema, firstIssueMessage } from '@/lib/validation/schemas';
 
 export const maxDuration = 30;
 
@@ -14,14 +15,14 @@ export { normalizePhoneNumber, dispatchMpesaStkPush };
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { phone, reference, description } = body;
-
-    if (!phone || !reference) {
+    const parsedPush = mpesaStkPushSchema.safeParse(body);
+    if (!parsedPush.success) {
       return NextResponse.json(
-        { success: false, error: 'Phone number and reference are required' },
+        { success: false, error: `Invalid request — ${firstIssueMessage(parsedPush.error)}` },
         { status: 400 }
       );
     }
+    const { phone, reference, description } = parsedPush.data;
 
     // Official KRA Certificate download fee is strictly KES 20.
     // Enforce server-side pricing to prevent client-side price tampering.
