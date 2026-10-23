@@ -7,6 +7,15 @@ vi.mock('next/font/google', () => ({
   }),
 }));
 
+vi.mock('@/lib/cms', () => ({
+  getPublishedArticles: vi.fn().mockResolvedValue([
+    { slug: 'sample-article', updatedAt: new Date() }
+  ]),
+  getPublishedProjects: vi.fn().mockResolvedValue([
+    { slug: 'sample-project', updatedAt: new Date() }
+  ]),
+}));
+
 import robots from '@/app/robots';
 import sitemap from '@/app/sitemap';
 import { submitToIndexNow } from '@/lib/seo/indexnow';
