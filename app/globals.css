@@ -4,6 +4,7 @@
 
 /* KRA Red Design System - GovTech Crisp Prestige Theme */
 :root {
+  --font-inter: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   /* Clean GovTech Crisp Tokens Light Mode */
   --secondary-fixed-dim: #cbd5e1;
   --on-surface-variant: #334155;

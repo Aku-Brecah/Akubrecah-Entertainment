@@ -1,4 +1,3 @@
-import { Inter } from 'next/font/google'
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from 'next-themes'
 import { ClerkProvider } from '@clerk/nextjs'
@@ -12,12 +11,6 @@ import "./globals.css"
 
 import { Metadata } from 'next';
 import { SiteSchema } from '@/components/seo/site-schema';
-
-const inter = Inter({ 
-  subsets: ["latin"], 
-  variable: "--font-inter",
-  display: "swap",
-})
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://akubrecah.com';
 
@@ -120,13 +113,15 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <SiteSchema />
-        {/* Preconnect to external resources */}
+        {/* External Resources & Fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://clerk.akubrecah.com" />
         <link rel="dns-prefetch" href="https://clerk.akubrecah.com" />
       </head>
-      <body className={`${inter.variable} font-sans`} data-theme="default" suppressHydrationWarning={true}>
+      <body className="font-sans" data-theme="default" suppressHydrationWarning={true}>
         <ClerkProvider 
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ"}
           signInUrl="/sign-in"
