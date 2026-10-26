@@ -359,5 +359,11 @@
     - Integrated live animated STK push prompt status with countdown timer (`60s`), active 2.5s polling via `/api/paystack/verify`, manual "Check Status" fallback, and retry options.
     - Automated instant certificate generation and client-side download (`executeDownload`) the moment Paystack confirms PIN authorization, keeping the user on the same page.
     - Purged all external popup/tab redirect links (`paystackAuthUrl`, `openPaystackCheckout`, `window.location.href`).
-  - [x] **Full Quality Verification:** Ran `npm run typecheck` (passed with 0 errors), `npm test` (all 14 test suites, 98/98 tests passing), and `npm run lint` (passed with 0 errors).
-
+- [x] **Task 63: WhatsApp Bot Strict Command Prefix Trigger & Dormant-by-Default Guard**
+  - [x] **Pure Validation Module (`lib/whatsapp/trigger-validator.ts`):** Separated trigger validation from execution. Implemented `validateWhatsAppTrigger` enforcing Unicode-aware whitespace trimming, requiring message start with strictly `.` or `/` prefixes, rejecting `!` prefixes, ignoring prefix-only and middle-embedded prefixes, rejecting group messages (`@g.us`), and blocking outbound messages (`fromMe: true` to contacts) and bot-authored echo messages.
+  - [x] **Bot Outbound & Echo Loop Prevention (`lib/whatsapp-dedup.ts`, `lib/evolution.ts`):** Recorded all bot-sent message IDs in a dedicated cache via `recordBotSentMessageId` and checked incoming webhooks with `isBotSentMessage` to prevent recursive activation loops.
+  - [x] **Webhook Early-Stage Guard (`app/api/whatsapp/webhook/route.ts`):** Enforced `validateWhatsAppTrigger` at the earliest entry point. Messages lacking `.` or `/` immediately return 200 OK (`Ignored: <reason>`), bypassing database session queries, read receipts, and state machines.
+  - [x] **Chat Route Dormancy (`app/api/whatsapp/chat/route.ts`):** Removed un-prefixed keyword and ID/PIN fallback activations. Messages without `.` or `/` return immediately without database session creation or AI calls. Unsupported prefixed commands safely return unknown-command guidance without invoking AI.
+  - [x] **Admin Command Strictness (`lib/whatsapp/admin-commands.ts`):** Enforced `parseWhatsAppCommand` requiring explicit `.` or `/` prefix, eliminating un-prefixed PIN authentication.
+  - [x] **Comprehensive Automated Tests (`tests/whatsapp-bot.test.ts`):** Added 34 unit tests covering strict prefixes, Unicode trimming, dormancy on casual text, multiline prefixes, argument preservation, admin outbound filtering, echo prevention, and chat route dormancy.
+  - [x] **Quality Verification:** Passed all 14 test suites (111/111 tests green), TypeScript compilation passed (`npm run typecheck` exit 0), and ESLint passed with 0 errors (`npm run lint`).
