@@ -65,3 +65,14 @@ export const recordDownloadSchema = z.object({
 export const generateReceiptSchema = z.object({
   downloadId: z.string().uuid().optional(),
 });
+
+/** POST /api/paystack/charge-mpesa */
+export const paystackMpesaChargeSchema = z.object({
+  phone: z
+    .string()
+    .min(9)
+    .max(16)
+    .regex(/^[0-9+\s()-]+$/, 'Invalid phone number format'),
+  pin: pinField,
+  email: z.string().email().optional(),
+});
