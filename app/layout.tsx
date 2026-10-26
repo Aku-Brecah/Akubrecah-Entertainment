@@ -1,5 +1,5 @@
 import { Toaster } from 'react-hot-toast';
-import { ThemeProvider } from 'next-themes'
+import { ThemeProvider } from '@/components/theme-provider'
 import { ClerkProvider } from '@clerk/nextjs'
 
 import { TooltipProviderWrapper } from '@/components/providers/tooltip-provider'
@@ -123,7 +123,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans" data-theme="default" suppressHydrationWarning={true}>
         <ClerkProvider 
-          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ"}
+          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
           signInUrl="/sign-in"
           signUpUrl="/sign-up"
           taskUrls={{
