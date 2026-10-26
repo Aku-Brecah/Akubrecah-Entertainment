@@ -20,6 +20,9 @@ export default function AdminSettingsPage() {
     linkedinUrl: "https://linkedin.com/company/akubrecah",
     kraRetrievalPrice: "20",
     engineeringAvailability: "Open for New Projects",
+    googlePlaceId: "",
+    googleWriteReviewUrl: "",
+    googleMapsUrl: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -263,6 +266,55 @@ export default function AdminSettingsPage() {
                   name="linkedinUrl"
                   value={settings.linkedinUrl}
                   onChange={handleChange}
+                  className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-outline-variant text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Card: Google Reviews & Google Business Profile */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-surface-container border border-outline-variant space-y-4 shadow-soft">
+            <div className="flex items-center gap-2.5 text-primary border-b border-outline-variant/60 pb-3">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <h2 className="text-sm font-black uppercase tracking-wider text-on-surface">Live Google Reviews & Google Business</h2>
+            </div>
+            <p className="text-xs text-on-surface-variant">
+              The public website reviews section syndicates genuine reviews directly from Google Business Profile. Configure your Google Place ID or direct Google Maps links below.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="space-y-1.5">
+                <label className="font-bold text-on-surface">Google Place ID</label>
+                <input
+                  type="text"
+                  name="googlePlaceId"
+                  value={settings.googlePlaceId}
+                  onChange={handleChange}
+                  placeholder="e.g. ChIJN1t_tDeuEmsRUsoyG83frY4"
+                  className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-outline-variant text-on-surface font-mono focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-bold text-on-surface">Direct Google Review URL</label>
+                <input
+                  type="url"
+                  name="googleWriteReviewUrl"
+                  value={settings.googleWriteReviewUrl}
+                  onChange={handleChange}
+                  placeholder="https://search.google.com/local/writereview?placeid=..."
+                  className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-outline-variant text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="font-bold text-on-surface">Google Maps Listing URL</label>
+                <input
+                  type="url"
+                  name="googleMapsUrl"
+                  value={settings.googleMapsUrl}
+                  onChange={handleChange}
+                  placeholder="https://maps.google.com/?query=Akubrecah+Entertainment+Nairobi"
                   className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-outline-variant text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>

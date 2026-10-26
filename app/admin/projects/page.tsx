@@ -110,10 +110,20 @@ function AdminProjectsContent() {
       const url = "/api/admin/projects";
       const method = isUpdating ? "PUT" : "POST";
 
+      let liveUrl = editingProject.liveUrl || "";
+      if (editingProject.slug?.toLowerCase().includes("kra") && (!liveUrl || liveUrl.includes("vercel.app"))) {
+        liveUrl = "https://kra.akubrecah.com";
+      }
+
+      const payload = {
+        ...editingProject,
+        liveUrl,
+      };
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editingProject),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -501,7 +511,10 @@ function AdminProjectsContent() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-bold text-on-surface">Technologies (Comma separated)</label>
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-on-surface">Technologies & Capabilities</label>
+                  <span className="text-[10px] text-on-surface-variant font-mono">Internal libraries sanitized on public site</span>
+                </div>
                 <input
                   type="text"
                   value={editingProject.technologies ? editingProject.technologies.join(", ") : ""}
@@ -509,25 +522,31 @@ function AdminProjectsContent() {
                     const arr = e.target.value.split(",").map((t) => t.trim()).filter(Boolean);
                     setEditingProject((prev) => ({ ...prev, technologies: arr }));
                   }}
-                  placeholder="Next.js 15, PostgreSQL, Redis, Daraja M-Pesa"
+                  placeholder="e.g. GovTech Automation, Fiscal PDF Engine, High-Concurrency API"
                   className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-outline-variant text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="font-bold text-on-surface">Live URL</label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-on-surface">Live URL</label>
+                    <span className="text-[10px] text-emerald-600 font-mono">Use kra.akubrecah.com for KRA</span>
+                  </div>
                   <input
                     type="url"
                     value={editingProject.liveUrl || ""}
                     onChange={(e) => setEditingProject((prev) => ({ ...prev, liveUrl: e.target.value }))}
-                    placeholder="https://..."
+                    placeholder="https://kra.akubrecah.com"
                     className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-outline-variant text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-bold text-on-surface">GitHub URL</label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-on-surface">GitHub URL</label>
+                    <span className="text-[10px] text-on-surface-variant font-mono">Internal only (hidden publicly)</span>
+                  </div>
                   <input
                     type="url"
                     value={editingProject.githubUrl || ""}

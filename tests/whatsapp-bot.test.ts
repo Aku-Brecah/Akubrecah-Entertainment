@@ -179,15 +179,16 @@ describe('Taxpayer fulfillment & payment phone prompt (lib/whatsapp/fulfillment.
       savedExtra = extra || {};
     };
 
+    const testPin = `A99999991X`;
     const taxpayer = {
       taxpayerName: 'JOHN DOE KAMAU',
-      pin: 'A012345678Z',
+      pin: testPin,
       idNumber: '11530093',
       taxpayerDetails: 'Active',
     };
 
     const reply = await handleTaxpayerFoundFulfillment({
-      userPhone: '254712345678',
+      userPhone: '254799999991',
       taxpayer,
       idOrPinInput: '11530093',
       saveConversationState: mockSaveState,
@@ -195,12 +196,12 @@ describe('Taxpayer fulfillment & payment phone prompt (lib/whatsapp/fulfillment.
 
     // Proves conversation state was set to AWAITING_PAYMENT_PHONE
     expect(savedStep).toBe('AWAITING_PAYMENT_PHONE');
-    expect(savedExtra.pin).toBe('A012345678Z');
+    expect(savedExtra.pin).toBe(testPin);
     expect(savedExtra.fee).toBe(20);
 
     // Proves message asks user for payment phone number
     expect(reply).toContain('ENTER M-PESA PHONE NUMBER');
-    expect(reply).toContain('0712345678');
+    expect(reply).toContain('0799999991');
     expect(reply).toContain('SAME');
     expect(reply).toContain('KES 20.00');
   });
@@ -216,15 +217,16 @@ describe('Taxpayer fulfillment & payment phone prompt (lib/whatsapp/fulfillment.
       savedExtra = extra || {};
     };
 
+    const testPin2 = `A99999992Y`;
     const taxpayer = {
       taxpayerName: 'JANE WANJIKU',
-      pin: 'A098765432B',
+      pin: testPin2,
       idNumber: '28374619',
       taxpayerDetails: 'Active',
     };
 
     const reply = await handleTaxpayerFoundFulfillment({
-      userPhone: '254711223344',
+      userPhone: '254799999992',
       taxpayer,
       idOrPinInput: '28374619',
       saveConversationState: mockSaveState,
@@ -233,7 +235,7 @@ describe('Taxpayer fulfillment & payment phone prompt (lib/whatsapp/fulfillment.
 
     expect(savedStep).toBe('AWAITING_PAYMENT');
     expect(savedExtra.paymentPhone).toBe('254712345678');
-    expect(savedExtra.pin).toBe('A098765432B');
+    expect(savedExtra.pin).toBe(testPin2);
     expect(reply).toContain('M-PESA PAYMENT PROMPT SENT');
   });
 });

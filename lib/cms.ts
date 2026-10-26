@@ -16,6 +16,8 @@ function getFallbackArticles(): any[] {
   return [];
 }
 
+import { filterPublicTechnologies, cleanPublicLiveUrl } from '@/lib/tech-filter';
+
 const FALLBACK_FLAGSHIP_PROJECTS = [
   {
     id: 'proj-kra-portal',
@@ -27,8 +29,8 @@ const FALLBACK_FLAGSHIP_PROJECTS = [
     client: 'Kenya Revenue Taxpayers',
     featuredImage: '/akubrecah-logo.png',
     liveUrl: 'https://kra.akubrecah.com',
-    githubUrl: 'https://github.com/Akubrecah/akubrecah-kra-certificate-portal',
-    technologies: ['Next.js 16', 'TypeScript', 'Tailwind CSS', 'PDF-Lib', 'Paystack', 'M-Pesa Daraja', 'Prisma'],
+    githubUrl: null,
+    technologies: ['GovTech Compliance', 'Statutory Verification', 'Instant Mobile Billing', 'Thermal ETR Receipts'],
     problemStatement: 'Taxpayers face extensive queues, slow portals, and unsecure storage when retrieving essential tax compliance certificates and filing Nil returns.',
     solutionArchitecture: 'Decoupled in-memory processing engine streaming certificates directly from volatile Node.js RAM buffers with dual-channel STK push reconciliation.',
     measurableOutcomes: [
@@ -51,8 +53,8 @@ const FALLBACK_FLAGSHIP_PROJECTS = [
     client: 'Urban Mobility Operations',
     featuredImage: '/blog/tax-image-2.jpg',
     liveUrl: null,
-    githubUrl: 'https://github.com/Akubrecah/swiftboda-ride',
-    technologies: ['React Native', 'Expo SDK 54', 'WebSockets', 'TypeScript', 'Node.js', 'M-Pesa STK Push', 'Serply Maps'],
+    githubUrl: null,
+    technologies: ['Urban Mobility', 'Fleet Telemetry', 'Driver Instant Payouts', 'Safety PIN Security'],
     problemStatement: 'Urban motorcycle transport suffers from passenger misidentification, driver cash handling friction, and dropped dispatch requests in congested cell corridors.',
     solutionArchitecture: 'Unified triple-persona mobile binary, binary WebSocket telemetry broadcasts, cryptographic 4-digit PIN handshakes, and automated 85%/15% M-Pesa fare splits.',
     measurableOutcomes: [
@@ -74,8 +76,8 @@ const FALLBACK_FLAGSHIP_PROJECTS = [
     client: 'Media & Production Studios',
     featuredImage: 'https://raw.githubusercontent.com/Akubrecah/AutoChop/main/assets/thumbnail.jpg',
     liveUrl: null,
-    githubUrl: 'https://github.com/Akubrecah/AutoChop',
-    technologies: ['Python 3.11', 'FFmpeg 5.0+', 'faster-whisper', 'CTranslate2', 'Gradio Blocks', 'Claude API'],
+    githubUrl: null,
+    technologies: ['Video AI Processing', 'Sub-second Speech Engine', 'Automated Subtitling', 'Social Studio'],
     problemStatement: 'Manual video scrubbing, awkward pause removal, and word-level caption alignment consumes hours per video episode.',
     solutionArchitecture: 'Local-first INT8 quantized speech recognition paired with audio VAD thresholds and 50ms audio crossfade splices.',
     measurableOutcomes: [
@@ -97,8 +99,8 @@ const FALLBACK_FLAGSHIP_PROJECTS = [
     client: 'Taxpayers & Legal Professionals',
     featuredImage: '/akubrecah-logo.png',
     liveUrl: 'https://akubrecah.com',
-    githubUrl: 'https://github.com/Akubrecah/Akubrecah-Dev-Cave',
-    technologies: ['Next.js 16', 'WebAssembly', 'pdf-lib', 'Tesseract.js', 'Prisma', 'Tailwind CSS 4'],
+    githubUrl: null,
+    technologies: ['Document Intelligence', 'Client-Side In-Memory Processing', 'Zero-Cloud Privacy', 'Bank-Grade Compression'],
     problemStatement: 'Uploading sensitive contracts and tax documents to third-party PDF cloud converters introduces severe data privacy risks.',
     solutionArchitecture: 'Local-first WebAssembly document processing ensuring sensitive documents never leave client device memory.',
     measurableOutcomes: [
@@ -112,17 +114,29 @@ const FALLBACK_FLAGSHIP_PROJECTS = [
   }
 ];
 
+function sanitizeProjectForPublic(project: any) {
+  if (!project) return project;
+  return {
+    ...project,
+    githubUrl: null, // Never expose direct GitHub source code links to public website
+    liveUrl: cleanPublicLiveUrl(project.slug, project.liveUrl),
+    technologies: filterPublicTechnologies(project.technologies),
+  };
+}
+
 export async function getPublishedProjects() {
   try {
     const list = await prisma.project.findMany({
       where: { isPublished: true },
       orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
     });
-    if (Array.isArray(list) && list.length > 0) return list;
+    if (Array.isArray(list) && list.length > 0) {
+      return list.map(sanitizeProjectForPublic);
+    }
   } catch (error) {
     log.warn('[getPublishedProjects DB Notice - Using Flagship Fallback]:', (error as any)?.message);
   }
-  return FALLBACK_FLAGSHIP_PROJECTS;
+  return FALLBACK_FLAGSHIP_PROJECTS.map(sanitizeProjectForPublic);
 }
 
 export async function getProjectBySlug(slug: string) {
@@ -130,11 +144,12 @@ export async function getProjectBySlug(slug: string) {
     const project = await prisma.project.findUnique({
       where: { slug },
     });
-    if (project) return project;
+    if (project) return sanitizeProjectForPublic(project);
   } catch (error) {
     log.warn(`[getProjectBySlug DB Notice for ${slug} - Checking Flagship Fallback]`);
   }
-  return FALLBACK_FLAGSHIP_PROJECTS.find((p) => p.slug.toLowerCase() === slug.toLowerCase()) || null;
+  const fallback = FALLBACK_FLAGSHIP_PROJECTS.find((p) => p.slug.toLowerCase() === slug.toLowerCase());
+  return fallback ? sanitizeProjectForPublic(fallback) : null;
 }
 
 export async function getPublishedArticles() {

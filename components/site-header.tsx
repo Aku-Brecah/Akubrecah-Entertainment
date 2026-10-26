@@ -188,12 +188,6 @@ const navData: NavItem[] = [
     groups: null,
   },
   {
-    label: "Brand Book",
-    href: "/brand",
-    badge: "Official",
-    groups: null,
-  },
-  {
     label: "Contact",
     href: "/contact",
     groups: null,

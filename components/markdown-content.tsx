@@ -15,8 +15,14 @@ marked.setOptions({
 export function MarkdownContent({ content, className = '' }: MarkdownContentProps) {
   if (!content) return null;
 
+  // Scrub vercel.app domains and direct github links from public markdown
+  const sanitized = content
+    .replace(/https?:\/\/[a-zA-Z0-9_-]*kra[a-zA-Z0-9_-]*\.vercel\.app/gi, 'https://kra.akubrecah.com')
+    .replace(/https?:\/\/[a-zA-Z0-9_-]+\.vercel\.app/gi, 'https://akubrecah.com')
+    .replace(/https?:\/\/github\.com\/Akubrecah\/[a-zA-Z0-9_.-]+/gi, '#');
+
   // Pre-process any GitHub specific callouts e.g. > [!NOTE], > [!TIP], > [!IMPORTANT], > [!WARNING]
-  const enhanced = content
+  const enhanced = sanitized
     .replace(
       /> \[!NOTE\]\s*\n((?:> .*\n?)*)/gi,
       '<div class="github-alert alert-note"><div class="alert-title">📘 Note</div>$1</div>'

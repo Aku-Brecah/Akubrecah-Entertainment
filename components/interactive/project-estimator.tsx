@@ -34,9 +34,9 @@ const SERVICES: ServiceType[] = [
     id: "govtech",
     label: "GovTech & Tax Portals",
     icon: ShieldCheck,
-    tagline: "KRA PIN retrieval, eCitizen remoting, M-Pesa STK push & ETR fiscal thermal receipts",
+    tagline: "KRA PIN retrieval, statutory verification, instant mobile billing & thermal ETR receipts",
     baseDays: 7,
-    baseStack: ["Next.js 16", "Daraja API", "eCitizen DWR", "80mm ETR Engine"],
+    baseStack: ["Statutory Integration", "Citizen Verification Gateway", "Thermal ETR POS Engine", "Zero-Disk RAM Security"],
   },
   {
     id: "web",
@@ -44,7 +44,7 @@ const SERVICES: ServiceType[] = [
     icon: Globe,
     tagline: "High-concurrency full-stack platforms, client portals & automated workflows",
     baseDays: 14,
-    baseStack: ["Next.js App Router", "Prisma ORM", "PostgreSQL Neon", "Tailwind CSS"],
+    baseStack: ["Enterprise Cloud Architecture", "High-Throughput Microservices", "Role-Based Access Control", "Edge CDN Scaling"],
   },
   {
     id: "mobile",
@@ -52,7 +52,7 @@ const SERVICES: ServiceType[] = [
     icon: Smartphone,
     tagline: "iOS and Android apps with offline caching, biometrics & push notifications",
     baseDays: 21,
-    baseStack: ["React Native", "TypeScript", "Expo", "Secure Enclave"],
+    baseStack: ["Cross-Platform Mobile Apps", "Biometric Authentication", "Offline-First Data Sync", "Encrypted Secure Storage"],
   },
   {
     id: "brand",
@@ -60,7 +60,7 @@ const SERVICES: ServiceType[] = [
     icon: Palette,
     tagline: "Full brand identity books, design tokens, thermal POS slips & commercial collateral",
     baseDays: 5,
-    baseStack: ["Design Spec Tokens", "Vector Identity", "Thermal Print Profiles", "UI Guidelines"],
+    baseStack: ["Corporate Modernism Tokens", "Brand Identity Guidelines", "Thermal Print Specifications", "Vector Asset System"],
   },
 ]
 
@@ -71,17 +71,17 @@ const SCALES = [
 ]
 
 const ADDONS = [
-  { id: "mpesa", label: "Daraja M-Pesa STK Push", days: 2 },
-  { id: "etr", label: "80mm Fiscal Thermal ETR Receipts", days: 2 },
-  { id: "whatsapp", label: "WhatsApp Telemetry Bot (Evolution API)", days: 3 },
-  { id: "ratelimit", label: "Distributed Redis Rate Limiter", days: 1 },
-  { id: "auth", label: "Clerk Live Production Auth & RBAC", days: 2 },
+  { id: "billing", label: "Automated Instant Mobile Billing", days: 2 },
+  { id: "etr", label: "80mm Thermal ETR Fiscal Slip Engine", days: 2 },
+  { id: "bot", label: "Automated WhatsApp Customer Assistant", days: 3 },
+  { id: "ratelimit", label: "High-Concurrency Rate Limiter", days: 1 },
+  { id: "rbac", label: "Multi-Role Client Portal & Admin RBAC", days: 2 },
 ]
 
 export function ProjectEstimator() {
   const [selectedService, setSelectedService] = useState<string>("govtech")
   const [selectedScale, setSelectedScale] = useState<string>("growth")
-  const [selectedAddons, setSelectedAddons] = useState<string[]>(["mpesa", "whatsapp", "etr"])
+  const [selectedAddons, setSelectedAddons] = useState<string[]>(["billing", "bot", "etr"])
 
   const activeService = SERVICES.find((s) => s.id === selectedService) || SERVICES[0]
   const activeScale = SCALES.find((s) => s.id === selectedScale) || SCALES[1]

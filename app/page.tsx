@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button"
 import { getPublishedProjects, getPublishedArticles } from '@/lib/cms'
 import { ProjectEstimator } from '@/components/interactive/project-estimator'
 import { ReviewSection } from '@/components/reviews/review-section'
+import { filterPublicTechnologies, cleanPublicLiveUrl } from '@/lib/tech-filter'
 
 export const revalidate = 3600;
 
@@ -106,9 +107,8 @@ export default async function Home() {
     { 
       icon: Printer, 
       label: "Brand & Thermal Print", 
-      desc: "80mm POS Layouts, Brand Books & Design Tokens", 
-      href: "/brand",
-      badge: "Brand Book"
+      desc: "80mm POS Layouts, Fiscal Thermal Receipts & Identity", 
+      href: "/services",
     },
   ]
 
@@ -189,9 +189,9 @@ export default async function Home() {
               </Button>
 
               <Button asChild variant="ghost" size="lg" className="h-13 px-5 rounded-xl text-on-surface-variant hover:text-primary font-bold text-sm flex items-center gap-2">
-                <Link href="/brand">
-                  <Sparkles className="h-4 w-4 text-amber-500" />
-                  <span>Brand Book</span>
+                <Link href="/projects">
+                  <FolderGit2 className="h-4 w-4 text-primary" />
+                  <span>View Projects</span>
                 </Link>
               </Button>
             </div>
@@ -284,17 +284,17 @@ export default async function Home() {
                       <span className="text-[11px] font-black uppercase tracking-wider text-red-700 dark:text-red-400 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
                         {proj.category}
                       </span>
-                      {proj.liveUrl && (
+                      {cleanPublicLiveUrl(proj.slug, proj.liveUrl) && (
                         <a
-                          href={proj.liveUrl}
+                          href={cleanPublicLiveUrl(proj.slug, proj.liveUrl)!}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-on-surface-variant hover:text-primary transition-colors p-1"
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline p-1"
                           aria-label={`Open live system for ${proj.title}`}
                           title={`Open live system for ${proj.title}`}
                         >
-                          <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-                          <span className="sr-only">Open live system for {proj.title}</span>
+                          <span>Live System</span>
+                          <ExternalLink className="w-3 h-3" aria-hidden="true" />
                         </a>
                       )}
                     </div>
@@ -311,7 +311,7 @@ export default async function Home() {
                     </div>
 
                     <div className="flex flex-wrap gap-1.5 pt-2">
-                      {((proj as any).technologies || (proj as any).techStack || []).slice(0, 4).map((tech: string) => (
+                      {filterPublicTechnologies((proj as any).technologies || []).slice(0, 4).map((tech: string) => (
                         <span key={tech} className="text-[10px] font-mono text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md border border-outline-variant/60">
                           {tech}
                         </span>

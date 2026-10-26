@@ -65,6 +65,7 @@ const navSections: NavSection[] = [
     items: [
       { href: "/admin/articles", label: "Articles & Field Notes", icon: BookOpen },
       { href: "/admin/projects", label: "Projects & Portfolio", icon: FolderGit2 },
+      { href: "/admin/brand", label: "Brand Book & Identity", icon: Sparkles },
       { href: "/admin/inquiries", label: "Messages & Inbox", icon: Mail },
       { href: "/admin/settings", label: "Website & SEO Settings", icon: Settings },
     ],

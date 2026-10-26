@@ -575,17 +575,18 @@ export async function findRecentSuccessfulPaystackPayment(opts: {
     const itemEmail = String(item.customerEmail || '').toLowerCase();
     const itemPin = String(item.pin || '').trim().toUpperCase();
 
+    const cleanPhoneDigits = cleanPhone.length >= 9 ? cleanPhone.slice(-9) : '';
+    const itemPhoneDigits = itemPhone.length >= 9 ? itemPhone.slice(-9) : '';
     const matchesPhone = Boolean(
-      cleanPhone &&
-      (itemPhone.includes(cleanPhone) ||
-        cleanPhone.includes(itemPhone) ||
-        itemEmail.includes(cleanPhone) ||
-        (cleanPhone.length >= 9 && itemPhone.endsWith(cleanPhone.slice(-9))))
+      cleanPhoneDigits &&
+      itemPhoneDigits &&
+      cleanPhoneDigits === itemPhoneDigits
     );
 
     const matchesPin = Boolean(
-      cleanPin &&
-      (itemPin.includes(cleanPin) || cleanPin.includes(itemPin))
+      cleanPin.length === 11 &&
+      itemPin.length === 11 &&
+      cleanPin === itemPin
     );
 
     if (matchesPhone || matchesPin) {

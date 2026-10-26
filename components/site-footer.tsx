@@ -133,12 +133,6 @@ export function SiteFooter(): JSX.Element {
                 </Link>
               </li>
               <li>
-                <Link href="/brand" className="hover:text-primary transition-colors flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  Brand Book & Tokens
-                </Link>
-              </li>
-              <li>
                 <Link href="/contact" className="hover:text-primary transition-colors font-bold text-primary">
                   Start a Project &rarr;
                 </Link>
