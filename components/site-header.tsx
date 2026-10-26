@@ -9,27 +9,12 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { UserButton, useUser } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import {
-  Code2,
-  Smartphone,
-  Cloud,
-  Layers,
-  FileCheck2,
-  ShieldCheck,
-  Send,
   ChevronDown,
   Menu,
   X,
   LayoutDashboard,
   Shield,
   ArrowRight,
-  Cpu,
-  Laptop,
-  Zap,
-  Globe,
-  Users,
-  Info,
-  Phone,
-  MapPin,
   ChevronRight,
 } from "lucide-react"
 
@@ -40,7 +25,6 @@ interface NavSubItem {
   title: string
   desc: string
   href: string
-  icon: any
   badge?: string
 }
 
@@ -80,11 +64,11 @@ const navData: NavItem[] = [
   {
     label: "About",
     href: "/about",
-    groups: null,   // simple link — no dropdown
+    groups: null,
   },
   {
     label: "Services",
-    href: "/services",          // parent page
+    href: "/services",
     groups: [
       {
         heading: "Engineering Capabilities",
@@ -93,25 +77,21 @@ const navData: NavItem[] = [
             title: "Web Engineering",
             desc: "High-performance full-stack web platforms & Next.js apps",
             href: "/services#web",
-            icon: Laptop,
           },
           {
             title: "Mobile App Development",
             desc: "Native iOS & Android, React Native ecosystems",
             href: "/services#mobile",
-            icon: Smartphone,
           },
           {
             title: "Cloud & DevOps",
             desc: "Microservices, CI/CD pipelines & AWS/GCP scaling",
             href: "/services#cloud",
-            icon: Cloud,
           },
           {
             title: "Enterprise Software",
             desc: "Bespoke internal systems, high-throughput APIs",
             href: "/services#enterprise",
-            icon: Layers,
           },
         ],
       },
@@ -129,19 +109,16 @@ const navData: NavItem[] = [
             title: "Akubrecah API Gateway",
             desc: "High-throughput microservice routing & event bus",
             href: "/products",
-            icon: Layers,
           },
           {
             title: "Client & Engineering Console",
             desc: "Full observability, deployment pipeline & monitoring hub",
             href: "/dashboard",
-            icon: LayoutDashboard,
           },
           {
             title: "Architecture & Cost Estimator",
             desc: "Interactive scope, technology stack & timeline calculator",
             href: "/estimator",
-            icon: Cpu,
             badge: "Interactive",
           },
         ],
@@ -160,25 +137,21 @@ const navData: NavItem[] = [
             title: "Financial Technology",
             desc: "M-Pesa, payment gateways & fintech infrastructure",
             href: "/solutions#fintech",
-            icon: Zap,
           },
           {
             title: "Government & GovTech",
             desc: "Statutory portals & citizen-facing digital services",
             href: "/solutions#govtech",
-            icon: Shield,
           },
           {
             title: "Enterprise Operations",
             desc: "ERP modules, automation & document workflows",
             href: "/solutions#enterprise",
-            icon: Users,
           },
           {
             title: "SaaS Product Engineering",
             desc: "Full-cycle MVP to scale for software startups",
             href: "/solutions#saas",
-            icon: Globe,
           },
         ],
       },
@@ -230,31 +203,24 @@ function MegaMenu({
             </p>
             <div className="space-y-0.5">
               {group.items.map((sub) => {
-                const Icon = sub.icon
                 return (
                   <Link
                     key={sub.title}
                     href={sub.href}
                     onClick={onClose}
-                    className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-surface-container transition-colors group cursor-pointer"
+                    className="block p-2.5 rounded-xl hover:bg-surface-container transition-colors group cursor-pointer"
                   >
-                    <div className="p-2 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors shrink-0 mt-0.5">
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors truncate">
-                          {sub.title}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors truncate">
+                        {sub.title}
+                      </span>
+                      {sub.badge && (
+                        <span className="shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                          {sub.badge}
                         </span>
-                        {sub.badge && (
-                          <span className="shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-primary text-white">
-                            {sub.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">{sub.desc}</p>
+                      )}
                     </div>
-                    <ChevronRight className="h-3.5 w-3.5 text-on-surface-variant opacity-0 group-hover:opacity-100 shrink-0 mt-1 transition-opacity" />
+                    <p className="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">{sub.desc}</p>
                   </Link>
                 )
               })}
@@ -459,31 +425,24 @@ function MobileNavSection({
                 {group.heading}
               </p>
               {group.items.map((sub) => {
-                const Icon = sub.icon
                 return (
                   <Link
                     key={sub.title}
                     href={sub.href}
                     onClick={onClose}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-surface-container transition-colors group min-h-[44px]"
+                    className="block p-2.5 rounded-xl hover:bg-surface-container transition-colors group min-h-[44px]"
                   >
-                    <div className="p-2 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors">
-                          {sub.title}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors">
+                        {sub.title}
+                      </span>
+                      {sub.badge && (
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                          {sub.badge}
                         </span>
-                        {sub.badge && (
-                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-primary text-white">
-                            {sub.badge}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-on-surface-variant line-clamp-1">{sub.desc}</p>
+                      )}
                     </div>
-                    <ChevronRight className="h-3.5 w-3.5 text-on-surface-variant ml-auto shrink-0" />
+                    <p className="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">{sub.desc}</p>
                   </Link>
                 )
               })}

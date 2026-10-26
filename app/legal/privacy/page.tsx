@@ -22,7 +22,7 @@ export default function PrivacyPolicyPage() {
         </p>
         <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 mt-4">
           <p className="text-[11px] text-primary font-bold uppercase tracking-wide">
-            ⚖️ This policy is governed by the Kenya Data Protection Act, 2019 (No. 24 of 2019) and the Data Protection (General) Regulations, 2021.
+            This policy is governed by the Kenya Data Protection Act, 2019 (No. 24 of 2019) and the Data Protection (General) Regulations, 2021.
           </p>
         </div>
       </div>

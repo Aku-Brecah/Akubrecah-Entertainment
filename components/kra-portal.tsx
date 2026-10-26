@@ -255,7 +255,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         if (result.pin) {
           setFormData(prev => ({ ...prev, pin: result.pin }))
         }
-        toast(result.error || "Security verification required. Please solve the arithmetic question.", { icon: "🔒" })
+        toast(result.error || "Security verification required. Please solve the arithmetic question.")
         setError(result.error || "Please enter the verification answer from the image.")
         setIdSearchStatus("idle")
         await loadCaptcha()
@@ -372,7 +372,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
         if (data.type === 'subscription') {
           setIsSubscribed(true)
-          toast.success("🎉 Payment Verified! Ready to download your certificate.", { duration: 4000 })
+          toast.success("Payment verified. Ready to download your certificate.", { duration: 4000 })
           await refreshVerifiedData(undefined, formData.rawPin || formData.pin)
           setShowPaymentModal(false)
         } else {
@@ -562,8 +562,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       if (isSub) {
         toast.success(
           data.subscription?.planName === 'cyber_monthly'
-            ? '⚡ Cyber Cafe Subscription Active · Free Download!'
-            : '🎉 Subscription Active · Free Download!'
+            ? 'Cyber Cafe Subscription Active · Instant Download'
+            : 'Subscription Active · Instant Download'
         )
         await handleSubscriptionDownload()
         return

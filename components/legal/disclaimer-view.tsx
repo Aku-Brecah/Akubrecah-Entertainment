@@ -249,8 +249,7 @@ export function DisclaimerView() {
           {/* Akubrecah Column */}
           <div className="rounded-2xl bg-surface-card dark:bg-slate-900/90 border border-border p-4 sm:p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black tracking-wider uppercase text-primary flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span className="text-[11px] font-black tracking-wider uppercase text-primary">
                 What Akubrecah Is
               </span>
               <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-surface-container text-muted-foreground border border-border">
@@ -259,19 +258,19 @@ export function DisclaimerView() {
             </div>
             <ul className="text-xs space-y-2 text-on-surface-variant">
               <li className="flex items-start gap-2">
-                <span className="text-emerald-600 font-bold">✓</span>
+                <span className="text-emerald-600 font-bold shrink-0">•</span>
                 <span>An assisted self-service portal for instant KRA PIN & certificate retrieval</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-emerald-600 font-bold">✓</span>
+                <span className="text-emerald-600 font-bold shrink-0">•</span>
                 <span>Automated PDF generator formatting certificates for immediate printing</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-emerald-600 font-bold">✓</span>
+                <span className="text-emerald-600 font-bold shrink-0">•</span>
                 <span>Cyber cafe business subscription platform (KES 500/mo unlimited)</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-emerald-600 font-bold">✓</span>
+                <span className="text-emerald-600 font-bold shrink-0">•</span>
                 <span>An independent digital service charging a transparent convenience fee</span>
               </li>
             </ul>
@@ -280,8 +279,7 @@ export function DisclaimerView() {
           {/* KRA Column */}
           <div className="rounded-2xl bg-surface-card dark:bg-slate-900/90 border border-border p-4 sm:p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black tracking-wider uppercase text-foreground flex items-center gap-1.5">
-                <XCircle className="w-4 h-4 text-red-500" />
+              <span className="text-[11px] font-black tracking-wider uppercase text-foreground">
                 What Akubrecah Is Not
               </span>
               <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-surface-container text-muted-foreground border border-border">
@@ -290,19 +288,19 @@ export function DisclaimerView() {
             </div>
             <ul className="text-xs space-y-2 text-on-surface-variant">
               <li className="flex items-start gap-2">
-                <span className="text-red-500 font-bold">✕</span>
+                <span className="text-red-500 font-bold shrink-0">—</span>
                 <span>NOT the Kenya Revenue Authority, Times Tower, or a government tax office</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-red-500 font-bold">✕</span>
+                <span className="text-red-500 font-bold shrink-0">—</span>
                 <span>Does NOT amend official tax records, waive penalties, or issue new PINs</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-red-500 font-bold">✕</span>
+                <span className="text-red-500 font-bold shrink-0">—</span>
                 <span>Does NOT provide legal, certified accounting, or tax advisory services</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-red-500 font-bold">✕</span>
+                <span className="text-red-500 font-bold shrink-0">—</span>
                 <span>Does NOT possess private or back-channel access beyond public taxpayer portals</span>
               </li>
             </ul>

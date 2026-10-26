@@ -118,8 +118,28 @@ Guided by the brand ethos: *"Engineering digital products that scale — Design 
    - Fitts' law compliant 48px+ touch targets.
    - 1-click KRA certificate search shortcuts, direct WhatsApp bot access, and project consultation triggers.
 
+## Minimalist Aesthetics & Iconography Standards
+1. **Restrained Functional Iconography**:
+   - Icons must be functional signposts (e.g. directional arrows `ArrowRight`, search `Search`, external links `ExternalLink`, download `Download`).
+   - Strictly prohibit decorative icon spamming beside every single bullet point, card heading, or dropdown menu item.
+   - Text should carry visual hierarchy, supported by whitespace and typography scale rather than iconography crutches.
+2. **Strict Emoji Ban in UI**:
+   - Zero decorative emojis in toasts, alerts, badges, headers, or buttons.
+   - Professional, sober, and authoritative GovTech and enterprise product language.
+3. **Authentic Metric Governance**:
+   - Never fabricate customer review counts, star ratings, certificate totals, or uptime stats.
+   - Ground all statements in real product capabilities, factual service descriptions, and verified system behavior.
+4. **Solid High-Contrast Typography**:
+   - Solid `#0F172A` / `#FFFFFF` headlines; strictly avoid decorative text-gradient masks and low-contrast faded copy.
+   - Clean, uncluttered backgrounds without floating glowing blur circles or decorative circuit lines behind text.
+
 ## Prohibitions
+- NO decorative emoji usage across website UI, toasts, badges, or buttons.
+- NO icon spam (do not place an icon on every single list item or card header).
+- NO fabricated stats, star ratings, review counts, or false certification claims.
+- NO gradient-clipped text headlines or distracting background blur blobs.
 - NO generic AI "hero split" (Left text / right stock image).
 - NO purple/indigo SaaS gradient clichés.
 - NO static, unresponsive buttons without active states.
 - NO hidden or washed-out typography with contrast under 4.5:1.
+

@@ -1,22 +1,6 @@
 import { 
   ArrowRight, 
-  Laptop, 
-  Smartphone, 
-  Cloud, 
-  Layers, 
-  Code2, 
-  Zap, 
-  Globe, 
-  FolderGit2, 
-  ExternalLink, 
-  BookOpen, 
-  Clock,
-  ShieldCheck,
-  Sparkles,
-  Star,
-  Printer,
-  MessageSquare,
-  CheckCircle2
+  ExternalLink 
 } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from "next/link"
@@ -83,69 +67,41 @@ export default async function Home() {
 
   const capabilities = [
     { 
-      icon: ShieldCheck, 
       label: "GovTech & Compliance", 
       desc: "Automated Tax Verification, Portals & POS Fiscal Thermal Systems", 
       href: "/solutions#govtech",
-      badge: "High Scale"
+      badge: "Flagship"
     },
     { 
-      icon: Laptop, 
       label: "Web Engineering", 
-      desc: "Next.js 16, High-Scale SSR & Microservices", 
+      desc: "High-Scale Server-Rendered Platforms, APIs & Microservices", 
       href: "/services#web" 
     },
     { 
-      icon: Smartphone, 
       label: "Mobile Ecosystems", 
-      desc: "iOS, Android & React Native Biometrics", 
+      desc: "Native iOS, Android & Universal React Native Applications", 
       href: "/services#mobile" 
     },
     { 
-      icon: Printer, 
       label: "Brand & Thermal Print", 
-      desc: "80mm POS Layouts, Fiscal Thermal Receipts & Identity", 
+      desc: "80mm POS Layouts, Fiscal Thermal Receipts & Corporate Identity", 
       href: "/services",
     },
   ]
 
   return (
     <div className="relative w-full bg-background text-on-background font-sans overflow-x-hidden">
-      
-      {/* Background glow & Monolithic Circuit Traces — deep red & cyan, strictly NO purple */}
-      <div className="absolute top-0 inset-x-0 h-[750px] bg-[radial-gradient(ellipse_at_25%_0%,rgba(186,26,26,0.14)_0%,transparent_70%)] pointer-events-none z-0" />
-      <div className="absolute top-24 right-[5%] w-[450px] h-[450px] bg-primary/5 rounded-full filter blur-[140px] pointer-events-none z-0" />
-      <div className="absolute top-80 left-[10%] w-[320px] h-[320px] bg-[#00C2FF]/4 rounded-full filter blur-[130px] pointer-events-none z-0" />
-
-      {/* SVG Monolithic Circuit Wirelines */}
-      <div className="absolute top-0 inset-x-0 h-[600px] pointer-events-none opacity-20 dark:opacity-30 z-0 overflow-hidden">
-        <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="circuit-line" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#BA1A1A" stopOpacity="0.4" />
-              <stop offset="50%" stopColor="#00C2FF" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#BA1A1A" stopOpacity="0.2" />
-            </linearGradient>
-          </defs>
-          <path d="M-100,50 L200,50 L300,150 L800,150 L950,300 L1600,300" fill="none" stroke="url(#circuit-line)" strokeWidth="1.5" strokeDasharray="6,6" />
-          <path d="M100,300 L400,300 L550,450 L1200,450" fill="none" stroke="url(#circuit-line)" strokeWidth="1" />
-          <circle cx="300" cy="150" r="3" fill="#00C2FF" />
-          <circle cx="950" cy="300" r="3.5" fill="#BA1A1A" />
-        </svg>
-      </div>
-
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col space-y-24 pb-24 pt-8 md:pt-14">
 
-        {/* ============================= MONOLITHIC HERO ============================= */}
+        {/* ============================= HERO SECTION ============================= */}
         <section id="hero" className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
           
-          {/* Left: Text & Magnetic CTAs */}
+          {/* Left: Text & Action Center */}
           <div className="flex-1 space-y-7">
             
-            {/* Asymmetric Monolithic Headline */}
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-on-surface tracking-tight leading-[1.05]">
               Engineering<br />
-              <span className="text-primary bg-gradient-to-br from-primary via-red-600 to-red-800 bg-clip-text text-transparent">
+              <span className="text-primary">
                 Digital Products
               </span><br />
               That Scale.
@@ -156,75 +112,61 @@ export default async function Home() {
               From automated KRA PIN retrieval and fiscal thermal ETR receipts to enterprise cloud platforms and native mobile apps.
             </p>
 
-            {/* Magnetic CTA Action Center */}
+            {/* Action Center */}
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 pt-2">
-              <Button asChild size="lg" className="h-13 px-7 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 shadow-lg shadow-primary/25 flex items-center gap-2 group transition-all">
+              <Button asChild size="lg" className="h-12 px-7 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 shadow-md shadow-primary/20 flex items-center gap-2 group transition-all">
                 <Link href="/services">
-                  <Sparkles className="h-4 w-4" />
                   <span>Explore Capabilities</span>
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
 
-              <Button asChild variant="outline" size="lg" className="h-13 px-6 rounded-xl border-outline-variant font-bold text-sm hover:bg-surface-container flex items-center gap-2 transition-all">
+              <Button asChild variant="outline" size="lg" className="h-12 px-6 rounded-xl border-outline-variant font-bold text-sm hover:bg-surface-container transition-all">
                 <Link href="/projects">
-                  <FolderGit2 className="h-4 w-4 text-primary" />
                   <span>View Case Studies</span>
                 </Link>
               </Button>
 
-              <Button asChild variant="ghost" size="lg" className="h-13 px-5 rounded-xl text-on-surface-variant hover:text-primary font-bold text-sm flex items-center gap-2">
+              <Button asChild variant="ghost" size="lg" className="h-12 px-5 rounded-xl text-on-surface-variant hover:text-primary font-bold text-sm">
                 <Link href="/contact">
-                  <MessageSquare className="h-4 w-4 text-primary" />
                   <span>Schedule Consultation</span>
                 </Link>
               </Button>
             </div>
 
-            {/* Live Trust Metrics Strip */}
-            <div className="pt-2 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-on-surface-variant border-t border-outline-variant/60">
-              <div className="flex items-center gap-1.5 font-bold text-on-surface">
-                <span className="text-amber-500 flex">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star key={s} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  ))}
-                </span>
-                <span className="font-mono">4.9/5.0</span>
-                <span className="opacity-70 font-normal">(1,280+ Reviews)</span>
-              </div>
-              <div className="flex items-center gap-1 font-mono font-bold text-on-surface">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>99.9% Production Uptime</span>
-              </div>
+            {/* Verified Operational Facts */}
+            <div className="pt-2 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-on-surface-variant border-t border-outline-variant/60">
+              <span className="font-semibold text-on-surface">Headquartered in Nairobi, Kenya</span>
+              <span className="hidden sm:inline text-outline-variant">•</span>
+              <span>Statutory GovTech & Thermal ETR Systems</span>
+              <span className="hidden sm:inline text-outline-variant">•</span>
+              <span>Custom Enterprise Software</span>
             </div>
           </div>
 
-          {/* Right: Monolithic Capability Grid */}
+          {/* Right: Minimal Capability Grid */}
           <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg">
             {capabilities.map((cap) => {
-              const Icon = cap.icon
               return (
                 <Link
                   key={cap.label}
                   href={cap.href}
-                  className="group p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant hover:border-primary/50 hover:shadow-lg transition-all duration-300 space-y-3 relative overflow-hidden"
+                  className="group p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant hover:border-primary/50 transition-all duration-200 flex flex-col justify-between"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                      <Icon className="h-5 w-5" />
-                    </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-sm text-on-surface group-hover:text-primary transition-colors">
+                      {cap.label}
+                    </span>
                     {cap.badge && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                         {cap.badge}
                       </span>
                     )}
                   </div>
-                  <div>
-                    <p className="font-bold text-sm text-on-surface group-hover:text-primary transition-colors flex items-center justify-between">
-                      <span>{cap.label}</span>
-                      <ArrowRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-primary" />
-                    </p>
-                    <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">{cap.desc}</p>
+                  <p className="text-xs text-on-surface-variant mt-2 leading-relaxed">{cap.desc}</p>
+                  <div className="pt-3 flex items-center gap-1 text-xs font-bold text-primary group-hover:underline">
+                    <span>Learn more</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </Link>
               )
@@ -232,13 +174,11 @@ export default async function Home() {
           </div>
         </section>
 
-
         {/* ============================= FEATURED PRODUCTION SYSTEMS ============================= */}
         <section id="featured-projects" className="space-y-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-black text-red-700 dark:text-red-400 uppercase tracking-widest">
-                <FolderGit2 className="h-3.5 w-3.5" />
+              <span className="text-xs font-black text-red-700 dark:text-red-400 uppercase tracking-widest">
                 Engineering Case Studies
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-on-surface tracking-tight">
@@ -328,8 +268,7 @@ export default async function Home() {
           <section id="articles-teaser" className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div className="space-y-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-black text-red-700 dark:text-red-400 uppercase tracking-widest">
-                  <BookOpen className="h-3.5 w-3.5" />
+                <span className="text-xs font-black text-red-700 dark:text-red-400 uppercase tracking-widest">
                   Engineering Writing
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-black text-on-surface tracking-tight">
@@ -357,9 +296,8 @@ export default async function Home() {
                       <span className="font-bold text-red-700 dark:text-red-400 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
                         {art.category}
                       </span>
-                      <span className="flex items-center gap-1 font-mono">
-                        <Clock className="w-3 h-3" />
-                        {art.readingTimeMinutes} min
+                      <span className="font-mono">
+                        {art.readingTimeMinutes} min read
                       </span>
                     </div>
 
@@ -425,7 +363,6 @@ export default async function Home() {
 
         {/* ============================= FINAL CTA BAND ============================= */}
         <section className="relative overflow-hidden p-10 sm:p-14 rounded-3xl bg-primary text-white space-y-6 text-center shadow-xl">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.12)_0%,transparent_60%)] pointer-events-none" />
           <div className="relative z-10 space-y-4">
             <h2 className="text-3xl sm:text-5xl font-black leading-tight tracking-tight">
               Ready to Build Your Next Digital System?

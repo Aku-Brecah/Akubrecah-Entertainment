@@ -2,7 +2,7 @@ import Link from "next/link"
 import type { JSX } from "react"
 import { Logo } from "@/components/logo"
 import { GooglePreferredSourceButton } from "@/components/google-preferred-source-button"
-import { Code2, Laptop, Smartphone, Cloud, FileCheck2, ShieldCheck, Mail, MapPin } from "lucide-react"
+import { Mail, MapPin } from "lucide-react"
 
 export function SiteFooter(): JSX.Element {
   const currentYear = new Date().getFullYear()
@@ -58,27 +58,27 @@ export function SiteFooter(): JSX.Element {
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/services#web" className="hover:text-primary transition-colors flex items-center gap-1.5">
+                <Link href="/services#web" className="hover:text-primary transition-colors block">
                   Web Applications (Next.js/React)
                 </Link>
               </li>
               <li>
-                <Link href="/services#mobile" className="hover:text-primary transition-colors flex items-center gap-1.5">
+                <Link href="/services#mobile" className="hover:text-primary transition-colors block">
                   Mobile Apps (iOS & Android)
                 </Link>
               </li>
               <li>
-                <Link href="/services#cloud" className="hover:text-primary transition-colors flex items-center gap-1.5">
+                <Link href="/services#cloud" className="hover:text-primary transition-colors block">
                   Cloud Infrastructure & DevOps
                 </Link>
               </li>
               <li>
-                <Link href="/services#enterprise" className="hover:text-primary transition-colors flex items-center gap-1.5">
+                <Link href="/services#enterprise" className="hover:text-primary transition-colors block">
                   Custom Enterprise Architecture
                 </Link>
               </li>
               <li>
-                <Link href="/solutions" className="hover:text-primary transition-colors flex items-center gap-1.5">
+                <Link href="/solutions" className="hover:text-primary transition-colors block">
                   Industry Solutions
                 </Link>
               </li>
@@ -92,25 +92,22 @@ export function SiteFooter(): JSX.Element {
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/products" className="hover:text-primary transition-colors flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <Link href="/products" className="hover:text-primary transition-colors block">
                   API Gateway & Integrations
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard" className="hover:text-primary transition-colors flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <Link href="/dashboard" className="hover:text-primary transition-colors block">
                   Client & Engineering Console
                 </Link>
               </li>
               <li>
-                <Link href="/services#cloud" className="hover:text-primary transition-colors">
+                <Link href="/services#cloud" className="hover:text-primary transition-colors block">
                   Cloud & Infrastructure Manager
                 </Link>
               </li>
               <li>
-                <Link href="/estimator" className="hover:text-primary transition-colors flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <Link href="/estimator" className="hover:text-primary transition-colors block">
                   Architecture & Scope Estimator
                 </Link>
               </li>

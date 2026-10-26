@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 }
 
 import Link from "next/link"
-import { CheckCircle2, ArrowRight, Globe, Zap, Shield, Users, Laptop, Smartphone, Cloud, ArrowUpRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BreadcrumbSchema, ServiceSchema } from "@/components/seo/site-schema"
 
@@ -39,10 +39,7 @@ const solutions = [
     title: "Financial Technology & Payments",
     subtitle: "Automated payment flows, multi-currency ledgers & instant reconciliation",
     description: "From M-Pesa Daraja STK Push integrations to multi-currency balance ledgers and automated reconciliation systems — we build the financial infrastructure that powers modern business in East Africa.",
-    icon: Zap,
     tag: "Fintech & Payments",
-    color: "text-primary",
-    bgColor: "bg-primary/10",
     deliverables: [
       "M-Pesa Daraja API (STK Push, C2B, B2C, B2B) architecture",
       "Card payment gateways (Stripe, Paystack, DPO, Pesapal)",
@@ -57,53 +54,44 @@ const solutions = [
     title: "Government & Public Sector",
     subtitle: "Statutory compliance portals & secure citizen-facing services",
     description: "We specialize in digitizing public sector workflows — from citizen identity verification gateways to automated statutory compliance portals and inter-agency data exchange APIs.",
-    icon: Shield,
     tag: "GovTech Systems",
-    color: "text-red-600 dark:text-red-400",
-    bgColor: "bg-red-50 dark:bg-red-950/40",
     deliverables: [
       "National ID & KRA PIN verification gateways",
       "Automated compliance certificate generation engines",
       "Statutory returns filing automation workflows",
       "Role-based citizen portal access control & audit trails",
       "Government API integrations (KRA, NTSA, eCitizen)",
-      "PDPA & data protection compliance architecture",
+      "KDPA 2019 data protection compliance architecture",
     ],
   },
   {
     id: "enterprise",
     title: "Enterprise Operations & ERP",
-    subtitle: "Replacing manual paperwork with intelligent, auditable digital portals",
-    description: "Digitize sprawling operational workflows with real-time web and mobile portals, automated document generation pipelines, custom ERP modules, and analytics telemetry.",
-    icon: Users,
+    subtitle: "Replacing manual paperwork with structured, auditable digital portals",
+    description: "Digitize sprawling operational workflows with real-time web and mobile portals, automated document generation pipelines, custom ERP modules, and operational telemetry.",
     tag: "Enterprise Systems",
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
     deliverables: [
       "Custom ERP modules & operational management tools",
-      "High-volume cryptographic PDF document generation",
+      "Cryptographic PDF document generation and automated archiving",
       "Granular approval hierarchies & Role-Based Access Control",
       "CRM & third-party enterprise integrations",
-      "Real-time business intelligence telemetry dashboards",
+      "Real-time business telemetry dashboards",
       "Automated multi-channel notification pipelines (SMS/Email)",
     ],
   },
   {
     id: "saas",
     title: "SaaS Product Engineering",
-    subtitle: "Full-cycle product architecture and development for tech startups",
-    description: "From initial MVP to Series A scale, we act as the senior technical partner for software ventures. We architect, build, and deploy multi-tenant SaaS products designed for rapid iteration and rock-solid stability.",
-    icon: Globe,
+    subtitle: "Full-cycle product architecture and development for software ventures",
+    description: "From initial architecture to production scale, we partner with ventures to architect, build, and deploy multi-tenant SaaS products designed for rapid iteration and stability.",
     tag: "SaaS & Ventures",
-    color: "text-primary",
-    bgColor: "bg-primary/10",
     deliverables: [
       "Rapid MVP delivery built on production-quality foundations",
       "Multi-tenant subscription billing (Stripe, Paystack, M-Pesa)",
       "Authentication, SSO & team permission management",
       "Usage metering and real-time product analytics",
       "Public API design, rate-limiting & developer documentation",
-      "Cloud-native auto-scaling architecture from Day 1",
+      "Cloud-native auto-scaling architecture",
     ],
   },
 ]
@@ -131,6 +119,24 @@ const processSteps = [
   },
 ]
 
+const ecosystemLayers = [
+  {
+    category: "Web Applications",
+    spec: "Next.js 15 · React 19 · TypeScript",
+    detail: "Server-rendered responsive web apps with strict type validation and optimized Core Web Vitals.",
+  },
+  {
+    category: "Mobile Apps",
+    spec: "iOS Swift · Android Kotlin · React Native",
+    detail: "High-performance native mobile apps with offline-first synchronization and biometric security.",
+  },
+  {
+    category: "Cloud & DevOps",
+    spec: "AWS · GCP · Docker · K8s · CI/CD",
+    detail: "Containerized deployment pipelines, zero-trust network boundaries, and automated monitoring.",
+  },
+]
+
 export default function SolutionsPage() {
   return (
     <div className="min-h-screen bg-background text-on-background">
@@ -147,7 +153,7 @@ export default function SolutionsPage() {
         ]}
       />
 
-      {/* Page Hero - Matching Products Design */}
+      {/* Page Hero */}
       <div className="bg-surface-container-lowest border-b border-outline-variant">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 space-y-6">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
@@ -177,10 +183,9 @@ export default function SolutionsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 space-y-20">
 
-        {/* Solutions Grid - Matching Products Card Design */}
+        {/* Solutions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {solutions.map((sol) => {
-            const Icon = sol.icon
             return (
               <div 
                 key={sol.id} 
@@ -188,19 +193,16 @@ export default function SolutionsPage() {
                 className="p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft hover:border-primary/40 transition-all duration-300 space-y-6 flex flex-col justify-between"
               >
                 <div className="space-y-6">
-                  {/* Icon & Tag */}
-                  <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-2xl ${sol.bgColor} ${sol.color}`}>
-                      <Icon className="h-7 w-7" />
-                    </div>
-                    <span className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full ${sol.bgColor} ${sol.color} border border-current/20`}>
+                  {/* Tag Header */}
+                  <div>
+                    <span className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
                       {sol.tag}
                     </span>
                   </div>
 
                   <div>
                     <h2 className="text-2xl sm:text-3xl font-black text-on-surface">{sol.title}</h2>
-                    <p className={`text-xs font-bold mt-1 ${sol.color}`}>{sol.subtitle}</p>
+                    <p className="text-xs font-bold mt-1 text-primary">{sol.subtitle}</p>
                     <p className="text-xs sm:text-sm text-on-surface-variant mt-3 leading-relaxed">{sol.description}</p>
                   </div>
 
@@ -208,7 +210,7 @@ export default function SolutionsPage() {
                   <div className="space-y-2.5">
                     {sol.deliverables.map((item) => (
                       <div key={item} className="flex items-start gap-2.5 text-xs sm:text-sm text-on-surface">
-                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <span className="text-primary font-bold shrink-0 leading-tight">•</span>
                         <span>{item}</span>
                       </div>
                     ))}
@@ -260,25 +262,20 @@ export default function SolutionsPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
-            {[
-              { icon: Laptop, label: "Web Applications", sub: "Next.js 15 · React 19 · TypeScript" },
-              { icon: Smartphone, label: "Mobile Apps", sub: "iOS Swift · Android Kotlin · React Native" },
-              { icon: Cloud, label: "Cloud & DevOps", sub: "AWS · GCP · Docker · K8s · CI/CD" },
-            ].map((item) => {
-              const Icon = item.icon
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {ecosystemLayers.map((item) => {
               return (
-                <div key={item.label} className="p-6 rounded-2xl bg-surface-container text-center space-y-2">
-                  <Icon className="h-7 w-7 text-primary mx-auto" />
-                  <p className="font-bold text-sm text-on-surface">{item.label}</p>
-                  <p className="text-xs text-on-surface-variant">{item.sub}</p>
+                <div key={item.category} className="p-6 rounded-2xl bg-surface-container text-left space-y-2 border border-outline-variant/60">
+                  <p className="font-bold text-sm text-on-surface">{item.category}</p>
+                  <p className="text-xs font-mono text-primary font-semibold">{item.spec}</p>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">{item.detail}</p>
                 </div>
               )
             })}
           </div>
         </div>
 
-        {/* Bottom CTA Banner - Matching Products Style */}
+        {/* Bottom CTA Banner */}
         <div className="p-10 sm:p-14 rounded-3xl bg-primary text-white text-center space-y-5">
           <h2 className="text-3xl font-black">Ready to Build a Tailored Solution?</h2>
           <p className="text-white/80 text-sm max-w-lg mx-auto">

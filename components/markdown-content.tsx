@@ -25,19 +25,19 @@ export function MarkdownContent({ content, className = '' }: MarkdownContentProp
   const enhanced = sanitized
     .replace(
       /> \[!NOTE\]\s*\n((?:> .*\n?)*)/gi,
-      '<div class="github-alert alert-note"><div class="alert-title">📘 Note</div>$1</div>'
+      '<div class="github-alert alert-note"><div class="alert-title">Note</div>$1</div>'
     )
     .replace(
       /> \[!TIP\]\s*\n((?:> .*\n?)*)/gi,
-      '<div class="github-alert alert-tip"><div class="alert-title">💡 Tip</div>$1</div>'
+      '<div class="github-alert alert-tip"><div class="alert-title">Tip</div>$1</div>'
     )
     .replace(
       /> \[!IMPORTANT\]\s*\n((?:> .*\n?)*)/gi,
-      '<div class="github-alert alert-important"><div class="alert-title">⚠️ Important</div>$1</div>'
+      '<div class="github-alert alert-important"><div class="alert-title">Important</div>$1</div>'
     )
     .replace(
       /> \[!WARNING\]\s*\n((?:> .*\n?)*)/gi,
-      '<div class="github-alert alert-warning"><div class="alert-title">🚨 Warning</div>$1</div>'
+      '<div class="github-alert alert-warning"><div class="alert-title">Warning</div>$1</div>'
     );
 
   // Convert to HTML

@@ -2,28 +2,12 @@
 
 import React, { useState } from "react"
 import Link from "next/link"
-import {
-  Cpu,
-  Layers,
-  Zap,
-  CheckCircle2,
-  ArrowRight,
-  Sparkles,
-  Server,
-  Smartphone,
-  Globe,
-  Palette,
-  ShieldCheck,
-  Clock,
-  Send,
-  MessageSquareCode
-} from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface ServiceType {
   id: string
   label: string
-  icon: any
   tagline: string
   baseDays: number
   baseStack: string[]
@@ -33,7 +17,6 @@ const SERVICES: ServiceType[] = [
   {
     id: "govtech",
     label: "GovTech & Tax Portals",
-    icon: ShieldCheck,
     tagline: "KRA PIN retrieval, statutory verification, instant mobile billing & thermal ETR receipts",
     baseDays: 7,
     baseStack: ["Statutory Integration", "Citizen Verification Gateway", "Thermal ETR POS Engine", "Zero-Disk RAM Security"],
@@ -41,7 +24,6 @@ const SERVICES: ServiceType[] = [
   {
     id: "web",
     label: "Enterprise Web Systems",
-    icon: Globe,
     tagline: "High-concurrency full-stack platforms, client portals & automated workflows",
     baseDays: 14,
     baseStack: ["Enterprise Cloud Architecture", "High-Throughput Microservices", "Role-Based Access Control", "Edge CDN Scaling"],
@@ -49,7 +31,6 @@ const SERVICES: ServiceType[] = [
   {
     id: "mobile",
     label: "Native Mobile Ecosystems",
-    icon: Smartphone,
     tagline: "iOS and Android apps with offline caching, biometrics & push notifications",
     baseDays: 21,
     baseStack: ["Cross-Platform Mobile Apps", "Biometric Authentication", "Offline-First Data Sync", "Encrypted Secure Storage"],
@@ -57,7 +38,6 @@ const SERVICES: ServiceType[] = [
   {
     id: "brand",
     label: "Creative Brand & Print",
-    icon: Palette,
     tagline: "Full brand identity books, design tokens, thermal POS slips & commercial collateral",
     baseDays: 5,
     baseStack: ["Corporate Modernism Tokens", "Brand Identity Guidelines", "Thermal Print Specifications", "Vector Asset System"],
@@ -102,7 +82,7 @@ export function ProjectEstimator() {
 
   // Construct pre-filled WhatsApp message
   const prefilledText = encodeURIComponent(
-    `Hello Akubrecah Entertainment! I scoped a project on your website:\n• Service: ${activeService.label}\n• Scale: ${activeScale.label}\n• Addons: ${selectedAddons.join(", ")}\n• Target Turnaround: ~${totalEstimatedDays} business days.\nI would like to schedule a technical discovery call.`
+    `Hello Akubrecah Technologies! I scoped a project on your website:\n• Service: ${activeService.label}\n• Scale: ${activeScale.label}\n• Addons: ${selectedAddons.join(", ")}\n• Target Turnaround: ~${totalEstimatedDays} business days.\nI would like to schedule a technical discovery call.`
   )
   const whatsappUrl = `https://wa.me/254791497858?text=${prefilledText}`
 
@@ -110,8 +90,7 @@ export function ProjectEstimator() {
     <section id="project-estimator" className="space-y-8">
       {/* Title */}
       <div className="space-y-3 text-center max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary">
-          <Sparkles className="w-3.5 h-3.5" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary">
           <span>Interactive Architecture Sandbox</span>
         </div>
         <h2 className="text-3xl sm:text-4xl font-black text-on-surface tracking-tight">
@@ -136,7 +115,6 @@ export function ProjectEstimator() {
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {SERVICES.map((srv) => {
-                const Icon = srv.icon
                 const isSelected = selectedService === srv.id
                 return (
                   <button
@@ -149,15 +127,11 @@ export function ProjectEstimator() {
                         : "bg-surface-container/40 dark:bg-slate-800/50 border-outline-variant hover:border-primary/40"
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className={`p-2 rounded-xl transition-colors ${
-                          isSelected ? "bg-primary text-white" : "bg-primary/10 text-primary"
-                        }`}
-                      >
-                        <Icon className="w-4 h-4" />
-                      </div>
+                    <div className="flex items-center justify-between">
                       <span className="text-xs font-black text-on-surface">{srv.label}</span>
+                      {isSelected && (
+                        <span className="text-[10px] font-mono font-bold text-primary px-1.5 py-0.5 rounded bg-primary/10">Active</span>
+                      )}
                     </div>
                     <p className="text-[11px] text-on-surface-variant mt-2 line-clamp-2 leading-relaxed">
                       {srv.tagline}
@@ -218,11 +192,7 @@ export function ProjectEstimator() {
                         : "bg-surface-container/40 dark:bg-slate-800/50 border-outline-variant text-on-surface-variant hover:text-on-surface hover:border-primary/30"
                     }`}
                   >
-                    <CheckCircle2
-                      className={`w-3.5 h-3.5 ${
-                        isChecked ? "text-emerald-600 dark:text-emerald-400" : "opacity-30"
-                      }`}
-                    />
+                    <span className={`w-2 h-2 rounded-full ${isChecked ? "bg-emerald-500" : "bg-outline-variant"}`} />
                     <span>{addon.label}</span>
                   </button>
                 )
@@ -232,29 +202,23 @@ export function ProjectEstimator() {
         </div>
 
         {/* Right: Live Architecture Blueprint & Turnaround (5 cols) */}
-        <div className="lg:col-span-5 p-6 sm:p-8 rounded-3xl bg-slate-950 text-white border border-slate-800 shadow-xl space-y-6 relative overflow-hidden">
+        <div className="lg:col-span-5 p-6 sm:p-8 rounded-3xl bg-slate-950 text-white border border-slate-800 shadow-xl space-y-6">
           
-          {/* Subtle Ambient Red Glow */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/15 rounded-full filter blur-[70px] pointer-events-none" />
-
           {/* Card Header */}
-          <div className="relative z-10 flex items-center justify-between border-b border-slate-800/80 pb-4">
-            <div className="flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-primary" />
-              <span className="text-xs font-black uppercase tracking-widest text-slate-300">
-                System Blueprint
-              </span>
-            </div>
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+            <span className="text-xs font-black uppercase tracking-widest text-slate-300">
+              System Blueprint
+            </span>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               Validated Architecture
             </span>
           </div>
 
           {/* Estimated Turnaround Time */}
-          <div className="relative z-10 p-5 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+          <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-400 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-primary" /> Projected Turnaround:
+              <span className="text-xs text-slate-400">
+                Projected Turnaround:
               </span>
               <span className="text-2xl font-black text-white font-mono">
                 ~{totalEstimatedDays} Days
@@ -266,7 +230,7 @@ export function ProjectEstimator() {
           </div>
 
           {/* Recommended Tech Stack Pills */}
-          <div className="relative z-10 space-y-2">
+          <div className="space-y-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
               Recommended Stack & Modules:
             </span>
@@ -294,7 +258,7 @@ export function ProjectEstimator() {
           </div>
 
           {/* Action CTAs */}
-          <div className="relative z-10 pt-2 space-y-3">
+          <div className="pt-2 space-y-3">
             <Button
               asChild
               size="lg"
@@ -312,8 +276,7 @@ export function ProjectEstimator() {
               rel="noreferrer"
               className="w-full h-11 px-4 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
-              <MessageSquareCode className="w-4 h-4 text-emerald-400" />
-              <span>Discuss Config via WhatsApp (Instant Reply)</span>
+              <span>Discuss Config via WhatsApp</span>
             </a>
           </div>
         </div>

@@ -248,7 +248,7 @@ export function KraPinChecker() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                🔄 Auto
+                Auto
               </button>
               <button
                 type="button"
@@ -259,7 +259,7 @@ export function KraPinChecker() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                ⚡ Live API
+                Direct API
               </button>
               <button
                 type="button"
@@ -270,7 +270,7 @@ export function KraPinChecker() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                🌐 DWR
+                Web Remoting
               </button>
             </div>
           </div>

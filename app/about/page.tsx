@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { Metadata } from "next";
-import { 
-  ShieldCheck, Zap, Lock, Users, Target, ArrowRight, CheckCircle2, 
-  MapPin, Code2, Smartphone, Cloud, FileCheck2, ArrowUpRight
-} from "lucide-react";
+import { ArrowRight, MapPin, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BreadcrumbSchema } from "@/components/seo/site-schema";
 
@@ -39,49 +36,42 @@ export const metadata: Metadata = {
 
 const principles = [
   {
-    icon: Code2,
     num: "01",
     title: "Engineering Rigor Above All",
     desc: "We treat software engineering as a rigorous discipline. Every module is strictly typed, tested, audited, and documented before deploying to production.",
   },
   {
-    icon: Lock,
     num: "02",
     title: "Security by Default",
-    desc: "Bank-grade TLS 1.3 encryption, OWASP hardening, and rigorous access control are built into the foundation from day one, never bolted on after.",
+    desc: "TLS 1.3 encryption, OWASP hardening, and rigorous access control are built into the foundation from day one, never bolted on after.",
   },
   {
-    icon: Target,
     num: "03",
     title: "Measurable Business Outcomes",
     desc: "We prioritize real-world velocity, uptime, latency metrics, and user adoption over vanity metrics and superficial deliverable checklists.",
   },
   {
-    icon: Zap,
     num: "04",
-    title: "Sub-Second Performance",
-    desc: "Optimized database query planners, distributed caching, and lean bundle delivery ensure lightning-fast interactions across all devices.",
+    title: "Responsive Performance",
+    desc: "Optimized database query planners, distributed caching, and lean bundle delivery ensure fast, dependable interactions across all devices.",
   },
 ]
 
 const stackCategories = [
   {
     title: "Web & Enterprise SaaS",
-    icon: Code2,
-    desc: "Modern reactive web apps built with Next.js 15, React 19, strict TypeScript, and Tailwind CSS for peak Core Web Vitals.",
-    technologies: ["Next.js 15", "React 19", "TypeScript", "Tailwind CSS", "Prisma ORM", "PostgreSQL"],
+    desc: "Modern reactive web apps built with Next.js, React, strict TypeScript, and Tailwind CSS for peak Core Web Vitals.",
+    technologies: ["Next.js", "React", "TypeScript", "Tailwind CSS", "Prisma ORM", "PostgreSQL"],
   },
   {
     title: "Mobile App Ecosystems",
-    icon: Smartphone,
     desc: "High-performance native iOS (Swift), Android (Kotlin), and universal React Native applications with offline-first synchronization.",
-    technologies: ["React Native", "Swift / SwiftUI", "Kotlin / Compose", "SQLite", "Expo", "Firebase"],
+    technologies: ["React Native", "Swift / SwiftUI", "Kotlin / Compose", "SQLite", "Expo"],
   },
   {
     title: "Cloud & DevOps Infrastructure",
-    icon: Cloud,
-    desc: "Containerized microservices and automated GitOps CI/CD pipelines deployed to AWS, GCP, and modern edge CDN networks.",
-    technologies: ["AWS / GCP", "Docker & K8s", "Terraform", "GitHub Actions", "Redis", "Cloudflare"],
+    desc: "Containerized microservices and automated GitOps CI/CD pipelines deployed to standard cloud providers and modern edge networks.",
+    technologies: ["Docker", "Linux / VPS", "GitHub Actions", "Redis", "Cloudflare"],
   },
 ]
 
@@ -89,27 +79,26 @@ const inHouseProducts = [
   {
     title: "KRA Certificate Retrieval Portal",
     tag: "Flagship GovTech",
-    stat: "50,000+ Certificates Issued",
-    speed: "< 30s processing",
+    stat: "Direct Registry Lookup",
+    speed: "Instant Resolution",
     href: "/retrieval-portal",
     desc: "Automated retrieval and cryptographic verification of compliance documents via National ID and PIN.",
   },
-
   {
     title: "Automated Tax Returns Filing",
     tag: "Compliance Suite",
-    stat: "25,000+ Returns Processed",
-    speed: "99.9% success rate",
+    stat: "Guided Submission",
+    speed: "Standard iTax Formats",
     href: "/dashboard/filing",
-    desc: "Streamlined statutory compliance assistant guiding Kenyan businesses through iTax nil returns in under 5 minutes.",
+    desc: "Streamlined statutory compliance assistant guiding Kenyan businesses through iTax nil returns efficiently.",
   },
 ]
 
-const companyStats = [
-  { label: "Compliance Certificates Issued", value: "50,000+" },
-  { label: "Daily Taxpayer Validations", value: "10,000+" },
-  { label: "Platform Uptime SLA", value: "99.98%" },
-  { label: "Production Deployments", value: "80+" },
+const coreCompetencies = [
+  { label: "Deployment Topology", value: "Edge CDN & Microservices" },
+  { label: "Data Protection", value: "KDPA 2019 Compliant" },
+  { label: "API Gateways", value: "Daraja M-Pesa & KRA iTax" },
+  { label: "Development Cadence", value: "CI/CD Automated Testing" },
 ]
 
 export default function AboutPage() {
@@ -156,10 +145,7 @@ export default function AboutPage() {
           
           {/* Main Content (3 cols) */}
           <div className="lg:col-span-3 space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-primary/10 text-primary">
-                <ShieldCheck className="h-7 w-7" />
-              </div>
+            <div>
               <span className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
                 Engineering Conviction
               </span>
@@ -179,17 +165,17 @@ export default function AboutPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 "Strict TypeScript & comprehensive type safety",
                 "Automated CI/CD pipelines & zero-downtime releases",
-                "Bank-grade TLS 1.3 encryption & OWASP hardening",
-                "Sub-second Core Web Vitals across all screens",
+                "Encrypted TLS transmission & OWASP hardening",
+                "High performance across all screen sizes",
                 "Resilient offline-first mobile sync capabilities",
                 "Clear documentation & enterprise code ownership",
               ].map((feat) => (
                 <div key={feat} className="flex items-start gap-2.5 text-sm text-on-surface">
-                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <span className="text-primary font-bold shrink-0 leading-tight">•</span>
                   <span>{feat}</span>
                 </div>
               ))}
@@ -207,12 +193,12 @@ export default function AboutPage() {
           {/* Stats Card (2 cols) - Matching Products Live Card */}
           <div className="lg:col-span-2">
             <div className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-5 sticky top-24">
-              <h4 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Engineering Track Record</h4>
+              <h4 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Engineering Competencies</h4>
               <div className="space-y-4">
-                {companyStats.map((stat) => (
+                {coreCompetencies.map((stat) => (
                   <div key={stat.label} className="flex items-center justify-between p-4 rounded-2xl bg-surface-container">
                     <span className="text-xs text-on-surface-variant font-semibold">{stat.label}</span>
-                    <span className="text-lg font-black text-on-surface">{stat.value}</span>
+                    <span className="text-sm font-bold text-on-surface text-right">{stat.value}</span>
                   </div>
                 ))}
               </div>
@@ -233,15 +219,11 @@ export default function AboutPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {principles.map((p) => {
-              const Icon = p.icon
               return (
                 <div key={p.num} className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant space-y-4 flex flex-col justify-between">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className="p-3 rounded-xl bg-primary/10 text-primary w-fit">
-                        <Icon className="h-6 w-6" />
-                      </div>
-                      <span className="text-xs font-mono font-black text-primary">{p.num}</span>
+                      <span className="text-xs font-mono font-black text-primary px-2 py-0.5 rounded bg-primary/10 border border-primary/20">{p.num}</span>
                     </div>
                     <h3 className="text-lg font-bold text-on-surface">{p.title}</h3>
                     <p className="text-xs text-on-surface-variant leading-relaxed">{p.desc}</p>
@@ -260,13 +242,9 @@ export default function AboutPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {stackCategories.map((item) => {
-              const Icon = item.icon
               return (
                 <div key={item.title} className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant space-y-5 flex flex-col justify-between">
                   <div className="space-y-3">
-                    <div className="p-3 rounded-xl bg-primary/10 text-primary w-fit">
-                      <Icon className="h-6 w-6" />
-                    </div>
                     <h3 className="text-lg font-bold text-on-surface">{item.title}</h3>
                     <p className="text-xs text-on-surface-variant leading-relaxed">{item.desc}</p>
                   </div>

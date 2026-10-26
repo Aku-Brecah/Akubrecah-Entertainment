@@ -2,13 +2,13 @@ import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "In-House Products & Statutory Software Tools",
-  description: "Explore Akubrecah Technologies' battle-tested software products: Akubrecah API Gateway, high-throughput financial routing, and automated compliance tools built for East African enterprises.",
+  description: "Explore Akubrecah Technologies' software products: Akubrecah API Gateway, high-throughput financial routing, and automated compliance tools built for East African enterprises.",
   alternates: {
     canonical: "https://akubrecah.com/products",
   },
   openGraph: {
     title: "In-House Products & Developer Tools | Akubrecah Technologies",
-    description: "Explore battle-tested software products, distributed API gateways, and tax compliance automation tools.",
+    description: "Explore software products, distributed API gateways, and tax compliance automation tools.",
     url: "https://akubrecah.com/products",
     type: "website",
     images: [
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 }
 
 import Link from "next/link"
-import { FileCheck2, ShieldCheck, Send, ArrowRight, CheckCircle2, Lock, Zap, Shield } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BreadcrumbSchema, SoftwareSchema } from "@/components/seo/site-schema"
 
@@ -37,35 +37,28 @@ const products = [
   {
     id: "api-gateway",
     tag: "Core Infrastructure",
-    icon: Zap,
     title: "Akubrecah API Gateway",
     subtitle: "High-throughput microservice routing & event bus",
-    description: "Our proprietary distributed API gateway architecture designed for sub-10ms request routing, token rate-limiting, and resilient webhook dispatch. Built with Next.js, Redis, and high-concurrency Node.js workers.",
+    description: "Our proprietary distributed API gateway architecture designed for low-latency request routing, token rate-limiting, and resilient webhook dispatch. Built with Next.js, Redis, and high-concurrency Node.js workers.",
     href: "/services#enterprise",
     ctaText: "Explore Gateway Architecture",
-    color: "text-primary",
-    bgColor: "bg-primary/10",
     features: [
-      "Sub-10ms latency distributed routing",
+      "Low-latency distributed routing",
       "Dynamic in-memory bounded LRU rate limiting",
       "Automated webhook retry with exponential backoff",
       "End-to-end payload signature verification (HMAC-SHA256)",
       "Zero-downtime hot reload configuration",
-      "Real-time Prometheus & OpenTelemetry metric exports",
+      "Prometheus & OpenTelemetry metric exports",
     ],
   },
-
   {
     id: "observability-console",
     tag: "Developer Platform",
-    icon: Shield,
     title: "Client & Engineering Console",
     subtitle: "Full-stack project observability & deployment hub",
     description: "A centralized dashboard for enterprise engineering clients. Track live production metrics, server resource utilization, database migration logs, and payment reconciliation in real-time.",
     href: "/dashboard",
     ctaText: "Open Engineering Console",
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
     features: [
       "Real-time container CPU, RAM & disk telemetry",
       "Integrated CI/CD build status and git commit tracking",
@@ -79,19 +72,19 @@ const products = [
 
 const techHighlights = [
   {
-    icon: Lock,
-    title: "Bank-Grade Security",
-    desc: "TLS 1.3 encryption, OWASP-hardened APIs, rate limiting, and automated scanner blocking on all product endpoints.",
+    step: "01",
+    title: "Encrypted & Hardened Standards",
+    desc: "TLS 1.3 encryption, OWASP-hardened APIs, rate limiting, and automated security controls on all product endpoints.",
   },
   {
-    icon: Zap,
-    title: "Sub-Second Performance",
+    step: "02",
+    title: "High Performance Architecture",
     desc: "Edge-deployed infrastructure with aggressive caching, CDN routing, and optimized database queries for minimal latency.",
   },
   {
-    icon: Shield,
-    title: "Zero-Downtime Architecture",
-    desc: "Blue-green deployments, automated health checks, and multi-region failover ensure continuous service availability.",
+    step: "03",
+    title: "Resilient Infrastructure",
+    desc: "Automated deployments, health checks, and failover safeguards ensure continuous service availability.",
   },
 ]
 
@@ -127,7 +120,7 @@ export default function ProductsPage() {
             </h1>
             <p className="text-base sm:text-lg text-on-surface-variant max-w-2xl leading-relaxed">
               Built and operated in-house, these products demonstrate the precision of our engineering. 
-              Used daily by thousands of Kenyan taxpayers and businesses for instant, verified tax compliance.
+              Designed for Kenyan taxpayers and businesses for instant, verified tax compliance.
             </p>
           </div>
         </div>
@@ -138,7 +131,6 @@ export default function ProductsPage() {
         {/* Products */}
         <div className="space-y-10">
           {products.map((product) => {
-            const Icon = product.icon
             return (
               <div
                 key={product.id}
@@ -146,20 +138,15 @@ export default function ProductsPage() {
                 className="p-8 sm:p-10 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-6"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-2xl ${product.bgColor} ${product.color}`}>
-                      <Icon className="h-7 w-7" />
-                    </div>
-                    <div>
-                      <span className={`text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${product.bgColor} ${product.color} border border-current/20`}>
-                        {product.tag}
-                      </span>
-                      <h2 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight mt-1.5">
-                        {product.title}
-                      </h2>
-                    </div>
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 inline-block mb-2">
+                      {product.tag}
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
+                      {product.title}
+                    </h2>
                   </div>
-                  <p className={`text-xs sm:text-sm font-bold ${product.color}`}>
+                  <p className="text-xs sm:text-sm font-bold text-primary">
                     {product.subtitle}
                   </p>
                 </div>
@@ -171,7 +158,7 @@ export default function ProductsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-4 border-t border-outline-variant/60">
                   {product.features.map((feat) => (
                     <div key={feat} className="flex items-start gap-2.5 text-xs sm:text-sm text-on-surface">
-                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                      <span className="text-primary font-bold shrink-0 leading-tight">•</span>
                       <span>{feat}</span>
                     </div>
                   ))}
@@ -192,17 +179,16 @@ export default function ProductsPage() {
         {/* Tech Highlights */}
         <div className="space-y-8">
           <div className="text-center space-y-2">
-            <span className="text-xs font-black text-primary uppercase tracking-widest">Built Different</span>
-            <h2 className="text-3xl font-black text-on-surface">Engineering Standards Behind Every Product</h2>
+            <span className="text-xs font-black text-primary uppercase tracking-widest">Engineering Discipline</span>
+            <h2 className="text-3xl font-black text-on-surface">Standards Behind Every Product</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {techHighlights.map((item) => {
-              const Icon = item.icon
               return (
                 <div key={item.title} className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant space-y-4">
-                  <div className="p-3 rounded-xl bg-primary/10 text-primary w-fit">
-                    <Icon className="h-6 w-6" />
-                  </div>
+                  <span className="text-xs font-mono font-black text-primary px-2 py-0.5 rounded bg-primary/10 border border-primary/20 w-fit inline-block">
+                    {item.step}
+                  </span>
                   <h3 className="text-lg font-bold text-on-surface">{item.title}</h3>
                   <p className="text-xs text-on-surface-variant leading-relaxed">{item.desc}</p>
                 </div>
@@ -215,12 +201,12 @@ export default function ProductsPage() {
         <div className="p-10 sm:p-14 rounded-3xl bg-primary text-white text-center space-y-5">
           <h2 className="text-3xl font-black">Need a Custom Version for Your Organization?</h2>
           <p className="text-white/80 text-sm max-w-lg mx-auto">
-            We white-label and customize all of our in-house products for enterprise and government deployments. 
-            Full SLA, dedicated support, and on-premise options available.
+            We configure and deploy our software architecture for enterprise and institutional clients. 
+            Dedicated support and customized hosting options available.
           </p>
           <Link href="/contact">
             <Button size="lg" className="h-12 px-8 rounded-xl bg-white text-primary font-bold text-sm flex items-center gap-2 mx-auto group">
-              Inquire About Licensing <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              Inquire About Deployment <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
         </div>

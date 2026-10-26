@@ -191,17 +191,17 @@ function FlagshipPortalContent() {
         <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-around p-3 sm:p-3.5 rounded-2xl bg-surface-container border border-outline-variant/60 gap-2 sm:gap-4 text-center text-[10px] sm:text-[11px] text-on-surface-variant font-medium">
           <div className="flex items-center justify-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 shrink-0" />
-            <span>KDPA 2019 Certified</span>
+            <span>KDPA 2019 Compliant</span>
           </div>
           <div className="hidden sm:block h-4 w-px bg-outline-variant/80" />
           <div className="flex items-center justify-center gap-1.5">
             <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-on-surface shrink-0" />
-            <span>256-Bit TLS Bank Security</span>
+            <span>Encrypted TLS Transmission</span>
           </div>
           <div className="hidden sm:block h-4 w-px bg-outline-variant/80" />
           <div className="flex items-center justify-center gap-1.5">
             <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
-            <span>2.4s Avg Retrieval</span>
+            <span>Direct Registry Lookup</span>
           </div>
           <div className="hidden sm:block h-4 w-px bg-outline-variant/80" />
           <div className="flex items-center justify-center gap-1.5">

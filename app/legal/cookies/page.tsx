@@ -22,7 +22,7 @@ export default function CookiePolicyPage() {
         </p>
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 mt-4">
           <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wide">
-            ✓ We use minimal cookies. We do not use advertising cookies or sell your browsing data.
+            We use minimal cookies. We do not use advertising cookies or sell your browsing data.
           </p>
         </div>
       </div>
@@ -65,12 +65,12 @@ export default function CookiePolicyPage() {
 
       <Section title="3. Cookies We Do NOT Use">
         <p>We do <strong>not</strong> use:</p>
-        <ul>
-          <li>❌ Advertising or marketing cookies</li>
-          <li>❌ Third-party tracking pixels (Facebook Pixel, Google Ads, etc.)</li>
-          <li>❌ Behavioural profiling cookies</li>
-          <li>❌ Social media tracking cookies</li>
-          <li>❌ Cross-site tracking technologies</li>
+        <ul className="space-y-1.5 list-disc list-inside">
+          <li>Advertising or marketing cookies</li>
+          <li>Third-party tracking pixels (Facebook Pixel, Google Ads, etc.)</li>
+          <li>Behavioural profiling cookies</li>
+          <li>Social media tracking cookies</li>
+          <li>Cross-site tracking technologies</li>
         </ul>
       </Section>
 

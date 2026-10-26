@@ -345,7 +345,7 @@ export default function ContactPage() {
 
                 {formState === "error" && errorMessage && (
                   <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold flex items-start gap-2.5">
-                    <span className="shrink-0 text-base leading-none">⚠️</span>
+                    <span className="font-bold shrink-0">[!]</span>
                     <span>{errorMessage}</span>
                   </div>
                 )}

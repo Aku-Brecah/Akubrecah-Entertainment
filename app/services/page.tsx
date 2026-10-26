@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { Metadata } from "next";
-import { 
-  Laptop, Smartphone, Cloud, Layers, 
-  CheckCircle2, ArrowRight, Shield, Zap, Lock, Terminal
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ServiceSchema, BreadcrumbSchema, FaqSchema } from "@/components/seo/site-schema";
 
@@ -56,7 +53,7 @@ const servicesFaqs = [
   },
   {
     question: "How does Akubrecah ensure system security and data privacy?",
-    answer: "We enforce security-by-default on every build: OWASP compliance, bank-grade 256-bit TLS encryption, strict role-based access control (RBAC), automated vulnerability scanning in CI/CD, and adherence to the Kenya Data Protection Act 2019.",
+    answer: "We enforce security-by-default on every build: OWASP compliance, encrypted TLS transmission, strict role-based access control (RBAC), automated vulnerability scanning in CI/CD, and adherence to the Kenya Data Protection Act 2019.",
   },
 ];
 
@@ -64,17 +61,14 @@ const services = [
   {
     id: "web",
     tag: "Full-Stack Web Engineering",
-    icon: Laptop,
     title: "Web Applications & Scalable SaaS",
     subtitle: "Production-grade Next.js, React, and strict TypeScript systems",
-    description: "We build resilient, server-rendered and statically generated web applications engineered for speed, search discovery, and enterprise security. Designed to handle high concurrent traffic with effortless sub-second latency.",
+    description: "We build resilient, server-rendered and statically generated web applications engineered for speed, search discovery, and enterprise security. Designed to handle high concurrent traffic with fast, dependable response times.",
     href: "/contact?service=web",
     ctaText: "Discuss Web Project",
-    color: "text-primary",
-    bgColor: "bg-primary/10",
     features: [
       "Server-rendered Next.js 15 & React 19 architecture",
-      "Sub-second Core Web Vitals (LCP < 1.2s, INP < 100ms)",
+      "Optimized Core Web Vitals and fast rendering across devices",
       "Strict end-to-end TypeScript with runtime validation",
       "Multi-tenant SaaS architecture & Stripe/Paystack billing",
       "WCAG 2.1 AA accessibility & semantic HTML standards",
@@ -85,35 +79,29 @@ const services = [
   {
     id: "mobile",
     tag: "Native & Universal Mobile",
-    icon: Smartphone,
     title: "Mobile App Ecosystems",
-    subtitle: "Fluid 60fps native iOS, Android, and React Native apps",
+    subtitle: "Native iOS, Android, and cross-platform React Native apps",
     description: "From native Swift/SwiftUI and Kotlin/Jetpack to cross-platform React Native with offline-first synchronization, we engineer mobile applications that deliver smooth, reliable experiences in any network condition.",
     href: "/contact?service=mobile",
     ctaText: "Discuss Mobile App",
-    color: "text-red-600 dark:text-red-400",
-    bgColor: "bg-red-50 dark:bg-red-950/40",
     features: [
       "Universal iOS (Swift/SwiftUI) & Android (Kotlin/Compose)",
       "Offline-first local SQLite caching with auto-sync",
       "Biometric security (FaceID/Fingerprint) & hardware APIs",
       "Push notification systems (APNs, FCM) & deep linking",
       "M-Pesa STK Push and mobile money checkout SDKs",
-      "App Store & Google Play submission and release management",
+      "App Store & Google Play release pipelines",
     ],
     stack: ["React Native", "Swift / SwiftUI", "Kotlin / Compose", "SQLite", "Expo", "Firebase"],
   },
   {
     id: "cloud",
     tag: "Cloud Architecture & DevOps",
-    icon: Cloud,
     title: "Cloud Infrastructure & GitOps",
-    subtitle: "Self-healing Kubernetes, Terraform IaC, and resilient microservices",
+    subtitle: "Container orchestration, Terraform IaC, and resilient microservices",
     description: "We architect secure, scalable cloud infrastructure across AWS, GCP, and Azure. Automated GitOps CI/CD pipelines, container orchestration, and continuous monitoring eliminate manual operations and deployment risks.",
     href: "/contact?service=cloud",
     ctaText: "Discuss Cloud Architecture",
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
     features: [
       "Docker & Kubernetes container orchestration at scale",
       "Infrastructure as Code (IaC) with Terraform & Pulumi",
@@ -127,14 +115,11 @@ const services = [
   {
     id: "enterprise",
     tag: "GovTech & Enterprise Systems",
-    icon: Layers,
     title: "Enterprise & Statutory Integration",
     subtitle: "High-throughput APIs, ERP connectors, and compliance portals",
-    description: "Bespoke digital transformation for enterprises and government agencies. We engineer high-throughput transaction gateways, automated statutory compliance pipelines, and custom back-office operations systems.",
+    description: "Bespoke digital transformation for enterprises and statutory agencies. We engineer high-throughput transaction gateways, automated statutory compliance pipelines, and custom back-office operations systems.",
     href: "/contact?service=enterprise",
     ctaText: "Discuss Enterprise Systems",
-    color: "text-primary",
-    bgColor: "bg-primary/10",
     features: [
       "M-Pesa Daraja API integration (STK Push, C2B, B2C, B2B)",
       "KRA iTax, eCitizen, NTSA, and statutory API connectors",
@@ -149,17 +134,17 @@ const services = [
 
 const engineeringHighlights = [
   {
-    icon: Lock,
+    step: "01",
     title: "OWASP-Hardened Standards",
-    desc: "Rigorous vulnerability assessments, zero-trust network policies, rate-limiting, and automated SAST/DAST scans on every pull request.",
+    desc: "Vulnerability assessments, zero-trust network policies, rate-limiting, and automated SAST/DAST scans on every pull request.",
   },
   {
-    icon: Terminal,
+    step: "02",
     title: "Clean Code & Architecture",
-    desc: "Strict domain-driven design, single-responsibility modules, strict typing, and comprehensive test coverage across every vertical slice.",
+    desc: "Domain-driven design, single-responsibility modules, strict typing, and comprehensive test coverage across every vertical slice.",
   },
   {
-    icon: Zap,
+    step: "03",
     title: "Telemetry & Observability",
     desc: "Integrated real-time error tracking, distributed tracing, and automated health checks ensure immediate visibility into system vitals.",
   },
@@ -207,7 +192,6 @@ export default function ServicesPage() {
 
         {/* Services Showcase */}
         {services.map((service) => {
-          const Icon = service.icon;
           return (
             <div 
               key={service.id} 
@@ -215,16 +199,12 @@ export default function ServicesPage() {
               className="p-8 sm:p-12 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-8"
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className={`p-3.5 rounded-2xl ${service.bgColor} ${service.color}`}>
-                    <Icon className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <span className={`text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${service.bgColor} ${service.color} border border-current/20 inline-block mb-1`}>
-                      {service.tag}
-                    </span>
-                    <h2 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">{service.title}</h2>
-                  </div>
+                <div>
+                  <span className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 inline-block mb-2">
+                    {service.tag}
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">{service.title}</h2>
+                  <p className="text-sm font-semibold text-primary mt-1">{service.subtitle}</p>
                 </div>
                 <Link href={service.href}>
                   <Button className="h-11 px-6 rounded-xl bg-primary text-white font-bold text-xs flex items-center gap-2 group w-fit">
@@ -234,8 +214,7 @@ export default function ServicesPage() {
               </div>
 
               <div>
-                <p className={`text-sm font-bold ${service.color}`}>{service.subtitle}</p>
-                <p className="text-sm text-on-surface-variant mt-2 leading-relaxed max-w-4xl">{service.description}</p>
+                <p className="text-sm text-on-surface-variant leading-relaxed max-w-4xl">{service.description}</p>
               </div>
 
               {/* Deliverables & Capabilities */}
@@ -244,7 +223,7 @@ export default function ServicesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {service.features.map((feat) => (
                     <div key={feat} className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-surface-container text-xs font-medium text-on-surface">
-                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                      <span className="text-primary font-bold shrink-0 leading-tight">•</span>
                       <span>{feat}</span>
                     </div>
                   ))}
@@ -274,12 +253,11 @@ export default function ServicesPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {engineeringHighlights.map((item) => {
-              const Icon = item.icon;
               return (
                 <div key={item.title} className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant space-y-4 shadow-soft">
-                  <div className="p-3 rounded-xl bg-primary/10 text-primary w-fit">
-                    <Icon className="h-6 w-6" />
-                  </div>
+                  <span className="text-xs font-mono font-black text-primary px-2 py-0.5 rounded bg-primary/10 border border-primary/20 w-fit inline-block">
+                    {item.step}
+                  </span>
                   <h3 className="text-lg font-bold text-on-surface">{item.title}</h3>
                   <p className="text-xs text-on-surface-variant leading-relaxed">{item.desc}</p>
                 </div>
@@ -292,7 +270,7 @@ export default function ServicesPage() {
         <div className="p-10 sm:p-14 rounded-3xl bg-primary text-white text-center space-y-5">
           <h2 className="text-3xl font-black">Not Sure Which Capability Fits Your Needs?</h2>
           <p className="text-white/80 text-sm max-w-lg mx-auto">
-            Book a complimentary 30-minute architecture discovery session. Our principal engineers will review your objectives and outline a concrete technical roadmap.
+            Book a 30-minute architecture discovery session. Our principal engineers will review your objectives and outline a concrete technical roadmap.
           </p>
           <Link href="/contact">
             <Button size="lg" className="h-12 px-8 rounded-xl bg-white text-primary font-bold text-sm flex items-center gap-2 mx-auto group">

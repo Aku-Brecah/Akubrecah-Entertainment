@@ -138,7 +138,7 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
           setPollStatus(null);
           setSubmitting(false);
           setShowModal(false);
-          toast.success("🎉 Cyber Cafe Subscription Activated Successfully!");
+          toast.success("Cyber Cafe Subscription Activated Successfully!");
           await fetchStatus();
         } else if (data.status === "failed" || (data.resultCode && data.resultCode !== 0)) {
           clearInterval(interval);
@@ -231,7 +231,7 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
                   Active
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
-                  📅 {daysRemaining} {daysRemaining === 1 ? "Day" : "Days"} Remaining
+                  {daysRemaining} {daysRemaining === 1 ? "Day" : "Days"} Remaining
                 </span>
               </div>
               <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-0.5 font-medium">
@@ -480,7 +480,7 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
                 <ArrowRight className="w-4 h-4" />
               </Button>
               <span className="text-xs text-zinc-500">
-                ⚡ Instant activation · Safaricom M-Pesa or Card accepted
+                Instant activation · Safaricom M-Pesa or Card accepted
               </span>
             </div>
           </div>

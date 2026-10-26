@@ -400,7 +400,7 @@ function AdminProjectsContent() {
 
             {errorMessage && (
               <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold">
-                ⚠️ {errorMessage}
+                {errorMessage}
               </div>
             )}
 
