@@ -90,11 +90,16 @@ else
     echo "⚠️ Note: Check if container picked up environment variables. Current response snippet above."
 fi
 
+API_KEY="${EVOLUTION_API_KEY:-}"
+if [ -z "$API_KEY" ] && [ -f .env ]; then
+  API_KEY=$(grep '^EVOLUTION_API_KEY=' .env | cut -d '=' -f2- | tr -d '\r"')
+fi
+
 # 5. Update Evolution API webhook to point to the new n8n webhook URL
 echo "📱 Pointing Evolution API WhatsApp webhook to n8n.akubrecah.com..."
 curl -s -X POST "https://wa.akubrecah.com/webhook/set/akubrecah-kra" \
   -H "Content-Type: application/json" \
-  -H "apikey: akubrecah_secret_whatsapp_key_2026" \
+  -H "apikey: ${API_KEY}" \
   -d '{
     "webhook": {
       "enabled": true,

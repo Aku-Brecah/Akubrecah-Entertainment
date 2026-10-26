@@ -9,7 +9,7 @@ import { createSystemLog } from '@/lib/prisma';
 import { fetchTaxpayerByPin, fetchTaxpayerById } from '@/lib/kra-api';
 import { getKraStationForCounty, formatKraStation, sanitizeTaxArea } from '@/lib/kra-stations';
 import { getUserSubscriptionStatus } from '@/lib/subscription';
-import { maskTaxpayerData, tryResolveKraPin, sealKraPin, looksLikeKraPin } from '@/lib/masking';
+import { maskTaxpayerData, tryResolveKraPin, sealKraPin, looksLikeKraPin, maskPin } from '@/lib/masking';
 
 export const maxDuration = 60;
 
@@ -746,13 +746,14 @@ export async function POST(req: NextRequest) {
             pinCheckerData = parsePinCheckerHtml(pcHtml);
             log.info('[retrieve] pinChecker parsed name:', pinCheckerData.name, 'pin:', pinCheckerData.pin);
             if (pinCheckerData.captchaWrong && !liveApiTaxpayer) {
+              const displayPin = maskPin(fullPin);
               await createSystemLog({
                 level: 'warning',
                 service: 'KRA-Retrieve',
-                message: `Wrong captcha answer entered for PIN ${fullPin}`,
+                message: `Wrong captcha answer entered for PIN ${displayPin}`,
                 actor: userEmail,
                 ip,
-                details: { pin: fullPin, captchaAnswer }
+                details: { pin: displayPin, captchaAnswer }
               });
               return NextResponse.json({
                 success: false,
@@ -793,14 +794,20 @@ export async function POST(req: NextRequest) {
 
     const registeredDate = first(pc?.registeredDate, pc?.obligationDate, api?.registrationDate, '');
 
+    // Verify user subscription status early so pre-payment checks respect caller entitlement
+    const { isSubscribed } = await getUserSubscriptionStatus(clerkId);
+    const callerKnowsPin = Boolean(resolvedSearchPin) || isSubscribed || isAdmin;
+
     // If fullPin is known and authentic, and name or registration date is missing, and no CAPTCHA answer provided
     if (fullPin && looksLikeKraPin(fullPin) && (!name || !registeredDate) && (!captchaAnswer || !captchaAnswer.trim())) {
-      log.info(`[retrieve] PIN ${fullPin} resolved. Prompting for security stamp to retrieve official details.`);
+      const maskedPin = maskPin(fullPin);
+      log.info(`[retrieve] PIN ${maskedPin} identified. Prompting for security stamp to retrieve official details.`);
       return NextResponse.json({
         success: false,
         captchaRequired: true,
-        pin: fullPin,
-        error: `PIN ${fullPin} identified. Please solve the security stamp to retrieve your official registration date and station.`
+        pin: callerKnowsPin ? fullPin : maskedPin,
+        rawPin: callerKnowsPin ? fullPin : sealKraPin(fullPin),
+        error: `Taxpayer PIN (${maskedPin}) identified. Please solve the security stamp to retrieve your official registration date and station.`
       }, { status: 422 });
     }
 
@@ -832,9 +839,6 @@ export async function POST(req: NextRequest) {
     // Zero-storage policy: Do not persist taxpayer lookup details into database cache.
     // Live taxpayer results are processed ephemerally in-memory for the active session.
 
-    // Verify user subscription status
-    const { isSubscribed } = await getUserSubscriptionStatus(clerkId);
-
     const fullTaxpayerRecord = {
       pin:           effectivePin,
       idNumber:      cleanId || liveApiTaxpayer?.idNumber || man?.idNumber || '',
@@ -862,7 +866,6 @@ export async function POST(req: NextRequest) {
     // caller already knows it (typed a real full PIN — NOT a masked display
     // hint) or is subscribed/admin. Otherwise send an opaque sealed blob the
     // client passes through to the payment endpoints (resolved server-side there).
-    const callerKnowsPin = Boolean(resolvedSearchPin) || isSubscribed || isAdmin;
     const clientRawPin = callerKnowsPin
       ? effectivePin
       : (fullPin && looksLikeKraPin(fullPin) ? sealKraPin(fullPin) : effectivePin);

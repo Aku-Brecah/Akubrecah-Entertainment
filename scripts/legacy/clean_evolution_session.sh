@@ -30,16 +30,25 @@ docker compose -f deploy/docker-compose.yml up -d evolution
 echo "5. Waiting 6 seconds for Evolution API to initialize..."
 sleep 6
 
+API_KEY="${EVOLUTION_API_KEY:-}"
+if [ -z "$API_KEY" ] && [ -f .env ]; then
+  API_KEY=$(grep '^EVOLUTION_API_KEY=' .env | cut -d '=' -f2- | tr -d '\r"')
+fi
+if [ -z "$API_KEY" ]; then
+  echo "❌ Error: EVOLUTION_API_KEY must be set in environment or .env"
+  exit 1
+fi
+
 INSTANCE_NAME="${EVOLUTION_INSTANCE_NAME:-akubrecah-portal}"
 ENCODED_INSTANCE=$(echo "$INSTANCE_NAME" | sed 's/ /%20/g')
 
 echo "6. Creating fresh instance ${INSTANCE_NAME}..."
 curl -s -X POST "https://wa.akubrecah.com/instance/create" \
   -H "Content-Type: application/json" \
-  -H "apikey: akubrecah_secret_whatsapp_key_2026" \
+  -H "apikey: ${API_KEY}" \
   -d '{
     "instanceName": "'"${INSTANCE_NAME}"'",
-    "token": "akubrecah_secret_whatsapp_key_2026",
+    "token": "'"${API_KEY}"'",
     "qrcode": true,
     "integration": "WHATSAPP-BAILEYS"
   }' > /dev/null || true
@@ -47,7 +56,7 @@ curl -s -X POST "https://wa.akubrecah.com/instance/create" \
 echo "7. Applying real-time chat & contact sync settings..."
 curl -s -X POST "https://wa.akubrecah.com/settings/set/${ENCODED_INSTANCE}" \
   -H "Content-Type: application/json" \
-  -H "apikey: akubrecah_secret_whatsapp_key_2026" \
+  -H "apikey: ${API_KEY}" \
   -d '{
     "rejectCall": false,
     "msgCall": "",
@@ -61,14 +70,14 @@ curl -s -X POST "https://wa.akubrecah.com/settings/set/${ENCODED_INSTANCE}" \
 echo "8. Pointing webhook to https://n8n.akubrecah.com/webhook/whatsapp-inbound..."
 curl -s -X POST "https://wa.akubrecah.com/webhook/set/${ENCODED_INSTANCE}" \
   -H "Content-Type: application/json" \
-  -H "apikey: akubrecah_secret_whatsapp_key_2026" \
+  -H "apikey: ${API_KEY}" \
   -d '{
     "webhook": {
       "enabled": true,
       "url": "https://n8n.akubrecah.com/webhook/whatsapp-inbound",
       "headers": {
-        "apikey": "akubrecah_secret_whatsapp_key_2026",
-        "x-webhook-secret": "akubrecah_secret_whatsapp_key_2026"
+        "apikey": "'"${API_KEY}"'",
+        "x-webhook-secret": "'"${API_KEY}"'"
       },
       "byEvents": false,
       "base64": false,
@@ -89,5 +98,5 @@ curl -s -X POST "https://wa.akubrecah.com/webhook/set/${ENCODED_INSTANCE}" \
 echo ""
 echo "✅ Evolution API is completely clean and ready!"
 echo "👉 Open https://wa.akubrecah.com/manager/ in your browser"
-echo "👉 Enter API Key: akubrecah_secret_whatsapp_key_2026"
+echo "👉 Enter your configured EVOLUTION_API_KEY"
 echo "👉 Click on '${INSTANCE_NAME}' and scan the fresh QR code!"

@@ -31,7 +31,13 @@ echo ""
 echo "6. Verifying Evolution WhatsApp Instance & Webhook..."
 INSTANCE_NAME="${EVOLUTION_INSTANCE_NAME:-Akubrecah Entertainment}"
 ENCODED_INSTANCE=$(echo "$INSTANCE_NAME" | sed 's/ /%20/g')
-API_KEY="${EVOLUTION_API_KEY:-akubrecah_secret_whatsapp_key_2026}"
+API_KEY="${EVOLUTION_API_KEY:-}"
+if [ -z "$API_KEY" ] && [ -f .env ]; then
+  API_KEY=$(grep '^EVOLUTION_API_KEY=' .env | cut -d '=' -f2- | tr -d '\r"')
+fi
+if [ -z "$API_KEY" ]; then
+  echo "⚠️ Warning: EVOLUTION_API_KEY is not set. WhatsApp instance verification skipped."
+fi
 
 # 6a. Ensure WhatsApp instance is created
 curl -s -X POST "http://127.0.0.1:8085/instance/create" \

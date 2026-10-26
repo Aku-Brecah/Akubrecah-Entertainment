@@ -1,5 +1,18 @@
-import { describe, it, expect } from 'vitest';
-import { maskTaxpayerData, maskPin } from '@/lib/masking';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { maskTaxpayerData, maskPin, sealKraPin, tryResolveKraPin } from '@/lib/masking';
+
+const TEST_SECRET = 'test-encryption-key-material-0000000000000042';
+let originalKey: string | undefined;
+
+beforeAll(() => {
+  originalKey = process.env.ENCRYPTION_KEY;
+  process.env.ENCRYPTION_KEY = TEST_SECRET;
+});
+
+afterAll(() => {
+  if (originalKey === undefined) delete process.env.ENCRYPTION_KEY;
+  else process.env.ENCRYPTION_KEY = originalKey;
+});
 
 describe('National ID and PIN masked retrieval behavior', () => {
   it('masks sensitive fields for preview while keeping full name and ID visible', () => {
@@ -61,5 +74,32 @@ describe('National ID and PIN masked retrieval behavior', () => {
     expect(unlocked.email).toBe('powel@example.com');
     expect(unlocked.phoneNumber).toBe('0712345678');
     expect(unlocked.isSubscribed).toBe(true);
+  });
+
+  it('enforces that anonymous pre-payment captchaRequired payloads never contain plaintext PIN', () => {
+    const fullPin = 'A012345678Z';
+    const callerKnowsPin = false;
+
+    const maskedPin = maskPin(fullPin);
+    const sealedPin = sealKraPin(fullPin);
+
+    const prePaymentResponse = {
+      success: false,
+      captchaRequired: true,
+      pin: callerKnowsPin ? fullPin : maskedPin,
+      rawPin: callerKnowsPin ? fullPin : sealedPin,
+      error: `Taxpayer PIN (${maskedPin}) identified. Please solve the security stamp to retrieve your official registration date and station.`
+    };
+
+    // Plaintext PIN must not appear anywhere in display pin or error message
+    expect(prePaymentResponse.pin).toBe('A01*****78Z');
+    expect(prePaymentResponse.pin).not.toBe(fullPin);
+    expect(prePaymentResponse.error).not.toContain(fullPin);
+    expect(prePaymentResponse.error).toContain('A01*****78Z');
+
+    // rawPin must be an opaque sealed blob that decrypts back to original PIN only server-side
+    expect(prePaymentResponse.rawPin.startsWith('kraseal1:')).toBe(true);
+    expect(prePaymentResponse.rawPin).not.toContain(fullPin);
+    expect(tryResolveKraPin(prePaymentResponse.rawPin)).toBe(fullPin);
   });
 });

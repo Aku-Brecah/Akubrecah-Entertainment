@@ -211,42 +211,22 @@ export default clerkMiddleware(async (auth, request) => {
   }
   // Case D: Accessing on kra.akubrecah.com
   else if (isKraSubdomain) {
-    // 1. Authentication Gating: User must be signed in to access the KRA portal
-    const isPublicAuthRoute =
-      pathname.startsWith('/sign-in') ||
-      pathname.startsWith('/sign-up') ||
-      pathname.startsWith('/sso-callback') ||
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/session-tasks') ||
-      pathname.startsWith('/legal/') ||
-      pathname === '/privacy' ||
-      pathname === '/terms' ||
-      pathname.startsWith('/favicon') ||
-      pathname.startsWith('/robots') ||
-      pathname.startsWith('/sitemap');
-
-    if (!userId && !isPublicAuthRoute) {
-      const signInUrl = new URL('/sign-in', request.url);
-      signInUrl.searchParams.set('redirect_url', request.url);
-      return NextResponse.redirect(signInUrl, 307);
-    }
-
-    // 2. Root '/' rewrites to the flagship portal hub
+    // 1. Root '/' rewrites to the flagship portal hub for all visitors (public access for SEO and users)
     if (pathname === '/') {
       response = NextResponse.rewrite(new URL('/retrieval-portal', request.url));
     }
-    // 3. Clean URL: redirect '/retrieval-portal' to root '/' on the subdomain
+    // 2. Clean URL: redirect '/retrieval-portal' to root '/' on the subdomain
     else if (pathname === '/retrieval-portal' || pathname === '/retrieval-portal/') {
       const cleanUrl = new URL('/', request.url);
       cleanUrl.search = request.nextUrl.search;
       return NextResponse.redirect(cleanUrl, 307);
     }
-    // 4. Filing shortcut: redirect '/dashboard/filing' to root with filing view
+    // 3. Filing shortcut: redirect '/dashboard/filing' to root with filing view
     else if (pathname === '/dashboard/filing' || pathname === '/dashboard/filing/') {
       const filingUrl = new URL('/?view=filing', request.url);
       return NextResponse.redirect(filingUrl, 307);
     }
-    // 5. Redirect marketing & agency routes back to the main domain
+    // 4. Redirect marketing & agency routes back to the main domain
     else if (
       pathname.startsWith('/about') ||
       pathname.startsWith('/projects') ||
@@ -274,8 +254,8 @@ export default clerkMiddleware(async (auth, request) => {
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
-  // Accelerate public marketing homepage on Edge CDN with stale-while-revalidate
-  if (!userId && pathname === '/' && !isKraSubdomain && !isAdminSubdomain) {
+  // Accelerate public marketing and portal homepage on Edge CDN with stale-while-revalidate
+  if (!userId && pathname === '/' && !isAdminSubdomain) {
     response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400');
   }
 
