@@ -23,13 +23,13 @@ export function SiteFooter(): JSX.Element {
           
           {/* Col 1 & 2: Brand Information */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-block hover:opacity-90 transition-opacity" aria-label="Akubrecah Technologies">
+            <Link href="/" className="inline-block hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
               <Logo width={150} height={42} />
             </Link>
             <p className="text-xs text-on-surface-variant leading-relaxed max-w-sm">
-              Akubrecah Technologies is a full-cycle software engineering and digital innovation company. 
-              We architect high-impact web applications, native & cross-platform mobile apps, cloud platforms, 
-              and mission-critical automated systems — proudly powering government and enterprise automation across East Africa.
+              Akubrecah Entertainment is a full-cycle software engineering, GovTech compliance, and digital brand innovation house. 
+              We architect high-impact web platforms, native mobile ecosystems, cloud infrastructure, 
+              and mission-critical automated portals — proudly powering citizens, cyber cafes, and enterprises across East Africa.
             </p>
             <div className="flex items-center gap-4 text-xs font-semibold text-on-surface">
               <span className="flex items-center gap-1.5">
@@ -130,6 +130,12 @@ export function SiteFooter(): JSX.Element {
               <li>
                 <Link href="/articles" className="hover:text-primary transition-colors">
                   Field Notes & Articles
+                </Link>
+              </li>
+              <li>
+                <Link href="/brand" className="hover:text-primary transition-colors flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  Brand Book & Tokens
                 </Link>
               </li>
               <li>

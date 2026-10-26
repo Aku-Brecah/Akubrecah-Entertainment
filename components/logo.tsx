@@ -38,7 +38,7 @@ export function Logo({
     )
   }
 
-  const altText = "Akubrecah Technologies"
+  const altText = "Akubrecah Entertainment"
 
   return (
     <div className={cn("relative flex items-center justify-center shrink-0", className)} style={{ width, height }}>
