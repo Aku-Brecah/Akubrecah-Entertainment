@@ -108,6 +108,12 @@ export function SiteFooter(): JSX.Element {
                   Cloud & Infrastructure Manager
                 </Link>
               </li>
+              <li>
+                <Link href="/estimator" className="hover:text-primary transition-colors flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  Architecture & Scope Estimator
+                </Link>
+              </li>
             </ul>
           </div>
 

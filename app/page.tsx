@@ -14,9 +14,7 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
-  FileCheck2,
   Printer,
-  Cpu,
   MessageSquare,
   CheckCircle2
 } from 'lucide-react'
@@ -24,7 +22,6 @@ import type { Metadata } from 'next'
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getPublishedProjects, getPublishedArticles } from '@/lib/cms'
-import { ProjectEstimator } from '@/components/interactive/project-estimator'
 import { ReviewSection } from '@/components/reviews/review-section'
 import { filterPublicTechnologies, cleanPublicLiveUrl } from '@/lib/tech-filter'
 
@@ -87,10 +84,10 @@ export default async function Home() {
   const capabilities = [
     { 
       icon: ShieldCheck, 
-      label: "GovTech Portals", 
-      desc: "KRA PIN Retrieval, ETR Receipts & Nil Returns", 
-      href: "/retrieval-portal",
-      badge: "Instant KES 20"
+      label: "GovTech & Compliance", 
+      desc: "Automated Tax Verification, Portals & POS Fiscal Thermal Systems", 
+      href: "/solutions#govtech",
+      badge: "High Scale"
     },
     { 
       icon: Laptop, 
@@ -145,18 +142,6 @@ export default async function Home() {
           {/* Left: Text & Magnetic CTAs */}
           <div className="flex-1 space-y-7">
             
-            {/* Live Telemetry Pill */}
-            <div className="inline-flex flex-wrap items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container-high border border-outline-variant text-xs font-semibold shadow-xs">
-              <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="font-black text-red-700 dark:text-red-400">Akubrecah Entertainment</span>
-              <span className="text-outline-muted">·</span>
-              <span className="text-on-surface-variant font-mono text-[11px]">Design · Print · Brand · Tech</span>
-              <span className="text-outline-muted hidden sm:inline">·</span>
-              <span className="text-emerald-700 dark:text-emerald-400 text-[11px] font-mono font-bold hidden sm:inline">
-                Gateway: 99.8% Online
-              </span>
-            </div>
-
             {/* Asymmetric Monolithic Headline */}
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-on-surface tracking-tight leading-[1.05]">
               Engineering<br />
@@ -174,24 +159,24 @@ export default async function Home() {
             {/* Magnetic CTA Action Center */}
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 pt-2">
               <Button asChild size="lg" className="h-13 px-7 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 shadow-lg shadow-primary/25 flex items-center gap-2 group transition-all">
-                <Link href="/retrieval-portal">
-                  <FileCheck2 className="h-4 w-4" />
-                  <span>Retrieve KRA PIN (KES 20)</span>
+                <Link href="/services">
+                  <Sparkles className="h-4 w-4" />
+                  <span>Explore Capabilities</span>
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
 
               <Button asChild variant="outline" size="lg" className="h-13 px-6 rounded-xl border-outline-variant font-bold text-sm hover:bg-surface-container flex items-center gap-2 transition-all">
-                <a href="#project-estimator">
-                  <Cpu className="h-4 w-4 text-primary" />
-                  <span>Interactive Estimator</span>
-                </a>
+                <Link href="/projects">
+                  <FolderGit2 className="h-4 w-4 text-primary" />
+                  <span>View Case Studies</span>
+                </Link>
               </Button>
 
               <Button asChild variant="ghost" size="lg" className="h-13 px-5 rounded-xl text-on-surface-variant hover:text-primary font-bold text-sm flex items-center gap-2">
-                <Link href="/projects">
-                  <FolderGit2 className="h-4 w-4 text-primary" />
-                  <span>View Projects</span>
+                <Link href="/contact">
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                  <span>Schedule Consultation</span>
                 </Link>
               </Button>
             </div>
@@ -209,7 +194,7 @@ export default async function Home() {
               </div>
               <div className="flex items-center gap-1 font-mono font-bold text-on-surface">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>52,480+ Certificates Retrieved</span>
+                <span>99.9% Production Uptime</span>
               </div>
             </div>
           </div>
@@ -247,8 +232,6 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* ============================= INTERACTIVE ARCHITECTURE ESTIMATOR ============================= */}
-        <ProjectEstimator />
 
         {/* ============================= FEATURED PRODUCTION SYSTEMS ============================= */}
         <section id="featured-projects" className="space-y-10">
@@ -458,8 +441,8 @@ export default async function Home() {
                 </Link>
               </Button>
               <Button asChild size="lg" className="h-12 px-8 rounded-xl border border-white/40 bg-transparent text-white font-bold text-sm hover:bg-white/15 hover:text-white backdrop-blur-sm transition-colors flex items-center gap-2 cursor-pointer">
-                <Link href="/retrieval-portal">
-                  Instant KRA PIN Portal
+                <Link href="/projects">
+                  View Case Studies
                 </Link>
               </Button>
             </div>
