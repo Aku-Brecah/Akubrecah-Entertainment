@@ -148,6 +148,17 @@ export async function handleTaxpayerFoundFulfillment({
         `─────────────────────────\n` +
         `_(Reply 1 to resend prompt | Send another number | Reply 0 to cancel)_`
       );
+    } else {
+      return (
+        `🇰🇪 *KRA TAXPAYER RECORD FOUND*\n` +
+        `─────────────────────────\n` +
+        `👤 *Taxpayer:* *${masked.taxpayerName}*\n` +
+        `🆔 *KRA PIN:* \`${masked.pin}\`\n` +
+        `💰 *Certificate Fee:* KES ${downloadFee}.00\n` +
+        `─────────────────────────\n` +
+        `⚠️ *Could not send payment prompt:* ${stkRes.error || 'Network error'}.\n\n` +
+        `👉 Send another Safaricom phone number (e.g. *0712345678*) or reply *0* to cancel.`
+      );
     }
   }
 

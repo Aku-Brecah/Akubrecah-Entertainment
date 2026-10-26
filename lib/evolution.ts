@@ -1,4 +1,5 @@
 import { log } from '@/lib/monitoring/logger';
+import { recordBotSentMessageId } from '@/lib/whatsapp-dedup';
 /**
  * Evolution API Client (Self-Hosted Free WhatsApp Integration)
  * Compatible with atendai/evolution-api:latest
@@ -120,6 +121,12 @@ export async function sendEvolutionTextMessage(
       return { success: false, error: `Evolution API returned ${response.status}: ${errText}`, targetUrl: url };
     }
 
+    const data = await response.json().catch(() => ({}));
+    const messageId = data?.key?.id || data?.id || data?.messageId;
+    if (messageId) {
+      recordBotSentMessageId(String(messageId));
+    }
+
     return { success: true, targetUrl: url };
   } catch (error: any) {
     const causeMsg = error.cause ? ` (cause: ${error.cause?.code || error.cause?.message || JSON.stringify(error.cause)})` : '';
@@ -209,6 +216,12 @@ export async function sendEvolutionDocument({
       const errText = await response.text();
       log.error('[Evolution API] Failed to send document:', response.status, errText);
       return { success: false, error: `Evolution API returned ${response.status}: ${errText}` };
+    }
+
+    const docData = await response.json().catch(() => ({}));
+    const docMessageId = docData?.key?.id || docData?.id || docData?.messageId;
+    if (docMessageId) {
+      recordBotSentMessageId(String(docMessageId));
     }
 
     return { success: true };

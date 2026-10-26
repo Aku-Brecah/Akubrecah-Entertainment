@@ -27,7 +27,7 @@ import { extractKenyanPhone, formatDisplayPhone } from '@/lib/whatsapp/phone';
 import { triggerInAppMpesaPayment, triggerCyberCafePayment, createPaystackLink } from '@/lib/whatsapp/payments';
 import { handleAdminBotCommand } from '@/lib/whatsapp/admin-commands';
 import { handleTaxpayerFoundFulfillment } from '@/lib/whatsapp/fulfillment';
-import { parseWhatsAppCommand, SESSION_TIMEOUT_MS } from '@/lib/whatsapp/commands';
+import { parseWhatsAppCommand, validateWhatsAppTrigger, SESSION_TIMEOUT_MS } from '@/lib/whatsapp/commands';
 
 export const maxDuration = 60;
 
@@ -51,6 +51,24 @@ export async function handleWhatsAppChat(params: {
     const incomingText = String(rawMessage).trim();
     const lowerText = incomingText.toLowerCase();
     const db = prisma as any;
+
+    // Strict trigger validation: only activate on leading '.' or '/'
+    const triggerValidation = validateWhatsAppTrigger(incomingText, {
+      messageId,
+    });
+
+    if (triggerValidation.shouldIgnore) {
+      log.info(`[WhatsApp Chat] Dormant - message ignored (${triggerValidation.reason}) for ${userPhone}`);
+      return {
+        success: true,
+        userPhone,
+        step: 'IDLE',
+        reply: '',
+        shouldReply: false,
+        metadata: { step: 'IDLE' },
+        sendResult: null,
+      };
+    }
 
     // Deduplication check: If this exact message ID was already processed, ignore to prevent duplicate responses
     if (messageId && isDuplicateWhatsAppMessage(messageId)) {
@@ -161,18 +179,18 @@ export async function handleWhatsAppChat(params: {
     }
 
     // Reject unknown slash commands with a safe help message instead of falling into workflows
-    if (hasCommandPrefix && !isAllowlisted) {
+    if (!isAllowlisted) {
       const unknownCmdReply =
         `❓ *Unknown Command*\n` +
         `─────────────────────────\n` +
-        `The command \`${trimmedInput.split(/\s+/)[0]}\` is not recognized.\n\n` +
+        `The command \`${cleanCmdWord}\` is not recognized.\n\n` +
         `*Supported Commands:*\n` +
-        `• */kra* - KRA PIN retrieval & certificate\n` +
-        `• */cyber* - Cyber Cafe monthly subscription (KES 500)\n` +
-        `• */status* - Check subscription status\n` +
-        `• */invoice* - Download official tax invoice PDF\n` +
-        `• */help* - Instructions & support\n` +
-        `• */cancel* - Cancel active session\n\n` +
+        `• *.kra* or */kra* - KRA PIN retrieval & certificate\n` +
+        `• *.cyber* or */cyber* - Cyber Cafe monthly subscription (KES 500)\n` +
+        `• *.status* or */status* - Check subscription status\n` +
+        `• *.invoice* or */invoice* - Download official tax invoice PDF\n` +
+        `• *.help* or */help* - Instructions & support\n` +
+        `• *.cancel* or */cancel* - Cancel active session\n\n` +
         `🌐 *Web Portal:* https://kra.akubrecah.com`;
 
       let sendResult = null;
@@ -215,14 +233,11 @@ export async function handleWhatsAppChat(params: {
       };
     }
 
-    // Direct National ID or KRA PIN detection (e.g. 11530093 or A012345678Z)
-    const isDirectPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(trimmedInput);
-    const isDirectId = /^\d{6,9}$/.test(trimmedInput);
+    // Direct National ID or KRA PIN detection (e.g. .11530093 or .A012345678Z)
+    const isDirectPin = /^[A-Za-z]\d{9}[A-Za-z]$/.test(cleanCmdWord) || /^[A-Za-z]\d{9}[A-Za-z]$/.test(cleanCmdArgs);
+    const isDirectId = /^\d{6,9}$/.test(cleanCmdWord) || /^\d{6,9}$/.test(cleanCmdArgs);
     const isStandaloneHelp =
-      ['help', 'menu', 'start', 'commands', 'assist', 'huduma'].includes(cleanCmdWord) ||
-      lowerText === 'help' ||
-      lowerText === 'menu' ||
-      lowerText === 'start';
+      ['help', 'menu', 'start', 'commands', 'assist', 'huduma'].includes(cleanCmdWord);
     const isStandaloneKra =
       cleanCmdWord === 'kra' ||
       cleanCmdWord === 'pin' ||
@@ -230,63 +245,24 @@ export async function handleWhatsAppChat(params: {
     const isStandaloneCyber = ['cyber', 'subscribe', 'package'].includes(cleanCmdWord);
     const isStandaloneStatus = ['status', 'days', 'sub'].includes(cleanCmdWord);
 
-    // Universal Cancellation: cancel, .cancel, /cancel, exit, .exit, /exit, stop, reset, 0
+    // Universal Cancellation: .cancel, /cancel, .exit, /exit, .stop, /stop, .reset, /reset, .0, /0
     const isCancelRequest =
-      ['cancel', 'exit', 'stop', 'reset', 'abort', '0'].includes(cleanCmdWord) ||
-      ['cancel', 'exit', 'stop', 'reset', 'abort', '0'].includes(lowerText);
+      ['cancel', 'exit', 'stop', 'reset', 'abort', '0'].includes(cleanCmdWord);
 
     const isMpesaReceipt =
-      /^[A-Z]{2}[A-Z0-9]{8}$/i.test(trimmedInput) &&
+      /^[A-Z]{2}[A-Z0-9]{8}$/i.test(cleanCmdArgs || cleanCmdWord) &&
       !isDirectPin &&
-      !/^(07|01|254|\d)/.test(trimmedInput);
+      !/^(07|01|254|\d)/.test(cleanCmdArgs || cleanCmdWord);
 
-    // Universal Payment Recheck Trigger: "paid", "nimepay", "confirm", "recheck", or pasting M-Pesa receipt / Paystack ref
+    // Universal Payment Recheck Trigger: .paid, .recheck, .confirm, .verify
     const isPaymentRecheckTrigger =
       ['paid', 'nimepay', 'nimelipa', 'confirm', 'recheck', 'verify', 'payment', 'lipa', 'done'].includes(cleanCmdWord) ||
-      ['paid', 'nimepay', 'nimelipa', 'confirm', 'recheck', 'verify', 'payment', 'lipa', 'done'].includes(lowerText) ||
-      lowerText.startsWith('paid ') ||
-      lowerText.startsWith('nimepay ') ||
-      lowerText.startsWith('recheck ') ||
       cleanCmdText.startsWith('paid ') ||
       cleanCmdText.startsWith('recheck ') ||
-      /^PSTK-[A-Z0-9\-]+$/i.test(trimmedInput) ||
+      /^PSTK-[A-Z0-9\-]+$/i.test(cleanCmdArgs) ||
       isMpesaReceipt;
 
-    const isRecognizedIntent =
-      hasCommandPrefix ||
-      isDirectPin ||
-      isDirectId ||
-      isStandaloneHelp ||
-      isStandaloneKra ||
-      isStandaloneCyber ||
-      isStandaloneStatus ||
-      isCancelRequest ||
-      isPaymentRecheckTrigger;
-
-    // When customer sends a message while the bot is idle, the bot remains completely silent & idle
-    // until it is explicitly triggered with supported commands (/kra, /cyber, /status, /help, /cancel, direct PIN/ID).
-    if (!isSessionActive && !isRecognizedIntent) {
-      return {
-        success: true,
-        userPhone,
-        step: 'IDLE',
-        reply: '',
-        shouldReply: false,
-        metadata,
-        sendResult: null,
-      };
-    }
-
-    const isBotTrigger =
-      hasCommandPrefix ||
-      (!isSessionActive && (
-        isDirectPin ||
-        isDirectId ||
-        isStandaloneHelp ||
-        isStandaloneKra ||
-        isStandaloneCyber ||
-        isStandaloneStatus
-      ));
+    const isBotTrigger = hasCommandPrefix;
 
     if (isCancelRequest) {
       await saveConversationState('IDLE', {
@@ -484,28 +460,14 @@ export async function handleWhatsAppChat(params: {
       };
     }
 
-    // 3. Process Bot Commands (when triggered with prefix or recognized standalone commands)
+    // 3. Process Bot Commands (triggered exclusively with strict . or / prefix)
     if (isBotTrigger) {
       let cmdWord = cleanCmdWord;
       let cmdArgs = cleanCmdArgs;
 
-      if (!hasCommandPrefix) {
-        if (isDirectPin || isDirectId) {
-          cmdWord = 'kra';
-          cmdArgs = trimmedInput;
-        } else if (isStandaloneHelp) {
-          cmdWord = 'help';
-          cmdArgs = '';
-        } else if (isStandaloneKra) {
-          cmdWord = 'kra';
-          cmdArgs = trimmedInput.includes(' ') ? trimmedInput.substring(trimmedInput.indexOf(' ') + 1).trim() : '';
-        } else if (isStandaloneCyber) {
-          cmdWord = 'cyber';
-          cmdArgs = '';
-        } else if (isStandaloneStatus) {
-          cmdWord = 'status';
-          cmdArgs = '';
-        }
+      if (isDirectPin || isDirectId) {
+        cmdWord = 'kra';
+        cmdArgs = cleanCmdArgs || cleanCmdWord;
       }
 
       // A. Cancellation / Exit / Reset (handled by universal cancel above, safety fallback)

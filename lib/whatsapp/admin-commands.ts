@@ -8,6 +8,7 @@ import { createAdminMagicToken } from '@/lib/magic-token';
 import { getPublicAppUrl } from '@/lib/utils';
 import { getPaystackLiveTransactions, findRecentSuccessfulPaystackPayment } from '@/lib/paystack';
 import { formatDisplayPhone } from '@/lib/whatsapp/phone';
+import { parseWhatsAppCommand } from '@/lib/whatsapp/commands';
 
 /**
  * Admin Bot Controller for WhatsApp Super Admin
@@ -30,19 +31,19 @@ export async function handleAdminBotCommand({
   authorPhone?: string;
   isFromBotOwner?: boolean;
 }): Promise<string | null> {
-  const trimmed = incomingText.trim();
+  const parsed = parseWhatsAppCommand(incomingText);
+  if (parsed.shouldIgnore || !parsed.hasCommandPrefix) {
+    return null;
+  }
 
-  // Strip leading ! or /
-  const clean = trimmed.replace(/^[\!\/]/, '').trim();
-  const parts = clean.split(/\s+/);
-  const rawCmd = parts[0]?.toLowerCase() || '';
-  const rawArg = parts.slice(1).join(' ').trim();
+  const rawCmd = parsed.cleanCmdWord;
+  const rawArg = parsed.cleanCmdArgs;
 
   const expectedPin = process.env.ADMIN_BOT_PIN || '';
   // Tokenized containment: a PIN embedded inside a longer number (e.g. inside
   // a phone number or a payment reference that happens to contain the PIN
   // digits) must NOT authenticate. The PIN has to be a standalone token.
-  const messageTokens = clean
+  const messageTokens = (parsed.cleanCmdText || '')
     .toLowerCase()
     .split(/[\s,.!;:()[\]{}]+/)
     .map((t) => t.replace(/^[^0-9a-z]+|[^0-9a-z]+$/g, ''))
@@ -103,15 +104,8 @@ export async function handleAdminBotCommand({
     'send',
   ];
 
-  // Admin trigger should ONLY activate if:
-  // 1. Explicit command prefix / or ! (e.g. /admin, !admin, /stats, !stats, /revenue, /link, /lock)
-  // 2. Message contains the secret admin PIN (configured via ADMIN_BOT_PIN)
-  // 3. User already has an authenticated active admin session and issues an explicit command
-  const isCommandPrefixed = trimmed.startsWith('/') || trimmed.startsWith('!') || trimmed.startsWith('.');
-  const isAdminTrigger =
-    (isCommandPrefixed && (rawCmd === 'admin' || adminCmds.includes(rawCmd))) ||
-    hasPinInText ||
-    (hasActivePinSession && isCommandPrefixed && adminCmds.includes(rawCmd));
+  // Admin trigger should ONLY activate on strict command prefix (. or /) matching admin commands
+  const isAdminTrigger = rawCmd === 'admin' || adminCmds.includes(rawCmd);
 
   if (!isAdminTrigger) return null;
 

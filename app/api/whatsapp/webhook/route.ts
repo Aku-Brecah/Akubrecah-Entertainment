@@ -5,6 +5,7 @@ import { sanitizeWhatsAppPhone, markEvolutionMessageRead } from '@/lib/evolution
 import { maskPhone } from '@/lib/masking';
 import { handleWhatsAppChat } from '@/app/api/whatsapp/chat/route';
 import { isDuplicateWhatsAppMessage } from '@/lib/whatsapp-dedup';
+import { validateWhatsAppTrigger } from '@/lib/whatsapp/commands';
 
 export const maxDuration = 60;
 
@@ -113,70 +114,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'Empty text' });
     }
 
-    const trimmed = incomingText.trim();
-    const lower = trimmed.toLowerCase();
+    const BOT_OWNER_NUMBER = (process.env.ADMIN_WHATSAPP_PHONE || '254791497858').replace(/[^0-9]/g, '');
 
-    // Check if this is an admin trigger or bot command
-    const cleanMsg = trimmed.replace(/^[\!\/]/, '').trim().toLowerCase();
-    const rawCmd = cleanMsg.split(/\s+/)[0];
-    const hasPin = Boolean(process.env.ADMIN_BOT_PIN) && cleanMsg.includes(String(process.env.ADMIN_BOT_PIN));
-    const adminCmds = [
-      'admin',
-      'stats',
-      'kpi',
-      'revenue',
-      'rev',
-      'logs',
-      'tx',
-      'transactions',
-      'bot',
-      'link',
-      'magic',
-      'lock',
-      'logout',
-      'failed',
-      'pending',
-      'issues',
-      'recheck',
-      'check',
-      'verify',
-      'deliver',
-      'fulfill',
-      'send',
-    ];
+    // Central Trigger Validation: Must begin with '.' or '/'; rejects outbound messages to contacts and bot echoes
+    const triggerValidation = validateWhatsAppTrigger(incomingText, {
+      fromMe: Boolean(key.fromMe),
+      remoteJid: rawRemoteJid,
+      messageId,
+      botPhone: BOT_OWNER_NUMBER,
+    });
 
-    const hasCommandPrefix = trimmed.startsWith('/') || trimmed.startsWith('!') || trimmed.startsWith('.');
-    const isDirectPinOrId = /^[A-Za-z]\d{9}[A-Za-z]$/.test(trimmed) || /^\d{6,9}$/.test(trimmed);
-    const isKnownBotCommand = ['kra', 'cyber', 'status', 'days', 'sub', 'help', 'menu', 'start', 'cancel', 'reset', 'stop', 'exit', 'invoice', 'invoices', 'receipt', 'renew', 'recheck', 'verify', 'paid', '0'].includes(rawCmd);
-    const isExplicitBotIntent = hasCommandPrefix || isDirectPinOrId || isKnownBotCommand;
-
-    const isAdminTrigger =
-      (hasCommandPrefix && (rawCmd === 'admin' || adminCmds.includes(rawCmd))) ||
-      hasPin;
-
-    // If message was sent from the bot account (fromMe = true):
-    // Only process if it is an explicit admin command, bot command, or direct lookup trigger.
-    // Regular automated outbound bot replies without command intent are ignored to prevent loops.
-    if (key.fromMe && !isAdminTrigger && !isExplicitBotIntent) {
-      return NextResponse.json({ success: true, message: 'Ignored normal outbound message' });
+    if (triggerValidation.shouldIgnore) {
+      log.info(`[WhatsApp Webhook] Dormant - message ignored (${triggerValidation.reason})`);
+      return NextResponse.json({ success: true, message: `Ignored: ${triggerValidation.reason}` });
     }
-
-    const BOT_OWNER_NUMBER = '254791497858';
 
     let userPhone = '';
 
     if (key.fromMe) {
-      // Outbound message or self-chat ("Message Yourself") from the bot instance.
-      // If sent to another WhatsApp user, this is an automated outbound reply — ignore to avoid loops.
-      if (!rawRemoteJid.includes(BOT_OWNER_NUMBER)) {
-        return NextResponse.json({ success: true, message: 'Ignored outbound message to customer' });
-      }
-
-      // If sent in self-chat ("Message Yourself"), only process if it is an explicit admin command or bot intent
-      if (!isAdminTrigger && !isExplicitBotIntent) {
-        return NextResponse.json({ success: true, message: 'Ignored normal outbound message' });
-      }
-
       userPhone = BOT_OWNER_NUMBER;
     } else {
       // Inbound message from a customer/external contact (fromMe = false).
