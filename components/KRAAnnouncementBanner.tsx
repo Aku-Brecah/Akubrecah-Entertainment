@@ -38,10 +38,10 @@ export default function KRAAnnouncementBanner() {
         
         <div className="flex-1 overflow-hidden mx-4">
           <div className="animate-marquee whitespace-nowrap inline-block">
-            <span className="text-[9px] font-bold uppercase tracking-widest px-8">
+            <span className="text-xs font-bold uppercase tracking-widest px-8">
               {announcement}
             </span>
-            <span className="text-[9px] font-bold uppercase tracking-widest px-8">
+            <span className="text-xs font-bold uppercase tracking-widest px-8">
               {announcement}
             </span>
           </div>

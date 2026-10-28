@@ -56,6 +56,12 @@ export async function GET(req: NextRequest) {
         });
 
         if (matchedCafe) {
+          // SECURITY: never claim a cafe that is already linked to a different
+          // Clerk account — phone-number matching alone is not ownership proof.
+          if (matchedCafe.clerkUserId && matchedCafe.clerkUserId !== clerkId) {
+            cafe = { ...matchedCafe, status: 'forbidden' };
+            break;
+          }
           // Link this cafe to the Clerk user ID for future fast lookups
           await db.cyberCafe.update({
             where: { id: matchedCafe.id },
@@ -67,7 +73,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    if (!cafe) {
+    if (!cafe || (cafe as any).status === 'forbidden') {
       return NextResponse.json({
         success: true,
         hasSubscription: false,

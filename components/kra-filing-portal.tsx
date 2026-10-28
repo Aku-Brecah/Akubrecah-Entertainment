@@ -18,7 +18,7 @@ import {
   DollarSign,
   FileCheck,
   RefreshCw,
-  Printer
+  Sparkles
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -123,15 +123,15 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
     }
 
     setNilStage("validating")
-    setStageProgressText("Verifying taxpayer credentials and registration...")
+    setStageProgressText("Simulating taxpayer credentials check (Demo Mode)...")
 
     try {
       await new Promise((res) => setTimeout(res, 900))
       setNilStage("submitting")
-      setStageProgressText("Transmitting Nil declaration to KRA statutory portal...")
+      setStageProgressText("Simulating Nil declaration transmission (Demo Mode)...")
 
       await new Promise((res) => setTimeout(res, 1200))
-      setStageProgressText("Generating official KRA e-return acknowledgment receipt...")
+      setStageProgressText("Generating simulated e-return acknowledgment receipt...")
 
       await new Promise((res) => setTimeout(res, 800))
 
@@ -154,10 +154,10 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
       })
 
       setNilStage("success")
-      toast.success("Nil Return successfully filed with KRA!")
+      toast.success("Demo Nil Return simulation complete! (Live submission coming soon)")
     } catch (err: any) {
       setNilStage("idle")
-      toast.error(err.message || "Filing submission failed. Please try again.")
+      toast.error(err.message || "Filing simulation failed. Please try again.")
     }
   }
 
@@ -195,10 +195,10 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
         submittedAt: submissionTime,
       })
       setIncomeStage("success")
-      toast.success("Income Tax Return processed successfully!")
+      toast.success("Demo Income Tax simulation complete! (Live submission coming soon)")
     } catch {
       setIncomeStage("idle")
-      toast.error("Failed to submit income return schedule.")
+      toast.error("Failed to simulate income return schedule.")
     }
   }
 
@@ -217,9 +217,9 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
         </Button>
 
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-bold text-muted-foreground">
-            KRA Filing Gateway Online (2025/2024 Tax Season)
+          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+          <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
+            Interactive Demo Mode · Live Filing Gateway Coming Soon
           </span>
         </div>
       </div>
@@ -229,15 +229,15 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
         {/* Title & Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              Tax Filing Facilitation
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              Interactive Demo · Coming Soon
             </div>
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-foreground tracking-tight">
-              Assisted Tax Returns Filing
+              Assisted Tax Returns Filing (Preview)
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              Select your return type to begin guided preparation and submission.
+              Explore the guided tax return workflow below. Live direct submission to KRA iTax is currently in development.
             </p>
           </div>
 
@@ -274,15 +274,26 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
           </div>
         </div>
 
-        {/* Third-Party Service Disclaimer Banner */}
-        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-xs leading-relaxed">
-          <strong className="font-semibold">Notice:</strong> Akubrecah Technologies is an independent cyber facilitation service and is not affiliated with the Kenya Revenue Authority (KRA). Free official tax filing services are available directly on{" "}
-          <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline font-semibold hover:text-amber-950 dark:hover:text-white">
-            itax.kra.go.ke
-          </a>.{" "}
-          <Link href="/legal/disclaimer" className="underline font-bold text-primary dark:text-red-400 hover:text-primary/80 ml-1">
-            Read Disclaimer →
-          </Link>
+        {/* Notice & Disclaimer Banner */}
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-950 dark:text-amber-200 text-xs leading-relaxed space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 text-[10px] font-black uppercase tracking-wider border border-amber-500/30">
+              <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+              Interactive Demo · Coming Soon
+            </span>
+            <span className="font-bold text-foreground">Feature Preview Notice</span>
+          </div>
+          <p>
+            Automated statutory tax return submission to KRA iTax is not yet live and will be available soon. This module is an interactive simulation demonstrating the filing workflow. For immediate legal filings right now, please use the official KRA portal at{" "}
+            <a
+              href="https://itax.kra.go.ke"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-bold text-amber-900 dark:text-amber-100 hover:text-foreground"
+            >
+              itax.kra.go.ke
+            </a>.
+          </p>
         </div>
 
         {/* ------------------------------------------------------------- */}
@@ -294,19 +305,19 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="p-6 sm:p-8 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-3">
-              <div className="w-14 h-14 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-md">
+            <div className="p-6 sm:p-8 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center space-y-3">
+              <div className="w-14 h-14 rounded-full bg-amber-500 text-white flex items-center justify-center mx-auto shadow-md">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
-              <h3 className="text-xl sm:text-2xl font-black text-emerald-950">
-                Tax Return Successfully Filed!
+              <h3 className="text-xl sm:text-2xl font-black text-foreground">
+                Tax Return Simulation Completed (Demo)
               </h3>
-              <p className="text-xs sm:text-sm text-emerald-800 max-w-md mx-auto">
-                Your return has been processed and statutory acknowledgment generated with the Kenya Revenue Authority.
+              <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
+                This is a simulated acknowledgment receipt generated for preview purposes. Official direct submission is coming soon.
               </p>
             </div>
 
-            {/* Official KRA Acknowledgment Card */}
+            {/* Simulated KRA Acknowledgment Card */}
             <div className="border border-border rounded-2xl p-6 sm:p-8 bg-muted/40 space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-border">
                 <div className="flex items-center gap-2">
@@ -318,15 +329,15 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                       KENYA REVENUE AUTHORITY
                     </h4>
                     <p className="text-[11px] text-muted-foreground font-medium">
-                      E-Return Acknowledgment Receipt
+                      Simulated E-Return Acknowledgment (Preview)
                     </p>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    ACCEPTED
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    DEMO SIMULATION · COMING SOON
                   </span>
                 </div>
               </div>
@@ -361,8 +372,8 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                     <p className="text-[11px] text-muted-foreground font-bold uppercase">Timestamp of Submission</p>
                     <p className="font-bold text-foreground">{receiptData.submittedAt}</p>
                   </div>
-                  <div className="text-[10px] text-muted-foreground text-right">
-                    Verified Digital Hash
+                  <div className="text-[10px] text-muted-foreground text-right font-medium">
+                    Simulated Hash · Demo Mode
                   </div>
                 </div>
               </div>
@@ -375,8 +386,8 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
                   }}
                   className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs h-11 px-6 rounded-xl flex items-center justify-center gap-2"
                 >
-                  <Printer className="w-4 h-4" />
-                  <span>Print / Save Official Receipt</span>
+                  <Download className="w-4 h-4" />
+                  <span>Print / Save Demo Receipt</span>
                 </Button>
 
                 <Button
@@ -515,12 +526,12 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
               {nilStage !== "idle" ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Filing Nil Return...</span>
+                  <span>Simulating Nil Return...</span>
                 </>
               ) : (
                 <>
                   <FileCheck className="w-5 h-5" />
-                  <span>Submit Nil Return to KRA</span>
+                  <span>Simulate Nil Return Submission (Demo Mode)</span>
                 </>
               )}
             </Button>
@@ -673,12 +684,12 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
               {incomeStage !== "idle" ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Submitting Return Schedule...</span>
+                  <span>Simulating Return Schedule...</span>
                 </>
               ) : (
                 <>
                   <FileSpreadsheet className="w-5 h-5" />
-                  <span>Submit Income Tax Return</span>
+                  <span>Simulate Income Tax Filing (Demo Mode)</span>
                 </>
               )}
             </Button>

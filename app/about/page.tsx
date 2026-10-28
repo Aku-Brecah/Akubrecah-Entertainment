@@ -86,11 +86,11 @@ const inHouseProducts = [
   },
   {
     title: "Automated Tax Returns Filing",
-    tag: "Compliance Suite",
+    tag: "Coming Soon",
     stat: "Guided Submission",
     speed: "Standard iTax Formats",
     href: "/dashboard/filing",
-    desc: "Streamlined statutory compliance assistant guiding Kenyan businesses through iTax nil returns efficiently.",
+    desc: "Streamlined statutory compliance assistant guiding Kenyan businesses through iTax nil returns efficiently — launching soon.",
   },
 ]
 

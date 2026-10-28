@@ -57,7 +57,9 @@ export default function RoleAccessPage() {
   };
 
   const saveMatrix = () => {
-    showToast("Role access control matrix saved successfully!");
+    // Honesty fix: this matrix is UI-local only and is not persisted to the
+    // server. Say so plainly instead of telling admins RBAC was saved.
+    showToast("Preview only — the access matrix is not yet persisted to the server.");
   };
 
   const resetMatrix = () => {

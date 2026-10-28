@@ -169,8 +169,15 @@ export async function getOrCreateDbUser(clerkId: string, email?: string, fullNam
   if (!clerkId) return null;
 
   try {
-    // 1. Try finding by clerkId first
-    let dbUser = await db.users?.findFirst({ where: { clerkId } });
+    // 1. Try finding by clerkId or id first
+    let dbUser = await db.users?.findFirst({
+      where: {
+        OR: [
+          { clerkId },
+          { id: clerkId },
+        ],
+      },
+    });
     if (dbUser) return dbUser;
 
     // 2. Resolve missing email or name from Clerk
@@ -178,7 +185,7 @@ export async function getOrCreateDbUser(clerkId: string, email?: string, fullNam
     let resolvedFirst = 'Taxpayer';
     let resolvedLast: string | undefined = undefined;
 
-    if (!resolvedEmail || !fullName) {
+    if (clerkId.startsWith('user_') && (!resolvedEmail || !fullName)) {
       try {
         const { clerkClient } = await import('@clerk/nextjs/server');
         const client = await clerkClient();
@@ -197,7 +204,7 @@ export async function getOrCreateDbUser(clerkId: string, email?: string, fullNam
       resolvedLast = parts.slice(1).join(' ') || undefined;
     }
 
-    const primaryEmail = resolvedEmail || `${clerkId}@akubrecah.local`;
+    const primaryEmail = resolvedEmail || (clerkId.startsWith('user_') ? `${clerkId}@akubrecah.local` : `guest_${Date.now()}@akubrecah.local`);
 
     // 3. Check if a user already exists with this email
     const existingByEmail = await db.users?.findFirst({ where: { email: primaryEmail } });
@@ -205,7 +212,7 @@ export async function getOrCreateDbUser(clerkId: string, email?: string, fullNam
       dbUser = await db.users?.update({
         where: { id: existingByEmail.id },
         data: {
-          clerkId,
+          clerkId: existingByEmail.clerkId || clerkId,
           firstName: resolvedFirst || existingByEmail.firstName,
           lastName: resolvedLast || existingByEmail.lastName,
           updatedAt: new Date(),
@@ -214,10 +221,13 @@ export async function getOrCreateDbUser(clerkId: string, email?: string, fullNam
       return dbUser;
     }
 
-    // 4. Create new user record
+    // 4. Create new user record (check if id already taken)
+    const existingById = await db.users?.findUnique({ where: { id: clerkId } });
+    const canUseClerkIdAsId = !existingById && Boolean(clerkId);
+
     dbUser = await db.users?.create({
       data: {
-        id: clerkId,
+        ...(canUseClerkIdAsId ? { id: clerkId } : {}),
         clerkId,
         email: primaryEmail,
         firstName: resolvedFirst,
@@ -230,8 +240,16 @@ export async function getOrCreateDbUser(clerkId: string, email?: string, fullNam
     return dbUser;
   } catch (error: any) {
     log.error('[getOrCreateDbUser] Error ensuring DB user record:', error.message);
-    // Fallback: try finding again in case of race condition
-    return await db.users?.findFirst({ where: { clerkId } }).catch(() => null);
+    // Fallback: try finding again in case of race condition or existing record
+    return await db.users?.findFirst({
+      where: {
+        OR: [
+          { clerkId },
+          { id: clerkId },
+          ...(email ? [{ email }] : []),
+        ],
+      },
+    }).catch(() => null);
   }
 }
 

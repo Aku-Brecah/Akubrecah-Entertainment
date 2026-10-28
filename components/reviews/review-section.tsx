@@ -83,7 +83,10 @@ export function ReviewSection() {
     fetchGoogleReviews()
   }, [])
 
-  const rating = data?.rating || 5.0
+  // DESIGN.md Authentic Metric Governance: never fabricate a rating. When no
+  // verified reviews exist yet, no numeric rating or stars are rendered.
+  const hasVerifiedReviews = (data?.totalReviews || data?.reviews?.length || 0) > 0
+  const rating = hasVerifiedReviews ? (data?.rating || 0) : null
   const totalCount = data?.totalReviews || (data?.reviews?.length || 0)
   const writeReviewUrl =
     data?.googleWriteReviewUrl ||
@@ -117,17 +120,25 @@ export function ReviewSection() {
 
           {/* Rating Summary Bar */}
           <div className="pt-2 flex flex-wrap items-center gap-4 text-xs">
-            <div className="flex items-center gap-2 font-black text-2xl text-on-surface">
-              <span>{rating.toFixed(1)}</span>
-              <div className="flex text-amber-400">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                ))}
+            {rating !== null ? (
+              <>
+                <div className="flex items-center gap-2 font-black text-2xl text-on-surface">
+                  <span>{rating.toFixed(1)}</span>
+                  <div className="flex text-amber-400">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                </div>
+                <div className="text-on-surface-variant font-medium">
+                  Based on <strong className="text-on-surface">{totalCount} verified</strong> ratings
+                </div>
+              </>
+            ) : (
+              <div className="text-on-surface-variant font-medium">
+                No verified Google reviews yet — <strong className="text-on-surface">be the first to review us</strong>
               </div>
-            </div>
-            <div className="text-on-surface-variant font-medium">
-              Based on <strong className="text-on-surface">{totalCount > 0 ? `${totalCount} verified` : "Google Business"}</strong> ratings
-            </div>
+            )}
           </div>
         </div>
 

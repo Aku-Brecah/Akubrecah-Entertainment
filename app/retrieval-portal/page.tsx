@@ -8,7 +8,6 @@ import {
   FileSpreadsheet,
   ShieldCheck,
   Lock,
-  Zap,
   Sparkles,
   ChevronDown,
   ChevronUp,
@@ -21,7 +20,6 @@ import { Button } from "@/components/ui/button"
 import { useUser, UserButton } from "@clerk/nextjs"
 import { KRAPortal } from "@/components/kra-portal"
 import { KRAFilingPortal } from "@/components/kra-filing-portal"
-import { CyberSubscriptionCard } from "@/components/cyber-subscription-card"
 import { GooglePreferredSourceButton } from "@/components/google-preferred-source-button"
 import { Logo } from "@/components/logo"
 import Link from "next/link"
@@ -37,7 +35,6 @@ function FlagshipPortalContent() {
   const [mode, setMode] = useState<ServiceMode>(
     requestedView === "filing" ? "filing" : "retrieval"
   )
-  const [showCyberModal, setShowCyberModal] = useState(false)
   const [showHowItWorks, setShowHowItWorks] = useState(false)
 
   useEffect(() => {
@@ -107,6 +104,9 @@ function FlagshipPortalContent() {
             >
               <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
               <span><span className="hidden sm:inline">Returns </span>Filing</span>
+              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-extrabold ml-0.5">
+                Demo · Coming Soon
+              </span>
             </button>
           </div>
 
@@ -148,7 +148,7 @@ function FlagshipPortalContent() {
               </>
             ) : (
               <>
-                Assisted Tax Returns <span className="text-primary">Filing Gateway</span>
+                Assisted Tax Returns <span className="text-primary">Filing (Interactive Demo)</span>
               </>
             )}
           </h1>
@@ -156,7 +156,7 @@ function FlagshipPortalContent() {
           <p className="text-[11px] sm:text-xs md:text-sm text-on-surface-variant max-w-xl mx-auto leading-relaxed">
             {mode === "retrieval"
               ? "Enter your National ID or KRA PIN below to generate and download your verified compliance document in seconds."
-              : "Prepare and submit your Nil Returns with verified electronic acknowledgment receipts."}
+              : "Interactive Demo Preview: Test our automated returns preparation workflow. Direct statutory transmission to the KRA gateway is coming soon."}
           </p>
         </div>
 
@@ -187,33 +187,8 @@ function FlagshipPortalContent() {
           </AnimatePresence>
         </div>
 
-        {/* COMPACT INSTITUTIONAL TRUST STRIP: 2x2 ON MOBILE, ROW ON TABLET/DESKTOP */}
-        <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-around p-3 sm:p-3.5 rounded-2xl bg-surface-container border border-outline-variant/60 gap-2 sm:gap-4 text-center text-[10px] sm:text-[11px] text-on-surface-variant font-medium">
-          <div className="flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 shrink-0" />
-            <span>KDPA 2019 Compliant</span>
-          </div>
-          <div className="hidden sm:block h-4 w-px bg-outline-variant/80" />
-          <div className="flex items-center justify-center gap-1.5">
-            <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-on-surface shrink-0" />
-            <span>Encrypted TLS Transmission</span>
-          </div>
-          <div className="hidden sm:block h-4 w-px bg-outline-variant/80" />
-          <div className="flex items-center justify-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
-            <span>Direct Registry Lookup</span>
-          </div>
-          <div className="hidden sm:block h-4 w-px bg-outline-variant/80" />
-          <div className="flex items-center justify-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 shrink-0" />
-            <span>Authentic QR Seal</span>
-          </div>
-        </div>
-
-        {/* SECONDARY UTILITIES: HOW IT WORKS & CYBER PASS (BELOW THE CORE WORKSPACE) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 pt-1 sm:pt-2">
-          
-          {/* How It Works Card */}
+        {/* HOW IT WORKS UTILITY CARD */}
+        <div className="w-full pt-1 sm:pt-2">
           <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft flex flex-col justify-between space-y-3">
             <div className="space-y-1">
               <div className="flex items-center justify-between">
@@ -225,7 +200,7 @@ function FlagshipPortalContent() {
                 </span>
               </div>
               <p className="text-[11px] text-on-surface-variant leading-snug">
-                1. Enter National ID or PIN · 2. Automated Registry Lookup · 3. Download Cryptographically Signed PDF.
+                1. Enter National ID or PIN · 2. Automated Registry Lookup · 3. Download Cryptographically Signed PDF for only KES 20.
               </p>
             </div>
             <button
@@ -255,54 +230,13 @@ function FlagshipPortalContent() {
                   </div>
                   <div className="flex items-start gap-2 text-xs">
                     <span className="font-mono font-black text-primary px-1.5 py-0.5 rounded bg-primary/10 text-[10px]">03</span>
-                    <span className="text-on-surface-variant text-[11px]">Download your certificate with live QR-code verification stamp.</span>
+                    <span className="text-on-surface-variant text-[11px]">Pay the standard KES 20 download fee via M-Pesa to download your tamper-proof certificate.</span>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-
-          {/* Cyber Cafe & Pro Pass Card */}
-          <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft flex flex-col justify-between space-y-3">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span className="text-xs font-black text-on-surface">Cyber Cafe & Pro Plan</span>
-                </div>
-                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10">
-                  KES 500 / mo
-                </span>
-              </div>
-              <p className="text-[11px] text-on-surface-variant leading-snug">
-                Cyber cafe operator or high-volume agent? Unlock unlimited instant downloads without paying per retrieval.
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowCyberModal(!showCyberModal)}
-              className="h-9 px-3.5 rounded-xl border-outline-variant text-xs font-bold text-primary hover:bg-primary/5 self-start cursor-pointer"
-            >
-              {showCyberModal ? "Hide Pass Details" : "View Unlimited Pass"}
-            </Button>
-          </div>
-
         </div>
-
-        {/* Expandable Cyber Subscription View */}
-        <AnimatePresence>
-          {showCyberModal && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <CyberSubscriptionCard compact={false} />
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* ============================================================== */}
         {/* 3. CRAWLABLE STATUTORY GUIDE & TAXPAYER FAQ ACCORDION (SEO/GOOGLE) */}
@@ -381,7 +315,7 @@ function FlagshipPortalContent() {
                 },
                 {
                   q: "How much does it cost to retrieve and download the certificate?",
-                  a: "Identity lookup and preview verification are 100% free. Generating and downloading the official high-resolution PDF certificate with instant WhatsApp and Email delivery is only KES 20 per retrieval. Cyber cafe operators can also purchase an unlimited monthly pass for KES 500.",
+                  a: "Identity lookup and preview verification are 100% free. Generating and downloading the official high-resolution PDF certificate with instant WhatsApp and Email delivery is only KES 20 (20 bob) per retrieval.",
                 },
                 {
                   q: "How fast is the certificate delivered?",
@@ -393,7 +327,7 @@ function FlagshipPortalContent() {
                 },
                 {
                   q: "How do I file KRA Nil Returns online through this portal?",
-                  a: "Toggle the service selector to 'Returns Filing'. Enter your KRA PIN and National ID, select the applicable tax year, and click submit. Our automated gateway files your nil income return and generates your official KRA electronic acknowledgment receipt.",
+                  a: "Toggle the service selector to 'Returns Filing (Demo · Coming Soon)'. You can preview the automated returns calculation workflow in interactive demo mode. Live statutory submissions directly into KRA iTax will be enabled soon.",
                 },
                 {
                   q: "Is this certificate accepted by Kenyan banks, employers, and government agencies?",

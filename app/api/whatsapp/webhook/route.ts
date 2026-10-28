@@ -212,7 +212,7 @@ export async function POST(req: NextRequest) {
     // the moment the user enters their PIN on their phone!
     if (isAwaitingPayment && pendingCheckoutId) {
       after(async () => {
-        log.info(`[WhatsApp Webhook after] Actively monitoring M-Pesa payment for ${pendingCheckoutId} (${userPhone})`);
+        log.info(`[WhatsApp Webhook after] Actively monitoring M-Pesa payment for ${pendingCheckoutId} (phone ***${userPhone.slice(-3)})`);
         const { fulfillWhatsAppCertificateDelivery } = await import('@/lib/certificate-fulfillment');
         const prismaModule = await import('@/lib/prisma');
         const db = prismaModule.default as any;
@@ -310,7 +310,7 @@ export async function POST(req: NextRequest) {
               const isCyberPayment = conv?.metadata?.step === 'CYBER_AWAITING_PAYMENT';
 
               if (isCyberPayment) {
-                log.info(`[WhatsApp Webhook after] Activating Cyber Cafe subscription for ${userPhone} (ref: ${mpesaReceipt})`);
+                log.info(`[WhatsApp Webhook after] Activating Cyber Cafe subscription for phone ***${userPhone.slice(-3)} (ref: ${mpesaReceipt})`);
                 const { activateCyberCafeSubscription, deliverCyberInvoiceToWhatsApp } = await import('@/lib/cyber-subscription');
                 const { sendEvolutionTextMessage } = await import('@/lib/evolution');
 

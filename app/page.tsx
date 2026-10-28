@@ -254,7 +254,7 @@ export default async function Home() {
               ))
             ) : (
               <div className="col-span-3 p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant text-center text-xs text-on-surface-variant">
-                Loading production portfolio...
+                No featured case studies published yet — check back soon.
               </div>
             )}
           </div>

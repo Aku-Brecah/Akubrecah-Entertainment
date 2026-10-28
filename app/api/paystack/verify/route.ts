@@ -44,7 +44,18 @@ export async function POST(req: NextRequest) {
     const clerkId = authClerkId || metadata.clerkId || 'guest_user';
 
     const db = prisma as any;
-    const dbUser = await getOrCreateDbUser(clerkId, verification.customerEmail);
+    let dbUser = await getOrCreateDbUser(clerkId, verification.customerEmail);
+    if (!dbUser) {
+      dbUser = await db.users?.findFirst({
+        where: {
+          OR: [
+            { clerkId },
+            { id: clerkId },
+            { id: 'guest_user' },
+          ],
+        },
+      }) || await db.users?.findFirst();
+    }
 
     const type = metadata.type || 'pay_per_download';
     const pin = metadata.pin ? String(metadata.pin).toUpperCase().trim() : '';
@@ -71,19 +82,32 @@ export async function POST(req: NextRequest) {
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30-day validity
 
-      const subRecord = await db.subscription?.create({
-        data: {
-          userId: dbUser.id,
-          clerkId: dbUser.clerkId,
-          status: 'active',
-          planName: 'monthly',
-          amountPaid: verification.amountKes,
-          currency: 'KES',
-          mpesaReceipt: `PAYSTACK_${reference}`,
-          startsAt: now,
-          expiresAt,
-        },
-      });
+      let subRecord: any;
+      try {
+        subRecord = await db.subscription?.create({
+          data: {
+            userId: dbUser.id,
+            clerkId: dbUser.clerkId,
+            status: 'active',
+            planName: 'monthly',
+            amountPaid: verification.amountKes,
+            currency: 'KES',
+            mpesaReceipt: `PAYSTACK_${reference}`,
+            startsAt: now,
+            expiresAt,
+          },
+        });
+      } catch (subErr: any) {
+        // Concurrent webhook+verify delivery for the same reference is a
+        // duplicate mint attempt — the DB unique constraint on mpesaReceipt
+        // backstops it. Treat P2002 as idempotent success.
+        if (subErr?.code !== 'P2002') {
+          throw subErr;
+        }
+        subRecord = await db.subscription?.findFirst({
+          where: { mpesaReceipt: `PAYSTACK_${reference}` },
+        });
+      }
 
       await createSystemLog({
         level: 'info',
@@ -146,8 +170,8 @@ export async function POST(req: NextRequest) {
 
       const downloadRecord = await db.certificateDownload?.create({
         data: {
-          userId: dbUser.id,
-          clerkId: dbUser.clerkId,
+          userId: dbUser?.id || 'guest_user',
+          clerkId: dbUser?.clerkId || clerkId,
           pin,
           downloadType: 'pay_per_download',
           amountCharged: verification.amountKes,
@@ -161,7 +185,7 @@ export async function POST(req: NextRequest) {
         level: 'info',
         service: 'Paystack-Download',
         message: `Certificate download authorized for PIN ${pin} via Paystack`,
-        actor: dbUser.email,
+        actor: dbUser?.email || verification.customerEmail || 'Taxpayer',
         details: { reference, pin, amount: verification.amountKes },
       });
 
@@ -175,7 +199,7 @@ export async function POST(req: NextRequest) {
     }
 
   } catch (error: any) {
-    log.error('[Paystack Verify] Error:', error.message);
+    log.error('[Paystack Verify] Error:', error?.stack || error?.message);
     return NextResponse.json(
       { success: false, error: 'Internal server error verifying payment.' },
       { status: 500 }

@@ -472,7 +472,7 @@ export default function ProfileClient({
         <div className="flex justify-center gap-6 mt-4">
           <Link href="/legal/privacy" className="text-xs font-bold hover:text-primary transition-colors uppercase">Privacy Policy</Link>
           <Link href="/legal/terms" className="text-xs font-bold hover:text-primary transition-colors uppercase">Terms of Service</Link>
-          <Link href="#" className="text-xs font-bold hover:text-primary transition-colors uppercase">Support</Link>
+          <Link href="/contact" className="text-xs font-bold hover:text-primary transition-colors uppercase">Support</Link>
         </div>
       </footer>
 

@@ -54,7 +54,7 @@ export default function ProfileWarningPopup({ isProfileComplete }: ProfileWarnin
             )}
           </div>
           <p className="text-amber-800 dark:text-amber-300 text-xs leading-relaxed">
-            Please update your Full Name and Phone Number. This is required to access KRA services and CV builder.
+            Please update your Full Name and Phone Number. This is required to access KRA services.
           </p>
           <div className="pt-2 flex items-center justify-between gap-4">
             <Link

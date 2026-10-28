@@ -174,7 +174,18 @@ export async function POST(req: NextRequest) {
           log.warn('[M-Pesa Callback] Conversation lookup notice:', e.message);
         }
 
-        const resolvedPin = conversation?.metadata?.pin || 'KRA_CERT';
+        const resolvedPin = conversation?.metadata?.pin
+          // SECURITY: fall back to the PIN bound at STK dispatch time so that
+          // web-initiated payments (no WhatsApp conversation) are still
+          // bound to the exact PIN that was paid for.
+          || (global as any).mpesaStkPinBindings?.[CheckoutRequestID]
+          || 'KRA_CERT';
+        // SECURITY: bind the paid-for PIN into the payment proof so that
+        // /api/certificate/record-download can verify a payment only unlocks
+        // the exact PIN that was paid for (prevents cross-PIN minting).
+        if (resolvedPin && resolvedPin !== 'KRA_CERT') {
+          registry[CheckoutRequestID].metadata.pin = resolvedPin.toUpperCase();
+        }
         const targetPhone = conversation?.user_phone || phoneNumber;
         const taxpayerName = conversation?.metadata?.taxpayerName || '';
 
@@ -231,7 +242,9 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        if (pendingCafe && (amount >= 500 || amount === 0)) {
+        // SECURITY: fail-closed. A metadata-stripped callback (amount === 0)
+        // must never activate a paid subscription. Require the real KES 500 fee.
+        if (pendingCafe && amount >= 500) {
           log.info(`[M-Pesa Callback] Activating Web Cyber Cafe subscription for ${pendingCafe.cafeName}`);
           const { activateCyberCafeSubscription, deliverCyberInvoiceToWhatsApp } = await import('@/lib/cyber-subscription');
           const activation = await activateCyberCafeSubscription({

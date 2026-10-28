@@ -28,9 +28,62 @@ export async function POST(req: NextRequest) {
       const type = metadata.type || 'pay_per_download';
       const pin = metadata.pin ? String(metadata.pin).toUpperCase().trim() : '';
 
+      // SECURITY: a non-KES transaction's amount/100 would be misread as
+      // KES. Fail closed on anything that is not KES.
+      if (data.currency && data.currency !== 'KES') {
+        log.warn(`[Paystack Webhook] Non-KES charge.success ignored (currency: ${data.currency}, ref: ${reference})`);
+        return NextResponse.json({ success: true, message: 'Non-KES transaction skipped' });
+      }
+
+      // Fulfilment for Cyber Cafe monthly web subscriptions. Previously this
+      // metadata type fell through every branch: money was collected via
+      // Paystack but the subscription was never activated server-side.
+      if (type === 'cyber_monthly' && metadata.cyberCafeId) {
+        try {
+          const db = prisma as any;
+          const cafe = await db.cyberCafe.findUnique({ where: { id: metadata.cyberCafeId } });
+          if (!cafe) {
+            log.error(`[Paystack Webhook] cyber_monthly payment for unknown cafe ${metadata.cyberCafeId} (ref: ${reference})`);
+          } else if (amountKes + 1e-9 < 500) {
+            log.error(`[Paystack Webhook] REJECTED underpaid cyber_monthly "success" (KES ${amountKes} < 500) for ${reference}`);
+          } else {
+            const { activateCyberCafeSubscription } = await import('@/lib/cyber-subscription');
+            const activation = await activateCyberCafeSubscription({
+              cafeName: cafe.cafeName,
+              ownerName: cafe.ownerName,
+              whatsappPhone: cafe.whatsappPhone,
+              paymentPhone: cafe.paymentPhone,
+              mpesaReceipt: `PAYSTACK_${reference}`,
+              checkoutId: reference,
+              amountKes,
+              clerkUserId: cafe.clerkUserId || metadata.clerkUserId,
+            });
+            if (activation.success) {
+              log.info(`[Paystack Webhook] Cyber Cafe subscription activated for ${cafe.cafeName} (ref: ${reference})`);
+            } else {
+              log.error(`[Paystack Webhook] Cyber activation failed for ${cafe.cafeName}: ${activation.error}`);
+            }
+          }
+        } catch (cyberErr: any) {
+          log.error('[Paystack Webhook] Cyber fulfilment error:', cyberErr.message);
+        }
+        return NextResponse.json({ success: true });
+      }
+
       if (clerkId) {
         const db = prisma as any;
-        const dbUser = await getOrCreateDbUser(clerkId, data.customer?.email);
+        let dbUser = await getOrCreateDbUser(clerkId, data.customer?.email);
+        if (!dbUser) {
+          dbUser = await db.users?.findFirst({
+            where: {
+              OR: [
+                { clerkId },
+                { id: clerkId },
+                { id: 'guest_user' },
+              ],
+            },
+          }) || await db.users?.findFirst();
+        }
 
         if (type === 'subscription') {
           const existingSub = await db.subscription?.findFirst({
@@ -40,20 +93,30 @@ export async function POST(req: NextRequest) {
           if (!existingSub) {
             const now = new Date();
             const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-            await db.subscription?.create({
-              data: {
-                userId: dbUser.id,
-                clerkId: dbUser.clerkId,
-                status: 'active',
-                planName: 'monthly',
-                amountPaid: amountKes,
-                currency: 'KES',
-                mpesaReceipt: `PAYSTACK_${reference}`,
-                startsAt: now,
-                expiresAt,
-              },
-            });
-            log.info(`[Paystack Webhook] Subscription activated for ${dbUser.email}`);
+            try {
+              await db.subscription?.create({
+                data: {
+                  userId: dbUser.id,
+                  clerkId: dbUser.clerkId,
+                  status: 'active',
+                  planName: 'monthly',
+                  amountPaid: amountKes,
+                  currency: 'KES',
+                  mpesaReceipt: `PAYSTACK_${reference}`,
+                  startsAt: now,
+                  expiresAt,
+                },
+              });
+              log.info(`[Paystack Webhook] Subscription activated for ${dbUser.email}`);
+            } catch (subErr: any) {
+              // Concurrent webhook+verify delivery for the same reference is a
+              // duplicate mint attempt — the DB unique constraint on
+              // mpesaReceipt backstops it. Treat P2002 as idempotent success.
+              if (subErr?.code !== 'P2002') {
+                throw subErr;
+              }
+              log.info(`[Paystack Webhook] Subscription already exists for ${reference} (concurrent delivery)`);
+            }
           }
         } else if (type === 'pay_per_download') {
           // Fail closed: an underpaid "success" must never mint a download.
@@ -77,8 +140,8 @@ export async function POST(req: NextRequest) {
           if (!existingDownload) {
             await db.certificateDownload?.create({
               data: {
-                userId: dbUser.id,
-                clerkId: dbUser.clerkId,
+                userId: dbUser?.id || 'guest_user',
+                clerkId: dbUser?.clerkId || clerkId,
                 pin,
                 downloadType: 'pay_per_download',
                 amountCharged: amountKes,
@@ -87,7 +150,7 @@ export async function POST(req: NextRequest) {
                 checkoutId: reference,
               },
             });
-            log.info(`[Paystack Webhook] Download recorded for PIN ${pin}`);
+            log.info(`[Paystack Webhook] Download recorded for PIN ${(pin || '').slice(0, 1)}***${(pin || '').slice(-1)}`);
 
             // Dispatch to WhatsApp if paid by a WhatsApp user
             let waTargetPhone: string | null = null;

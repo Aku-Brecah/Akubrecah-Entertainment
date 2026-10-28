@@ -2,24 +2,36 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, ArrowRight, User } from "lucide-react";
+import { ShieldCheck, ArrowRight, User, AlertTriangle } from "lucide-react";
 import { completeOnboardingAction } from "./actions";
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmitError("");
+    const formData = new FormData(e.currentTarget);
+
     try {
-      await completeOnboardingAction();
+      await completeOnboardingAction({
+        fullName: String(formData.get("fullName") || ""),
+        dob: String(formData.get("dob") || ""),
+        gender: String(formData.get("gender") || ""),
+        nationality: String(formData.get("nationality") || ""),
+        phone: String(formData.get("phone") || ""),
+      });
       localStorage.setItem("hasCompletedOnboarding", "true");
       router.push("/dashboard");
     } catch (err) {
-      console.error("Onboarding action error, using local fallback:", err);
-      localStorage.setItem("hasCompletedOnboarding", "true");
-      router.push("/dashboard");
+      console.error("Onboarding action error:", err);
+      // UX: surface the failure instead of silently pretending success.
+      setSubmitError(
+        "We couldn't save your profile right now. Please try again — your details have not been saved yet."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -48,7 +60,7 @@ export default function OnboardingPage() {
                 Full Name
               </label>
               <input
-                id="fullName"
+                id="fullName" name="fullName"
                 type="text"
                 required
                 placeholder="e.g. John Doe"
@@ -62,7 +74,7 @@ export default function OnboardingPage() {
                 Date of Birth
               </label>
               <input
-                id="dob"
+                id="dob" name="dob"
                 type="date"
                 required
                 className="w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
@@ -75,7 +87,7 @@ export default function OnboardingPage() {
                 Gender
               </label>
               <select
-                id="gender"
+                id="gender" name="gender"
                 required
                 className="w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               >
@@ -92,7 +104,7 @@ export default function OnboardingPage() {
                 Nationality
               </label>
               <select
-                id="nationality"
+                id="nationality" name="nationality"
                 required
                 className="w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               >
@@ -193,7 +205,7 @@ export default function OnboardingPage() {
                 Email Address
               </label>
               <input
-                id="email"
+                id="email" name="email"
                 type="email"
                 required
                 placeholder="john@example.com"
@@ -207,7 +219,7 @@ export default function OnboardingPage() {
                 Phone Number
               </label>
               <input
-                id="phone"
+                id="phone" name="phone"
                 type="tel"
                 required
                 placeholder="+254 700 000 000"
@@ -215,6 +227,13 @@ export default function OnboardingPage() {
               />
             </div>
           </div>
+
+          {submitError && (
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300">
+              <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+              <p className="text-sm font-medium">{submitError}</p>
+            </div>
+          )}
 
           <div className="pt-6 border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-sm text-on-surface-variant">

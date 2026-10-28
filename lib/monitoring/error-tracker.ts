@@ -60,9 +60,10 @@ export async function captureError(
           scope.setExtras(context.extra);
         }
         if (context.user) {
+          // SECURITY: never send user email to the third-party Sentry service
+          // (KDPA zero-PII). Only a pseudonymous id is shared.
           scope.setUser({
             id: context.user.id,
-            email: context.user.email,
           });
         }
         if (context.service) {
@@ -132,7 +133,8 @@ export function setUserScope(user: { id?: string; email?: string; role?: string 
   if (isSentryConfigured) {
     try {
       if (user) {
-        Sentry.setUser({ id: user.id, email: user.email });
+        // SECURITY: email must not leave the app boundary to third-party trackers.
+        Sentry.setUser({ id: user.id, role: user.role });
       } else {
         Sentry.setUser(null);
       }

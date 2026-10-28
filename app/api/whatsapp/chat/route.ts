@@ -1,5 +1,6 @@
 import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
+import { safeCompare } from '@/lib/admin-auth';
 import prisma from '@/lib/prisma';
 import { sanitizeWhatsAppPhone, sendEvolutionTextMessage, sendEvolutionDocument } from '@/lib/evolution';
 import { fetchTaxpayerById, fetchTaxpayerByPin } from '@/lib/kra-api';
@@ -58,7 +59,7 @@ export async function handleWhatsAppChat(params: {
     });
 
     if (triggerValidation.shouldIgnore) {
-      log.info(`[WhatsApp Chat] Dormant - message ignored (${triggerValidation.reason}) for ${userPhone}`);
+      log.info(`[WhatsApp Chat] Dormant - message ignored (${triggerValidation.reason}) for phone ***${userPhone.slice(-3)}`);
       return {
         success: true,
         userPhone,
@@ -72,7 +73,7 @@ export async function handleWhatsAppChat(params: {
 
     // Deduplication check: If this exact message ID was already processed, ignore to prevent duplicate responses
     if (messageId && isDuplicateWhatsAppMessage(messageId)) {
-      log.info(`[WhatsApp Chat] Duplicate message ${messageId} from ${userPhone} ignored.`);
+      log.info(`[WhatsApp Chat] Duplicate message ${messageId} from phone ***${userPhone.slice(-3)} ignored.`);
       return {
         success: true,
         userPhone,
@@ -1491,7 +1492,7 @@ export async function POST(req: NextRequest) {
       body.apikey ||
       body.secret;
 
-    if (!providedSecret || !expectedSecret || providedSecret !== expectedSecret) {
+    if (!providedSecret || !expectedSecret || !safeCompare(providedSecret, expectedSecret)) {
       log.warn('[WhatsApp Chat] Blocked unauthorized chat trigger request. Missing or invalid secret.');
       return NextResponse.json(
         { success: false, error: 'Unauthorized: Invalid Evolution webhook secret.' },

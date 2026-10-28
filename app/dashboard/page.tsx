@@ -16,7 +16,6 @@ import { currentUser } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import prisma, { createSystemLog } from "@/lib/prisma";
 import ProfileWarningPopup from "@/components/profile-warning-popup";
-import { CyberSubscriptionCard } from "@/components/cyber-subscription-card";
 
 export default async function TaxpayerDashboard() {
   const user = await currentUser();
@@ -143,18 +142,6 @@ export default async function TaxpayerDashboard() {
         </div>
       </div>
 
-      {/* Cyber Cafe Monthly Unlimited Package (KES 500/mo) */}
-      <section className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <div>
-            <h2 className="text-lg font-headline font-bold text-on-surface">Cyber Cafe & Agent Unlimited Package</h2>
-            <p className="text-xs text-on-surface-variant">
-              Unlimited KRA Certificate Retrievals, zero individual download fees, automated WhatsApp bot lookups, and official monthly tax invoices.
-            </p>
-          </div>
-        </div>
-        <CyberSubscriptionCard />
-      </section>
 
       {/* Primary Action Cards (Focused Compliance Hub) */}
       <div className={`grid grid-cols-1 ${isAdmin ? "md:grid-cols-3" : "md:grid-cols-2"} gap-6`}>
@@ -200,25 +187,25 @@ export default async function TaxpayerDashboard() {
               <div className="p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
                 <Send className="h-6 w-6" />
               </div>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
-                Statutory
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                Demo · Coming Soon
               </span>
             </div>
             <CardTitle className="text-lg font-headline font-bold text-on-surface group-hover:text-primary transition-colors">
-              Automated Nil Returns Filing
+              Tax Returns Filing Assistant
             </CardTitle>
             <CardDescription className="text-xs text-on-surface-variant leading-relaxed mt-1">
-              Expedited statutory tax submission assistant for individual employment, business, and zero-liability nil returns.
+              Preview our statutory tax submission workflow. Direct submission to KRA iTax is currently in development and coming soon.
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-2">
             <div className="pt-3 border-t border-outline-variant/60 flex items-center justify-between text-xs text-on-surface-variant mb-4">
-              <span>Annual Returns</span>
-              <span className="font-semibold text-on-surface">KRA Pipeline Ready</span>
+              <span>Filing Module</span>
+              <span className="font-semibold text-amber-600 dark:text-amber-400">Preview Mode</span>
             </div>
-            <Link href="/dashboard/filing" className="block w-full">
+            <Link href="/retrieval-portal" className="block w-full">
               <Button className="w-full h-11 rounded-xl bg-primary text-white font-bold text-xs shadow-xs hover:bg-primary/95 flex items-center justify-center gap-2 group-hover:shadow-md transition-all">
-                <span>Access Tax Filing</span>
+                <span>Explore Filing Demo</span>
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>

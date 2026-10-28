@@ -76,7 +76,23 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const devSecretKey = (body.devSecretKey || process.env.DEV_CLERK_SECRET_KEY || process.env.CLERK_DEV_SECRET_KEY || "").trim();
     const csvContent = (body.csvContent || "").trim();
-    const defaultPassword = body.defaultPassword || "Akubrecah2026!#";
+    // SECURITY: no hardcoded default password. An explicit password must be
+    // supplied per migration run; a published default lets anyone log in as
+    // every migrated account.
+    const defaultPassword = String(body.defaultPassword || "").trim();
+
+    // SECURITY: when replicating users via the Clerk API, every migrated
+    // account needs an explicit password provided at run time — never a
+    // shared, published default.
+    if (devSecretKey && !defaultPassword) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "defaultPassword is required when using a Clerk Development Secret Key.",
+        },
+        { status: 400 }
+      );
+    }
 
     if (!devSecretKey && !csvContent) {
       // Check if old clerk.csv exists on server filesystem as fallback

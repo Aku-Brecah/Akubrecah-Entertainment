@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminMagicToken, verifyAdminMagicToken } from '@/lib/magic-token';
+import { safeCompare } from '@/lib/admin-auth';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { getPublicAppUrl } from '@/lib/utils';
 
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 86400, // 24 hours
+    maxAge: 14400, // 4 hours — matches magic token TTL
     domain: cookieDomain,
   });
 
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 86400, // 24 hours
+    maxAge: 14400, // 4 hours — matches magic token TTL
     domain: cookieDomain,
   });
 
@@ -105,14 +106,23 @@ export async function POST(req: NextRequest) {
     const pin = String(body.pin || '').trim();
     const expectedPin = process.env.ADMIN_BOT_PIN || '';
 
-    if (!pin || !expectedPin || pin !== expectedPin) {
+    if (!pin || !expectedPin || !safeCompare(pin, expectedPin)) {
       return NextResponse.json(
         { success: false, error: 'Invalid master admin passcode. Please check your PIN.' },
         { status: 401 }
       );
     }
 
-    const adminPhone = process.env.SUPER_ADMIN_PHONE || '254791497858';
+    // SECURITY: no hardcoded fallback phone number in source. If the env var
+    // is not configured, fail closed instead of minting access for a number
+    // baked into the repository.
+    const adminPhone = (process.env.SUPER_ADMIN_PHONE || '').trim();
+    if (!adminPhone) {
+      return NextResponse.json(
+        { success: false, error: 'Server misconfiguration: SUPER_ADMIN_PHONE is not set.' },
+        { status: 500 }
+      );
+    }
     const token = createAdminMagicToken(adminPhone);
 
     const response = NextResponse.json({
@@ -131,7 +141,7 @@ export async function POST(req: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 86400, // 24 hours
+      maxAge: 14400, // 4 hours — matches magic token TTL
       domain: cookieDomain,
     });
 
@@ -141,7 +151,7 @@ export async function POST(req: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 86400, // 24 hours
+      maxAge: 14400, // 4 hours — matches magic token TTL
       domain: cookieDomain,
     });
 

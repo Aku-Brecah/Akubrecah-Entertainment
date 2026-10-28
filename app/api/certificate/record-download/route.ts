@@ -99,6 +99,14 @@ export async function POST(req: NextRequest) {
         where: { checkoutId },
       });
       if (existing) {
+        // SECURITY: a reused checkoutId may only unlock the same PIN that was
+        // originally recorded for it. Anything else is rejected.
+        if (existing.pin && existing.pin !== pin.toUpperCase()) {
+          return NextResponse.json(
+            { success: false, error: 'This payment is bound to a different KRA PIN.' },
+            { status: 403 }
+          );
+        }
         // Already downloaded — return the existing record id so the client can proceed
         return NextResponse.json({ success: true, downloadId: existing.id, alreadyRecorded: true });
       }
@@ -110,6 +118,16 @@ export async function POST(req: NextRequest) {
 
       if (!payment || payment.status !== 'success') {
         return NextResponse.json({ success: false, error: 'Payment not confirmed. Please complete M-Pesa payment first.' }, { status: 402 });
+      }
+
+      // SECURITY: payment-for-A must only unlock certificate-A. If the payment
+      // proof carries a bound PIN, the requested PIN must match it exactly.
+      const paidPin = String(payment.metadata?.pin || '').toUpperCase();
+      if (paidPin && paidPin !== 'KRA_CERT' && paidPin !== pin.toUpperCase()) {
+        return NextResponse.json(
+          { success: false, error: 'This payment is bound to a different KRA PIN.' },
+          { status: 403 }
+        );
       }
 
       // Record the pay-per-download

@@ -40,13 +40,13 @@ export function AdminLayoutWrapper({
     isAdminDomain
 
   if (isStandalonePage) {
-    return <main className="flex-grow flex flex-col w-full min-h-screen min-w-0">{children}</main>
+    return <main id="main-content" className="flex-grow flex flex-col w-full min-h-screen min-w-0">{children}</main>
   }
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <SiteHeader />
-      <main className="flex-grow flex-1 flex flex-col w-full pt-16">
+      <main id="main-content" className="flex-grow flex-1 flex flex-col w-full pt-16">
         {children}
       </main>
       <SiteFooter />

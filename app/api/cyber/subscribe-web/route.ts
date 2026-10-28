@@ -49,6 +49,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // SECURITY: a cafe record already claimed by a different Clerk account
+    // must never be hijacked — even if the caller knows the WhatsApp number.
+    if (cafe && cafe.clerkUserId && cafe.clerkUserId !== clerkId) {
+      return NextResponse.json({
+        success: false,
+        error: 'This Cyber Cafe is already registered to a different account.',
+      }, { status: 403 });
+    }
+
     if (cafe) {
       cafe = await db.cyberCafe.update({
         where: { id: cafe.id },

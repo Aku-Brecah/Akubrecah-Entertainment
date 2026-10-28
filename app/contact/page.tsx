@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Send, MapPin, Mail, Clock, MessageSquare, ArrowRight, CheckCircle2, Shield, Lock, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -61,6 +61,28 @@ export default function ContactPage() {
   })
   const [formState, setFormState] = useState<FormState>("idle")
   const [errorMessage, setErrorMessage] = useState<string>("")
+
+  // UX: prefill form context from CTA links (?service=, ?solution=, ?scale=)
+  // used by the estimator, services and solutions pages.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const service = params.get('service') || params.get('solution') || '';
+    if (!service) return;
+    const serviceMap: Record<string, string> = {
+      web: 'Web Application / Scalable SaaS',
+      mobile: 'Mobile App (iOS / Android / React Native)',
+      cloud: 'Cloud Infrastructure & DevOps',
+      enterprise: 'Enterprise & Internal System',
+    };
+    const mapped = serviceMap[service.toLowerCase()] || '';
+    setForm((prev) => ({
+      ...prev,
+      projectType: mapped || prev.projectType,
+      message: prev.message
+        || `I'm interested in discussing a ${service} project${params.get('scale') ? ` (${params.get('scale')} scale)` : ''}.`,
+    }));
+  }, []);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -188,7 +210,7 @@ export default function ContactPage() {
               <div className="space-y-2">
                 {[
                   { name: "KRA Certificate Retrieval Portal", href: "/retrieval-portal" },
-                  { name: "Automated Tax Returns Filing", href: "/dashboard/filing" },
+                  { name: "Automated Tax Returns Filing (Coming Soon)", href: "/dashboard/filing" },
                 ].map((tool) => (
                   <Link
                     key={tool.name}

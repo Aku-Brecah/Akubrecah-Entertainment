@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
     const reference = `PSTK-MPESA-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-    log.info(`[Paystack M-Pesa STK] Triggering KES ${FIXED_DOWNLOAD_FEE_KES} prompt to ${normalizedPhone} for PIN ${cleanPin}`);
+    log.info(`[Paystack M-Pesa STK] Triggering KES ${FIXED_DOWNLOAD_FEE_KES} prompt to masked phone ending ${normalizedPhone.slice(-3)} for PIN ${cleanPin.slice(0, 1)}****`);
 
     const result = await chargePaystackMpesa({
       phone: formatPaystackKenyaPhone(normalizedPhone),

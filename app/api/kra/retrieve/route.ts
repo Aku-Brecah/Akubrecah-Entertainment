@@ -163,7 +163,8 @@ async function lookupPinByIdNumber(idNumber: string, cookieString: string, proxy
     '/KRA-Portal/dwr/call/plaincall/findPinByIdno.findPinByIdnumber.dwr',
     body, cookieString, 'text/plain', proxyUrl
   );
-  log.info('[retrieve] PIN lookup raw snippet:', raw ? raw.substring(0, 200) : 'EMPTY');
+  // SECURITY: raw DWR responses can embed full taxpayer PINs — log length only.
+  log.info('[retrieve] PIN lookup raw snippet length:', raw ? raw.length : 0);
 
   const m = raw.match(/handleCallback\([^,]+,[^,]+,"([^"]+)"\)/) || raw.match(/s\d+="([^"]+)"/);
   if (m) {
@@ -731,7 +732,8 @@ export async function POST(req: NextRequest) {
         if (captchaAnswer && captchaAnswer.trim()) {
           const postData = `viewType=static&actionCode=checkPin&vo.pinNo=${encodeURIComponent(fullPin)}&captcahText=${encodeURIComponent(captchaAnswer.trim())}`;
           log.info('[retrieve] Using cookieString for pinChecker:', cookieString);
-          log.info('[retrieve] Posting to pinChecker with postData:', postData);
+          // SECURITY: never log full PINs — postData contains the plaintext PIN.
+          log.info('[retrieve] Posting to pinChecker with postData:', postData.replace(/vo\.pinNo=[^&]+/, 'vo.pinNo=***'));
           
           const [pcHtml, manResult] = await Promise.all([
             httpsPost('/KRA-Portal/pinChecker.htm', postData, cookieString, 'application/x-www-form-urlencoded', proxyUrl).catch((e: any) => {
@@ -742,9 +744,10 @@ export async function POST(req: NextRequest) {
           ]);
 
           if (pcHtml.length > 100) {
-            log.info('[retrieve] pinChecker raw response snippet:', pcHtml.substring(0, 600));
+            // SECURITY: raw KRA HTML may contain taxpayer name/email/phone — log length only.
+            log.info('[retrieve] pinChecker raw response length:', pcHtml.length);
             pinCheckerData = parsePinCheckerHtml(pcHtml);
-            log.info('[retrieve] pinChecker parsed name:', pinCheckerData.name, 'pin:', pinCheckerData.pin);
+            log.info(`[retrieve] pinChecker parsed name length: ${pinCheckerData.name?.length || 0}, pin: ${pinCheckerData.pin ? '***' + String(pinCheckerData.pin).slice(-3) : 'none'}`);
             if (pinCheckerData.captchaWrong && !liveApiTaxpayer) {
               const displayPin = maskPin(fullPin);
               await createSystemLog({
@@ -833,7 +836,8 @@ export async function POST(req: NextRequest) {
     const street         = first(man?.street, pc?.street, api?.street, '');
     const poBox          = first(man?.poBox, pc?.poBox, api?.poBox, '');
     const postalCode     = first(man?.postalCode, pc?.postalCode, api?.postalCode, '');
-    const email          = first(man?.email, pc?.email, api?.email, '');
+    const authenticatedEmail = (userEmail && userEmail.includes('@') && !userEmail.includes('guest@') && !userEmail.startsWith('user_')) ? userEmail : '';
+    const email          = first(man?.email, pc?.email, api?.email, authenticatedEmail, '');
     const phoneNumber    = first(man?.phoneNumber, pc?.phoneNumber, api?.phoneNumber, '');
 
     // Zero-storage policy: Do not persist taxpayer lookup details into database cache.

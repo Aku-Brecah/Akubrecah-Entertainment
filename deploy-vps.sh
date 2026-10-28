@@ -11,6 +11,10 @@ echo "🚀 Deploying Akubrecah directly to VPS: ${VPS_HOST}"
 echo "=================================================="
 
 echo ""
+echo "🔑 Verifying SSH connectivity..."
+ssh -o BatchMode=yes -o ConnectTimeout=8 "${VPS_USER}@${VPS_HOST}" "echo '  ✓ SSH connection established'"
+
+echo ""
 echo "📦 Step 1: Syncing project files to ${VPS_USER}@${VPS_HOST}:${REMOTE_DIR}..."
 
 rsync -avz --progress \
@@ -23,14 +27,36 @@ rsync -avz --progress \
   --exclude 'redis-data' \
   --exclude 'evolution-data' \
   --exclude 'evolution-postgres-data' \
+  --exclude 'deploy/certs' \
+  --exclude 'training cv' \
+  --exclude 'deploy/.env' \
   "${LOCAL_DIR}/" \
   "${VPS_USER}@${VPS_HOST}:${REMOTE_DIR}/"
 
 echo ""
-echo "🔄 Step 2: Executing restart.sh on VPS to apply updates..."
-ssh "${VPS_USER}@${VPS_HOST}" "bash ${REMOTE_DIR}/restart.sh"
+echo "🧹 Step 2: Cleaning up obsolete/removed routes on VPS..."
+ssh "${VPS_USER}@${VPS_HOST}" "rm -rf \
+  ${REMOTE_DIR}/app/checkout \
+  ${REMOTE_DIR}/app/filing-success \
+  ${REMOTE_DIR}/app/admin/global-config \
+  ${REMOTE_DIR}/public/kra-pin-finder \
+  ${REMOTE_DIR}/styles/globals.css \
+  ${REMOTE_DIR}/public/'AKUBRECAH ENTERTAINMENT -  JARVIS-CLASS AUTONOMOUS SYSTEM - MASTER ACTION PLAN.docx' \
+  ${REMOTE_DIR}/public/'logo copy.png' \
+  ${REMOTE_DIR}/public/'simple-logo - with-text.png'"
+
+echo ""
+echo "🔄 Step 3: Rebuilding and restarting akubrecah-app container on VPS..."
+ssh "${VPS_USER}@${VPS_HOST}" "cd ${REMOTE_DIR} && docker compose up -d --build akubrecah-app"
+
+echo ""
+echo "🩺 Step 4: Verifying application health..."
+sleep 5
+HEALTH_STATUS=$(ssh "${VPS_USER}@${VPS_HOST}" "curl -s -m 5 http://127.0.0.1:3005/api/health" || echo "unreachable")
+echo "Health Response: ${HEALTH_STATUS}"
 
 echo ""
 echo "=================================================="
 echo "✅ Direct VPS deployment complete and services live!"
 echo "=================================================="
+

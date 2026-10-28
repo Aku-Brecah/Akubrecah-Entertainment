@@ -49,9 +49,11 @@ export async function verifyAdminCaller(req?: NextRequest): Promise<AdminCaller 
     }
 
     // 2. Check service secret (headers only, env-configured, timing-safe)
+    // SECURITY: only the dedicated webhook secret may act as a service
+    // credential. EVOLUTION_API_KEY is a low-trust integration key and must
+    // never grant Super Admin access to the site.
     const serviceSecret = req.headers.get("x-service-secret");
-    const expectedServiceSecret =
-      process.env.EVOLUTION_WEBHOOK_SECRET || process.env.EVOLUTION_API_KEY || "";
+    const expectedServiceSecret = process.env.EVOLUTION_WEBHOOK_SECRET || "";
     if (serviceSecret && expectedServiceSecret && safeCompare(serviceSecret, expectedServiceSecret)) {
       return { userId: "service_admin", email: "admin@akubrecah.co.ke", role: "Super Admin" };
     }
@@ -73,7 +75,9 @@ export async function verifyAdminCaller(req?: NextRequest): Promise<AdminCaller 
       const client = await clerkClient();
       const currentUser = await client.users.getUser(userId);
       const email = currentUser.primaryEmailAddress?.emailAddress?.toLowerCase();
-      const role = (currentUser.publicMetadata?.role as string) || "Admin";
+      // SECURITY: no default role. A user without explicit role metadata is a
+      // normal taxpayer and must never be granted admin access.
+      const role = (currentUser.publicMetadata?.role as string) || "";
       const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || '').toLowerCase();
       const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
 

@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'KRA PIN or National ID is required' }, { status: 400 });
       }
 
-      log.info(`[KRA Nil Return] Launching browser for PIN/ID: ${pin}`);
+      log.info(`[KRA Nil Return] Launching browser for masked PIN/ID: ${String(pin).slice(0, 2)}***`);
 
       // If reset is requested, run headfully so operator can answer security questions in Chrome.
       // Otherwise, run headlessly (invisible background worker).

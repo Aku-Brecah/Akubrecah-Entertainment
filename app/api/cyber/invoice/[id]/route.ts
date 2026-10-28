@@ -1,5 +1,7 @@
 import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { isAdminUser } from '@/lib/subscription';
 import prisma from '@/lib/prisma';
 import { generateCyberInvoicePdfBuffer } from '@/lib/cyber-subscription';
 
@@ -15,6 +17,22 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Invoice ID is required' }, { status: 400 });
     }
 
+    // SECURITY: invoices contain owner names and phone numbers (PII). Access is
+    // restricted to the cafe owner (matched by Clerk user or payment phone) and
+    // admins — no more unauthenticated access by UUID.
+    let clerkId: string | null = null;
+    let clerkPhone: string | null = null;
+    try {
+      const { userId } = await auth();
+      if (userId) {
+        clerkId = userId;
+        const { clerkClient } = await import('@clerk/nextjs/server');
+        const client = await clerkClient();
+        const user = await client.users.getUser(userId);
+        clerkPhone = user.phoneNumbers?.find((p: any) => p.id === user.primaryPhoneNumberId)?.phoneNumber || null;
+      }
+    } catch {}
+
     const db = prisma as any;
     const invoice = await db.cyberInvoice.findUnique({
       where: { id },
@@ -25,6 +43,23 @@ export async function GET(
 
     if (!invoice || !invoice.cyberCafe) {
       return NextResponse.json({ success: false, error: 'Invoice not found' }, { status: 404 });
+    }
+
+    const isAdmin = clerkId ? await isAdminUser(clerkId) : false;
+    const normalizedClerkPhone = clerkPhone ? clerkPhone.replace(/\D/g, '').replace(/^0/, '254') : '';
+    const ownsCafe =
+      !!clerkId &&
+      (invoice.cyberCafe.clerkUserId === clerkId ||
+        (normalizedClerkPhone &&
+          [invoice.cyberCafe.whatsappPhone, invoice.cyberCafe.paymentPhone]
+            .map((p: any) => String(p || '').replace(/\D/g, ''))
+            .includes(normalizedClerkPhone)));
+
+    if (!isAdmin && !ownsCafe) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: you do not have access to this invoice.' },
+        { status: 403 }
+      );
     }
 
     const pdfBuffer = await generateCyberInvoicePdfBuffer({

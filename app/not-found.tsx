@@ -46,16 +46,17 @@ export default function NotFound() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
             <button
               onClick={() => router.back()}
-              className="w-full sm:w-auto bg-surface-container border border-outline-muted text-on-surface font-label-md text-label-md py-3 px-6 rounded hover:bg-surface-variant transition-colors flex justify-center items-center gap-2"
+              className="w-full sm:w-auto bg-surface-container border border-outline-muted text-on-surface font-label-md text-label-md py-3 px-6 rounded-xl hover:bg-surface-variant transition-colors flex justify-center items-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
               Go Back
             </button>
-            <Link href="/" className="w-full sm:w-auto">
-              <button className="w-full sm:w-auto bg-primary-container text-on-primary font-label-md text-label-md py-3 px-8 rounded hover:bg-primary transition-colors flex justify-center items-center gap-2">
-                <Home className="w-4 h-4" />
-                Return Home
-              </button>
+            <Link
+              href="/"
+              className="w-full sm:w-auto bg-primary-container text-on-primary font-label-md text-label-md py-3 px-8 rounded-xl hover:bg-primary transition-colors flex justify-center items-center gap-2"
+            >
+              <Home className="w-4 h-4" />
+              Return Home
             </Link>
           </div>
         </motion.div>

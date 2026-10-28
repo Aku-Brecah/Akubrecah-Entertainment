@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import toast from "react-hot-toast";
 import { 
   Mail, Phone, Building, Calendar, MessageSquare, 
   Search, CheckCircle2, Clock, 
@@ -222,6 +223,7 @@ export default function AdminInquiriesPage() {
       }
     } catch (err) {
       console.error("Failed to update status:", err);
+      toast.error("Failed to update status. Please try again.");
     } finally {
       setIsUpdating(false);
     }
@@ -241,9 +243,12 @@ export default function AdminInquiriesPage() {
         }
         setConfirmDeleteId(null);
         fetchInquiries();
+      } else {
+        toast.error(data.error || "Failed to delete inquiry. Please try again.");
       }
     } catch (err) {
       console.error("Failed to delete inquiry:", err);
+      toast.error("Failed to delete inquiry. Please check your connection and try again.");
     } finally {
       setIsUpdating(false);
     }

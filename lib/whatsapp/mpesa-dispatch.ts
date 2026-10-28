@@ -133,6 +133,14 @@ export async function dispatchMpesaStkPush({
         const stkData = await stkRes.json();
         if (stkRes.ok) {
           const reqId = stkData.CheckoutRequestID || stkData.checkoutRequestId;
+          // SECURITY: bind the paid-for PIN to this checkoutId at dispatch time
+          // so the callback and /api/certificate/record-download can verify a
+          // payment only unlocks the PIN that was actually paid for.
+          if (resolvedRefPin) {
+            const g = global as any;
+            g.mpesaStkPinBindings = g.mpesaStkPinBindings || {};
+            g.mpesaStkPinBindings[reqId] = resolvedRefPin.toUpperCase();
+          }
           return {
             success: true,
             checkoutRequestId: reqId,
@@ -147,7 +155,7 @@ export async function dispatchMpesaStkPush({
 
     // 2. Paystack M-Pesa STK Push
     if (process.env.PAYSTACK_SECRET_KEY) {
-      log.info('[M-Pesa STK] Dispatching real STK Push via Paystack Charge API for phone:', normalizedPhone);
+      log.info(`[M-Pesa STK] Dispatching real STK Push via Paystack Charge API for phone ***${normalizedPhone.slice(-3)}`);
       const cleanPin = (resolvedRefPin || tryResolveKraPin(reference) || reference.replace(/^CERT-/, '').trim().toUpperCase());
 
       const paystackRes = await chargePaystackMpesa({

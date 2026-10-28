@@ -48,7 +48,10 @@ export async function createSystemLog(data: {
 
     const sanitizedMessage = (data.message || '')
       .replace(/[A-Z]\d{9}[A-Z]/gi, '[PIN-MASKED]')
-      .replace(/\b\d{7,10}\b/g, '[ID-MASKED]');
+      .replace(/\b\d{7,10}\b/g, '[ID-MASKED]')
+      // Phone numbers (2547XXXXXXXX / 2541XXXXXXXX / 07XX / +254…) are PII too —
+      // the numeric regex above cannot match them, so mask them explicitly.
+      .replace(/(\+?254|0)[17]\d{8}/g, '[PHONE-MASKED]');
 
     const log = await db.systemLog.create({
       data: {

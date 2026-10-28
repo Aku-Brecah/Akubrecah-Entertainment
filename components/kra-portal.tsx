@@ -26,14 +26,9 @@ import {
   CheckCircle2,
   X,
   FileText,
-  ExternalLink,
-  Printer
+  Mail,
+  ExternalLink
 } from 'lucide-react'
-import { 
-  ReceiptPrinter, 
-  TaxpayerCertificateReceiptContent, 
-  type ReceiptPrinterStage 
-} from "@/components/receipt-printer"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -103,6 +98,13 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const [error, setError] = useState<string | null>(null)
   const [hasConsented, setHasConsented] = useState(false)
 
+  // Auto-sync authenticated user email when available
+  useEffect(() => {
+    if (userEmail && !formData.email) {
+      setFormData(prev => ({ ...prev, email: userEmail }))
+    }
+  }, [userEmail])
+
   // CAPTCHA state
   const [captchaImage, setCaptchaImage] = useState<string | null>(null)
   const [sessionToken, setSessionToken] = useState<string | null>(null)
@@ -119,8 +121,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
   const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false)
   const [verifiedReceipt, setVerifiedReceipt] = useState<string | null>(null)
-  const [previewMode, setPreviewMode] = useState<"printer" | "card">("printer")
-  const [printerStage, setPrinterStage] = useState<ReceiptPrinterStage>("complete")
 
   // Subscription & Paystack M-Pesa state (Same-Page, Zero-Redirect)
   const [isSubscribed, setIsSubscribed] = useState(false)
@@ -131,7 +131,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const isRecordUnlocked = Boolean(verifiedDownloadId || isAdmin || isSubscribed)
+  const isRecordUnlocked = Boolean(verifiedDownloadId || isAdmin)
 
   // Sync phone number from taxpayer profile if available
   useEffect(() => {
@@ -168,19 +168,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       }
     }
   }, [])
-
-  // Auto-trigger stepped receipt printer feed animation when navigating to Step 4 or upon payment unlocking
-  useEffect(() => {
-    if (currentStep === 4) {
-      setPrinterStage("processing")
-      const t1 = setTimeout(() => setPrinterStage("printing"), 350)
-      const t2 = setTimeout(() => setPrinterStage("complete"), 2400)
-      return () => {
-        clearTimeout(t1)
-        clearTimeout(t2)
-      }
-    }
-  }, [currentStep, isRecordUnlocked])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => {
@@ -273,7 +260,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             pin: result.data?.pin || (activeTab === "pin" ? prev.pin : ''),
             rawPin: effectiveRawPin || result.data?.pin || '',
             idNumber: effectiveIdNumber,
-            email: result.data?.email || '',
+            email: result.data?.email || prev.email || userEmail || '',
             building: result.data?.building || '',
             street: result.data?.street || '',
             town: result.data?.town || '',
@@ -334,7 +321,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             pin: result.data.pin || prev.pin,
             rawPin: result.data.pin || prev.rawPin,
             idNumber: result.data.idNumber || prev.idNumber,
-            email: result.data.email || prev.email,
+            email: result.data.email || prev.email || userEmail || '',
             building: result.data.building || prev.building,
             street: result.data.street || prev.street,
             town: result.data.town || prev.town,
@@ -581,7 +568,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         if (paymentPhone) {
           await handlePaystackMpesaPayment()
         } else {
-          toast("Please enter your Safaricom M-Pesa number to pay KES 20 and download your certificate.", { icon: "ℹ️" })
+          toast("Please enter your Safaricom M-Pesa number to pay KES 20 and download your certificate.")
         }
       } else {
         setShowPaymentModal(true)
@@ -600,11 +587,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     }
 
     setIsDownloadingPdf(true)
-    setPrinterStage("processing")
     const loadingToast = toast.loading("Securely generating your compliance certificate...")
     try {
-      setTimeout(() => setPrinterStage("printing"), 350)
-
       const activeForm = { ...formData }
       const certPin = activeForm.rawPin || activeForm.pin
       const payload = {
@@ -655,10 +639,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       }, 1500)
 
       toast.success("Certificate downloaded successfully!", { id: loadingToast })
-      setPrinterStage("complete")
       setPaymentStep("done")
     } catch (err: any) {
-      setPrinterStage("complete")
       toast.error(err.message || "Download failed. Please check your connection.", { id: loadingToast })
     } finally {
       setIsDownloadingPdf(false)
@@ -855,7 +837,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           <span className={cn(currentStep >= 2 ? "text-red-600 dark:text-red-400 font-black" : "text-zinc-400")}>2. Details</span>
           <span className={cn(currentStep >= 3 ? "text-red-600 dark:text-red-400 font-black" : "text-zinc-400")}>3. Address</span>
           <span className={cn(currentStep >= 4 ? "text-red-600 dark:text-red-400 font-black" : "text-zinc-400")}>
-            4. Download<span className="hidden sm:inline"> {isSubscribed ? "(Free)" : "(KES 20)"}</span>
+            4. Download<span className="hidden sm:inline"> (KES 20)</span>
           </span>
         </div>
         <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden relative border border-zinc-200 dark:border-zinc-700">
@@ -1294,13 +1276,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                               <p className="text-xs sm:text-sm font-black text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
                                 {isRecordUnlocked ? "Compliance Certificate Ready" : "Official Compliance Record Ready"}
                                 <span className="text-[10px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold">
-                                  {isSubscribed ? "Cyber Plan Active" : isRecordUnlocked ? "Paid & Unmasked" : "100% Verified"}
+                                  {isRecordUnlocked ? "Paid & Unmasked" : "100% Verified"}
                                 </span>
                               </p>
                               <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5 leading-relaxed font-medium">
-                                {isSubscribed 
-                                  ? "Active Cyber Cafe Subscription. Full statutory details unmasked with zero per-certificate download fee."
-                                  : isRecordUnlocked 
+                                {isRecordUnlocked 
                                   ? "Payment verified. Your certificate is compiled and full taxpayer details are unmasked below." 
                                   : <>Taxpayer record matched directly with government registries. Confidential fields remain masked until you pay strictly <strong>KES 20 (20 bob)</strong> to unmask and download your official tamper-proof PDF.</>}
                               </p>
@@ -1309,134 +1289,13 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           <div className="shrink-0 bg-red-100 dark:bg-red-950/60 border border-red-200 dark:border-red-800 rounded-xl px-3.5 py-2 text-center w-full sm:w-auto">
                             <span className="block text-[10px] uppercase font-black text-red-600 dark:text-red-400 tracking-wider">Download Fee</span>
                             <span className="text-sm sm:text-base font-black text-red-600 dark:text-red-400">
-                              {isSubscribed ? "FREE (SUB)" : isRecordUnlocked ? "PAID" : "KES 20 only"}
+                              {isRecordUnlocked ? "PAID" : "KES 20 only"}
                             </span>
                           </div>
                         </div>
 
-                        {/* View Switcher: Interactive Receipt Dispenser vs Data Grid */}
-                        <div className="flex items-center justify-center gap-1.5 max-w-xs mx-auto p-1 bg-surface-variant/40 dark:bg-zinc-800/60 rounded-xl border border-outline-variant/60 my-2">
-                          <button
-                            type="button"
-                            onClick={() => setPreviewMode("printer")}
-                            className={cn(
-                              "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer",
-                              previewMode === "printer"
-                                ? "bg-primary text-white shadow-xs"
-                                : "text-on-surface-variant hover:text-on-surface"
-                            )}
-                          >
-                            <Printer className="w-3.5 h-3.5" />
-                            <span>Receipt Printer</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPreviewMode("card")}
-                            className={cn(
-                              "flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer",
-                              previewMode === "card"
-                                ? "bg-primary text-white shadow-xs"
-                                : "text-on-surface-variant hover:text-on-surface"
-                            )}
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            <span>Data Grid</span>
-                          </button>
-                        </div>
-
-                        {previewMode === "printer" ? (
-                          /* Interactive Stepped Receipt Printer View */
-                          <div className="w-full max-w-sm sm:max-w-md mx-auto py-1">
-                            <ReceiptPrinter.Root stage={printerStage} feedMotion="stepped">
-                              <ReceiptPrinter.Machine>
-                                <ReceiptPrinter.Header>
-                                  <ReceiptPrinter.Status />
-                                  <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-400">
-                                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="tracking-widest">KRA-ONLINE</span>
-                                  </div>
-                                </ReceiptPrinter.Header>
-
-                                <ReceiptPrinter.Screen>
-                                  <div className="space-y-1 font-mono text-[11px]">
-                                    <div className="flex items-center justify-between text-zinc-400 text-[10px]">
-                                      <span>TERMINAL SYSTEM:</span>
-                                      <span className="text-primary font-bold">KRA-CERT-DISPENSER</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-zinc-200">
-                                      <span>TAXPAYER:</span>
-                                      <span className="font-bold truncate max-w-[170px] uppercase text-zinc-100">
-                                        {formData.fullName || "REGISTERED CITIZEN"}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-zinc-200">
-                                      <span>NATIONAL ID:</span>
-                                      <span className="font-bold font-mono text-zinc-100">
-                                        {formData.idNumber || "ON FILE"}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-zinc-200">
-                                      <span>PIN:</span>
-                                      <span className="font-bold font-mono text-primary">
-                                        {isRecordUnlocked ? (formData.rawPin || formData.pin) : (maskPin(formData.pin || formData.rawPin) || "A01*****78Z")}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-zinc-200">
-                                      <span>STATION:</span>
-                                      <span className="font-bold text-zinc-300">
-                                        {isRecordUnlocked ? (formData.station || "Station on file") : "••••••••••"}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </ReceiptPrinter.Screen>
-                              </ReceiptPrinter.Machine>
-
-                              <ReceiptPrinter.Output>
-                                <ReceiptPrinter.Paper>
-                                  <TaxpayerCertificateReceiptContent
-                                    pin={isRecordUnlocked ? (formData.rawPin || formData.pin) : (maskPin(formData.pin || formData.rawPin) || "A01*****78Z")}
-                                    name={formData.fullName || "REGISTERED TAXPAYER"}
-                                    idNumber={formData.idNumber}
-                                    station={formData.station}
-                                    registeredDate={formData.registeredDate}
-                                    building={isRecordUnlocked ? formData.building : undefined}
-                                    street={isRecordUnlocked ? formData.street : undefined}
-                                    town={formData.town || formData.county}
-                                    county={formData.county}
-                                    email={isRecordUnlocked ? formData.email : (maskEmail(formData.email) || undefined)}
-                                    phoneNumber={isRecordUnlocked && formData.phoneNumber && !formData.phoneNumber.includes('•') ? formData.phoneNumber : undefined}
-                                    isUnlocked={isRecordUnlocked}
-                                    receiptNumber={verifiedReceipt || undefined}
-                                    paymentMethod="PAYSTACK M-PESA"
-                                    amount={accessInfo?.feeKes || 20}
-                                    onDownload={handleDownload}
-                                    isDownloading={isDownloadingPdf}
-                                    onDownloadReceipt={handleDownloadReceipt}
-                                    isDownloadingReceipt={isDownloadingReceipt}
-                                  />
-                                </ReceiptPrinter.Paper>
-                              </ReceiptPrinter.Output>
-                            </ReceiptPrinter.Root>
-
-
-                            {/* Micro-interaction controls */}
-                            <div className="flex items-center justify-center gap-3 pt-2">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setPrinterStage("processing")
-                                  setTimeout(() => setPrinterStage("printing"), 350)
-                                  setTimeout(() => setPrinterStage("complete"), 2200)
-                                }}
-                                className="text-[11px] font-mono text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 flex items-center gap-1.5 transition-colors cursor-pointer"
-                              >
-                                <RefreshCw className="w-3 h-3" /> Replay Dispense Motion
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          /* KDPA Masked Taxpayer Preview Grid */
-                          <div className="w-full max-w-2xl mx-auto bg-surface-variant/30 rounded-2xl p-4 sm:p-6 border border-outline-variant space-y-4 shadow-sm">
+                        {/* Taxpayer Preview Data Grid */}
+                        <div className="w-full max-w-2xl mx-auto bg-surface-variant/30 rounded-2xl p-4 sm:p-6 border border-outline-variant space-y-4 shadow-sm my-2">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                               
                               {/* 1. Taxpayer Legal Name (Unmasked) */}
@@ -1515,8 +1374,10 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                 </div>
                                 <p className="text-xs sm:text-sm font-mono text-on-surface truncate">
                                   {isRecordUnlocked 
-                                    ? (formData.email || "Registered Email") 
-                                    : (maskEmail(formData.email) || "j***e@gmail.com")}
+                                    ? (formData.email || userEmail || "Official Email on File") 
+                                    : ((formData.email || userEmail) 
+                                        ? maskEmail(formData.email || userEmail) 
+                                        : "••••••••@••••• (Confidential on KRA Registry)")}
                                 </p>
                               </div>
 
@@ -1621,7 +1482,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                               </p>
                             </div>
                           </div>
-                        )}
                       </>
                     );
                   })()}
@@ -1676,8 +1536,34 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                 className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-outline-variant bg-surface dark:bg-slate-800 text-on-surface text-sm font-mono placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
                               />
                             </div>
-                            <p className="text-[10px] text-on-surface-variant mt-1 flex items-center gap-1">
-                              <Lock className="w-3 h-3 text-emerald-600" /> 256-Bit SSL Secured by Paystack · Prompts M-Pesa PIN directly on your mobile
+                          </div>
+
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label htmlFor="same-page-email-input" className="block text-xs font-bold text-on-surface">
+                                Certificate Delivery Email Address
+                              </label>
+                              <span className="text-[10px] text-on-surface-variant font-medium">
+                                {formData.email || userEmail ? "Will appear on Certificate" : "Optional"}
+                              </span>
+                            </div>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant">
+                                <Mail className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                              </div>
+                              <input
+                                id="same-page-email-input"
+                                type="email"
+                                value={formData.email}
+                                onChange={(e) => {
+                                  handleInputChange('email', e.target.value.toLowerCase().trim())
+                                }}
+                                placeholder={userEmail || "your-email@example.com"}
+                                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-outline-variant bg-surface dark:bg-slate-800 text-on-surface text-sm font-mono placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
+                              />
+                            </div>
+                            <p className="text-[11px] text-on-surface-variant mt-1">
+                              Enter your preferred email here to embed it into your official generated KRA certificate PDF.
                             </p>
                           </div>
 
@@ -1785,8 +1671,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                               onClick={handleDownloadReceipt}
                               className={cn(secondaryButtonClass, "py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5")}
                             >
-                              <Printer className="w-4 h-4" />
-                              <span>Download ETR Receipt</span>
+                              <FileText className="w-4 h-4" />
+                              <span>Download Official Receipt (PDF)</span>
                             </button>
                           </div>
                         </div>
@@ -1799,7 +1685,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     <button className={cn(secondaryButtonClass, "w-full sm:w-auto justify-center")} onClick={() => { setCurrentStep(1); setIdSearchStatus("idle"); setIsVerified(false); setFormData(prev => ({ ...prev, idNumber: "", pin: "", rawPin: "" })); }}>
                       <RefreshCw className="w-4 h-4 shrink-0" /> New Search
                     </button>
-                    {isRecordUnlocked ? (
+                    {isRecordUnlocked && (
                       <button 
                         className={cn(primaryButtonClass, "w-full sm:w-auto justify-center shadow-lg shadow-primary/25 h-12 px-6 sm:px-8 text-xs sm:text-sm font-bold flex items-center gap-2")} 
                         onClick={() => executeDownload()}
@@ -1807,23 +1693,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       >
                         <Download className="w-4 h-4 shrink-0" /> 
                         <span>{isDownloadingPdf ? "Compiling PDF..." : "Download Certificate (PDF)"}</span>
-                      </button>
-                    ) : (
-                      <button 
-                        className={cn(primaryButtonClass, "w-full sm:w-auto justify-center shadow-lg shadow-primary/25 h-12 px-6 sm:px-8 text-xs sm:text-sm font-bold flex items-center gap-2")} 
-                        onClick={() => {
-                          if (!paymentPhone) {
-                            const el = document.getElementById('same-page-phone-input')
-                            el?.focus()
-                            toast("Please enter your Safaricom M-Pesa number above to pay KES 20 and download your certificate.", { icon: "ℹ️" })
-                          } else {
-                            handlePaystackMpesaPayment()
-                          }
-                        }}
-                        disabled={isInitializingPaystack}
-                      >
-                        <Smartphone className="w-4 h-4 shrink-0" /> 
-                        <span className="truncate">Pay KES 20 via M-Pesa & Download</span>
                       </button>
                     )}
                   </div>
@@ -1917,9 +1786,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-outline-variant bg-surface dark:bg-slate-800 text-on-surface text-sm font-mono placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
                         />
                       </div>
-                      <p className="text-[10px] text-on-surface-variant mt-1 flex items-center gap-1">
-                        <Lock className="w-3 h-3 text-emerald-600" /> 256-Bit SSL Secured by Paystack · No redirects
-                      </p>
                     </div>
 
                     {paymentError && (

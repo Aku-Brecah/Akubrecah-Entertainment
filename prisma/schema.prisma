@@ -261,7 +261,7 @@ model Subscription {
   planName        String    @default("monthly")
   amountPaid      Float     @default(0)
   currency        String    @default("KES")
-  mpesaReceipt    String?   // M-Pesa receipt for the subscription payment
+  mpesaReceipt    String?   // M-Pesa receipt for the subscription payment (unique when present — prevents duplicate minting from concurrent webhook+verify deliveries)
   startsAt        DateTime  @default(now())
   expiresAt       DateTime
   cancelledAt     DateTime?
@@ -269,6 +269,7 @@ model Subscription {
   updatedAt       DateTime  @updatedAt
   users           users     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([mpesaReceipt])
   @@index([clerkId])
   @@index([userId])
   @@index([status])

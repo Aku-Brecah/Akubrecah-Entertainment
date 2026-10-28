@@ -48,12 +48,6 @@ const kraNavData: NavItem[] = [
     groups: null,
   },
   {
-    label: "Cyber Subscription (KES 500)",
-    href: "/#cyber-sub",
-    badge: "Unlimited",
-    groups: null,
-  },
-  {
     label: "Agency Home ↗",
     href: "https://akubrecah.com",
     groups: null,

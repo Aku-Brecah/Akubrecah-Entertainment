@@ -10,13 +10,14 @@ export default async function MyProfileDashboard() {
 
   const metadata = user?.publicMetadata || {};
   const phone = user?.phoneNumbers[0]?.phoneNumber || (metadata.phoneNumber as string) || null;
-  const dob = (metadata.dob as string) || "1985-05-12";
-  const gender = (metadata.gender as string) || "Male";
-  const nationality = (metadata.nationality as string) || "Kenyan";
+  // Honesty fix: never render fabricated personal data (fake DOB, gender,
+  // avatar) as if it were the user's stored profile. Empty until the user
+  // actually provides it.
+  const dob = (metadata.dob as string) || "";
+  const gender = (metadata.gender as string) || "";
+  const nationality = (metadata.nationality as string) || "";
 
-  const imageUrl =
-    user?.imageUrl ||
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuAgNLrrn3LbtniV8TsotOZQz36_cYux060GeKaU1QnPNfaPyCqmeWVDF-OrJGhShnq3wqWIOBkPYIPIKNiZfwok3wtlKxsFdxSrFPmcS5p1Up28JeBKT0rYDVI9a-hKnIHaCRnaOZ7SKUQO0HSjA5p7xDzE7GyrMa6E6K0it85ZwvxA8YxWLmkHkSU9QYAJOUOWw-cRPETasn1Sq9IxvfUTNPDgELqIgDcZmK8wTSrSUIML13HInQREaR0dtxff5SZuSeZROS0_Ecro";
+  const imageUrl = user?.imageUrl || "";
 
   return (
     <ProfileClient

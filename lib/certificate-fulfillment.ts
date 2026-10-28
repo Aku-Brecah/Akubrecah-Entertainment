@@ -556,7 +556,8 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
     : rawPin.split('-')[0].trim();
   const receiptNum = opts.mpesaReceipt || (isCyberSubscription ? 'CYBER-SUB-ACTIVE' : `REC-${Date.now().toString(36).toUpperCase()}`);
 
-  log.info(`[Fulfillment] Initiating WhatsApp document delivery for PIN ${cleanPin} to ${userPhone}`);
+  // SECURITY: never log full PINs or phone numbers — log a masked preview.
+  log.info(`[Fulfillment] Initiating WhatsApp document delivery for PIN ${cleanPin.slice(0, 1)}***${cleanPin.slice(-1)} to phone ***${userPhone.slice(-3)}`);
 
   try {
     // 1. Resolve taxpayer details: Strict Zero-Storage, never rely on persistent kra_pin_cache
@@ -738,7 +739,7 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
     await createSystemLog({
       level: 'info',
       service: 'WhatsApp-Fulfillment',
-      message: `Delivered KRA Certificate and Receipt to WhatsApp ${userPhone} for PIN ${cleanPin}`,
+      message: `Delivered KRA Certificate and Receipt to WhatsApp ***${userPhone.slice(-3)} for PIN ***${cleanPin.slice(-3)}`,
       actor: `wa_${userPhone}`,
       details: { pin: cleanPin, checkoutId, receiptNum, amount },
     });

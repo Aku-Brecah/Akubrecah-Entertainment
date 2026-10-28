@@ -828,13 +828,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           </div>
 
-          {/* Desktop: Quick Search */}
+          {/* Desktop: Quick Search — routes to the system logs viewer */}
           <div className="hidden md:flex flex-1 max-w-md">
             <div className="relative w-full">
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant" />
               <input
                 className="w-full bg-surface-container-lowest border border-outline-variant rounded-full py-2 pl-10 pr-4 text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Search CMS posts, telemetry, KRA records, logs, users..."
+                onClick={() => router.push('/admin/system-logs')}
+                readOnly
+                title="Opens System Logs & Telemetry search"
               />
             </div>
           </div>
@@ -883,7 +886,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               title="System Logs & Telemetry"
             >
               <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full animate-pulse" />
             </Link>
 
             {user?.imageUrl && (

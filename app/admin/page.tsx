@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   TrendingUp,
@@ -148,6 +148,7 @@ interface OverviewData {
 
 export default function AdminOverviewPage() {
   const [data, setData] = useState<OverviewData | null>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "paystack" | "transactions" | "whatsapp">("overview");
@@ -198,16 +199,25 @@ export default function AdminOverviewPage() {
     fetchOverview(1);
   }, []);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    fetchOverview(currentPage, searchQuery, channelFilter, gatewayFilter);
-    toast.success("Live metrics & Paystack gateway synced");
+    // UX fix: the success signal fires only after the fetch actually resolves.
+    try {
+      await fetchOverview(currentPage, searchQuery, channelFilter, gatewayFilter);
+      toast.success("Live metrics & Paystack gateway synced");
+    } catch {
+      // fetchOverview already toasts the failure.
+    }
   };
 
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
     setCurrentPage(1);
-    fetchOverview(1, val, channelFilter, gatewayFilter);
+    // UX fix: debounce so every keystroke doesn't fire a request storm.
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      fetchOverview(1, val, channelFilter, gatewayFilter);
+    }, 300);
   };
 
   const handleChannelChange = (val: string) => {

@@ -143,7 +143,14 @@ export default function RootLayout({
             enableSystem={false}
           >
             <TooltipProviderWrapper>
-              <div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-hidden bg-background">                
+              {/* Accessibility: skip navigation for keyboard users */}
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-xl focus:bg-primary focus:text-on-primary focus:text-sm focus:font-bold"
+              >
+                Skip to main content
+              </a>
+              <div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-hidden bg-background">
                 <KRAAnnouncementBanner />
                 <AdminLayoutWrapper>
                   {children}

@@ -47,17 +47,20 @@ export function WriteReviewModal({ onReviewSubmitted }: WriteReviewModalProps) {
 
     setIsSubmitting(true)
     setTimeout(() => {
+      // Honesty fix: submissions are stored locally as unverified drafts —
+      // nothing here is a "Verified Client" review, no fake counters are
+      // minted, and nothing is displayed as Google-syndicated.
       const review: UserReview = {
         id: `rev-${Date.now()}`,
         name: name.trim(),
-        role: role.trim() || "Verified Client",
+        role: role.trim() || "Client",
         location: location.trim() || "Kenya",
         category,
         rating,
         date: "Just now",
         content: content.trim(),
-        verified: true,
-        helpfulCount: 1,
+        verified: false,
+        helpfulCount: 0,
       }
 
       onReviewSubmitted(review)

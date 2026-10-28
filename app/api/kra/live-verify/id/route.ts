@@ -66,6 +66,10 @@ export async function POST(req: NextRequest) {
 
     const taxpayerData = await fetchTaxpayerById(cleanId, engineMode);
 
+    if (!taxpayerData.email && userEmail && userEmail.includes('@') && !userEmail.includes('guest@') && !userEmail.startsWith('user_')) {
+      taxpayerData.email = userEmail;
+    }
+
     // Zero-storage policy: Do not persist taxpayer lookup details into database cache.
     // Live taxpayer results are processed ephemerally in-memory for the active session.
     
