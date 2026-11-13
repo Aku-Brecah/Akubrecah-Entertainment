@@ -19,12 +19,11 @@ export async function POST(req: NextRequest) {
     // Security: validate the Daraja callback with the secret token embedded in
     // the registered callback URL (.../api/mpesa/callback?token=<secret>).
     // FAIL CLOSED: without a configured token the callback origin cannot be
-    // authenticated, so every request is rejected. A forged 'success' payload
-    // would otherwise mint a paid certificateDownload record for free.
-    // (Daraja portals let you register the query-param token; boot must set it.)
-    const callbackToken = process.env.MPESA_CALLBACK_TOKEN;
+    // authenticated, so every request is rejected.
+    const callbackToken =
+      process.env.DARAJA_CALLBACK_TOKEN || process.env.MPESA_CALLBACK_TOKEN;
     if (!callbackToken) {
-      log.error('[M-Pesa Callback] REJECTED: MPESA_CALLBACK_TOKEN is not configured — callbacks are fail-closed');
+      log.error('[M-Pesa Callback] REJECTED: DARAJA_CALLBACK_TOKEN / MPESA_CALLBACK_TOKEN is not configured — callbacks are fail-closed');
       return NextResponse.json(
         { success: false, error: 'Callback token not configured server-side' },
         { status: 503 }
@@ -63,7 +62,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid payload structure' }, { status: 400 });
     }
 
-    const { CheckoutRequestID, ResultCode, ResultDesc, CallbackMetadata } = body.stkCallback;
+    const { MerchantRequestID, CheckoutRequestID, ResultCode, ResultDesc, CallbackMetadata } = body.stkCallback;
 
     if (!CheckoutRequestID) {
       log.warn('[M-Pesa Callback] Missing CheckoutRequestID');
@@ -71,6 +70,7 @@ export async function POST(req: NextRequest) {
     }
 
     const registry = getCallbackRegistry();
+    const { mapDarajaResultCodeToStatus } = await import('@/lib/whatsapp/mpesa-dispatch');
 
     // Parse callback metadata first so amount tampering can be validated
     // before anything is marked as paid.
@@ -81,11 +81,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check if the payment was successful
-    // A "success" callback under the KES 20 certificate price is rejected:
-    // the amount tampering must not grant a free download. (amount === 0 means
-    // the gateway sent no metadata — treated as unresolved, not rejected.)
-    const underpaid = ResultCode === 0 && amount > 0 && amount < 20;
+    const minCertFee = Number(process.env.MPESA_DOWNLOAD_FEE_KES || 20);
+    const underpaid = ResultCode === 0 && amount > 0 && amount < minCertFee;
 
     if (underpaid) {
       log.error(`[M-Pesa Callback] REJECTED underpaid "success" (KES ${amount}) for ${CheckoutRequestID}`);
@@ -95,12 +92,24 @@ export async function POST(req: NextRequest) {
         resultDesc: `Underpaid amount KES ${amount}`,
         timestamp: Date.now()
       };
+      try {
+        const prismaModule = await import('@/lib/prisma');
+        const db = prismaModule.default as any;
+        await db.mpesaTransaction?.updateMany({
+          where: { checkoutRequestId: CheckoutRequestID },
+          data: {
+            status: 'FAILED',
+            resultCode: Number(ResultCode),
+            resultDesc: `Underpaid amount KES ${amount}`,
+          },
+        });
+      } catch {}
       return NextResponse.json({ success: true, message: 'Underpaid callback rejected' });
     }
 
     // Fail closed on stripped metadata: a "success" callback with no amount
     // cannot be verified against the KES 20 price, so it must never mint a
-    // paid entitlement (historically it was recorded as a KES 20 charge).
+    // paid entitlement.
     if (ResultCode === 0 && amount <= 0) {
       log.error(`[M-Pesa Callback] REJECTED "success" with no amount metadata for ${CheckoutRequestID}`);
       registry[CheckoutRequestID] = {
@@ -109,6 +118,18 @@ export async function POST(req: NextRequest) {
         resultDesc: 'Payment not verifiable: no amount in callback metadata',
         timestamp: Date.now()
       };
+      try {
+        const prismaModule = await import('@/lib/prisma');
+        const db = prismaModule.default as any;
+        await db.mpesaTransaction?.updateMany({
+          where: { checkoutRequestId: CheckoutRequestID },
+          data: {
+            status: 'FAILED',
+            resultCode: Number(ResultCode),
+            resultDesc: 'Payment not verifiable: no amount in callback metadata',
+          },
+        });
+      } catch {}
       return NextResponse.json(
         { success: false, error: 'Payment callback failed verification' },
         { status: 400 }
@@ -141,7 +162,10 @@ export async function POST(req: NextRequest) {
       registry[CheckoutRequestID] = {
         status: 'success',
         resultCode: ResultCode,
+        ResultCode: ResultCode,
         resultDesc: ResultDesc,
+        MpesaReceiptNumber: mpesaReceipt,
+        Amount: amount,
         metadata: {
           amount,
           mpesaReceiptNumber: mpesaReceipt,
@@ -157,6 +181,28 @@ export async function POST(req: NextRequest) {
         const db = prismaModule.default as any;
         const { getOrCreateDbUser } = await import('@/lib/subscription');
 
+        // 0. Lookup durable MpesaTransaction record (carries PIN & channel for both Web and WhatsApp)
+        let txRecord: any = null;
+        try {
+          txRecord = await db.mpesaTransaction?.findUnique({
+            where: { checkoutRequestId: CheckoutRequestID },
+          });
+          if (txRecord) {
+            await db.mpesaTransaction.update({
+              where: { checkoutRequestId: CheckoutRequestID },
+              data: {
+                status: 'COMPLETED',
+                resultCode: 0,
+                resultDesc: ResultDesc || 'The service request is processed successfully.',
+                mpesaReceiptNumber: mpesaReceipt || txRecord.mpesaReceiptNumber || CheckoutRequestID,
+                ...(MerchantRequestID ? { merchantRequestId: MerchantRequestID } : {}),
+              },
+            });
+          }
+        } catch (txErr: any) {
+          log.warn('[M-Pesa Callback] MpesaTransaction update notice:', txErr?.message);
+        }
+
         // 1. Look up any WhatsApp conversation awaiting payment with this checkoutId
         let conversation: any = null;
         try {
@@ -168,82 +214,104 @@ export async function POST(req: NextRequest) {
           });
           conversation = conversations?.find((c: any) => {
             const meta = c.metadata as any;
-            return meta?.checkoutId === CheckoutRequestID || meta?.paymentPhone === phoneNumber;
+            return meta?.checkoutId === CheckoutRequestID || (phoneNumber && meta?.paymentPhone === phoneNumber);
           });
         } catch (e: any) {
           log.warn('[M-Pesa Callback] Conversation lookup notice:', e.message);
         }
 
-        const resolvedPin = conversation?.metadata?.pin
-          // SECURITY: fall back to the PIN bound at STK dispatch time so that
-          // web-initiated payments (no WhatsApp conversation) are still
-          // bound to the exact PIN that was paid for.
-          || (global as any).mpesaStkPinBindings?.[CheckoutRequestID]
-          || 'KRA_CERT';
-        // SECURITY: bind the paid-for PIN into the payment proof so that
-        // /api/certificate/record-download can verify a payment only unlocks
-        // the exact PIN that was paid for (prevents cross-PIN minting).
+        const resolvedPin =
+          txRecord?.pin ||
+          conversation?.metadata?.pin ||
+          (global as any).mpesaStkPinBindings?.[CheckoutRequestID] ||
+          'KRA_CERT';
         if (resolvedPin && resolvedPin !== 'KRA_CERT') {
           registry[CheckoutRequestID].metadata.pin = resolvedPin.toUpperCase();
         }
-        const targetPhone = conversation?.user_phone || phoneNumber;
+        const isWebOrigin = txRecord?.channel === 'web' && !conversation;
+        const targetPhone = conversation?.user_phone || txRecord?.phone || phoneNumber;
         const taxpayerName = conversation?.metadata?.taxpayerName || '';
 
         // 1b. Check if this payment was for a Cyber Cafe Monthly Subscription
-        const isCyber = conversation?.metadata?.step === 'CYBER_AWAITING_PAYMENT';
+        const isCyber =
+          conversation?.metadata?.step === 'CYBER_AWAITING_PAYMENT' ||
+          txRecord?.channel === 'cyber';
         if (isCyber) {
           log.info(`[M-Pesa Callback] Activating Cyber Cafe subscription for ${targetPhone} (receipt: ${mpesaReceipt})`);
           const { activateCyberCafeSubscription, deliverCyberInvoiceToWhatsApp } = await import('@/lib/cyber-subscription');
-          const { sendEvolutionTextMessage } = await import('@/lib/evolution');
 
-          const activation = await activateCyberCafeSubscription({
-            cafeName: conversation?.metadata?.cyberCafeName || 'Cyber Cafe',
-            ownerName: conversation?.metadata?.cyberOwnerName || 'Cyber Operator',
-            whatsappPhone: conversation?.metadata?.cyberWaPhone || targetPhone,
-            paymentPhone: conversation?.metadata?.paymentPhone || phoneNumber || targetPhone,
-            mpesaReceipt,
-            checkoutId: CheckoutRequestID,
-            amountKes: Number(amount || 500),
+          const existingCyberInv = await db.cyberInvoice?.findFirst({
+            where: { checkoutId: CheckoutRequestID },
           });
+          if (existingCyberInv) {
+            return NextResponse.json({ success: true, duplicate: true, message: 'Cyber invoice already processed' });
+          }
 
-          if (conversation) {
-            const meta = (conversation.metadata as any) || {};
-            meta.step = 'IDLE';
-            meta.activeSession = false;
-            meta.mpesaReceipt = mpesaReceipt;
-            await db.ai_conversations?.update({
-              where: { id: conversation.id },
-              data: {
-                metadata: meta,
-                updated_at: new Date(),
+          let pendingCafe: any = null;
+          if (!conversation) {
+            pendingCafe = await db.cyberCafe?.findFirst({
+              where: {
+                OR: [
+                  { notes: { contains: CheckoutRequestID } },
+                  ...(phoneNumber ? [{ paymentPhone: phoneNumber, status: 'pending' }] : []),
+                ],
               },
             });
           }
 
-          if (activation.success && activation.invoice && activation.cafe) {
-            await deliverCyberInvoiceToWhatsApp({
-              whatsappPhone: targetPhone,
-              invoice: activation.invoice,
-              cafe: activation.cafe,
-              daysRemaining: activation.daysRemaining,
+          if ((conversation || pendingCafe) && Number(amount) >= 500) {
+            const activation = await activateCyberCafeSubscription({
+              cafeName: conversation?.metadata?.cyberCafeName || pendingCafe?.cafeName || 'Cyber Cafe',
+              ownerName: conversation?.metadata?.cyberOwnerName || pendingCafe?.ownerName || 'Cyber Operator',
+              whatsappPhone: conversation?.metadata?.cyberWaPhone || pendingCafe?.whatsappPhone || targetPhone,
+              paymentPhone: conversation?.metadata?.paymentPhone || pendingCafe?.paymentPhone || phoneNumber || targetPhone,
+              mpesaReceipt,
+              checkoutId: CheckoutRequestID,
+              amountKes: Number(amount || 500),
+              clerkUserId: pendingCafe?.clerkUserId || txRecord?.clerkId || undefined,
             });
-          }
 
-          return NextResponse.json({ success: true, message: 'Cyber Cafe subscription callback processed successfully' });
+            if (conversation) {
+              const meta = (conversation.metadata as any) || {};
+              meta.step = 'IDLE';
+              meta.activeSession = false;
+              meta.mpesaReceipt = mpesaReceipt;
+              await db.ai_conversations?.update({
+                where: { id: conversation.id },
+                data: {
+                  metadata: meta,
+                  updated_at: new Date(),
+                },
+              });
+            }
+
+            if (activation.success && activation.invoice && activation.cafe) {
+              try {
+                await deliverCyberInvoiceToWhatsApp({
+                  whatsappPhone: conversation ? targetPhone : activation.cafe.whatsappPhone,
+                  invoice: activation.invoice,
+                  cafe: activation.cafe,
+                  daysRemaining: activation.daysRemaining,
+                });
+              } catch (err: any) {
+                log.warn('[M-Pesa Callback] WhatsApp invoice delivery notice:', err.message);
+              }
+            }
+
+            return NextResponse.json({ success: true, message: 'Cyber Cafe subscription callback processed successfully' });
+          }
         }
 
-        // 1c. Check if there is a pending CyberCafe subscription (e.g. initiated from web)
+        // 1c. Fallback check: pending Web CyberCafe even if channel wasn't tagged 'cyber'
         const pendingCafe = await db.cyberCafe?.findFirst({
           where: {
             OR: [
               { notes: { contains: CheckoutRequestID } },
-              { paymentPhone: phoneNumber, status: 'pending' },
+              ...(phoneNumber ? [{ paymentPhone: phoneNumber, status: 'pending' }] : []),
             ],
           },
         });
 
-        // SECURITY: fail-closed. A metadata-stripped callback (amount === 0)
-        // must never activate a paid subscription. Require the real KES 500 fee.
         if (pendingCafe && amount >= 500) {
           log.info(`[M-Pesa Callback] Activating Web Cyber Cafe subscription for ${pendingCafe.cafeName}`);
           const { activateCyberCafeSubscription, deliverCyberInvoiceToWhatsApp } = await import('@/lib/cyber-subscription');
@@ -275,30 +343,37 @@ export async function POST(req: NextRequest) {
         }
 
         // 2. Idempotent CertificateDownload creation — Safaricom routinely
-        // retries callbacks, and each retry must NOT create a second
-        // entitlement, re-send WhatsApp documents, or re-dispatch n8n.
-        // The unique checkoutId on certificateDownload is the dedupe anchor.
+        // retries callbacks, and STK Push Query may also create the download row
+        // first with checkoutId as temporary mpesaReceipt. Update the receipt if needed.
         try {
-          const prismaIdem = await import('@/lib/prisma');
-          const dbIdem = prismaIdem.default as any;
-          const existingDownload = await dbIdem.certificateDownload?.findFirst({
+          const existingDownload = await db.certificateDownload?.findFirst({
             where: { checkoutId: CheckoutRequestID },
           });
           if (existingDownload) {
-            log.info(`[M-Pesa Callback] Duplicate callback for ${CheckoutRequestID} — download ${existingDownload.id} already issued; ack only`);
-            return NextResponse.json({ success: true, message: 'Already processed' });
+            if (mpesaReceipt && existingDownload.mpesaReceipt !== mpesaReceipt) {
+              await db.certificateDownload?.update({
+                where: { id: existingDownload.id },
+                data: { mpesaReceipt },
+              }).catch(() => {});
+            }
+            log.info(`[M-Pesa Callback] Duplicate/already-issued callback for ${CheckoutRequestID} — ack only`);
+            return NextResponse.json({ success: true, duplicate: true, message: 'Already processed' });
           }
         } catch (idemErr: any) {
           log.warn('[M-Pesa Callback] Idempotency lookup notice:', idemErr.message);
         }
 
         // 2b. Create CertificateDownload record safely
+        const effectiveClerkId =
+          txRecord?.channel === 'web'
+            ? (txRecord?.clerkId || 'guest_user')
+            : (txRecord?.clerkId || (targetPhone ? `wa_${targetPhone}` : 'guest_user'));
         let dbUser: any = null;
         try {
           dbUser = await getOrCreateDbUser(
-            'wa_' + targetPhone,
-            `wa_${targetPhone}@akubrecah.co.ke`,
-            taxpayerName || 'WhatsApp Taxpayer'
+            effectiveClerkId,
+            `${effectiveClerkId}@akubrecah.co.ke`,
+            taxpayerName || 'Taxpayer'
           );
         } catch (uErr: any) {
           log.warn('[M-Pesa Callback] User lookup notice:', uErr.message);
@@ -309,11 +384,11 @@ export async function POST(req: NextRequest) {
           try {
             downloadRecord = await db.certificateDownload.create({
               data: {
-                userId: dbUser?.id || ('wa_' + targetPhone),
-                clerkId: 'wa_' + targetPhone,
+                userId: dbUser?.id || effectiveClerkId,
+                clerkId: effectiveClerkId,
                 pin: resolvedPin.toUpperCase(),
                 downloadType: 'pay_per_download',
-                amountCharged: Number(amount || 20),
+                amountCharged: Number(amount || minCertFee),
                 currency: 'KES',
                 mpesaReceipt: mpesaReceipt,
                 checkoutId: CheckoutRequestID,
@@ -326,74 +401,91 @@ export async function POST(req: NextRequest) {
 
         const downloadId = downloadRecord?.id || 'dl_' + Date.now();
 
-        // 3. Update conversation step to COMPLETED and end active session
-        if (conversation) {
-          const meta = (conversation.metadata as any) || {};
-          meta.step = 'COMPLETED';
-          meta.activeSession = false;
-          meta.mpesaReceipt = mpesaReceipt;
-          meta.downloadId = downloadId;
-          await db.ai_conversations?.update({
-            where: { id: conversation.id },
-            data: {
-              metadata: meta,
-              updated_at: new Date(),
-            },
-          });
-        }
+        // 3. For WhatsApp-originated payments, update conversation & deliver certificate PDF
+        if (!isWebOrigin && targetPhone) {
+          if (conversation) {
+            const meta = (conversation.metadata as any) || {};
+            meta.step = 'COMPLETED';
+            meta.activeSession = false;
+            meta.mpesaReceipt = mpesaReceipt;
+            meta.downloadId = downloadId;
+            await db.ai_conversations?.update({
+              where: { id: conversation.id },
+              data: {
+                metadata: meta,
+                updated_at: new Date(),
+              },
+            });
+          }
 
-        // 4. Trigger direct WhatsApp Document Delivery (Certificate + Receipt)
-        try {
-          const { fulfillWhatsAppCertificateDelivery } = await import('@/lib/certificate-fulfillment');
-          await fulfillWhatsAppCertificateDelivery({
-            phone: targetPhone,
-            pin: resolvedPin,
-            checkoutId: CheckoutRequestID,
-            mpesaReceipt,
-            amount: Number(amount || 20),
-            taxpayerName,
-            taxpayerDetails: conversation?.metadata?.taxpayerDetails,
-          });
-        } catch (fulErr: any) {
-          log.error('[M-Pesa Callback] Direct fulfillment error:', fulErr.message);
-        }
-
-        // Trigger n8n Workflow so executions visibly reflect in n8n
-        const n8nWebhookUrl = process.env.N8N_KRA_DELIVERY_WEBHOOK || 'https://n8n.akubrecah.com/webhook/kra-delivery';
-        try {
-          await fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              checkoutId: CheckoutRequestID,
-              mpesaReceipt,
-              amount: Number(amount || 20),
+          try {
+            const { fulfillWhatsAppCertificateDelivery } = await import('@/lib/certificate-fulfillment');
+            await fulfillWhatsAppCertificateDelivery({
               phone: targetPhone,
               pin: resolvedPin,
-              downloadId,
+              checkoutId: CheckoutRequestID,
+              mpesaReceipt,
+              amount: Number(amount || minCertFee),
               taxpayerName,
-              appUrl: 'https://kra.akubrecah.com',
-              evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
-              instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment',
-              serviceSecret: process.env.N8N_DISPATCH_SECRET || process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
-              apiKey: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
-            }),
-          });
-        } catch (n8nErr: any) {
-          log.warn('[M-Pesa Callback] n8n delivery webhook notice:', n8nErr.message);
+              taxpayerDetails: conversation?.metadata?.taxpayerDetails,
+            });
+          } catch (fulErr: any) {
+            log.error('[M-Pesa Callback] Direct fulfillment error:', fulErr.message);
+          }
+
+          const n8nWebhookUrl = process.env.N8N_KRA_DELIVERY_WEBHOOK || 'https://n8n.akubrecah.com/webhook/kra-delivery';
+          try {
+            await fetch(n8nWebhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                checkoutId: CheckoutRequestID,
+                mpesaReceipt,
+                amount: Number(amount || minCertFee),
+                phone: targetPhone,
+                pin: resolvedPin,
+                downloadId,
+                taxpayerName,
+                appUrl: 'https://kra.akubrecah.com',
+                evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
+                instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment',
+                serviceSecret: process.env.N8N_DISPATCH_SECRET || process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
+                apiKey: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
+              }),
+            });
+          } catch (n8nErr: any) {
+            log.warn('[M-Pesa Callback] n8n delivery webhook notice:', n8nErr.message);
+          }
         }
       } catch (dbErr: any) {
         log.error('[M-Pesa Callback DB Handler Error]:', dbErr.message);
       }
     } else {
-      log.warn(`[M-Pesa Callback] Payment Failed! Code: ${ResultCode}, Desc: ${ResultDesc}`);
+      const { status: mappedStatus, dbStatus } = mapDarajaResultCodeToStatus(String(ResultCode ?? '1'));
+      log.warn(`[M-Pesa Callback] Payment Not Completed! Code: ${ResultCode} (${mappedStatus}), Desc: ${ResultDesc}`);
 
       registry[CheckoutRequestID] = {
-        status: 'failed',
+        status: mappedStatus === 'pending' ? 'failed' : mappedStatus,
         resultCode: ResultCode,
-        resultDesc: ResultDesc,
+        ResultCode: ResultCode,
+        resultDesc: ResultDesc || 'Transaction not completed',
         timestamp: Date.now()
       };
+
+      try {
+        const prismaModule = await import('@/lib/prisma');
+        const db = prismaModule.default as any;
+        await db.mpesaTransaction?.updateMany({
+          where: { checkoutRequestId: CheckoutRequestID },
+          data: {
+            status: dbStatus === 'PENDING' ? 'FAILED' : dbStatus,
+            resultCode: Number.isFinite(Number(ResultCode)) ? Number(ResultCode) : null,
+            resultDesc: ResultDesc || 'Transaction not completed',
+          },
+        });
+      } catch (txErr: any) {
+        log.warn('[M-Pesa Callback] Failure status persist notice:', txErr?.message);
+      }
 
       // If associated with a WhatsApp conversation, notify user and allow retry without slashes
       (async () => {

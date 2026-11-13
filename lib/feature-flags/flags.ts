@@ -12,17 +12,10 @@ export interface FeatureFlagDefinition {
 }
 
 export const FEATURE_FLAGS: Record<string, FeatureFlagDefinition> = {
-  enable_paystack_gateway: {
-    key: 'enable_paystack_gateway',
-    name: 'Paystack Payment Gateway',
-    description: 'Enables card, Apple Pay, and Paystack checkout options.',
-    defaultValue: true,
-    category: 'payments',
-  },
   enable_mpesa_stk_push: {
     key: 'enable_mpesa_stk_push',
     name: 'M-Pesa STK Push Express',
-    description: 'Enables instant Safaricom M-Pesa STK push payment prompts.',
+    description: 'Enables instant Safaricom Daraja M-Pesa STK push payment prompts.',
     defaultValue: true,
     category: 'payments',
   },

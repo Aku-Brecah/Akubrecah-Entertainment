@@ -1,20 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
-import { 
-  Building2, 
-  Calendar, 
-  CheckCircle2, 
-  Clock, 
-  CreditCard, 
-  FileText, 
-  Loader2, 
-  Phone, 
-  RefreshCw, 
-  ShieldCheck, 
-  Smartphone, 
-  Sparkles, 
+import {
+  AlertCircle,
+  Building2,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  FileText,
+  Loader2,
+  Phone,
+  RefreshCw,
+  RotateCcw,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
   Zap,
   ArrowRight,
   ExternalLink,
@@ -49,6 +50,17 @@ interface CyberInvoiceData {
   periodEnd: string;
 }
 
+type CyberMpesaStatus =
+  | "ready"
+  | "initiating"
+  | "stk_sent"
+  | "waiting"
+  | "verifying"
+  | "success"
+  | "failed"
+  | "cancelled"
+  | "timeout";
+
 export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }) {
   const { isSignedIn, isLoaded, user } = useUser();
   const [loading, setLoading] = useState(true);
@@ -58,11 +70,20 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
   const [cafe, setCafe] = useState<CyberCafeData | null>(null);
   const [invoices, setInvoices] = useState<CyberInvoiceData[]>([]);
 
-  // Modal State
+  // Modal & Safaricom Daraja M-Pesa Express State
   const [showModal, setShowModal] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [mpesaStatus, setMpesaStatus] = useState<CyberMpesaStatus>("ready");
   const [pollingCheckoutId, setPollingCheckoutId] = useState<string | null>(null);
-  const [pollStatus, setPollStatus] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(60);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [confirmedReceipt, setConfirmedReceipt] = useState<string | null>(null);
+  const stkTransitionRef = useRef<NodeJS.Timeout | null>(null);
+
+  const isBusy =
+    mpesaStatus === "initiating" ||
+    mpesaStatus === "stk_sent" ||
+    mpesaStatus === "waiting" ||
+    mpesaStatus === "verifying";
 
   // Form State
   const [formData, setFormData] = useState({
@@ -70,7 +91,6 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
     ownerName: "",
     whatsappPhone: "",
     paymentPhone: "",
-    method: "mpesa" as "mpesa" | "paystack",
   });
 
   const fetchStatus = async () => {
@@ -121,56 +141,161 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
     }
   }, [isLoaded, isSignedIn, user]);
 
-  // Handle M-Pesa polling when waiting for STK push
+  const applyCyberStatusOutcome = async (data: any): Promise<boolean> => {
+    if (data?.status === "success" || data?.verified || data?.resultCode === 0) {
+      setConfirmedReceipt(data?.mpesaReceipt || pollingCheckoutId || "CONFIRMED");
+      setMpesaStatus("success");
+      setStatusError(null);
+      setPollingCheckoutId(null);
+      toast.success("Cyber Cafe Subscription Activated Successfully!");
+      await fetchStatus();
+      return true;
+    }
+    if (data?.status === "cancelled" || data?.resultCode === 1032) {
+      setMpesaStatus("cancelled");
+      setStatusError(
+        data?.error ||
+          data?.resultDesc ||
+          "You cancelled the M-Pesa prompt on your phone (ResultCode 1032). No funds were deducted."
+      );
+      setPollingCheckoutId(null);
+      return true;
+    }
+    if (data?.status === "timeout" || data?.resultCode === 1037) {
+      setMpesaStatus("timeout");
+      setStatusError(
+        data?.error ||
+          data?.resultDesc ||
+          "The M-Pesa authorization request timed out on your handset."
+      );
+      setPollingCheckoutId(null);
+      return true;
+    }
+    if (data?.status === "failed" || (typeof data?.resultCode === "number" && data.resultCode !== 0)) {
+      setMpesaStatus("failed");
+      setStatusError(
+        data?.error ||
+          data?.resultDesc ||
+          "M-Pesa payment could not be completed. Confirm your balance and phone number."
+      );
+      setPollingCheckoutId(null);
+      return true;
+    }
+    return false;
+  };
+
+  // Cleanup STK transition timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (stkTransitionRef.current) clearTimeout(stkTransitionRef.current);
+    };
+  }, []);
+
+  // Handle Safaricom Daraja M-Pesa polling & countdown when waiting for STK confirmation
   useEffect(() => {
     if (!pollingCheckoutId) return;
 
-    let attempts = 0;
-    const interval = setInterval(async () => {
-      attempts++;
-      setPollStatus(`Awaiting M-Pesa PIN input on your phone... (${attempts * 2}s)`);
+    let remaining = 60;
+    setSecondsLeft(60);
+
+    const countdown = setInterval(() => {
+      remaining -= 1;
+      setSecondsLeft(Math.max(0, remaining));
+      if (remaining <= 0) {
+        clearInterval(countdown);
+        clearInterval(poller);
+        setMpesaStatus((prev) => {
+          if (prev === "success" || prev === "cancelled" || prev === "failed") return prev;
+          return "timeout";
+        });
+        setStatusError(
+          "Authorization timed out after 60 seconds. If you already entered your PIN and received an M-Pesa SMS, click Verify Now below."
+        );
+      }
+    }, 1000);
+
+    const poller = setInterval(async () => {
       try {
         const res = await fetch(`/api/mpesa/status/${pollingCheckoutId}`);
         const data = await res.json();
-        if (data.status === "success" || data.resultCode === 0) {
-          clearInterval(interval);
-          setPollingCheckoutId(null);
-          setPollStatus(null);
-          setSubmitting(false);
-          setShowModal(false);
-          toast.success("Cyber Cafe Subscription Activated Successfully!");
-          await fetchStatus();
-        } else if (data.status === "failed" || (data.resultCode && data.resultCode !== 0)) {
-          clearInterval(interval);
-          setPollingCheckoutId(null);
-          setPollStatus(null);
-          setSubmitting(false);
-          toast.error(data.resultDesc || "M-Pesa payment cancelled or timed out.");
-        } else if (attempts >= 30) {
-          clearInterval(interval);
-          setPollingCheckoutId(null);
-          setPollStatus(null);
-          setSubmitting(false);
-          toast.error("Payment timeout. If debited, your subscription will activate shortly.");
-          await fetchStatus();
-        }
+        await applyCyberStatusOutcome(data);
       } catch {
-        // Continue polling
+        // Continue polling on transient network error
       }
     }, 2500);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(countdown);
+      clearInterval(poller);
+    };
   }, [pollingCheckoutId]);
 
-  const handleSubscribeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleManualVerify = async () => {
+    if (!pollingCheckoutId) {
+      toast.error("No active checkout request found.");
+      return;
+    }
+    const previousState = mpesaStatus;
+    setMpesaStatus("verifying");
+    setStatusError(null);
+    const toastId = toast.loading("Verifying payment with Safaricom Daraja...");
+    try {
+      const res = await fetch(`/api/mpesa/status/${pollingCheckoutId}`);
+      const data = await res.json();
+      toast.dismiss(toastId);
+      const settled = await applyCyberStatusOutcome(data);
+      if (!settled) {
+        setMpesaStatus(previousState === "timeout" ? "timeout" : "waiting");
+        const pendingMsg =
+          data?.error ||
+          "Payment has not settled yet. Confirm the M-Pesa PIN prompt on your phone and retry verification.";
+        setStatusError(pendingMsg);
+        toast(pendingMsg);
+      }
+    } catch (err: any) {
+      toast.dismiss(toastId);
+      setMpesaStatus(previousState === "timeout" ? "timeout" : "waiting");
+      toast.error(err?.message || "Failed to verify Daraja transaction.");
+    }
+  };
+
+  const handleResetToForm = () => {
+    if (stkTransitionRef.current) {
+      clearTimeout(stkTransitionRef.current);
+      stkTransitionRef.current = null;
+    }
+    setPollingCheckoutId(null);
+    setMpesaStatus("ready");
+    setStatusError(null);
+    setSecondsLeft(60);
+  };
+
+  const handleSubscribeSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (isBusy) return;
+
     if (!formData.cafeName.trim() || !formData.ownerName.trim() || !formData.whatsappPhone.trim() || !formData.paymentPhone.trim()) {
-      toast.error("Please fill in all cyber cafe registration fields.");
+      const msg = "Please fill in all cyber cafe registration fields.";
+      setStatusError(msg);
+      toast.error(msg);
       return;
     }
 
-    setSubmitting(true);
-    setPollStatus("Initiating subscription gateway...");
+    const cleanPhone = formData.paymentPhone.replace(/[\s\-+()]/g, "");
+    const validKenyan =
+      /^(?:254|0)(?:7\d{8}|1\d{8})$/.test(cleanPhone) ||
+      /^(?:7|1)\d{8}$/.test(cleanPhone);
+    if (!validKenyan) {
+      const msg = "Enter a valid Kenyan M-Pesa payment number (07XXXXXXXX or 01XXXXXXXX).";
+      setStatusError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    setMpesaStatus("initiating");
+    setStatusError(null);
+    setConfirmedReceipt(null);
+    setPollingCheckoutId(null);
 
     try {
       const res = await fetch("/api/cyber/subscribe-web", {
@@ -180,20 +305,24 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
       });
 
       const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.error || "Subscription initialization failed");
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Subscription STK initiation failed");
       }
 
-      if (data.gateway === "mpesa" && data.checkoutRequestId) {
-        toast.success("M-Pesa STK Push sent! Enter your PIN on your phone.", { duration: 5000 });
+      if ((data.gateway === "daraja" || data.gateway === "mpesa") && data.checkoutRequestId) {
         setPollingCheckoutId(data.checkoutRequestId);
-      } else if (data.gateway === "paystack" && data.authorizationUrl) {
-        toast.loading("Redirecting to Paystack checkout...");
-        window.location.href = data.authorizationUrl;
+        setMpesaStatus("stk_sent");
+        toast.success("Safaricom M-Pesa STK Push sent. Enter your PIN on your phone.", { duration: 5000 });
+        if (stkTransitionRef.current) clearTimeout(stkTransitionRef.current);
+        stkTransitionRef.current = setTimeout(() => {
+          setMpesaStatus((prev) => (prev === "stk_sent" ? "waiting" : prev));
+        }, 1800);
+      } else {
+        throw new Error("Missing Safaricom Daraja CheckoutRequestID from server response.");
       }
     } catch (err: any) {
-      setSubmitting(false);
-      setPollStatus(null);
+      setMpesaStatus("failed");
+      setStatusError(err.message || "Failed to initiate Safaricom M-Pesa subscription.");
       toast.error(err.message || "Failed to initiate subscription.");
     }
   };
@@ -480,7 +609,7 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
                 <ArrowRight className="w-4 h-4" />
               </Button>
               <span className="text-xs text-zinc-500">
-                Instant activation · Safaricom M-Pesa or Card accepted
+                Instant activation · Direct Safaricom M-Pesa Express (STK Push)
               </span>
             </div>
           </div>
@@ -495,149 +624,380 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
     if (!showModal) return null;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-        <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl p-6 sm:p-7 space-y-5 text-zinc-900 dark:text-zinc-100">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+        <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl p-5 sm:p-7 space-y-5 text-zinc-900 dark:text-zinc-100 my-auto">
           {/* Close button */}
           <button
             type="button"
             onClick={() => {
-              if (!submitting) {
+              if (!isBusy) {
                 setShowModal(false);
-                setPollingCheckoutId(null);
-                setPollStatus(null);
+                handleResetToForm();
               }
             }}
-            className="absolute top-5 right-5 p-1.5 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            disabled={isBusy}
+            aria-label="Close subscription modal"
+            className="absolute top-5 right-5 p-1.5 rounded-full text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-40"
           >
             <X className="w-5 h-5" />
           </button>
 
           {/* Modal Header */}
-          <div className="space-y-1">
+          <div className="space-y-1.5 pr-8">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 text-[10px] font-black uppercase tracking-wider">
               <Building2 className="w-3 h-3" />
-              Cyber Cafe Monthly Package
+              Cyber Cafe 30-Day Pass
             </div>
             <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
               {isActive ? "Renew Cyber Subscription" : "Register Cyber Cafe Subscription"}
             </h3>
             <p className="text-xs text-zinc-600 dark:text-zinc-400">
-              KES 500 for 30 Days of Unlimited Certificate Downloads · VAT Tax Invoice included
+              <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">KES 500.00</span> for 30 Days of Unlimited Certificate Downloads · Official 16% VAT Invoice included
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubscribeSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Cyber Cafe Business Name</Label>
-              <Input
-                value={formData.cafeName}
-                onChange={(e) => setFormData({ ...formData, cafeName: e.target.value })}
-                placeholder="e.g. SpeedNet Cyber Services"
-                required
-                className="h-10 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-red-600"
-              />
+          {/* Sole Payment Gateway Banner */}
+          <div className="rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-500/30 p-3.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                <Smartphone className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-zinc-900 dark:text-zinc-50">
+                  Safaricom M-Pesa Express (STK Push)
+                </p>
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                  Sole Active Gateway · Paybill <span className="font-mono font-bold">9914132</span>
+                </p>
+              </div>
             </div>
+            <span className="font-mono font-black text-sm text-emerald-700 dark:text-emerald-300 shrink-0 tabular-nums">
+              KES 500.00
+            </span>
+          </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Owner / Manager Name</Label>
-              <Input
-                value={formData.ownerName}
-                onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
-                placeholder="e.g. John Mwangi"
-                required
-                className="h-10 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-red-600"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* STATE: READY FORM */}
+          {mpesaStatus === "ready" && (
+            <form onSubmit={handleSubscribeSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                  WhatsApp Number (Lookups)
-                </Label>
+                <Label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Cyber Cafe Business Name</Label>
                 <Input
-                  value={formData.whatsappPhone}
-                  onChange={(e) => setFormData({ ...formData, whatsappPhone: e.target.value })}
-                  placeholder="e.g. 0712345678"
+                  value={formData.cafeName}
+                  onChange={(e) => setFormData({ ...formData, cafeName: e.target.value })}
+                  placeholder="e.g. SpeedNet Cyber Services"
                   required
-                  className="h-10 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-red-600"
+                  className="h-11 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-red-600"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                  M-Pesa Payment Number
-                </Label>
+                <Label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Owner / Manager Name</Label>
                 <Input
-                  value={formData.paymentPhone}
-                  onChange={(e) => setFormData({ ...formData, paymentPhone: e.target.value })}
-                  placeholder="e.g. 0712345678"
+                  value={formData.ownerName}
+                  onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
+                  placeholder="e.g. John Mwangi"
                   required
-                  className="h-10 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-red-600"
+                  className="h-11 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-red-600"
                 />
               </div>
-            </div>
 
-            {/* Payment Method Switcher */}
-            <div className="space-y-1.5 pt-1">
-              <Label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Payment Gateway</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, method: "mpesa" })}
-                  className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                    formData.method === "mpesa"
-                      ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-xs"
-                      : "bg-zinc-50 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400"
-                  }`}
-                >
-                  <Smartphone className="w-4 h-4 text-emerald-600" />
-                  <span>M-Pesa STK Push</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, method: "paystack" })}
-                  className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                    formData.method === "paystack"
-                      ? "bg-red-50 dark:bg-red-950/40 border-red-500 text-red-700 dark:text-red-300 shadow-xs"
-                      : "bg-zinc-50 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400"
-                  }`}
-                >
-                  <CreditCard className="w-4 h-4 text-red-600" />
-                  <span>Card / Paystack</span>
-                </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                    WhatsApp Number (Lookups)
+                  </Label>
+                  <Input
+                    type="tel"
+                    inputMode="tel"
+                    value={formData.whatsappPhone}
+                    onChange={(e) => setFormData({ ...formData, whatsappPhone: e.target.value })}
+                    placeholder="e.g. 0712345678"
+                    required
+                    className="h-11 text-xs font-mono rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-red-600"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                    M-Pesa Payment Number
+                  </Label>
+                  <Input
+                    type="tel"
+                    inputMode="tel"
+                    value={formData.paymentPhone}
+                    onChange={(e) => {
+                      setFormData({ ...formData, paymentPhone: e.target.value });
+                      setStatusError(null);
+                    }}
+                    placeholder="07XXXXXXXX or 01XXXXXXXX"
+                    required
+                    className="h-11 text-xs font-mono rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-red-600"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Polling / Submitting Indicator */}
-            {pollStatus && (
-              <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 text-xs flex items-center gap-2.5">
-                <Loader2 className="w-4 h-4 animate-spin text-emerald-600 shrink-0" />
-                <span className="font-semibold">{pollStatus}</span>
+              <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 p-3 text-[11px] text-zinc-600 dark:text-zinc-400">
+                An M-Pesa STK Push for <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">KES 500.00</span> will be sent directly to your phone. Enter your M-Pesa PIN to activate instant unlimited access.
               </div>
-            )}
 
-            {/* Submit Action */}
-            <div className="pt-2">
+              {statusError && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-700 dark:text-red-300 text-xs font-medium flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{statusError}</span>
+                </div>
+              )}
+
               <Button
                 type="submit"
-                disabled={submitting}
-                className="w-full h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2"
+                disabled={isBusy}
+                className="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2 cursor-pointer"
               >
-                {submitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Processing Payment...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Pay KES 500 & Activate Subscription</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
+                <Smartphone className="w-4 h-4" />
+                <span>Send KES 500 M-Pesa STK Prompt</span>
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </form>
+          )}
+
+          {/* STATE: INITIATING */}
+          {mpesaStatus === "initiating" && (
+            <div className="py-6 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-red-600/10 text-red-600 flex items-center justify-center mx-auto">
+                <Loader2 className="w-6 h-6 animate-spin" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-50">
+                  Connecting to Safaricom Daraja Gateway...
+                </h4>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                  Dispatching KES 500.00 STK Push to <span className="font-mono font-bold">{formData.paymentPhone}</span>.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* STATE: STK SENT */}
+          {mpesaStatus === "stk_sent" && (
+            <div className="py-5 px-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/30 text-center space-y-3">
+              <div className="relative mx-auto w-12 h-12">
+                <div className="absolute inset-0 rounded-full bg-emerald-500/25 animate-ping" />
+                <div className="relative w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                  <Smartphone className="w-6 h-6" />
+                </div>
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-50">
+                  M-Pesa STK Prompt Sent to {formData.paymentPhone}
+                </h4>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                  Check your handset screen now for the Lipa na M-Pesa dialog.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* STATE: WAITING FOR PIN AUTHORIZATION */}
+          {mpesaStatus === "waiting" && (
+            <div className="py-4 px-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 text-center space-y-4">
+              <div className="space-y-1.5">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[11px] font-mono font-bold text-amber-700 dark:text-amber-300 tabular-nums">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Awaiting M-Pesa PIN · {secondsLeft}s</span>
+                </span>
+                <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-50">
+                  Enter Your M-Pesa PIN on {formData.paymentPhone}
+                </h4>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  Authorize <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">KES 500.00</span> (Paybill <span className="font-mono font-bold">9914132</span>). Your subscription activates automatically once Safaricom confirms settlement.
+                </p>
+              </div>
+
+              {statusError && (
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs">
+                  {statusError}
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  type="button"
+                  onClick={handleManualVerify}
+                  className="flex-1 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-1.5" />
+                  Verify Payment Now
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleResetToForm}
+                  className="h-11 rounded-xl text-xs font-semibold cursor-pointer"
+                >
+                  Change Number
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* STATE: VERIFYING */}
+          {mpesaStatus === "verifying" && (
+            <div className="py-6 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-red-600/10 text-red-600 flex items-center justify-center mx-auto">
+                <Loader2 className="w-6 h-6 animate-spin" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-50">
+                  Verifying Transaction with Safaricom Daraja...
+                </h4>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                  Checking callback confirmation for Checkout ID{" "}
+                  <span className="font-mono">{pollingCheckoutId}</span>.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* STATE: SUCCESS */}
+          {mpesaStatus === "success" && (
+            <div className="py-4 px-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/30 text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-7 h-7" />
+              </div>
+              <div>
+                <h4 className="font-bold text-base text-zinc-900 dark:text-zinc-50">
+                  Cyber Cafe Subscription Active
+                </h4>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                  Receipt <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300">{confirmedReceipt}</span> verified. Unlimited 30-day KRA PIN lookups are now unlocked.
+                </p>
+              </div>
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowModal(false);
+                  handleResetToForm();
+                }}
+                className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer"
+              >
+                Done
               </Button>
             </div>
-          </form>
+          )}
+
+          {/* STATE: CANCELLED */}
+          {mpesaStatus === "cancelled" && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="w-5 h-5 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-50">
+                    M-Pesa Prompt Cancelled
+                  </h4>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 leading-relaxed">
+                    {statusError || "You dismissed the M-Pesa prompt on your handset. No funds were deducted."}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  type="button"
+                  onClick={() => handleSubscribeSubmit()}
+                  className="flex-1 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs cursor-pointer"
+                >
+                  <RotateCcw className="w-4 h-4 mr-1.5" />
+                  Resend STK Prompt
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleResetToForm}
+                  className="h-11 rounded-xl text-xs font-semibold cursor-pointer"
+                >
+                  Edit Details
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* STATE: TIMEOUT */}
+          {mpesaStatus === "timeout" && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
+              <div className="flex items-start gap-2.5">
+                <Clock className="w-5 h-5 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-50">
+                    M-Pesa Authorization Timed Out
+                  </h4>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 leading-relaxed">
+                    {statusError || "The M-Pesa prompt expired before confirmation. If you entered your PIN, click Verify Now."}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                {pollingCheckoutId && (
+                  <Button
+                    type="button"
+                    onClick={handleManualVerify}
+                    className="flex-1 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-1.5" />
+                    Verify Now
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  onClick={() => handleSubscribeSubmit()}
+                  className="flex-1 h-11 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs cursor-pointer"
+                >
+                  <RotateCcw className="w-4 h-4 mr-1.5" />
+                  Resend STK Prompt
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleResetToForm}
+                  className="h-11 rounded-xl text-xs font-semibold cursor-pointer"
+                >
+                  Edit Phone
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* STATE: FAILED */}
+          {mpesaStatus === "failed" && (
+            <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 space-y-3">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-sm text-red-700 dark:text-red-300">
+                    M-Pesa Payment Failed
+                  </h4>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 leading-relaxed">
+                    {statusError || "Unable to complete payment. Please verify your M-Pesa balance and phone number."}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  type="button"
+                  onClick={() => handleSubscribeSubmit()}
+                  className="flex-1 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs cursor-pointer"
+                >
+                  <RotateCcw className="w-4 h-4 mr-1.5" />
+                  Retry Payment
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleResetToForm}
+                  className="h-11 rounded-xl text-xs font-semibold cursor-pointer"
+                >
+                  Edit Details
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

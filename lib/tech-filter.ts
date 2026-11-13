@@ -1,7 +1,7 @@
 /**
  * Utility to sanitize technology tags and URLs displayed on the public website.
  * Hides raw internal libraries/frameworks (Next.js, TypeScript, Prisma, PostgreSQL,
- * M-Pesa STK, Paystack, PDF-Lib, WhatsApp Baileys, etc.) and enforces official live URLs.
+ * M-Pesa STK, PDF-Lib, WhatsApp Baileys, etc.) and enforces official live URLs.
  */
 
 const BLOCKED_PUBLIC_TECH_PATTERNS = [

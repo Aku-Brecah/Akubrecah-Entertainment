@@ -1,20 +1,21 @@
 import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
-import { chargePaystackMpesa, formatPaystackKenyaPhone } from '@/lib/paystack';
 import { tryResolveKraPin } from '@/lib/masking';
 import { mpesaStkPushSchema, firstIssueMessage } from '@/lib/validation/schemas';
+import {
+  normalizePhoneNumber,
+  isValidKenyanMpesaPhone,
+  dispatchMpesaStkPush,
+} from '@/lib/whatsapp/mpesa-dispatch';
 
 export const maxDuration = 30;
 
-// Helper to normalize phone numbers to Safaricom Daraja format: 2547XXXXXXXX or 2541XXXXXXXX
-// Shared helpers now live in lib/whatsapp/mpesa-dispatch.ts
-import { normalizePhoneNumber, dispatchMpesaStkPush } from '@/lib/whatsapp/mpesa-dispatch';
 export { normalizePhoneNumber, dispatchMpesaStkPush };
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const parsedPush = mpesaStkPushSchema.safeParse(body);
     if (!parsedPush.success) {
       return NextResponse.json(
@@ -22,12 +23,35 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const { phone, reference, description } = parsedPush.data;
 
-    // Official KRA Certificate download fee is strictly KES 20.
-    // Enforce server-side pricing to prevent client-side price tampering.
-    const FIXED_CERTIFICATE_FEE_KES = 20;
-    const effectiveAmount = FIXED_CERTIFICATE_FEE_KES;
+    const { phone, reference, pin, type, description } = parsedPush.data;
+
+    if (!isValidKenyanMpesaPhone(phone)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Please enter a valid Safaricom M-Pesa number (07XXXXXXXX or 01XXXXXXXX).',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Resolve plain or sealed (kraseal1:) PIN strictly server-side
+    const resolvedPin =
+      (pin ? tryResolveKraPin(pin.trim()) || (/^[A-Z]\d{9}[A-Z]$/i.test(pin.trim()) ? pin.trim().toUpperCase() : '') : '') ||
+      (reference ? tryResolveKraPin(reference.replace(/^CERT-/i, '').trim()) || '' : '');
+
+    if (type === 'certificate' && !resolvedPin && !reference) {
+      return NextResponse.json(
+        { success: false, error: 'A valid KRA PIN or transaction reference is required.' },
+        { status: 400 }
+      );
+    }
+
+    // Server-authoritative pricing: never trust client-submitted amounts.
+    const certFee = Number(process.env.MPESA_DOWNLOAD_FEE_KES || 20);
+    const cyberFee = Number(process.env.MPESA_SUBSCRIPTION_AMOUNT_KES || 500);
+    const effectiveAmount = type === 'cyber' ? cyberFee : certFee;
 
     let userClerkId = 'anonymous';
     let userEmail = 'customer@akubrecah.co.ke';
@@ -46,24 +70,59 @@ export async function POST(req: NextRequest) {
         const clerkUser = await client.users.getUser(userId);
         userEmail = clerkUser.primaryEmailAddress?.emailAddress || userEmail;
       }
-    } catch {}
+    } catch {
+      // Guest / public portal retrieval checkout
+    }
+
+    const effectiveReference = resolvedPin
+      ? `CERT-${resolvedPin}`
+      : reference || `KRA-${Date.now()}`;
 
     const result = await dispatchMpesaStkPush({
       phone,
       amount: effectiveAmount,
-      reference,
-      description: description || `KRA Certificate Payment - KES ${effectiveAmount}`,
+      reference: effectiveReference,
+      pin: resolvedPin || null,
+      channel: type === 'cyber' ? 'cyber' : 'web',
+      description:
+        description ||
+        (type === 'cyber' ? 'Cyber Cafe Pass' : 'KRA Certificate'),
       userClerkId,
       userEmail,
     });
 
-    const status = result.success ? 200 : 400;
-    return NextResponse.json(result, { status });
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          gateway: result.gateway || 'none',
+          error: result.error || 'Failed to initiate M-Pesa STK Push.',
+        },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      gateway: 'daraja',
+      status: 'PENDING',
+      checkoutRequestId: result.checkoutRequestId,
+      merchantRequestId: result.MerchantRequestID,
+      amount: effectiveAmount,
+      phone: result.normalizedPhone || normalizePhoneNumber(phone),
+      alreadyPending: Boolean(result.alreadyPending),
+      message:
+        result.CustomerMessage ||
+        'M-Pesa prompt sent to your phone. Enter your M-Pesa PIN to authorize payment.',
+    });
   } catch (error: any) {
     log.error('[M-Pesa STK Catch Error]:', error.message);
-    return NextResponse.json({
-      success: false,
-      error: 'Unable to process the M-Pesa STK Push right now. Please try again shortly.',
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Unable to process the M-Pesa STK Push right now. Please try again shortly.',
+      },
+      { status: 500 }
+    );
   }
 }

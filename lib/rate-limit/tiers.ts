@@ -21,7 +21,7 @@ export function getTierForRoute(pathname: string): RateTier {
   // Tier 2: Financial transactions, STK push triggers, file uploads, and browser automation (10 req/min)
   if (
     pathname.startsWith('/api/mpesa/stkpush') ||
-    pathname.startsWith('/api/paystack/initialize') ||
+    pathname.startsWith('/api/mpesa/verify') ||
     pathname.startsWith('/api/cyber/subscribe-web') ||
     pathname.startsWith('/api/kra/nil-return') ||
     pathname.startsWith('/api/kra/upload-id') ||

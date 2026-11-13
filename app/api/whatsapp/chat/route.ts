@@ -6,12 +6,11 @@ import { sanitizeWhatsAppPhone, sendEvolutionTextMessage, sendEvolutionDocument 
 import { fetchTaxpayerById, fetchTaxpayerByPin } from '@/lib/kra-api';
 import { maskTaxpayerData } from '@/lib/masking';
 import {
-  initializePaystackTransaction,
-  verifyPaystackTransaction,
-  getPaystackLiveTransactions,
-  findRecentSuccessfulPaystackPayment,
-} from '@/lib/paystack';
-import { dispatchMpesaStkPush, normalizePhoneNumber } from '@/lib/whatsapp/mpesa-dispatch';
+  dispatchMpesaStkPush,
+  normalizePhoneNumber,
+  queryMpesaStkPushStatus,
+  findRecentSuccessfulMpesaPayment,
+} from '@/lib/whatsapp/mpesa-dispatch';
 import { createAdminMagicToken } from '@/lib/magic-token';
 import { getPublicAppUrl } from '@/lib/utils';
 import {
@@ -25,7 +24,7 @@ import {
 } from '@/lib/cyber-subscription';
 import { isDuplicateWhatsAppMessage } from '@/lib/whatsapp-dedup';
 import { extractKenyanPhone, formatDisplayPhone } from '@/lib/whatsapp/phone';
-import { triggerInAppMpesaPayment, triggerCyberCafePayment, createPaystackLink } from '@/lib/whatsapp/payments';
+import { triggerInAppMpesaPayment, triggerCyberCafePayment } from '@/lib/whatsapp/payments';
 import { handleAdminBotCommand } from '@/lib/whatsapp/admin-commands';
 import { handleTaxpayerFoundFulfillment } from '@/lib/whatsapp/fulfillment';
 import { parseWhatsAppCommand, validateWhatsAppTrigger, SESSION_TIMEOUT_MS } from '@/lib/whatsapp/commands';
@@ -314,18 +313,16 @@ export async function handleWhatsAppChat(params: {
 
       const isPinArg = /^[A-Z]\d{9}[A-Z]$/i.test(targetArg);
       const isRefArg =
-        targetArg.startsWith('PSTK-') ||
+        targetArg.startsWith('ws_CO_') ||
         (/^[A-Z]{2}[A-Z0-9]{8}$/i.test(targetArg) && !isDirectPin && !/^(07|01|254|\d)/.test(targetArg));
       const queryPin = (isPinArg ? targetArg.toUpperCase() : null) || metadata.pin;
       const queryRef = (isRefArg ? targetArg : null) || metadata.checkoutId;
 
-      const { findRecentSuccessfulPaystackPayment } = await import('@/lib/paystack');
-      const payment = await findRecentSuccessfulPaystackPayment({
+      const payment = await findRecentSuccessfulMpesaPayment({
         phone: queryPhone,
         pin: queryPin,
         reference: queryRef,
         maxAgeMinutes: 180,
-        skipCache: true,
       });
 
       // Also check DB for recent download record or pin lookup
@@ -1029,9 +1026,18 @@ export async function handleWhatsAppChat(params: {
           if (typeof (global as any).mpesaCallbacks !== 'undefined') {
             const rawCb = (global as any).mpesaCallbacks;
             const cb = rawCb?.[metadata.checkoutId] || (typeof rawCb?.get === 'function' ? rawCb.get(metadata.checkoutId) : undefined);
-            if (cb && cb.ResultCode === 0) {
+            if (cb && (cb.status === 'success' || cb.resultCode === 0 || cb.ResultCode === 0)) {
               isPaid = true;
-              verifiedReceipt = cb.MpesaReceiptNumber || metadata.checkoutId;
+              verifiedReceipt = cb.metadata?.mpesaReceiptNumber || cb.MpesaReceiptNumber || metadata.checkoutId;
+            }
+          }
+
+          if (!isPaid && metadata.checkoutId.startsWith('ws_CO_')) {
+            const darajaStatus = await queryMpesaStkPushStatus(metadata.checkoutId);
+            if (darajaStatus.status === 'success') {
+              const cb = (global as any).mpesaCallbacks?.[metadata.checkoutId];
+              isPaid = true;
+              verifiedReceipt = cb?.metadata?.mpesaReceiptNumber || cb?.MpesaReceiptNumber || metadata.checkoutId;
             }
           }
 
@@ -1052,22 +1058,21 @@ export async function handleWhatsAppChat(params: {
           }
         }
 
-        // Check Paystack for Cyber Cafe subscription payment
+        // Check durable Daraja MpesaTransaction table for Cyber Cafe subscription payment
         if (!isPaid) {
           try {
-            const { findRecentSuccessfulPaystackPayment } = await import('@/lib/paystack');
-            const foundPaystack = await findRecentSuccessfulPaystackPayment({
+            const foundMpesa = await findRecentSuccessfulMpesaPayment({
               phone: activePayPhone || userPhone,
               reference: metadata.checkoutId,
+              minAmountKes: 500,
               maxAgeMinutes: 90,
-              skipCache: true,
             });
-            if (foundPaystack.found && (foundPaystack.amountKes || 0) >= 490) {
+            if (foundMpesa.found && (foundMpesa.amountKes || 0) >= 500) {
               isPaid = true;
-              verifiedReceipt = foundPaystack.reference || metadata.checkoutId;
+              verifiedReceipt = foundMpesa.reference || metadata.checkoutId;
             }
           } catch (err: any) {
-            log.warn('[Cyber Paystack Verify Notice]:', err.message);
+            log.warn('[Cyber Daraja Verify Notice]:', err.message);
           }
         }
 
@@ -1119,7 +1124,7 @@ export async function handleWhatsAppChat(params: {
     // 6. Step AWAITING_PAYMENT_PHONE / AWAITING_PHONE_NUMBER: User confirmed record and must enter payment phone number
     else if (currentStep === 'AWAITING_PAYMENT_PHONE' || currentStep === 'AWAITING_PHONE_NUMBER') {
       const pinToDownload = metadata.pin;
-      const downloadFee = Number(metadata.fee || process.env.PAYSTACK_DOWNLOAD_FEE_KES || 20);
+      const downloadFee = Number(metadata.fee || process.env.MPESA_DOWNLOAD_FEE_KES || 20);
 
       // A. Cancellation
       if (lowerText === '0' || lowerText === 'cancel' || lowerText === 'exit' || lowerText === 'reset') {
@@ -1244,7 +1249,7 @@ export async function handleWhatsAppChat(params: {
       currentStep === 'AWAITING_CONFIRMATION'
     ) {
       const pinToDownload = metadata.pin;
-      const downloadFee = Number(process.env.PAYSTACK_DOWNLOAD_FEE_KES || 20);
+      const downloadFee = Number(process.env.MPESA_DOWNLOAD_FEE_KES || 20);
       const activePayPhone = metadata.paymentPhone || userPhone;
 
       // A. Cancellation
@@ -1368,33 +1373,41 @@ export async function handleWhatsAppChat(params: {
           log.warn('[WhatsApp Chat] DB payment check notice:', dbErr.message);
         }
 
-        // 2. Check global mpesaCallbacks (Daraja in-memory safe access)
+        // 2. Check global mpesaCallbacks (Daraja in-memory safe access) + active STK query
         if (!isPaid && metadata.checkoutId && typeof (global as any).mpesaCallbacks !== 'undefined') {
           const rawCb = (global as any).mpesaCallbacks;
           const cb = rawCb?.[metadata.checkoutId] || (typeof rawCb?.get === 'function' ? rawCb.get(metadata.checkoutId) : undefined);
-          if (cb && cb.ResultCode === 0) {
+          if (cb && (cb.status === 'success' || cb.resultCode === 0 || cb.ResultCode === 0)) {
             isPaid = true;
-            verifiedReceipt = cb.MpesaReceiptNumber || metadata.checkoutId;
+            verifiedReceipt = cb.metadata?.mpesaReceiptNumber || cb.MpesaReceiptNumber || metadata.checkoutId;
           }
         }
 
-        // 3. Check Paystack: verify direct checkoutId or search recent successful payment for phone/PIN
+        if (!isPaid && metadata.checkoutId?.startsWith('ws_CO_')) {
+          const darajaStatus = await queryMpesaStkPushStatus(metadata.checkoutId);
+          if (darajaStatus.status === 'success') {
+            const cb = (global as any).mpesaCallbacks?.[metadata.checkoutId];
+            isPaid = true;
+            verifiedReceipt = cb?.metadata?.mpesaReceiptNumber || cb?.MpesaReceiptNumber || metadata.checkoutId;
+          }
+        }
+
+        // 3. Check durable MpesaTransaction ledger in PostgreSQL
         if (!isPaid) {
           try {
-            const { findRecentSuccessfulPaystackPayment } = await import('@/lib/paystack');
-            const foundPaystack = await findRecentSuccessfulPaystackPayment({
+            const foundMpesa = await findRecentSuccessfulMpesaPayment({
               phone: activePayPhone || userPhone,
               pin: pinToDownload,
               reference: metadata.checkoutId,
+              minAmountKes: downloadFee,
               maxAgeMinutes: 90,
-              skipCache: true,
             });
-            if (foundPaystack.found && foundPaystack.reference) {
+            if (foundMpesa.found && foundMpesa.reference) {
               isPaid = true;
-              verifiedReceipt = foundPaystack.reference;
+              verifiedReceipt = foundMpesa.reference;
             }
           } catch (err: any) {
-            log.warn('[WhatsApp Chat] Paystack verify notice:', err.message);
+            log.warn('[WhatsApp Chat] Daraja DB verify notice:', err.message);
           }
         }
 

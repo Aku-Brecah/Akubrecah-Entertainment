@@ -26,7 +26,6 @@ const isPublicRoute = createRouteMatcher([
   '/api/mpesa(.*)',
   '/api/certificate(.*)',
   '/api/generate-certificate(.*)',
-  '/api/paystack(.*)',
   '/api/whatsapp(.*)',
   '/api/analytics(.*)',
   '/api/github(.*)',

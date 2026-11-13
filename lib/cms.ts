@@ -24,7 +24,7 @@ const FALLBACK_FLAGSHIP_PROJECTS = [
     slug: 'akubrecah-kra-certificate-portal',
     title: 'KRA PIN Certificate Retrieval & Statutory Portal',
     summary: 'Mission-critical automated Kenyan tax compliance platform processing National ID verification, automated Nil return filing, and sub-120ms volatile RAM PDF streaming.',
-    description: 'An enterprise-grade statutory compliance portal designed for Kenyan taxpayers.\n\nKey Engineering Pillars:\n• Direct encrypted TLS integration with upstream authority endpoints\n• Zero-disk persistent RAM streaming for citizen privacy protection\n• Automated M-Pesa Daraja and Paystack micro-payment reconciliation\n• WhatsApp autonomous bot dispatcher for instant receipt and PDF certificate delivery',
+    description: 'An enterprise-grade statutory compliance portal designed for Kenyan taxpayers.\n\nKey Engineering Pillars:\n• Direct encrypted TLS integration with upstream authority endpoints\n• Zero-disk persistent RAM streaming for citizen privacy protection\n• Automated Safaricom Daraja M-Pesa Express micro-payment reconciliation\n• WhatsApp autonomous bot dispatcher for instant receipt and PDF certificate delivery',
     category: 'GovTech & Compliance',
     client: 'Kenya Revenue Taxpayers',
     featuredImage: '/akubrecah-logo.png',
@@ -36,7 +36,7 @@ const FALLBACK_FLAGSHIP_PROJECTS = [
     measurableOutcomes: [
       'Sub-120ms certificate generation latency',
       'Zero persistent PDF storage on disk',
-      'Multi-gateway payment support (Paystack & M-Pesa)',
+      'Direct Safaricom Daraja M-Pesa Express billing',
       'Autonomous WhatsApp document delivery'
     ],
     isFeatured: true,

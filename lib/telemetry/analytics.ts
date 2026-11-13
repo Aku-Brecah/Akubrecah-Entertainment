@@ -11,7 +11,6 @@ export interface TelemetryEvent {
     | 'search_pin'
     | 'view_masked_details'
     | 'click_stk_mpesa'
-    | 'click_paystack'
     | 'download_certificate'
     | 'cyber_subscription_checkout'
     | 'cyber_invoice_download'

@@ -70,7 +70,7 @@ const services = [
       "Server-rendered Next.js 15 & React 19 architecture",
       "Optimized Core Web Vitals and fast rendering across devices",
       "Strict end-to-end TypeScript with runtime validation",
-      "Multi-tenant SaaS architecture & Stripe/Paystack billing",
+      "Multi-tenant SaaS architecture & automated M-Pesa billing",
       "WCAG 2.1 AA accessibility & semantic HTML standards",
       "Automated CI/CD pipelines & zero-downtime deployment",
     ],

@@ -450,7 +450,7 @@ describe('Taxpayer fulfillment & payment phone prompt (lib/whatsapp/fulfillment.
     const spy = vi.spyOn(payments, 'triggerInAppMpesaPayment').mockResolvedValueOnce({
       success: true,
       checkoutRequestId: 'ws_CO_TEST_123',
-      gateway: 'paystack',
+      gateway: 'daraja',
       normalizedPhone: '254712345678',
     });
 

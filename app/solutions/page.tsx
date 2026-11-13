@@ -42,7 +42,7 @@ const solutions = [
     tag: "Fintech & Payments",
     deliverables: [
       "M-Pesa Daraja API (STK Push, C2B, B2C, B2B) architecture",
-      "Card payment gateways (Stripe, Paystack, DPO, Pesapal)",
+      "Real-time mobile & digital payment reconciliation pipelines",
       "Multi-currency transaction ledger engines",
       "Automated bank statement reconciliation pipelines",
       "Real-time financial dashboards & cashflow telemetry",
@@ -87,7 +87,7 @@ const solutions = [
     tag: "SaaS & Ventures",
     deliverables: [
       "Rapid MVP delivery built on production-quality foundations",
-      "Multi-tenant subscription billing (Stripe, Paystack, M-Pesa)",
+      "Multi-tenant subscription billing (Safaricom M-Pesa Express, Stripe)",
       "Authentication, SSO & team permission management",
       "Usage metering and real-time product analytics",
       "Public API design, rate-limiting & developer documentation",

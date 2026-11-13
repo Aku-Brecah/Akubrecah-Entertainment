@@ -1,10 +1,8 @@
 /**
- * WhatsApp-driven payment dispatchers (M-Pesa STK push + Paystack checkout link).
+ * WhatsApp-driven Safaricom Daraja M-Pesa Express payment dispatchers.
  */
 import { log } from '@/lib/monitoring/logger';
 import { dispatchMpesaStkPush, normalizePhoneNumber } from '@/lib/whatsapp/mpesa-dispatch';
-import { getPublicAppUrl } from '@/lib/utils';
-import { initializePaystackTransaction } from '@/lib/paystack';
 
 export async function triggerInAppMpesaPayment({
   targetPhone,
@@ -34,6 +32,8 @@ export async function triggerInAppMpesaPayment({
       phone: normalizedPhone,
       amount,
       reference,
+      pin: cleanPin,
+      channel: 'whatsapp',
       description: `KRA Certificate - ${cleanPin}`,
       userClerkId: `wa_${whatsappUserPhone.replace(/[^a-zA-Z0-9]/g, '')}`,
       userEmail: `wa_${whatsappUserPhone.replace(/[^a-zA-Z0-9]/g, '')}@akubrecah.co.ke`,
@@ -42,7 +42,7 @@ export async function triggerInAppMpesaPayment({
     return {
       success: result.success,
       checkoutRequestId: result.checkoutRequestId || result.CheckoutRequestID,
-      gateway: result.gateway || 'mpesa',
+      gateway: result.gateway || 'daraja',
       normalizedPhone,
       error: result.error,
     };
@@ -77,10 +77,12 @@ export async function triggerCyberCafePayment({
   const reference = `CYBER-${Date.now().toString().slice(-6)}`;
 
   try {
+    const cyberFee = Number(process.env.MPESA_SUBSCRIPTION_AMOUNT_KES || 500);
     const result = await dispatchMpesaStkPush({
       phone: normalizedPhone,
-      amount: 500,
+      amount: cyberFee,
       reference,
+      channel: 'cyber',
       description: `Cyber Sub - ${cafeName.substring(0, 20)}`,
       userClerkId: `wa_${whatsappUserPhone.replace(/[^a-zA-Z0-9]/g, '')}`,
       userEmail: `cyber_${whatsappUserPhone.replace(/[^a-zA-Z0-9]/g, '')}@akubrecah.co.ke`,
@@ -89,7 +91,7 @@ export async function triggerCyberCafePayment({
     return {
       success: result.success,
       checkoutRequestId: result.checkoutRequestId || result.CheckoutRequestID,
-      gateway: result.gateway || 'mpesa',
+      gateway: result.gateway || 'daraja',
       normalizedPhone,
       error: result.error,
     };
@@ -101,23 +103,4 @@ export async function triggerCyberCafePayment({
       error: err.message || 'Failed to trigger M-Pesa STK Push',
     };
   }
-}
-
-export async function createPaystackLink(userPhone: string, pin: string, amount: number, customerName?: string) {
-  const appUrl = getPublicAppUrl();
-  const reference = `PSTK-CERT-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-  return await initializePaystackTransaction({
-    email: `wa_${userPhone.replace(/[^a-zA-Z0-9]/g, '')}@akubrecah.co.ke`,
-    amountKes: amount,
-    reference,
-    callbackUrl: `${appUrl}/checkout/success?ref=${reference}&pin=${pin}`,
-    metadata: {
-      clerkId: 'wa_' + userPhone,
-      type: 'pay_per_download',
-      pin,
-      amountKes: amount,
-      phone: userPhone,
-      customerName: customerName || 'WhatsApp Customer',
-    },
-  });
 }

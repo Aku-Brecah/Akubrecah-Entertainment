@@ -10,7 +10,7 @@ describe('Rate Limiter Module', () => {
       expect(tier1.tierKey).toBe('strict');
       expect(tier1.limit).toBe(10);
 
-      const tier2 = getTierForRoute('/api/paystack/initialize');
+      const tier2 = getTierForRoute('/api/mpesa/verify');
       expect(tier2.tierKey).toBe('strict');
 
       const tier3 = getTierForRoute('/api/kra/nil-return');

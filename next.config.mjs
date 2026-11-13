@@ -101,7 +101,7 @@ const nextConfig = {
           },
           {
             // Introduced as Report-Only so violations surface (devtools/Sentry)
-            // without breaking the Clerk/Paystack/Daraja allowlist; enforce by
+            // without breaking the Clerk/Daraja allowlist; enforce by
             // switching the key to `Content-Security-Policy` after tuning.
             key: 'Content-Security-Policy-Report-Only',
             value: [

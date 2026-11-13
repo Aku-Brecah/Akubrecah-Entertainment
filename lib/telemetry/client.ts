@@ -16,7 +16,6 @@ export interface TrackingPayload {
     | 'search_pin'
     | 'view_masked'
     | 'click_stk_mpesa'
-    | 'click_paystack'
     | 'download_certificate'
     | string;
   description?: string;

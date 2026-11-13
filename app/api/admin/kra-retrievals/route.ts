@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
     const kraLogs = await db.SystemLog?.findMany({
       where: {
         OR: [
-          { service: { in: ["KRA-Retrieve", "Certificate-Generation", "Paystack-Download", "Paystack-Subscription", "KRA-Live-PIN-Checker"] } },
+          { service: { in: ["KRA-Retrieve", "Certificate-Generation", "M-Pesa-Daraja", "M-Pesa-STK", "KRA-Live-PIN-Checker"] } },
           { message: { contains: "PIN", mode: "insensitive" } },
           { message: { contains: "Certificate", mode: "insensitive" } },
         ],

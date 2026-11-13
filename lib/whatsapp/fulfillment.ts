@@ -66,17 +66,17 @@ export async function handleTaxpayerFoundFulfillment({
     return '';
   }
 
-  // 2. Regular pay-per-download flow (KES 20 STK push)
-  const downloadFee = Number(process.env.PAYSTACK_DOWNLOAD_FEE_KES || 20);
+  // 2. Regular pay-per-download flow (KES 20 Daraja STK push)
+  const downloadFee = Number(process.env.MPESA_DOWNLOAD_FEE_KES || 20);
 
-  // Check if client already paid (e.g. recent approved payment or retry)
+  // Check if client already paid via Daraja recently (e.g. delayed callback or retry)
   try {
-    const { findRecentSuccessfulPaystackPayment } = await import('@/lib/paystack');
-    const existingPayment = await findRecentSuccessfulPaystackPayment({
+    const { findRecentSuccessfulMpesaPayment } = await import('@/lib/whatsapp/mpesa-dispatch');
+    const existingPayment = await findRecentSuccessfulMpesaPayment({
       phone: userPhone,
       pin: cleanPin,
+      minAmountKes: downloadFee,
       maxAgeMinutes: 90,
-      skipCache: true,
     });
 
     if (existingPayment.found && existingPayment.reference) {

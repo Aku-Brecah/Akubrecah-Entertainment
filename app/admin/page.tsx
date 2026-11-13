@@ -37,30 +37,20 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
-interface PaystackLiveTx {
-  id: string | number;
+interface DarajaLiveTx {
+  id: string;
   reference: string;
+  pin?: string | null;
+  phone: string;
   amountKes: number;
-  feesKes: number;
-  netKes: number;
+  currency: string;
   status: string;
+  checkoutRequestId: string;
+  merchantRequestId: string;
+  mpesaReceipt?: string | null;
+  resultCode?: number | null;
+  resultDesc?: string | null;
   channel: string;
-  currency: string;
-  customerEmail?: string;
-  customerPhone?: string;
-  pin?: string;
-  paidAt?: string;
-  createdAt: string;
-}
-
-interface PaystackPayout {
-  id: string | number;
-  transferCode: string;
-  amountKes: number;
-  currency: string;
-  status: string;
-  reason: string;
-  recipientName: string;
   createdAt: string;
 }
 
@@ -77,19 +67,22 @@ interface OverviewData {
     };
     byGateway: {
       mpesa: number;
-      paystack: number;
+      historical: number;
     };
     averageTransactionValue: number;
   };
-  paystackLive?: {
-    balanceKes: number;
+  darajaLive?: {
+    shortCode: string;
+    environment: string;
     currency: string;
-    liveTransactionsTotalKes: number;
-    livePayoutsTotalKes: number;
-    transactions: PaystackLiveTx[];
-    payouts: PaystackPayout[];
-    totalLiveTx: number;
-    totalPayouts: number;
+    completedVolumeKes: number;
+    completedCount: number;
+    pendingCount: number;
+    cancelledCount: number;
+    timedOutCount: number;
+    failedCount: number;
+    totalTracked: number;
+    transactions: DarajaLiveTx[];
   };
   deviceUsage: {
     totalSessions: number;
@@ -151,7 +144,7 @@ export default function AdminOverviewPage() {
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "paystack" | "transactions" | "whatsapp">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "daraja" | "transactions" | "whatsapp">("overview");
 
   // Filters & Pagination for Unified Transactions Table
   const [searchQuery, setSearchQuery] = useState("");
@@ -204,7 +197,7 @@ export default function AdminOverviewPage() {
     // UX fix: the success signal fires only after the fetch actually resolves.
     try {
       await fetchOverview(currentPage, searchQuery, channelFilter, gatewayFilter);
-      toast.success("Live metrics & Paystack gateway synced");
+      toast.success("Live metrics & Daraja M-Pesa gateway synced");
     } catch {
       // fetchOverview already toasts the failure.
     }
@@ -424,7 +417,7 @@ export default function AdminOverviewPage() {
     );
   }
   const rev = data?.revenue;
-  const payLive = data?.paystackLive;
+  const darajaLive = data?.darajaLive;
   const dev = data?.deviceUsage;
   const fnl = data?.funnel;
   const bot = data?.whatsappBot;
@@ -453,7 +446,7 @@ export default function AdminOverviewPage() {
             Executive Command & <span className="text-primary">Gateway Intelligence</span>
           </h1>
           <p className="text-xs sm:text-sm text-on-surface-variant max-w-3xl leading-relaxed">
-            Real-time financial reconciliation matching Paystack live balances & payouts, user click telemetry, 
+            Real-time financial reconciliation matching Safaricom Daraja M-Pesa Express transactions, user click telemetry,
             PC vs mobile device distribution, and WhatsApp bot commands.
           </p>
         </div>
@@ -508,22 +501,22 @@ export default function AdminOverviewPage() {
         </button>
 
         <button
-          onClick={() => setActiveTab("paystack")}
+          onClick={() => setActiveTab("daraja")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs transition-all whitespace-nowrap shrink-0 ${
-            activeTab === "paystack"
+            activeTab === "daraja"
               ? "bg-primary text-white font-black shadow-md shadow-primary/20 ring-1 ring-primary/30"
               : "bg-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-semibold"
           }`}
         >
-          <CreditCard className="w-4 h-4" />
-          <span>Paystack Gateway & Payouts</span>
-          {payLive?.balanceKes !== undefined && (
+          <Smartphone className="w-4 h-4" />
+          <span>Daraja M-Pesa Live</span>
+          {darajaLive?.completedVolumeKes !== undefined && (
             <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-              activeTab === "paystack"
+              activeTab === "daraja"
                 ? "bg-white/25 text-white"
-                : "bg-surface-container-highest text-on-surface-variant"
+                : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
             }`}>
-              KES {payLive.balanceKes.toLocaleString()}
+              KES {darajaLive.completedVolumeKes.toLocaleString()}
             </span>
           )}
         </button>
@@ -562,7 +555,7 @@ export default function AdminOverviewPage() {
 
       {/* 3. Top Financial & Telemetry KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Gross Revenue & Paystack Match */}
+        {/* Card 1: Gross Revenue & Gateway Split */}
         <div className="bg-surface-container-lowest p-5 rounded-3xl border border-outline-variant shadow-xs flex flex-col justify-between relative overflow-hidden group hover:border-primary/40 transition-all">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Gross Revenue</span>
@@ -582,40 +575,38 @@ export default function AdminOverviewPage() {
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-outline-variant/40 flex items-center justify-between text-[11px] text-on-surface-variant">
-            <span>Paystack: KES {(rev?.byGateway?.paystack || 0).toLocaleString()}</span>
-            <span>M-Pesa (Legacy): KES {(rev?.byGateway?.mpesa || 0).toLocaleString()}</span>
+            <span>Daraja M-Pesa: KES {(rev?.byGateway?.mpesa || 0).toLocaleString()}</span>
+            <span>Archive: KES {(rev?.byGateway?.historical || 0).toLocaleString()}</span>
           </div>
         </div>
 
-        {/* Card 2: Paystack Real-Time Balance */}
+        {/* Card 2: Safaricom Daraja Live STK Telemetry */}
         <div className="bg-surface-container-lowest p-5 rounded-3xl border border-outline-variant shadow-xs flex flex-col justify-between relative overflow-hidden group hover:border-primary/40 transition-all">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Paystack Available Balance</span>
-            <div className="w-10 h-10 rounded-2xl bg-sky-500/10 flex items-center justify-center text-sky-600">
-              <CreditCard className="w-5 h-5" />
+            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Daraja M-Pesa Express</span>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+              <Smartphone className="w-5 h-5" />
             </div>
           </div>
           <div>
-            <div className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
-              KES {(payLive?.balanceKes || 0).toLocaleString()}
+            <div className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight font-mono">
+              KES {(darajaLive?.completedVolumeKes || 0).toLocaleString()}
             </div>
             <div className="text-xs text-on-surface-variant mt-2 flex items-center justify-between">
-              <span>Settled Payouts:</span>
-              <strong className="text-on-surface font-mono">KES {(payLive?.livePayoutsTotalKes || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</strong>
+              <span>Paybill ShortCode:</span>
+              <strong className="text-on-surface font-mono">{darajaLive?.shortCode || "9914132"}</strong>
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-outline-variant/40 flex items-center justify-between text-[11px] text-on-surface-variant">
             <span className="text-emerald-600 font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Live from Gateway
+              <CheckCircle2 className="w-3 h-3" /> {darajaLive?.completedCount || 0} Verified ({darajaLive?.environment || "PRODUCTION"})
             </span>
-            <a
-              href="https://dashboard.paystack.com"
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={() => setActiveTab("daraja")}
               className="text-primary hover:underline font-bold flex items-center gap-0.5"
             >
-              Dashboard <ArrowUpRight className="w-3 h-3" />
-            </a>
+              STK Ledger <ArrowUpRight className="w-3 h-3" />
+            </button>
           </div>
         </div>
 
@@ -1085,59 +1076,62 @@ export default function AdminOverviewPage() {
         </div>
       )}
 
-      {/* 5. TAB CONTENT: PAYSTACK LIVE GATEWAY & PAYOUTS */}
-      {activeTab === "paystack" && (
+      {/* 5. TAB CONTENT: SAFARICOM DARAJA LIVE GATEWAY */}
+      {activeTab === "daraja" && (
         <div className="space-y-6">
-          {/* Paystack Financial Reconciled Cards */}
+          {/* Daraja M-Pesa Express KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-5 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-xs">
               <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block mb-1">
-                Available Paystack Balance
+                Verified Daraja Volume
               </span>
               <div className="text-3xl font-black text-on-surface tracking-tight font-mono">
-                KES {(payLive?.balanceKes || 0).toLocaleString()}
+                KES {(darajaLive?.completedVolumeKes || 0).toLocaleString()}
               </div>
               <p className="text-xs text-emerald-600 mt-2 font-medium flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Reconciled live with Paystack API
+                <CheckCircle2 className="w-3.5 h-3.5" /> Paybill {darajaLive?.shortCode || "9914132"} ({darajaLive?.environment || "PRODUCTION"})
               </p>
             </div>
 
             <div className="p-5 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-xs">
               <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block mb-1">
-                Total Payouts / Transfers
+                Successful STK Prompts
               </span>
-              <div className="text-3xl font-black text-on-surface tracking-tight font-mono">
-                KES {(payLive?.livePayoutsTotalKes || 0).toLocaleString()}
+              <div className="text-3xl font-black text-emerald-600 tracking-tight font-mono">
+                {darajaLive?.completedCount || 0}
               </div>
               <p className="text-xs text-on-surface-variant mt-2">
-                Settled to designated Bank / M-Pesa accounts
+                Confirmed via Safaricom callback or STK Query
               </p>
             </div>
 
             <div className="p-5 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-xs">
               <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block mb-1">
-                Live Gateway Transactions
+                Pending / Exception Prompts
               </span>
-              <div className="text-3xl font-black text-on-surface tracking-tight font-mono">
-                KES {(payLive?.liveTransactionsTotalKes || 0).toLocaleString()}
+              <div className="text-2xl font-black text-on-surface tracking-tight font-mono flex items-center gap-3">
+                <span className="text-amber-600">{darajaLive?.pendingCount || 0} Pending</span>
+                <span className="text-xs text-on-surface-variant font-normal">
+                  ({darajaLive?.cancelledCount || 0} Cancelled / {darajaLive?.timedOutCount || 0} Timeout / {darajaLive?.failedCount || 0} Failed)
+                </span>
               </div>
               <p className="text-xs text-on-surface-variant mt-2">
-                Total volume processed through Paystack
+                Tracked out of {darajaLive?.totalTracked || 0} recent Daraja STK pushes
               </p>
             </div>
           </div>
 
-          {/* Paystack Transfers / Payouts History Table */}
+          {/* Safaricom Daraja STK Push Transactions Table */}
           <div className="bg-surface-container-lowest rounded-3xl border border-outline-variant overflow-hidden shadow-xs">
             <div className="p-5 border-b border-outline-variant/60 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-on-surface">Paystack Settlement & Payout History</h3>
+                <h3 className="text-base font-bold text-on-surface">Safaricom Daraja STK Push Telemetry</h3>
                 <p className="text-xs text-on-surface-variant">
-                  Official bank and till transfers executed by Paystack for your account.
+                  Real-time Lipa na M-Pesa Online requests, callback result codes, and confirmed M-Pesa receipts.
                 </p>
               </div>
               <span className="text-xs font-mono font-bold text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-lg">
-                {payLive?.payouts.length || 0} Transfers
+                {darajaLive?.transactions.length || 0} Records
               </span>
             </div>
 
@@ -1145,94 +1139,28 @@ export default function AdminOverviewPage() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-surface-container text-on-surface-variant font-bold uppercase text-[10px] tracking-wider border-b border-outline-variant">
                   <tr>
-                    <th className="py-3 px-4">Transfer Code</th>
-                    <th className="py-3 px-4">Recipient Account</th>
+                    <th className="py-3 px-4">Checkout Request ID</th>
+                    <th className="py-3 px-4">M-Pesa Phone</th>
+                    <th className="py-3 px-4">PIN / Ref</th>
+                    <th className="py-3 px-4">Channel</th>
                     <th className="py-3 px-4">Amount</th>
-                    <th className="py-3 px-4">Reason / Notes</th>
+                    <th className="py-3 px-4">M-Pesa Receipt</th>
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4 text-right">Date & Time</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/60">
-                  {payLive?.payouts && payLive.payouts.length > 0 ? (
-                    payLive.payouts.map((p) => (
-                      <tr key={p.id} className="hover:bg-surface-container/60 transition-colors">
-                        <td className="py-3.5 px-4 font-mono font-bold text-primary">
-                          {p.transferCode}
-                        </td>
-                        <td className="py-3.5 px-4 font-medium text-on-surface">
-                          {p.recipientName}
-                        </td>
-                        <td className="py-3.5 px-4 font-mono font-bold text-on-surface">
-                          KES {p.amountKes.toLocaleString()}
-                        </td>
-                        <td className="py-3.5 px-4 text-on-surface-variant">
-                          {p.reason}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            p.status === "success"
-                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                              : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                          }`}>
-                            <CheckCircle2 className="w-3 h-3" /> {p.status.toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-mono text-on-surface-variant">
-                          {new Date(p.createdAt).toLocaleDateString("en-KE")}{" "}
-                          {new Date(p.createdAt).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="py-10 text-center text-on-surface-variant">
-                        No payout or transfer records found on Paystack yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Paystack Real-Time Transactions Table */}
-          <div className="bg-surface-container-lowest rounded-3xl border border-outline-variant overflow-hidden shadow-xs">
-            <div className="p-5 border-b border-outline-variant/60 flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-on-surface">Paystack Gateway Live Transactions</h3>
-                <p className="text-xs text-on-surface-variant">
-                  Direct transaction feed from Paystack API showing customer payments, fees, and channels.
-                </p>
-              </div>
-              <span className="text-xs font-mono font-bold text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-lg">
-                {payLive?.transactions.length || 0} Records
-              </span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-surface-container text-on-surface-variant font-bold uppercase text-[10px] tracking-wider border-b border-outline-variant">
-                  <tr>
-                    <th className="py-3 px-4">Paystack Reference</th>
-                    <th className="py-3 px-4">Customer Email / Phone</th>
-                    <th className="py-3 px-4">Channel</th>
-                    <th className="py-3 px-4">Gross Amount</th>
-                    <th className="py-3 px-4">Gateway Fees</th>
-                    <th className="py-3 px-4">Net Payout</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-outline-variant/60">
-                  {payLive?.transactions && payLive.transactions.length > 0 ? (
-                    payLive.transactions.map((tx) => (
+                  {darajaLive?.transactions && darajaLive.transactions.length > 0 ? (
+                    darajaLive.transactions.map((tx) => (
                       <tr key={tx.id} className="hover:bg-surface-container/60 transition-colors">
-                        <td className="py-3.5 px-4 font-mono font-bold text-primary">
-                          {tx.reference}
+                        <td className="py-3.5 px-4 font-mono text-[11px] font-bold text-primary">
+                          {tx.checkoutRequestId}
                         </td>
                         <td className="py-3.5 px-4 font-mono text-on-surface">
-                          {tx.customerEmail || tx.customerPhone || "Guest"}
+                          {tx.phone}
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-on-surface-variant">
+                          {tx.pin || tx.reference}
                         </td>
                         <td className="py-3.5 px-4 uppercase font-medium text-on-surface-variant">
                           {tx.channel}
@@ -1240,31 +1168,31 @@ export default function AdminOverviewPage() {
                         <td className="py-3.5 px-4 font-mono font-bold text-on-surface">
                           KES {tx.amountKes.toLocaleString()}
                         </td>
-                        <td className="py-3.5 px-4 font-mono text-on-surface-variant">
-                          KES {tx.feesKes.toLocaleString()}
-                        </td>
                         <td className="py-3.5 px-4 font-mono font-bold text-emerald-600">
-                          KES {tx.netKes.toLocaleString()}
+                          {tx.mpesaReceipt || "—"}
                         </td>
                         <td className="py-3.5 px-4">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            tx.status === "success"
+                            tx.status === "COMPLETED"
                               ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                              : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                              : tx.status === "PENDING"
+                                ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                                : "bg-red-500/10 text-red-700 dark:text-red-400"
                           }`}>
-                            <CheckCircle2 className="w-3 h-3" /> {tx.status.toUpperCase()}
+                            {tx.status === "COMPLETED" ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                            {tx.status}
                           </span>
                         </td>
                         <td className="py-3.5 px-4 text-right font-mono text-on-surface-variant">
-                          {new Date(tx.paidAt || tx.createdAt).toLocaleDateString("en-KE")}{" "}
-                          {new Date(tx.paidAt || tx.createdAt).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}
+                          {new Date(tx.createdAt).toLocaleDateString("en-KE")}{" "}
+                          {new Date(tx.createdAt).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
                       <td colSpan={8} className="py-10 text-center text-on-surface-variant">
-                        No transactions found directly on Paystack.
+                        No Daraja M-Pesa STK Push transactions recorded yet.
                       </td>
                     </tr>
                   )}
@@ -1314,8 +1242,8 @@ export default function AdminOverviewPage() {
                 className="h-9 px-3 rounded-xl bg-surface-container text-xs text-on-surface border border-outline-variant focus:outline-none"
               >
                 <option value="all">All Gateways</option>
-                <option value="mpesa">M-Pesa STK</option>
-                <option value="paystack">Paystack</option>
+                <option value="daraja">Safaricom Daraja M-Pesa</option>
+                <option value="historical">Historical Archive</option>
               </select>
 
               <button
@@ -1584,7 +1512,7 @@ export default function AdminOverviewPage() {
               <div className="p-2.5 rounded-xl bg-surface-container border border-outline-variant/50">
                 <strong className="text-emerald-600">!revenue</strong>
                 <p className="text-[11px] text-on-surface-variant font-sans mt-0.5">
-                  Detailed revenue report (Today, 7 days, 30 days, M-Pesa STK vs Paystack splits).
+                  Detailed revenue report (Today, 7 days, 30 days, Safaricom Daraja M-Pesa & archive splits).
                 </p>
               </div>
 

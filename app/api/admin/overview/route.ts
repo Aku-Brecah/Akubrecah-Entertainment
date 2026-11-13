@@ -1,7 +1,6 @@
 import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getPaystackBalances, getPaystackLiveTransactions, getPaystackPayouts } from "@/lib/paystack";
 import { verifyAdminCaller } from "@/lib/admin-auth";
 
 export const maxDuration = 30;
@@ -16,7 +15,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const searchQuery = searchParams.get("q")?.trim() || "";
     const channelFilter = searchParams.get("channel") || "all"; // "all" | "web" | "whatsapp"
-    const gatewayFilter = searchParams.get("gateway") || "all"; // "all" | "mpesa" | "paystack"
+    const gatewayFilter = searchParams.get("gateway") || "all"; // "all" | "daraja" | "historical"
     const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 200);
     const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1);
     const skip = (page - 1) * limit;
@@ -87,8 +86,8 @@ export async function GET(req: NextRequest) {
     const whatsappRevenue = whatsappDownloads.reduce((acc, curr) => acc + (Number(curr.amountCharged) || 0), 0) + totalCyberRevenue;
     const webRevenue = webDownloads.reduce((acc, curr) => acc + (Number(curr.amountCharged) || 0), 0) + totalSubRevenue;
 
-    // Gateway Revenue (Paystack vs Legacy M-Pesa)
-    const isPaystackTx = (d: any) => {
+    // Historical gateway breakdown (preserved strictly for accounting integrity)
+    const isHistoricalGatewayTx = (d: any) => {
       const receipt = String(d.mpesaReceipt || '').toUpperCase();
       const checkout = String(d.checkoutId || '').toUpperCase();
       return (
@@ -100,9 +99,18 @@ export async function GET(req: NextRequest) {
       );
     };
 
-    const paystackDownloads = allDownloads.filter(isPaystackTx);
-    const paystackRevenue = paystackDownloads.reduce((acc, curr) => acc + (Number(curr.amountCharged) || 0), 0) + totalSubRevenue;
-    const mpesaRevenue = Math.max(0, totalRevenue - paystackRevenue);
+    const historicalDownloads = allDownloads.filter(isHistoricalGatewayTx);
+    const historicalRevenue = historicalDownloads.reduce((acc, curr) => acc + (Number(curr.amountCharged) || 0), 0) + totalSubRevenue;
+    const darajaMpesaRevenue = Math.max(0, totalRevenue - historicalRevenue);
+
+    // Fetch Safaricom Daraja STK Push transaction telemetry from mpesa_transactions
+    let recentDarajaTxs: any[] = [];
+    if (typeof db.mpesaTransaction?.findMany === "function") {
+      recentDarajaTxs = await db.mpesaTransaction.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      });
+    }
 
     // -------------------------------------------------------------
     // 2. WHATSAPP BOT SPECIFIC METRICS
@@ -235,7 +243,7 @@ export async function GET(req: NextRequest) {
     let formattedTransactions = allDownloads.map((d) => {
       const isWa = d.clerkId?.startsWith("wa_");
       const phoneMatch = isWa ? d.clerkId.replace("wa_", "") : null;
-      const isPaystack = isPaystackTx(d);
+      const isHistorical = isHistoricalGatewayTx(d);
 
       return {
         id: d.id,
@@ -244,8 +252,8 @@ export async function GET(req: NextRequest) {
         currency: d.currency || "KES",
         downloadType: d.downloadType || "pay_per_download",
         channel: isWa ? "whatsapp" : "web",
-        gateway: isPaystack ? "Paystack" : "M-Pesa STK (Legacy)",
-        receipt: d.mpesaReceipt || d.checkoutId || (isPaystack ? "PSTK-VERIFIED" : "STK-VERIFIED"),
+        gateway: isHistorical ? "Historical Archive" : "Safaricom Daraja M-Pesa",
+        receipt: d.mpesaReceipt || d.checkoutId || "STK-VERIFIED",
         customer: phoneMatch || (d.users?.email || d.users?.phone || d.clerkId || "Guest User"),
         status: "COMPLETED",
         createdAt: d.createdAt,
@@ -257,8 +265,10 @@ export async function GET(req: NextRequest) {
       formattedTransactions = formattedTransactions.filter((t) => t.channel === channelFilter);
     }
     if (gatewayFilter !== "all") {
-      formattedTransactions = formattedTransactions.filter((t) => 
-        gatewayFilter === "mpesa" ? t.gateway.includes("M-Pesa") : t.gateway.includes("Paystack")
+      formattedTransactions = formattedTransactions.filter((t) =>
+        gatewayFilter === "daraja" || gatewayFilter === "mpesa"
+          ? t.gateway.includes("Daraja")
+          : t.gateway.includes("Historical")
       );
     }
     if (searchQuery) {
@@ -275,21 +285,17 @@ export async function GET(req: NextRequest) {
     const paginatedTransactions = formattedTransactions.slice(skip, skip + limit);
 
     // -------------------------------------------------------------
-    // 6. PAYSTACK LIVE GATEWAY RECONCILIATION
+    // 6. SAFARICOM DARAJA M-PESA LIVE GATEWAY TELEMETRY
     // -------------------------------------------------------------
-    const [paystackBalance, paystackLiveTx, paystackPayouts] = await Promise.all([
-      getPaystackBalances().catch(() => ({ success: false, currency: 'KES', balanceKes: 0 })),
-      getPaystackLiveTransactions(100).catch(() => ({ success: false, total: 0, items: [] })),
-      getPaystackPayouts(50).catch(() => ({ success: false, total: 0, items: [] })),
-    ]);
-
-    const livePaystackTxTotal = (paystackLiveTx.items || [])
-      .filter((t: any) => t.status === 'success')
-      .reduce((acc: number, curr: any) => acc + (Number(curr.amountKes) || 0), 0);
-
-    const livePaystackPayoutsTotal = (paystackPayouts.items || [])
-      .filter((p: any) => p.status === 'success')
-      .reduce((acc: number, curr: any) => acc + (Number(curr.amountKes) || 0), 0);
+    const darajaCompleted = recentDarajaTxs.filter((t: any) => t.status === "COMPLETED");
+    const darajaPending = recentDarajaTxs.filter((t: any) => t.status === "PENDING");
+    const darajaCancelled = recentDarajaTxs.filter((t: any) => t.status === "CANCELLED");
+    const darajaTimedOut = recentDarajaTxs.filter((t: any) => t.status === "TIMED_OUT");
+    const darajaFailed = recentDarajaTxs.filter((t: any) => t.status === "FAILED");
+    const darajaCompletedVolumeKes = darajaCompleted.reduce(
+      (acc: number, curr: any) => acc + (Number(curr.amount) || 0),
+      0
+    );
 
     // -------------------------------------------------------------
     // 7. RESPONSE PAYLOAD
@@ -307,22 +313,40 @@ export async function GET(req: NextRequest) {
           whatsapp: whatsappRevenue,
         },
         byGateway: {
-          mpesa: mpesaRevenue,
-          paystack: paystackRevenue,
+          mpesa: darajaMpesaRevenue,
+          historical: historicalRevenue,
         },
-        averageTransactionValue: completedDownloadsCount > 0 
-          ? Math.round(totalRevenue / completedDownloadsCount) 
+        averageTransactionValue: completedDownloadsCount > 0
+          ? Math.round(totalRevenue / completedDownloadsCount)
           : 0,
       },
-      paystackLive: {
-        balanceKes: paystackBalance.balanceKes || 0,
-        currency: paystackBalance.currency || "KES",
-        liveTransactionsTotalKes: livePaystackTxTotal,
-        livePayoutsTotalKes: livePaystackPayoutsTotal,
-        transactions: paystackLiveTx.items || [],
-        payouts: paystackPayouts.items || [],
-        totalLiveTx: paystackLiveTx.total || 0,
-        totalPayouts: paystackPayouts.total || 0,
+      darajaLive: {
+        shortCode: process.env.DARAJA_SHORTCODE || process.env.MPESA_SHORTCODE || "9914132",
+        environment: (process.env.DARAJA_ENVIRONMENT || process.env.MPESA_ENV || "production").toUpperCase(),
+        currency: "KES",
+        completedVolumeKes: darajaCompletedVolumeKes,
+        completedCount: darajaCompleted.length,
+        pendingCount: darajaPending.length,
+        cancelledCount: darajaCancelled.length,
+        timedOutCount: darajaTimedOut.length,
+        failedCount: darajaFailed.length,
+        totalTracked: recentDarajaTxs.length,
+        transactions: recentDarajaTxs.map((t: any) => ({
+          id: t.id,
+          reference: t.reference,
+          pin: t.pin,
+          phone: t.phone,
+          amountKes: Number(t.amount) || 0,
+          currency: t.currency || "KES",
+          status: t.status,
+          checkoutRequestId: t.checkoutRequestId,
+          merchantRequestId: t.merchantRequestId,
+          mpesaReceipt: t.mpesaReceiptNumber,
+          resultCode: t.resultCode,
+          resultDesc: t.resultDesc,
+          channel: t.channel,
+          createdAt: t.createdAt,
+        })),
       },
       deviceUsage: {
         totalSessions,

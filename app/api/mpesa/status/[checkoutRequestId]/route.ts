@@ -1,110 +1,65 @@
 import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { verifyAndFulfillMpesaCheckout } from '@/lib/mpesa-verification';
 
-export const maxDuration = 10;
+export const maxDuration = 15;
 
-const getCallbackRegistry = (): Record<string, any> => {
-  const g = global as any;
-  if (!g.mpesaCallbacks) {
-    g.mpesaCallbacks = {};
-  }
-  return g.mpesaCallbacks;
-};
-
+/**
+ * GET /api/mpesa/status/[checkoutRequestId]
+ *
+ * Returns authoritative Daraja M-Pesa Express transaction status (`pending`,
+ * `success`, `cancelled`, `timeout`, or `failed`) from PostgreSQL and live
+ * Daraja STK Push Query reconciliation. No mocked or simulated paths.
+ */
 export async function GET(
   req: NextRequest,
   props: { params: Promise<{ checkoutRequestId: string }> }
 ) {
   try {
     const params = await props.params;
-    const checkoutRequestId = params.checkoutRequestId;
+    const checkoutRequestId = params.checkoutRequestId?.trim();
 
     if (!checkoutRequestId) {
-      return NextResponse.json({ success: false, error: 'CheckoutRequestID is required' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'CheckoutRequestID is required' },
+        { status: 400 }
+      );
     }
 
-    const registry = getCallbackRegistry();
-    const callbackResult = registry[checkoutRequestId];
-
-    if (!callbackResult) {
-      // Simulated checkouts (ws_CO_MOCK_*) exist for local development and
-      // integration testing only. They are disabled in production so a
-      // crafted checkout id cannot mint a fake paid record.
-      // The in-memory registry is instance-local. On multi-instance or
-      // serverless deployments the callback may have been processed by
-      // another instance — fall back to the durable DB entitlement record.
-      if (process.env.NODE_ENV === 'production') {
-        try {
-          const prismaModule = await import('@/lib/prisma');
-          const db = prismaModule.default as any;
-          const downloadRecord = await db.certificateDownload?.findFirst({
-            where: { checkoutId: checkoutRequestId },
-          });
-          if (downloadRecord) {
-            return NextResponse.json({
-              status: 'success',
-              resultCode: 0,
-              resultDesc: 'The service request is processed successfully.',
-              metadata: {
-                amount: Number(downloadRecord.amountCharged) || 20,
-                mpesaReceiptNumber: downloadRecord.mpesaReceipt || '',
-                transactionDate: downloadRecord.createdAt
-                  ? new Date(downloadRecord.createdAt).toISOString().replace(/[-:TZ]/g, '').substring(0, 14)
-                  : '',
-                phoneNumber: '',
-              },
-              timestamp: new Date(downloadRecord.createdAt).getTime() || Date.now(),
-              source: 'database',
-            });
-          }
-        } catch (dbFallbackErr: any) {
-          log.warn('[M-Pesa Status] DB fallback lookup notice:', dbFallbackErr?.message);
-        }
-        return NextResponse.json({ status: 'pending' });
-      }
-
-      // Check if it is a mock checkout and check for forced simulation parameters
-      const url = new URL(req.url);
-      const forceSimulate = url.searchParams.get('simulate');
-
-      if (checkoutRequestId.startsWith('ws_CO_MOCK_')) {
-        if (forceSimulate === 'success') {
-          // Auto-register mock success
-          const mockReceipt = 'NLJ' + Math.floor(10000000 + Math.random() * 90000000).toString() + 'SV';
-          const mockResult = {
-            status: 'success',
-            resultCode: 0,
-            resultDesc: 'The service request is processed successfully.',
-            metadata: {
-              amount: 100,
-              mpesaReceiptNumber: mockReceipt,
-              transactionDate: new Date().toISOString().replace(new RegExp('[-' + ':T]', 'g'), '').substring(0, 14),
-              phoneNumber: '254712345678'
-            },
-            timestamp: Date.now()
-          };
-          registry[checkoutRequestId] = mockResult;
-          return NextResponse.json(mockResult);
-        } else if (forceSimulate === 'failed') {
-          const mockResult = {
-            status: 'failed',
-            resultCode: 1032,
-            resultDesc: 'Request cancelled by user',
-            timestamp: Date.now()
-          };
-          registry[checkoutRequestId] = mockResult;
-          return NextResponse.json(mockResult);
-        }
-      }
-
-      // Default: still waiting for Safaricom callback
-      return NextResponse.json({ status: 'pending' });
+    let clerkId: string | null = null;
+    try {
+      const session = await auth();
+      clerkId = session?.userId || null;
+    } catch {
+      // Guest status poll
     }
 
-    return NextResponse.json(callbackResult);
+    const pinParam = req.nextUrl.searchParams.get('pin') || undefined;
+    const result = await verifyAndFulfillMpesaCheckout({
+      checkoutRequestId,
+      rawPinInput: pinParam,
+      clerkId,
+    });
 
+    if (result.httpStatus && result.httpStatus >= 400) {
+      return NextResponse.json(result, { status: result.httpStatus });
+    }
+
+    return NextResponse.json({
+      ...result,
+      metadata: {
+        amount: result.amount ?? 20,
+        mpesaReceiptNumber: result.mpesaReceipt || '',
+        phoneNumber: result.phone || '',
+        ...(result.pin ? { pin: result.pin } : {}),
+      },
+    });
   } catch (error: any) {
     log.error('[M-Pesa Status Catch Error]:', error.message);
-    return NextResponse.json({ success: false, error: 'Payment status lookup failed' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: 'Payment status lookup failed' },
+      { status: 500 }
+    );
   }
 }

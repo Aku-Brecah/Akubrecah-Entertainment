@@ -8,7 +8,9 @@ describe('Environment Configuration Module', () => {
     expect(config.NODE_ENV).toBeDefined();
     // No hardcoded fallback identity: unset env means empty (fail closed).
     expect(config.SUPER_ADMIN_EMAIL).toBe('');
-    expect(config.PAYSTACK_SUBSCRIPTION_AMOUNT_KES).toBe(499);
+    expect(config.MPESA_DOWNLOAD_FEE_KES).toBe(20);
+    expect(config.MPESA_SUBSCRIPTION_AMOUNT_KES).toBe(500);
+    expect(config.DARAJA_ENVIRONMENT).toBeDefined();
     expect(config.REDIS_URL).toBeDefined();
   });
 

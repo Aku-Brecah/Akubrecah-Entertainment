@@ -18,7 +18,6 @@ This guide establishes the architecture, deployment isolation, sandbox testing, 
 ┌─────────────────────────────────┐
 │       STAGING (preview)         │
 │  - Isolated Staging Database    │
-│  - Paystack Sandbox (Test Keys) │
 │  - M-Pesa Daraja Sandbox        │
 │  - Sentry environment: staging  │
 │  - Strict KDPA PII Masking      │
@@ -28,7 +27,6 @@ This guide establishes the architecture, deployment isolation, sandbox testing, 
 ┌─────────────────────────────────┐
 │      PRODUCTION (live)          │
 │  - Production DB (PgBouncer)    │
-│  - Paystack Live Keys           │
 │  - Safaricom Daraja Production  │
 │  - Sentry environment: prod     │
 │  - Live WhatsApp Bot Fulfillment│
@@ -46,8 +44,7 @@ To prevent accidental data pollution, financial transactions, or spamming real c
    - **Procedure:** Use a dedicated database branch (e.g. Neon ephemeral branching or Supabase Staging project). Set `DATABASE_URL` in Vercel Preview environment settings to the staging database connection string.
 
 2. **Payment Gateway Sandboxing:**
-   - **Paystack:** Set `PAYSTACK_SECRET_KEY=sk_test_...` and `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_...`. Never use live keys in preview or staging.
-   - **M-Pesa:** Use Daraja sandbox consumer key/secret and test shortcode `174379`.
+   - **Safaricom Daraja M-Pesa:** Use Daraja sandbox consumer key/secret (`DARAJA_ENVIRONMENT=sandbox`) and test shortcode `174379` in staging; reserve live production keys (`DARAJA_ENVIRONMENT=production`) for production only.
 
 3. **WhatsApp Bot & Customer Notifications:**
    - In staging, set `ADMIN_WHATSAPP_NUMBERS` exclusively to developer test phones.

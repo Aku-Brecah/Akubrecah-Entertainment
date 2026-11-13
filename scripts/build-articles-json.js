@@ -290,14 +290,14 @@ export async function generateSecureCertificateBuffer(data: CertificateData): Pr
     title: 'Architecting High-Throughput Kenyan Fintech Systems with M-Pesa & Next.js',
     excerpt: 'Integrating payment gateways in East Africa requires engineering for high variability in telecommunication latency, STK Push timeouts, and idempotent webhook delivery.',
     category: 'Fintech Engineering',
-    tags: ['Fintech', 'M-Pesa', 'Daraja', 'Paystack', 'Next.js', 'PostgreSQL'],
+    tags: ['Fintech', 'M-Pesa', 'Daraja', 'Next.js', 'PostgreSQL'],
     featuredImage: '/blog/tax-image-3.jpg',
     authorName: 'Akubrecah',
     readingTimeMinutes: 7,
     isPublished: true,
     publishedAt: new Date('2026-03-15T10:15:00.000Z').toISOString(),
     seoTitle: 'Architecting High-Throughput Kenyan Fintech Systems with M-Pesa',
-    seoDescription: 'Idempotent architecture for M-Pesa Daraja STK Push and Paystack in Next.js applications.',
+    seoDescription: 'Idempotent architecture for Safaricom M-Pesa Daraja STK Push in Next.js applications.',
     content: `# Architecting High-Throughput Kenyan Fintech Systems with M-Pesa & Next.js
 
 Integrating payment gateways in East Africa requires engineering for high variability in telecommunication latency, network drops during USSD PIN prompts, and asynchronous webhook delivery.
@@ -308,7 +308,7 @@ Whether processing certificate retrieval micro-payments or fleet dispatch fares,
 
 ## 🔄 The Trap of Webhook-Only Architecture
 
-Many engineering teams rely solely on Safaricom Daraja or Paystack webhooks to confirm payments:
+Many engineering teams rely solely on Safaricom Daraja callbacks to confirm payments:
 \`\`\`
 [User Clicks Pay] ──> [STK Push Sent] ──> [Wait for Webhook] ──> [Unlock Service]
 \`\`\`

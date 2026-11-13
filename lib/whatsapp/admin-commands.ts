@@ -6,7 +6,7 @@ import { log } from '@/lib/monitoring/logger';
 import prisma from '@/lib/prisma';
 import { createAdminMagicToken } from '@/lib/magic-token';
 import { getPublicAppUrl } from '@/lib/utils';
-import { getPaystackLiveTransactions, findRecentSuccessfulPaystackPayment } from '@/lib/paystack';
+import { findRecentSuccessfulMpesaPayment, normalizePhoneNumber } from '@/lib/whatsapp/mpesa-dispatch';
 import { formatDisplayPhone } from '@/lib/whatsapp/phone';
 import { parseWhatsAppCommand } from '@/lib/whatsapp/commands';
 
@@ -259,8 +259,8 @@ export async function handleAdminBotCommand({
     const sevenDayRev = downloads.filter((d) => new Date(d.createdAt) >= sevenDaysAgo).reduce((acc, c) => acc + (Number(c.amountCharged) || 0), 0);
     const thirtyDayRev = downloads.filter((d) => new Date(d.createdAt) >= thirtyDaysAgo).reduce((acc, c) => acc + (Number(c.amountCharged) || 0), 0);
 
-    const mpesaRev = downloads.filter((d) => Boolean(d.mpesaReceipt)).reduce((acc, c) => acc + (Number(c.amountCharged) || 0), 0);
-    const paystackRev = totalRev - mpesaRev;
+    const webRev = totalRev - downloads.filter((d) => d.clerkId?.startsWith('wa_')).reduce((acc, c) => acc + (Number(c.amountCharged) || 0), 0);
+    const waRev = totalRev - webRev;
 
     return (
       `💰 *REVENUE BREAKDOWN REPORT*\n` +
@@ -270,9 +270,9 @@ export async function handleAdminBotCommand({
       `• *Last 7 Days:*   KES ${sevenDayRev.toLocaleString()}\n` +
       `• *Last 30 Days:*  KES ${thirtyDayRev.toLocaleString()}\n` +
       `• *Lifetime:*      KES ${totalRev.toLocaleString()}\n\n` +
-      `💳 *PAYMENT CHANNELS*\n` +
-      `• *M-Pesa STK:*    KES ${mpesaRev.toLocaleString()} (${totalRev > 0 ? Math.round((mpesaRev / totalRev) * 100) : 0}%)\n` +
-      `• *Paystack Card:* KES ${paystackRev.toLocaleString()} (${totalRev > 0 ? Math.round((paystackRev / totalRev) * 100) : 0}%)\n` +
+      `💳 *DARAJA M-PESA CHANNELS*\n` +
+      `• *Web Portal:*    KES ${webRev.toLocaleString()} (${totalRev > 0 ? Math.round((webRev / totalRev) * 100) : 0}%)\n` +
+      `• *WhatsApp Bot:*  KES ${waRev.toLocaleString()} (${totalRev > 0 ? Math.round((waRev / totalRev) * 100) : 0}%)\n` +
       `─────────────────────────\n` +
       `_Reply *!logs* to view recent customer transactions_`
     );
@@ -356,12 +356,17 @@ export async function handleAdminBotCommand({
   if (cmd === 'failed' || cmd === 'pending' || cmd === 'issues') {
     let recentTx: any[] = [];
     try {
-      const txRes = await getPaystackLiveTransactions(30, 1);
-      if (txRes.success && Array.isArray(txRes.items)) {
-        recentTx = txRes.items.filter((t: any) => t.status !== 'success').slice(0, 5);
+      if (typeof db.mpesaTransaction?.findMany === 'function') {
+        recentTx = await db.mpesaTransaction.findMany({
+          where: {
+            status: { in: ['FAILED', 'CANCELLED', 'TIMED_OUT', 'PENDING'] },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        });
       }
     } catch (err: any) {
-      log.warn('[Admin !failed] Paystack live fetch notice:', err.message);
+      log.warn('[Admin !failed] Daraja DB lookup notice:', err.message);
     }
 
     let awaitingConvs: any[] = [];
@@ -404,18 +409,18 @@ export async function handleAdminBotCommand({
     }
 
     if (recentTx.length > 0) {
-      report += `❌ *RECENT GATEWAY FAILURES (${recentTx.length}):*\n`;
+      report += `❌ *RECENT DARAJA GATEWAY EVENTS (${recentTx.length}):*\n`;
       recentTx.forEach((t: any, i: number) => {
-        const phone = t.customerPhone || 'Unknown Phone';
+        const phone = t.phone || 'Unknown Phone';
         const pin = t.pin || 'KRA';
         const time = new Date(t.createdAt).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' });
 
         report +=
           `*${i + 1}. Phone:* \`${formatDisplayPhone(phone)}\`\n` +
-          `   • Amount: KES ${t.amountKes}.00\n` +
+          `   • Amount: KES ${Number(t.amount || 20).toFixed(0)}.00\n` +
           `   • PIN: \`${pin}\`\n` +
-          `   • Gateway Status: _${t.status}_\n` +
-          `   • Ref: \`${t.reference}\`\n` +
+          `   • Daraja Status: _${t.status}_\n` +
+          `   • CheckoutID: \`${t.checkoutRequestId}\`\n` +
           `   • Time: ${time}\n\n`;
       });
     }
@@ -436,19 +441,18 @@ export async function handleAdminBotCommand({
         `⚠️ *Please provide a target to recheck:*\n` +
         `• Example: *!recheck 0719299900*\n` +
         `• Example: *!recheck A016881319Q*\n` +
-        `• Example: *!recheck PSTK-MPESA-...*`
+        `• Example: *!recheck ws_CO_...*`
       );
     }
 
     const cleanQuery = query.replace(/[^0-9a-zA-Z]/g, '');
 
-    // 1. Search for successful payment on Paystack
-    const payment = await findRecentSuccessfulPaystackPayment({
+    // 1. Search for successful Daraja M-Pesa payment
+    const payment = await findRecentSuccessfulMpesaPayment({
       phone: query,
       pin: query,
       reference: query,
       maxAgeMinutes: 180, // last 3 hours
-      skipCache: true,
     });
 
     // 2. Lookup conversation in DB
@@ -514,22 +518,30 @@ export async function handleAdminBotCommand({
         `📄 Certificate PDF and fiscal receipt have been generated and dispatched directly to the customer's WhatsApp chat.`
       );
     } else {
-      // Fetch last attempt from Paystack
+      // Fetch last Daraja STK Push attempt from PostgreSQL
       let lastAttempt: any = null;
       try {
-        const txList = await getPaystackLiveTransactions(30, 1);
-        lastAttempt = (txList.items || []).find((t: any) => {
-          const ph = String(t.customerPhone || '').replace(/[^0-9]/g, '');
-          const cleanQ = query.replace(/[^0-9]/g, '');
-          return (cleanQ && ph.includes(cleanQ)) || (t.reference && t.reference.includes(query)) || (t.pin && t.pin.includes(query.toUpperCase()));
-        });
+        const cleanQ = normalizePhoneNumber(query);
+        if (typeof db.mpesaTransaction?.findFirst === 'function') {
+          lastAttempt = await db.mpesaTransaction.findFirst({
+            where: {
+              OR: [
+                ...(cleanQ ? [{ phone: cleanQ }] : []),
+                { checkoutRequestId: query },
+                { pin: query.toUpperCase() },
+                { reference: { contains: query } },
+              ],
+            },
+            orderBy: { createdAt: 'desc' },
+          });
+        }
       } catch {}
 
       return (
         `⏳ *PAYMENT NOT VERIFIED FOR \`${query}\`*\n` +
         `─────────────────────────\n` +
-        `• *Gateway Status:* ${lastAttempt ? `❌ ${lastAttempt.status}` : 'No matching payment record'}\n` +
-        `• *Last Reference:* \`${lastAttempt?.reference || 'N/A'}\`\n` +
+        `• *Daraja Status:* ${lastAttempt ? `❌ ${lastAttempt.status}${lastAttempt.resultDesc ? ` (${lastAttempt.resultDesc})` : ''}` : 'No matching payment record'}\n` +
+        `• *CheckoutRef:* \`${lastAttempt?.checkoutRequestId || 'N/A'}\`\n` +
         `• *Time:* ${lastAttempt?.createdAt ? new Date(lastAttempt.createdAt).toLocaleTimeString('en-KE') : 'N/A'}\n` +
         `─────────────────────────\n` +
         `👉 If client claims they paid, reply *!deliver ${query}* to force-fulfill.`

@@ -111,18 +111,24 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, downloadId: existing.id, alreadyRecorded: true });
       }
 
-      // Verify payment was actually successful in the in-memory registry
+      // Verify payment was actually successful in durable DB or callback registry
+      const txRecord = await db.mpesaTransaction?.findUnique({
+        where: { checkoutRequestId: checkoutId },
+      });
       const g = global as any;
       const registry: Record<string, any> = g.mpesaCallbacks || {};
       const payment = registry[checkoutId];
 
-      if (!payment || payment.status !== 'success') {
+      const isPaidInDb = txRecord?.status === 'COMPLETED';
+      const isPaidInMem = payment && payment.status === 'success';
+
+      if (!isPaidInDb && !isPaidInMem) {
         return NextResponse.json({ success: false, error: 'Payment not confirmed. Please complete M-Pesa payment first.' }, { status: 402 });
       }
 
       // SECURITY: payment-for-A must only unlock certificate-A. If the payment
       // proof carries a bound PIN, the requested PIN must match it exactly.
-      const paidPin = String(payment.metadata?.pin || '').toUpperCase();
+      const paidPin = String(txRecord?.pin || payment?.metadata?.pin || '').toUpperCase();
       if (paidPin && paidPin !== 'KRA_CERT' && paidPin !== pin.toUpperCase()) {
         return NextResponse.json(
           { success: false, error: 'This payment is bound to a different KRA PIN.' },
@@ -137,9 +143,9 @@ export async function POST(req: NextRequest) {
           clerkId: userId,
           pin: pin.toUpperCase(),
           downloadType: 'pay_per_download',
-          amountCharged: payment.metadata?.amount || 20,
+          amountCharged: Number(txRecord?.amount || payment?.metadata?.amount || 20),
           currency: 'KES',
-          mpesaReceipt: payment.metadata?.mpesaReceiptNumber || null,
+          mpesaReceipt: txRecord?.mpesaReceiptNumber || payment?.metadata?.mpesaReceiptNumber || null,
           checkoutId,
         },
       });

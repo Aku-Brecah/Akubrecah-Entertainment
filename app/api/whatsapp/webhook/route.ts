@@ -279,28 +279,47 @@ export async function POST(req: NextRequest) {
               }
             }
 
-            // 2. Check global in-memory Daraja callback cache
+            // 2. Check global in-memory Daraja callback cache (and active Daraja STK query fallback)
             if (!isPaid && typeof (global as any).mpesaCallbacks !== 'undefined') {
-              const cb = (global as any).mpesaCallbacks?.get(pendingCheckoutId);
-              if (cb && cb.ResultCode === 0) {
+              const rawCb = (global as any).mpesaCallbacks;
+              const cb =
+                rawCb?.[pendingCheckoutId] ||
+                (typeof rawCb?.get === 'function' ? rawCb.get(pendingCheckoutId) : undefined);
+              if (cb && (cb.status === 'success' || cb.resultCode === 0 || cb.ResultCode === 0)) {
                 isPaid = true;
-                mpesaReceipt = cb.MpesaReceiptNumber || pendingCheckoutId;
-                amountKes = cb.Amount || 500;
+                mpesaReceipt = cb.metadata?.mpesaReceiptNumber || cb.MpesaReceiptNumber || pendingCheckoutId;
+                amountKes = cb.metadata?.amount || cb.Amount || (conv?.metadata?.step === 'CYBER_AWAITING_PAYMENT' ? 500 : 20);
               }
             }
 
-            // 3. Check Paystack verification (if checkoutId is PSTK-... or CERT-...)
-            if (!isPaid && (pendingCheckoutId.startsWith('PSTK-') || pendingCheckoutId.startsWith('CERT-') || pendingCheckoutId.startsWith('CYBER-'))) {
+            if (!isPaid && pendingCheckoutId.startsWith('ws_CO_')) {
               try {
-                const { verifyPaystackTransaction } = await import('@/lib/paystack');
-                const tx = await verifyPaystackTransaction(pendingCheckoutId);
-                if (tx && tx.status === 'success') {
+                const { queryMpesaStkPushStatus } = await import('@/lib/whatsapp/mpesa-dispatch');
+                const darajaStatus = await queryMpesaStkPushStatus(pendingCheckoutId);
+                if (darajaStatus.status === 'success') {
+                  const cb = (global as any).mpesaCallbacks?.[pendingCheckoutId];
                   isPaid = true;
-                  mpesaReceipt = tx.reference || `PSTK_${pendingCheckoutId}`;
-                  amountKes = tx.amountKes || 20;
+                  mpesaReceipt = cb?.metadata?.mpesaReceiptNumber || cb?.MpesaReceiptNumber || pendingCheckoutId;
+                  amountKes = cb?.metadata?.amount || cb?.Amount || (conv?.metadata?.step === 'CYBER_AWAITING_PAYMENT' ? 500 : 20);
                 }
-              } catch (verifyErr: any) {
-                // Ignore transient network errors during polling
+              } catch {
+                // Ignore transient query errors during polling
+              }
+            }
+
+            // 3. Check durable MpesaTransaction table in case callback was recorded on another instance
+            if (!isPaid && typeof db.mpesaTransaction?.findUnique === 'function') {
+              try {
+                const tx = await db.mpesaTransaction.findUnique({
+                  where: { checkoutRequestId: pendingCheckoutId },
+                });
+                if (tx && tx.status === 'COMPLETED') {
+                  isPaid = true;
+                  mpesaReceipt = tx.mpesaReceiptNumber || pendingCheckoutId;
+                  amountKes = Number(tx.amount) || (conv?.metadata?.step === 'CYBER_AWAITING_PAYMENT' ? 500 : 20);
+                }
+              } catch {
+                // Ignore transient DB lookup errors during polling
               }
             }
 

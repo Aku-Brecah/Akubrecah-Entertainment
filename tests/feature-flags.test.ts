@@ -18,13 +18,12 @@ describe('Feature Flags Engine', () => {
 
   afterEach(() => {
     delete process.env.FEATURE_FLAG_ENABLE_NIL_TAX_FILING;
-    delete process.env.FEATURE_FLAG_ENABLE_PAYSTACK_GATEWAY;
+    delete process.env.FEATURE_FLAG_ENABLE_MPESA_STK_PUSH;
     clearFeatureFlagCache();
   });
 
   it('evaluates defined flags to their safe default values', async () => {
-    const paystackEnabled = await isFeatureEnabled('enable_paystack_gateway');
-    expect(paystackEnabled).toBe(true);
+    expect(FEATURE_FLAGS.enable_mpesa_stk_push).toBeDefined();
 
     const mpesaEnabled = await isFeatureEnabled('enable_mpesa_stk_push');
     expect(mpesaEnabled).toBe(true);
@@ -42,10 +41,10 @@ describe('Feature Flags Engine', () => {
     expect(result).toBe(true);
 
     // Override default true to false via env
-    process.env.FEATURE_FLAG_ENABLE_PAYSTACK_GATEWAY = 'false';
+    process.env.FEATURE_FLAG_ENABLE_MPESA_STK_PUSH = 'false';
     clearFeatureFlagCache();
 
-    const disabledResult = await isFeatureEnabled('enable_paystack_gateway');
+    const disabledResult = await isFeatureEnabled('enable_mpesa_stk_push');
     expect(disabledResult).toBe(false);
   });
 

@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       name: taxpayerName || 'Registered Taxpayer',
       amount: Number(downloadRecord?.amountCharged ?? 20),
       phone: undefined,
-      paymentMethod: downloadRecord?.checkoutId && !downloadRecord?.mpesaReceipt ? 'PAYSTACK' : 'M-PESA EXPRESS',
+      paymentMethod: 'M-PESA EXPRESS (DARAJA)',
     });
 
     return new NextResponse(pdfBuffer, {
