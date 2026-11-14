@@ -130,7 +130,7 @@ export default clerkMiddleware(async (auth, request) => {
 
   // 6. Subdomain routing & Strict Domain Isolation
   const host = (request.headers.get('x-forwarded-host') || request.headers.get('host') || '').toLowerCase();
-  const { isKraSubdomain, isAdminSubdomain } = classifyHost(host);
+  const { isKraSubdomain, isAdminSubdomain, isLocalhost } = classifyHost(host);
 
   // Case 0: Canonical Domain Enforcement — Permanently redirect legacy *.vercel.app traffic to custom domains
   if (host.includes('.vercel.app')) {
@@ -142,8 +142,8 @@ export default clerkMiddleware(async (auth, request) => {
     return redirectResponse;
   }
 
-  // Case A: Accessing /admin routes on main domain or KRA domain -> redirect to admin.akubrecah.com
-  if (!isAdminSubdomain) {
+  // Case A: Accessing /admin routes on main domain or KRA domain -> redirect to admin.akubrecah.com (allow direct /admin on localhost)
+  if (!isAdminSubdomain && !isLocalhost) {
     if (pathname === '/admin' || pathname.startsWith('/admin/')) {
       const targetAdminUrl = new URL(pathname === '/admin' ? '/' : pathname, 'https://admin.akubrecah.com');
       targetAdminUrl.search = request.nextUrl.search;
@@ -152,7 +152,6 @@ export default clerkMiddleware(async (auth, request) => {
   }
 
   // Case B: In production, redirect sign-in, sign-up, and KRA portal routes from main domain to kra.akubrecah.com
-  const { isLocalhost } = classifyHost(host);
   if (!isKraSubdomain && !isAdminSubdomain && !isLocalhost) {
     if (pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up')) {
       const kraAuthUrl = new URL(pathname, 'https://kra.akubrecah.com');
