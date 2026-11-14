@@ -128,7 +128,7 @@ export default async function ProjectDetailPage({ params }: Props) {
       {/* Header & Hero */}
       <div className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none" />
-        <div className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-8 sm:py-10 space-y-5 relative z-10">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 sm:py-10 space-y-5 relative z-10">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
             <span>/</span>
@@ -178,7 +178,7 @@ export default async function ProjectDetailPage({ params }: Props) {
       </div>
 
       {/* Main Body */}
-      <div className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-8 sm:py-10 space-y-8">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 sm:py-10 space-y-8">
         {/* Metric Ribbons & Fast Facts */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-soft">

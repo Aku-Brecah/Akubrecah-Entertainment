@@ -60,7 +60,7 @@ function FlagshipPortalContent() {
       {/* 1. ADAPTIVE RESPONSIVE GOVTECH TOP NAVIGATION BAR */}
       {/* ============================================================== */}
       <header className="sticky top-0 z-50 w-full bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant/80 shadow-2xs">
-        <div className="w-full max-w-none px-3 sm:px-5 lg:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="w-full max-w-none px-4 sm:px-6 lg:px-10 xl:px-12 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* Brand Mark & Identity */}
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-90 shrink-0">
@@ -128,7 +128,7 @@ function FlagshipPortalContent() {
       {/* ============================================================== */}
       {/* 2. FOCUSED HERO WORKSPACE (ZERO SCROLL ACROSS ALL DEVICES) */}
       {/* ============================================================== */}
-      <main className="flex-1 w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-3 sm:py-5 space-y-4 sm:space-y-6">
+      <main className="flex-1 w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-3 sm:py-5 space-y-4 sm:space-y-6">
         
         {/* Compact, Focused Title Banner */}
         <div className="text-center space-y-1.5 sm:space-y-2 max-w-4xl mx-auto px-1">
@@ -449,7 +449,7 @@ function FlagshipPortalContent() {
       {/* 3. MINIMAL GOVTECH FOOTER */}
       {/* ============================================================== */}
       <footer className="mt-auto border-t border-outline-variant/60 bg-surface-container-lowest/80 py-5 sm:py-6 text-xs text-on-surface-variant">
-        <div className="w-full max-w-none px-3 sm:px-5 lg:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
+        <div className="w-full max-w-none px-4 sm:px-6 lg:px-10 xl:px-12 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
           <p className="text-[11px] text-on-surface-variant">
             &copy; {new Date().getFullYear()} Akubrecah Technologies. Independent third-party cyber assistance provider. Not affiliated with the Kenya Revenue Authority (KRA).
           </p>

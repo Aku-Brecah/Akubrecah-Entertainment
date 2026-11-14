@@ -113,7 +113,7 @@ export default function AboutPage() {
 
       {/* Page Hero - Matching Products Design */}
       <div className="bg-surface-container-lowest border-b border-outline-variant">
-        <div className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-8 md:py-10 space-y-5">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-5">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
             <span>/</span>
@@ -138,7 +138,7 @@ export default function AboutPage() {
         </div>
       </div>
 
-      <div className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-8 md:py-10 space-y-10">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-10">
 
         {/* Core Philosophy Section - Matching Products 5-Column Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 items-start">

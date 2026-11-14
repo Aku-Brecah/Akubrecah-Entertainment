@@ -91,7 +91,7 @@ export default async function Home() {
 
   return (
     <div className="relative w-full bg-background text-on-background font-sans overflow-x-hidden">
-      <div className="relative z-10 w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 flex flex-col space-y-12 pb-12 pt-5 md:pt-8">
+      <div className="relative z-10 w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 flex flex-col space-y-12 pb-12 pt-5 md:pt-8">
 
         {/* ============================= HERO SECTION ============================= */}
         <section id="hero" className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
@@ -327,7 +327,7 @@ export default async function Home() {
         )}
 
         {/* ============================= METHODOLOGY ============================= */}
-        <section className="space-y-8 text-center w-full mx-auto">
+        <section className="space-y-8 text-center max-w-3xl mx-auto">
           <div className="space-y-3">
             <span className="text-xs font-black text-red-700 dark:text-red-400 uppercase tracking-widest">How We Work</span>
             <h2 className="text-3xl sm:text-4xl font-black text-on-surface">

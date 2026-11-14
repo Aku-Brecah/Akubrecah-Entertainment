@@ -39,7 +39,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-5 sm:py-6 pb-12 space-y-6">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-5 sm:py-6 pb-12 space-y-6">
         
         {/* ============================================================== */}
         {/* TOP BAR: BREADCRUMBS & HOME LINK */}

@@ -16,7 +16,7 @@ export function SiteFooter(): JSX.Element {
 
   return (
     <footer className="w-full border-t border-outline-variant/60 bg-surface-container-lowest/80 backdrop-blur-md pt-8 pb-6 z-40 relative text-xs text-on-surface-variant" role="contentinfo">
-      <div className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
         
         {/* Main Footer Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-10 border-b border-outline-variant/60">
