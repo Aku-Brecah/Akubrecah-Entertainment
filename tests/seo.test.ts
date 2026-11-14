@@ -212,21 +212,25 @@ describe('Search Engine Optimization (SEO) & Indexing Suite', () => {
 
       try {
         const cms = await vi.importActual<typeof import('@/lib/cms')>('@/lib/cms');
+        const fallbackArticles = cms.getFallbackArticles();
+        expect(fallbackArticles.length).toBeGreaterThanOrEqual(5);
+        expect(fallbackArticles[0].slug).toBe('kra-pin-retrieval-online-using-id-number-itax-login-guide');
+
         const articles = await cms.getPublishedArticles();
         expect(articles.length).toBeGreaterThan(0);
         expect(articles[0].slug).toBe('kra-pin-retrieval-online-using-id-number-itax-login-guide');
 
         const article = await cms.getArticleBySlug('kra-pin-retrieval-online-using-id-number-itax-login-guide');
         expect(article).not.toBeNull();
-        expect(article.isPublished).toBe(true);
-        expect(article.publishedAt).toBeInstanceOf(Date);
-        expect(article.featuredImage).toBe('/blog/kra-pin-retrieval-portal.png');
+        expect(article!.isPublished).toBe(true);
+        expect(article!.publishedAt).toBeInstanceOf(Date);
+        expect(article!.featuredImage).toBe('/blog/kra-pin-retrieval-portal.png');
         expect(fs.existsSync(path.join(process.cwd(), 'public', 'blog', 'kra-pin-retrieval-portal.png'))).toBe(true);
-        expect(article.content).toContain('/blog/kra-pin-retrieval-portal.png');
-        expect(article.content).toContain('/retrieval-portal');
-        expect(article.content).toContain('KES 20');
-        expect(Array.isArray(article.faqs)).toBe(true);
-        expect(article.faqs.length).toBeGreaterThanOrEqual(6);
+        expect(article!.content).toContain('/blog/kra-pin-retrieval-portal.png');
+        expect(article!.content).toContain('/retrieval-portal');
+        expect(article!.content).toContain('KES 20');
+        expect(Array.isArray(article!.faqs)).toBe(true);
+        expect(article!.faqs.length).toBeGreaterThanOrEqual(6);
 
         const targetKeywords = [
           'retrieve kra pin',
@@ -240,11 +244,37 @@ describe('Search Engine Optimization (SEO) & Indexing Suite', () => {
           'KRA PIN Retrieval online',
         ];
 
-        const normalizedContent = `${article.title}\n${article.excerpt}\n${article.content}`.toLowerCase();
+        const normalizedContent = `${article!.title}\n${article!.excerpt}\n${article!.content}`.toLowerCase();
         for (const keyword of targetKeywords) {
-          expect(article.tags).toContain(keyword);
+          expect(article!.tags).toContain(keyword);
           expect(normalizedContent).toContain(keyword.toLowerCase());
         }
+
+        // Verify DB-backed article rows also receive fallback featuredImage & FAQs enrichment
+        findUniqueSpy.mockResolvedValueOnce({
+          id: 'art-kra-pin-retrieval-guide',
+          slug: 'kra-pin-retrieval-online-using-id-number-itax-login-guide',
+          title: article!.title,
+          excerpt: article!.excerpt,
+          content: article!.content,
+          category: article!.category,
+          tags: article!.tags,
+          featuredImage: null,
+          authorName: 'Akubrecah',
+          readingTimeMinutes: 9,
+          isPublished: true,
+          publishedAt: new Date('2026-11-14T18:00:00.000Z'),
+          seoTitle: article!.seoTitle,
+          seoDescription: article!.seoDescription,
+          canonicalUrl: null,
+          createdAt: new Date('2026-11-14T18:00:00.000Z'),
+          updatedAt: new Date('2026-11-14T18:00:00.000Z'),
+        });
+
+        const dbEnrichedArticle = await cms.getArticleBySlug('kra-pin-retrieval-online-using-id-number-itax-login-guide');
+        expect(dbEnrichedArticle).not.toBeNull();
+        expect(dbEnrichedArticle!.featuredImage).toBe('/blog/kra-pin-retrieval-portal.png');
+        expect(dbEnrichedArticle!.faqs.length).toBeGreaterThanOrEqual(6);
       } finally {
         findManySpy.mockRestore();
         findUniqueSpy.mockRestore();

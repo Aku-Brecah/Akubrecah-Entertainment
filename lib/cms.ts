@@ -1,30 +1,186 @@
 import { log } from '@/lib/monitoring/logger';
 import prisma from '@/lib/prisma';
+import fallbackArticlesData from '@/data/articles-fallback.json';
 import fs from 'fs';
 import path from 'path';
 
-function getFallbackArticles(): any[] {
+export interface ArticleFaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface FallbackArticleRecord {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  tags: string[];
+  featuredImage: string | null;
+  authorName: string;
+  readingTimeMinutes: number;
+  isPublished: boolean;
+  publishedAt: Date;
+  updatedAt: Date;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  canonicalUrl: string | null;
+  createdAt: Date;
+  faqs: ArticleFaqItem[];
+}
+
+const FEATURED_REFRESH_SLUGS = new Set([
+  'kra-pin-retrieval-online-using-id-number-itax-login-guide',
+]);
+const SEED_COOLDOWN_MS = 5 * 60 * 1000;
+let lastFallbackSeedAt = 0;
+let seedInFlight: Promise<void> | null = null;
+
+function normalizeFallbackArticles(raw: unknown): FallbackArticleRecord[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item) => {
+    const article = item as Record<string, unknown>;
+    const publishedAt = article.publishedAt
+      ? new Date(String(article.publishedAt))
+      : new Date();
+    const updatedAt = article.updatedAt
+      ? new Date(String(article.updatedAt))
+      : publishedAt;
+    const createdAt = article.createdAt
+      ? new Date(String(article.createdAt))
+      : publishedAt;
+
+    return {
+      id: String(article.id || ''),
+      slug: String(article.slug || ''),
+      title: String(article.title || ''),
+      excerpt: String(article.excerpt || ''),
+      content: String(article.content || ''),
+      category: String(article.category || 'Engineering'),
+      tags: Array.isArray(article.tags) ? article.tags.map(String) : [],
+      featuredImage: article.featuredImage ? String(article.featuredImage) : null,
+      authorName: article.authorName ? String(article.authorName) : 'Akubrecah',
+      readingTimeMinutes: Number(article.readingTimeMinutes) || 5,
+      isPublished: Boolean(article.isPublished ?? true),
+      publishedAt,
+      updatedAt,
+      seoTitle: article.seoTitle ? String(article.seoTitle) : null,
+      seoDescription: article.seoDescription ? String(article.seoDescription) : null,
+      canonicalUrl: article.canonicalUrl ? String(article.canonicalUrl) : null,
+      createdAt,
+      faqs: Array.isArray(article.faqs) ? (article.faqs as ArticleFaqItem[]) : [],
+    };
+  });
+}
+
+export function getFallbackArticles(): FallbackArticleRecord[] {
   try {
+    const bundled = normalizeFallbackArticles(fallbackArticlesData);
+    if (bundled.length > 0) {
+      return bundled;
+    }
+
     const filePath = path.join(process.cwd(), 'data', 'articles-fallback.json');
     if (fs.existsSync(filePath)) {
       const data = fs.readFileSync(filePath, 'utf-8');
-      const parsed = JSON.parse(data);
-      if (Array.isArray(parsed)) {
-        return parsed.map((article) => {
-          const publishedAt = article.publishedAt ? new Date(article.publishedAt) : new Date();
-          const updatedAt = article.updatedAt ? new Date(article.updatedAt) : publishedAt;
-          return {
-            ...article,
-            publishedAt,
-            updatedAt,
-          };
-        });
-      }
+      return normalizeFallbackArticles(JSON.parse(data));
     }
   } catch (err) {
     log.warn('[Fallback Articles Error]:', err);
   }
   return [];
+}
+
+export async function ensureFallbackArticlesSeeded(force = false): Promise<void> {
+  if (!force && (process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST))) {
+    return;
+  }
+
+  const now = Date.now();
+  if (!force && now - lastFallbackSeedAt < SEED_COOLDOWN_MS) {
+    return;
+  }
+
+  if (seedInFlight) {
+    return seedInFlight;
+  }
+
+  seedInFlight = (async () => {
+    try {
+      const dbArticle = (prisma as { article?: typeof prisma.article }).article;
+      if (!dbArticle || typeof dbArticle.upsert !== 'function') {
+        return;
+      }
+
+      const fallbackList = getFallbackArticles();
+      if (fallbackList.length === 0) return;
+
+      const existingRows =
+        typeof dbArticle.findMany === 'function'
+          ? await dbArticle.findMany({ select: { id: true, slug: true } })
+          : [];
+      const existingBySlug = new Set(existingRows.map((row) => row.slug.toLowerCase()));
+      const existingById = new Set(existingRows.map((row) => row.id));
+
+      for (const fb of fallbackList) {
+        if (!fb.slug) continue;
+
+        const slugLower = fb.slug.toLowerCase();
+        // Skip if an article with this static ID exists under an admin-renamed slug
+        if (!existingBySlug.has(slugLower) && fb.id && existingById.has(fb.id)) {
+          continue;
+        }
+
+        const createData = {
+          ...(fb.id ? { id: fb.id } : {}),
+          slug: fb.slug,
+          title: fb.title,
+          excerpt: fb.excerpt,
+          content: fb.content,
+          category: fb.category,
+          tags: fb.tags,
+          featuredImage: fb.featuredImage,
+          authorName: fb.authorName,
+          readingTimeMinutes: fb.readingTimeMinutes,
+          isPublished: fb.isPublished,
+          publishedAt: fb.publishedAt,
+          seoTitle: fb.seoTitle,
+          seoDescription: fb.seoDescription,
+        };
+
+        const updateData = FEATURED_REFRESH_SLUGS.has(slugLower)
+          ? {
+            title: fb.title,
+            excerpt: fb.excerpt,
+            content: fb.content,
+            category: fb.category,
+            tags: fb.tags,
+            featuredImage: fb.featuredImage,
+            readingTimeMinutes: fb.readingTimeMinutes,
+            isPublished: true,
+            publishedAt: fb.publishedAt,
+            seoTitle: fb.seoTitle,
+            seoDescription: fb.seoDescription,
+          }
+          : {};
+
+        await dbArticle.upsert({
+          where: { slug: fb.slug },
+          update: updateData,
+          create: createData,
+        });
+      }
+
+      lastFallbackSeedAt = Date.now();
+    } catch (err) {
+      log.warn('[ensureFallbackArticlesSeeded Notice]:', (err as Error)?.message || err);
+    } finally {
+      seedInFlight = null;
+    }
+  })();
+
+  return seedInFlight;
 }
 
 import { filterPublicTechnologies, cleanPublicLiveUrl } from '@/lib/tech-filter';
@@ -163,27 +319,42 @@ export async function getProjectBySlug(slug: string) {
   return fallback ? sanitizeProjectForPublic(fallback) : null;
 }
 
+function enrichArticleWithFallback<
+  T extends { featuredImage?: string | null; faqs?: ArticleFaqItem[] }
+>(
+  article: T,
+  matchingFallback: FallbackArticleRecord | null | undefined
+): T & { featuredImage: string | null; faqs: ArticleFaqItem[] } {
+  return {
+    ...article,
+    featuredImage: article.featuredImage || matchingFallback?.featuredImage || null,
+    faqs:
+      Array.isArray(article.faqs) && article.faqs.length > 0
+        ? article.faqs
+        : matchingFallback?.faqs || [],
+  };
+}
+
 export async function getPublishedArticles() {
   const fallbackList = getFallbackArticles();
   try {
+    await ensureFallbackArticlesSeeded().catch(() => { });
     const list = await prisma.article.findMany({
       where: { isPublished: true },
       orderBy: { publishedAt: 'desc' },
     });
     if (Array.isArray(list) && list.length > 0) {
       const dbSlugs = new Set(list.map((a) => a.slug.toLowerCase()));
-      // Enrich database articles with fallback cover images if missing
       const enrichedDb = list.map((a) => {
-        const matchingFallback = fallbackList.find((f) => f.slug.toLowerCase() === a.slug.toLowerCase());
-        return {
-          ...a,
-          featuredImage: a.featuredImage || matchingFallback?.featuredImage || null,
-        };
+        const matchingFallback = fallbackList.find(
+          (f) => f.slug.toLowerCase() === a.slug.toLowerCase()
+        );
+        return enrichArticleWithFallback(a, matchingFallback);
       });
 
       const merged = [...enrichedDb];
       for (const fb of fallbackList) {
-        if (!dbSlugs.has(fb.slug.toLowerCase())) {
+        if (!dbSlugs.has(fb.slug.toLowerCase()) && fb.isPublished) {
           merged.push(fb);
         }
       }
@@ -192,25 +363,24 @@ export async function getPublishedArticles() {
       );
     }
   } catch (error) {
-    log.warn('[getPublishedArticles DB Notice - Using Fallback]:', (error as any)?.message);
+    log.warn('[getPublishedArticles DB Notice - Using Fallback]:', (error as Error)?.message);
   }
-  return fallbackList.sort(
-    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-  );
+  return fallbackList
+    .filter((a) => a.isPublished)
+    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 }
 
 export async function getArticleBySlug(slug: string) {
   const fallbackList = getFallbackArticles();
-  const matchingFallback = fallbackList.find((a: any) => a.slug.toLowerCase() === slug.toLowerCase()) || null;
+  const matchingFallback =
+    fallbackList.find((a) => a.slug.toLowerCase() === slug.toLowerCase()) || null;
   try {
+    await ensureFallbackArticlesSeeded().catch(() => { });
     const article = await prisma.article.findUnique({
       where: { slug },
     });
     if (article) {
-      return {
-        ...article,
-        featuredImage: article.featuredImage || matchingFallback?.featuredImage || null,
-      };
+      return enrichArticleWithFallback(article, matchingFallback);
     }
   } catch (error) {
     log.warn(`[getArticleBySlug DB Notice for ${slug} - Using Fallback]`);
