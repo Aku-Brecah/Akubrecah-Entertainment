@@ -26,6 +26,8 @@ const metricIcons: Record<string, string> = {
 export default function SystemHealthPage() {
   const [metrics, setMetrics] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
+  const [logs, setLogs] = useState<any[]>(LOG_ITEMS);
+  const [logFilter, setLogFilter] = useState<"all" | "warning" | "error">("all");
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   
@@ -40,7 +42,10 @@ export default function SystemHealthPage() {
 
   const fetchHealth = async () => {
     try {
-      const res = await fetch("/api/admin/system-health");
+      const [res, logsRes] = await Promise.all([
+        fetch("/api/admin/system-health"),
+        fetch("/api/admin/logs?limit=15").catch(() => null),
+      ]);
       const data = await res.json();
       if (data.success) {
         setMetrics(data.metrics);
@@ -58,6 +63,24 @@ export default function SystemHealthPage() {
         }
       } else {
         showToast("Error retrieving live health metrics: " + (data.error || "Access Denied"));
+      }
+
+      if (logsRes && logsRes.ok) {
+        const logsData = await logsRes.json().catch(() => null);
+        if (logsData?.success && Array.isArray(logsData.logs) && logsData.logs.length > 0) {
+          setLogs(
+            logsData.logs.map((l: any) => ({
+              type: l.level === "error" || l.level === "warning" ? l.level : "info",
+              icon: l.level === "error" ? "error" : l.level === "warning" ? "warning" : "task_alt",
+              title: l.service || "System",
+              desc: l.message || "",
+              time: l.timestamp
+                ? new Date(l.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                : "Recent",
+              actor: l.actor || "System",
+            }))
+          );
+        }
       }
     } catch (e) {
       console.error(e);
@@ -200,13 +223,25 @@ export default function SystemHealthPage() {
               Live Health Logs
               <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
             </h3>
-            <button className="text-on-surface-variant hover:text-primary">
+            <button
+              type="button"
+              onClick={() => {
+                const next = logFilter === "all" ? "warning" : logFilter === "warning" ? "error" : "all";
+                setLogFilter(next);
+                showToast(`Showing ${next === "all" ? "all" : next} log events`);
+              }}
+              className="text-on-surface-variant hover:text-primary flex items-center gap-1 text-xs font-semibold cursor-pointer"
+              title={`Filter logs (current: ${logFilter})`}
+            >
+              <span className="uppercase">{logFilter}</span>
               <span className="material-symbols-outlined text-[20px]">filter_list</span>
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
             <ul className="divide-y divide-outline-variant/50">
-              {LOG_ITEMS.map((log, i) => (
+              {logs
+                .filter((log) => logFilter === "all" || log.type === logFilter)
+                .map((log, i) => (
                 <li key={i} className="px-5 py-3 hover:bg-surface-container-low transition-colors flex gap-3 items-start">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${iconColors[log.type]}`}>
                     <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>{log.icon}</span>

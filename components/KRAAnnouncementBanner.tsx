@@ -15,16 +15,10 @@ export default function KRAAnnouncementBanner() {
       const host = window.location.hostname.toLowerCase()
       setIsKra(host.startsWith("kra.") || host.includes("kra.akubrecah.com"))
     }
-    // Set the KRA announcement message
-    // This message is based on current KRA policy (March 2026)
-    const currentDate = new Date()
-    const marchDeadline = new Date('2026-03-31')
-    
-    if (currentDate < marchDeadline) {
-      setAnnouncement(
-        "Cyber Café Assistance Notice: NIL returns for the 2025 tax year can be filed starting April 1st, 2026. Official free government portal: itax.kra.go.ke."
-      )
-    }
+    // Set active third-party compliance facilitation announcement notice
+    setAnnouncement(
+      "Cyber Café Assistance Notice: Instant KRA PIN certificate retrieval & compliance facilitation. Official free government portal: itax.kra.go.ke."
+    )
   }, [])
 
   if (!isKra || !announcement || pathname?.startsWith('/admin') || pathname?.startsWith('/dashboard')) return null

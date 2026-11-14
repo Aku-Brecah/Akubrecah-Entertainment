@@ -16,7 +16,7 @@ export default function AdminSettingsPage() {
     heroHeadline: "Engineering Digital Products That Scale",
     heroSubtitle: "Full-cycle software engineering — from concept to production. Web platforms, native mobile apps, cloud infrastructure, and mission-critical automated systems.",
     whatsappBotNumber: "254791497858",
-    githubUrl: "https://github.com/Akubrecah",
+    githubUrl: "https://github.com/Aku-brecah",
     linkedinUrl: "https://linkedin.com/company/akubrecah",
     kraRetrievalPrice: "20",
     engineeringAvailability: "Open for New Projects",

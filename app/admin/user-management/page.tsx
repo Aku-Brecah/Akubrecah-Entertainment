@@ -426,13 +426,32 @@ export default function UserManagementPage() {
 
       {/* Reset Password */}
       {modal === "resetPw" && selectedUser && (
-        <Modal title={`Reset Password — ${selectedUser.name}`} onClose={() => setModal(null)}>
+        <Modal title={`Reset Session Access — ${selectedUser.name}`} onClose={() => setModal(null)}>
           <p className="text-sm text-on-surface-variant mb-4 leading-relaxed">
-            A password reset email trigger will be sent to <strong className="text-on-surface">{selectedUser.email}</strong> via Clerk to securely establish new credentials.
+            Revoke all active Clerk sessions for <strong className="text-on-surface">{selectedUser.email}</strong> so they must re-authenticate and verify credentials on their next sign-in.
           </p>
           <div className="flex gap-3">
             <button onClick={() => setModal(null)} className="flex-1 py-2.5 border border-outline-variant rounded-xl text-on-surface font-bold hover:bg-surface-container text-sm">Cancel</button>
-            <button onClick={() => { setModal(null); showToast(`Clerk password reset link sent to ${selectedUser.email}`); }} className="flex-1 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 text-sm">Send Reset Email</button>
+            <button
+              onClick={async () => {
+                const target = selectedUser;
+                setModal(null);
+                try {
+                  const res = await fetch("/api/admin/users", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "resetPassword", userId: target.id }),
+                  });
+                  const data = await res.json();
+                  showToast(data.message || data.error || `Sessions updated for ${target.email}`);
+                } catch {
+                  showToast("Network error resetting user sessions.");
+                }
+              }}
+              className="flex-1 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 text-sm cursor-pointer"
+            >
+              Revoke Active Sessions
+            </button>
           </div>
         </Modal>
       )}

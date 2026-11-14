@@ -37,7 +37,7 @@ export function SiteSchema(): JSX.Element {
       longitude: 36.817223,
     },
     sameAs: [
-      'https://github.com/Akubrecah',
+      'https://github.com/Aku-brecah',
       'https://linkedin.com/company/akubrecah',
       'https://twitter.com/akubrecah',
       'https://mail.akubrecah.com',

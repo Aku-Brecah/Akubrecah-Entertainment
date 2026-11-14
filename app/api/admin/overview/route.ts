@@ -32,6 +32,15 @@ export async function GET(req: NextRequest) {
     let allDownloads: any[] = [];
     if (typeof db.certificateDownload?.findMany === "function") {
       allDownloads = await db.certificateDownload.findMany({
+        include: {
+          users: {
+            select: {
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
         orderBy: { createdAt: "desc" },
         take: 1000,
       });

@@ -67,20 +67,38 @@ export default function ContactPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(window.location.search);
-    const service = params.get('service') || params.get('solution') || '';
-    if (!service) return;
+    const service = (params.get('service') || params.get('solution') || '').toLowerCase();
+    const scale = (params.get('scale') || '').toLowerCase();
+    if (!service && !scale) return;
+
     const serviceMap: Record<string, string> = {
       web: 'Web Application / Scalable SaaS',
+      saas: 'Web Application / Scalable SaaS',
       mobile: 'Mobile App (iOS / Android / React Native)',
+      mobility: 'Mobile App (iOS / Android / React Native)',
       cloud: 'Cloud Infrastructure & DevOps',
       enterprise: 'Enterprise & Internal System',
+      govtech: 'Government / GovTech Compliance Portal',
+      fintech: 'Fintech & M-Pesa / Card Gateway Integration',
+      brand: 'Other Engineering Consultation',
     };
-    const mapped = serviceMap[service.toLowerCase()] || '';
+    const scaleMap: Record<string, string> = {
+      starter: 'KES 500,000 – KES 2,000,000',
+      mvp: 'KES 500,000 – KES 2,000,000',
+      growth: 'KES 2,000,000 – KES 5,000,000',
+      enterprise: 'KES 5,000,000 – KES 15,000,000',
+    };
+
+    const mappedService = serviceMap[service] || '';
+    const mappedBudget = scaleMap[scale] || '';
+
     setForm((prev) => ({
       ...prev,
-      projectType: mapped || prev.projectType,
-      message: prev.message
-        || `I'm interested in discussing a ${service} project${params.get('scale') ? ` (${params.get('scale')} scale)` : ''}.`,
+      projectType: mappedService || prev.projectType,
+      budget: mappedBudget || prev.budget,
+      message:
+        prev.message ||
+        `I'm interested in discussing a ${service || 'software engineering'} project${scale ? ` (${scale} scale)` : ''}.`,
     }));
   }, []);
 

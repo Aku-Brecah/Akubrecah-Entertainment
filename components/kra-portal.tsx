@@ -212,6 +212,14 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         sessionStorage.removeItem("kra_active_form_data");
         localStorage.removeItem("kra_active_form_data");
       } catch { }
+
+      // Support deep-links such as /retrieval-portal?pin=A012345678Z from the Admin PIN Checker
+      const params = new URLSearchParams(window.location.search);
+      const queryPin = params.get("pin")?.trim().toUpperCase() || "";
+      if (queryPin) {
+        setActiveTab("pin");
+        setFormData(prev => ({ ...prev, pin: queryPin }));
+      }
     }
   }, [])
 

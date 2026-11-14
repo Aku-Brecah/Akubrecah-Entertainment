@@ -108,6 +108,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: `User status changed to ${status}` });
     }
 
+    if (action === "resetPassword" || action === "resetSessions") {
+      const sessionsRes = await client.sessions.getSessionList({ userId });
+      const activeSessions = (sessionsRes.data || []).filter((s) => s.status === "active");
+      await Promise.all(activeSessions.map((s) => client.sessions.revokeSession(s.id)));
+
+      return NextResponse.json({
+        success: true,
+        revokedCount: activeSessions.length,
+        message:
+          activeSessions.length > 0
+            ? `Revoked ${activeSessions.length} active session(s); user must re-authenticate or reset password via Clerk.`
+            : "No active sessions found; user will authenticate cleanly on next login.",
+      });
+    }
+
     return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
   } catch (error: any) {
     log.error("[API Admin Users POST Error]:", error);

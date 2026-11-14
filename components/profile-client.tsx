@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useClerk, useUser } from "@clerk/nextjs";
 import {
   Camera,
   CheckCircle2,
@@ -18,8 +19,6 @@ import {
   AlertTriangle,
   X,
   Save,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { updateProfileDetails } from "@/app/dashboard/profile/actions";
 
@@ -94,23 +93,25 @@ export default function ProfileClient({
   email: initialEmail,
   phone: initialPhone,
   imageUrl,
-  initialDob = "1985-05-12",
-  initialGender = "Male",
-  initialNationality = "Kenyan",
+  initialDob = "",
+  initialGender = "",
+  initialNationality = "",
 }: ProfileClientProps) {
+  const { openUserProfile } = useClerk();
+  const { user: clerkUser } = useUser();
+
   // State
   const [fullName, setFullName] = useState(initialFullName);
-  const [email, setEmail] = useState(initialEmail);
+  const [email] = useState(initialEmail);
   const [phone, setPhone] = useState(initialPhone);
   const [dob, setDob] = useState(initialDob);
   const [gender, setGender] = useState(initialGender);
   const [nationality, setNationality] = useState(initialNationality);
-  const [twoFAEnabled, setTwoFAEnabled] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
 
   // Modal state
   const [modal, setModal] = useState<
-    "personal" | "contact" | "password" | "loginActivity" | null
+    "personal" | "contact" | "loginActivity" | null
   >(null);
 
   // Form temp values
@@ -119,13 +120,7 @@ export default function ProfileClient({
   const [tempDob, setTempDob] = useState("");
   const [tempGender, setTempGender] = useState("");
   const [tempNationality, setTempNationality] = useState("");
-  const [tempEmail, setTempEmail] = useState("");
   const [tempPhone, setTempPhone] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState("");
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -176,7 +171,6 @@ export default function ProfileClient({
   };
 
   const openContactModal = () => {
-    setTempEmail(email || "");
     setTempPhone(phone || "");
     setModal("contact");
   };
@@ -187,31 +181,13 @@ export default function ProfileClient({
         phone: tempPhone,
       });
       if (res.success) {
-        setEmail(tempEmail || null);
         setPhone(tempPhone || null);
         setModal(null);
-        showToast("Contact information updated successfully.");
+        showToast("Phone number updated successfully.");
       }
     } catch (err: any) {
       showToast(err.message || "Failed to update contact information.");
     }
-  };
-
-  const savePassword = () => {
-    if (newPassword.length < 8) {
-      setPasswordError("Password must be at least 8 characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("Passwords do not match.");
-      return;
-    }
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setPasswordError("");
-    setModal(null);
-    showToast("Password changed successfully.");
   };
 
   const missingPhone = !phone;
@@ -232,22 +208,37 @@ export default function ProfileClient({
       <section className="bg-surface-container-lowest rounded-2xl p-8 mb-6 shadow-soft flex flex-col md:flex-row items-center md:items-start gap-8 relative overflow-hidden border border-outline-variant">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -mr-8 -mt-8" />
         <div className="relative">
-          <Image
-            className="w-32 h-32 rounded-2xl object-cover shadow-lg border-4 border-surface-container"
-            alt={fullName}
-            width={128}
-            height={128}
-            src={imageUrl}
-          />
+          {imageUrl ? (
+            <Image
+              className="w-32 h-32 rounded-2xl object-cover shadow-lg border-4 border-surface-container"
+              alt={fullName || "Taxpayer Profile"}
+              width={128}
+              height={128}
+              src={imageUrl}
+            />
+          ) : (
+            <div className="w-32 h-32 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-3xl font-black shadow-lg border-4 border-surface-container">
+              {(fullName || email || "TX")
+                .split(" ")
+                .filter(Boolean)
+                .map((w) => w[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase()}
+            </div>
+          )}
           <button
+            type="button"
+            onClick={() => openUserProfile()}
             title="Change photo"
-            className="absolute -bottom-2 -right-2 bg-primary text-white p-2 rounded-xl shadow-lg hover:scale-110 transition-transform"
+            aria-label="Change profile photo"
+            className="absolute -bottom-2 -right-2 bg-primary text-white p-2 rounded-xl shadow-lg hover:scale-110 transition-transform cursor-pointer"
           >
             <Camera className="w-4 h-4" />
           </button>
         </div>
         <div className="flex-1 text-center md:text-left">
-          <h2 className="text-3xl font-bold text-on-surface">{fullName}</h2>
+          <h2 className="text-3xl font-bold text-on-surface">{fullName || "Registered Taxpayer"}</h2>
           <p className="text-on-surface-variant text-sm mt-1">
             {email ?? "No email on file"}
           </p>
@@ -349,23 +340,25 @@ export default function ProfileClient({
           <div className="p-6 space-y-4">
             <div className="flex flex-col">
               <span className="text-xs font-bold text-primary uppercase tracking-wider">Full Name</span>
-              <span className="text-on-surface font-medium">{fullName}</span>
+              <span className="text-on-surface font-medium">{fullName || "Not provided"}</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-primary uppercase tracking-wider">Date of Birth</span>
                 <span className="text-on-surface font-medium">
-                  {new Date(dob).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                  {dob && !Number.isNaN(new Date(dob).getTime())
+                    ? new Date(dob).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+                    : "Not provided"}
                 </span>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-primary uppercase tracking-wider">Gender</span>
-                <span className="text-on-surface font-medium">{gender}</span>
+                <span className="text-on-surface font-medium">{gender || "Not provided"}</span>
               </div>
             </div>
             <div className="flex flex-col">
               <span className="text-xs font-bold text-primary uppercase tracking-wider">Nationality</span>
-              <span className="text-on-surface font-medium">{nationality}</span>
+              <span className="text-on-surface font-medium">{nationality || "Not provided"}</span>
             </div>
           </div>
         </div>
@@ -421,14 +414,15 @@ export default function ProfileClient({
                 <Key className="w-5 h-5 text-primary" />
                 <div>
                   <p className="font-bold text-on-surface text-sm">Password</p>
-                  <p className="text-xs text-on-surface-variant">Last changed recently</p>
+                  <p className="text-xs text-on-surface-variant">Managed via Clerk Security</p>
                 </div>
               </div>
               <button
-                onClick={() => { setPasswordError(""); setModal("password"); }}
-                className="px-3 py-1.5 border border-outline-variant text-on-surface text-sm font-bold rounded-xl hover:bg-surface-container transition-colors"
+                type="button"
+                onClick={() => openUserProfile()}
+                className="px-3 py-1.5 border border-outline-variant text-on-surface text-sm font-bold rounded-xl hover:bg-surface-container transition-colors cursor-pointer"
               >
-                Change
+                Manage
               </button>
             </div>
             {/* 2FA */}
@@ -437,28 +431,24 @@ export default function ProfileClient({
                 <Lock className="w-5 h-5 text-primary" />
                 <div>
                   <p className="font-bold text-on-surface text-sm">Two-Factor Auth</p>
-                  <p className={`text-xs font-medium ${twoFAEnabled ? "text-green-600 dark:text-green-400" : "text-on-surface-variant"}`}>
-                    {twoFAEnabled ? "Enabled via SMS" : "Disabled"}
+                  <p className={`text-xs font-medium ${clerkUser?.twoFactorEnabled ? "text-green-600 dark:text-green-400" : "text-on-surface-variant"}`}>
+                    {clerkUser?.twoFactorEnabled ? "Enabled on account" : "Configure in Clerk"}
                   </p>
                 </div>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={twoFAEnabled}
-                  onChange={(e) => {
-                    setTwoFAEnabled(e.target.checked);
-                    showToast(e.target.checked ? "Two-factor authentication enabled." : "Two-factor authentication disabled.");
-                  }}
-                />
-                <div className="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary" />
-              </label>
+              <button
+                type="button"
+                onClick={() => openUserProfile()}
+                className="px-3 py-1.5 border border-outline-variant text-on-surface text-sm font-bold rounded-xl hover:bg-surface-container transition-colors cursor-pointer"
+              >
+                Security
+              </button>
             </div>
             {/* Login Activity */}
             <button
+              type="button"
               onClick={() => setModal("loginActivity")}
-              className="flex items-center justify-center gap-2 p-4 text-primary font-bold text-sm hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-primary/40"
+              className="flex items-center justify-center gap-2 p-4 text-primary font-bold text-sm hover:bg-primary/5 rounded-xl transition-colors border border-dashed border-primary/40 cursor-pointer"
             >
               <History className="w-5 h-5" /> View Login Activity
             </button>
@@ -499,6 +489,7 @@ export default function ProfileClient({
             <div className="space-y-1">
               <label className="text-xs font-bold text-primary uppercase tracking-wider">Gender</label>
               <select value={tempGender} onChange={e => setTempGender(e.target.value)} className={inputCls}>
+                <option value="">Not specified</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
@@ -507,6 +498,7 @@ export default function ProfileClient({
             <div className="space-y-1">
               <label className="text-xs font-bold text-primary uppercase tracking-wider">Nationality</label>
               <select value={tempNationality} onChange={e => setTempNationality(e.target.value)} className={inputCls}>
+                <option value="">Not specified</option>
                 {NATIONALITIES.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
@@ -525,8 +517,14 @@ export default function ProfileClient({
         <Modal title="Edit Contact Information" onClose={() => setModal(null)}>
           <div className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-primary uppercase tracking-wider">Email Address</label>
-              <input type="email" value={tempEmail} onChange={e => setTempEmail(e.target.value)} className={inputCls} placeholder="you@example.com" />
+              <label className="text-xs font-bold text-primary uppercase tracking-wider">Primary Email Address</label>
+              <input type="email" value={email || ""} readOnly disabled className={inputCls + " opacity-70 cursor-not-allowed"} placeholder="No verified email on file" />
+              <p className="text-[11px] text-on-surface-variant">
+                Primary email is managed via your verified authentication account.{" "}
+                <button type="button" onClick={() => { setModal(null); openUserProfile(); }} className="text-primary font-bold hover:underline cursor-pointer">
+                  Update email in Clerk
+                </button>
+              </p>
             </div>
             <div className="space-y-1">
               <label className="text-xs font-bold text-primary uppercase tracking-wider">Phone Number</label>
@@ -542,68 +540,46 @@ export default function ProfileClient({
         </Modal>
       )}
 
-      {/* Change Password */}
-      {modal === "password" && (
-        <Modal title="Change Password" onClose={() => setModal(null)}>
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-primary uppercase tracking-wider">Current Password</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={e => setCurrentPassword(e.target.value)}
-                  className={inputCls + " pr-10"}
-                  placeholder="Enter current password"
-                />
-                <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-primary uppercase tracking-wider">New Password</label>
-              <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className={inputCls} placeholder="Min. 8 characters" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-primary uppercase tracking-wider">Confirm New Password</label>
-              <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={inputCls} placeholder="Repeat new password" />
-            </div>
-            {passwordError && (
-              <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
-                <AlertTriangle className="w-4 h-4" /> {passwordError}
-              </p>
-            )}
-            <div className="flex gap-3 pt-2">
-              <button onClick={() => setModal(null)} className="flex-1 py-2.5 border border-outline-variant rounded-xl text-on-surface font-bold hover:bg-surface-container transition-colors text-sm">Cancel</button>
-              <button onClick={savePassword} className="flex-1 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 text-sm">
-                <Key className="w-4 h-4" /> Update Password
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
       {/* Login Activity */}
       {modal === "loginActivity" && (
         <Modal title="Login Activity" onClose={() => setModal(null)}>
-          <div className="space-y-3">
-            {[
-              { device: "Chrome on macOS", location: "Nairobi, Kenya", time: "Today, 12:06 AM", current: true },
-              { device: "Safari on iPhone", location: "Nairobi, Kenya", time: "Yesterday, 8:45 PM", current: false },
-              { device: "Chrome on Windows", location: "Mombasa, Kenya", time: "Jun 22, 2026, 3:12 PM", current: false },
-            ].map((session, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-outline-variant bg-surface">
-                <div>
-                  <p className="font-medium text-on-surface text-sm">{session.device}</p>
-                  <p className="text-xs text-on-surface-variant">{session.location} · {session.time}</p>
-                </div>
-                {session.current
-                  ? <span className="text-xs font-bold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 px-2 py-1 rounded-full">Current</span>
-                  : <button className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline">Revoke</button>
-                }
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3.5 rounded-xl border border-outline-variant bg-surface">
+              <div>
+                <p className="font-medium text-on-surface text-sm">Current Authenticated Session</p>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  Last sign-in:{" "}
+                  {clerkUser?.lastSignInAt
+                    ? new Date(clerkUser.lastSignInAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })
+                    : "Active Now"}
+                </p>
               </div>
-            ))}
+              <span className="text-xs font-bold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 px-2.5 py-1 rounded-full">
+                Current
+              </span>
+            </div>
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              View all signed-in browsers, active security sessions, and connected devices directly inside Clerk Security Settings.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setModal(null)}
+                className="flex-1 py-2.5 border border-outline-variant rounded-xl text-on-surface font-bold hover:bg-surface-container transition-colors text-sm"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setModal(null);
+                  openUserProfile();
+                }}
+                className="flex-1 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors text-sm cursor-pointer"
+              >
+                Manage Active Devices
+              </button>
+            </div>
           </div>
         </Modal>
       )}

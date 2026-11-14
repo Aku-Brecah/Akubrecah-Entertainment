@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { useUser, UserButton } from "@clerk/nextjs"
 import { KRAPortal } from "@/components/kra-portal"
 import { KRAFilingPortal } from "@/components/kra-filing-portal"
+import { CyberSubscriptionCard } from "@/components/cyber-subscription-card"
 import { GooglePreferredSourceButton } from "@/components/google-preferred-source-button"
 import { Logo } from "@/components/logo"
 import Link from "next/link"
@@ -236,6 +237,11 @@ function FlagshipPortalContent() {
               )}
             </AnimatePresence>
           </div>
+        </div>
+
+        {/* CYBER CAFE UNLIMITED MONTHLY PLAN (COMPACT VARIANT) */}
+        <div className="w-full">
+          <CyberSubscriptionCard compact={true} />
         </div>
 
         {/* ============================================================== */}

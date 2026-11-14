@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
     }) || [];
 
     // 3. Fetch KRA audit logs
-    const kraLogs = await db.SystemLog?.findMany({
+    const kraLogs = await db.systemLog?.findMany({
       where: {
         OR: [
           { service: { in: ["KRA-Retrieve", "Certificate-Generation", "M-Pesa-Daraja", "M-Pesa-STK", "KRA-Live-PIN-Checker"] } },

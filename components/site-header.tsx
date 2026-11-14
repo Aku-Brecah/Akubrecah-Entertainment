@@ -485,7 +485,7 @@ export function SiteHeader() {
   const userRole = user?.publicMetadata?.role as string
   const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase()
   const isAdmin =
-    userEmail === configAdminEmail ||
+    Boolean(configAdminEmail && userEmail === configAdminEmail) ||
     userRole === "Super Admin" ||
     userRole === "Admin"
 
@@ -542,12 +542,14 @@ export function SiteHeader() {
             {isKra ? (
               isLoaded && isSignedIn ? (
                 <div className="flex items-center gap-2 flex-nowrap">
-                  <Link href="/admin">
-                    <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all cursor-pointer shrink-0">
-                      <Shield className="h-3 w-3" />
-                      Admin
-                    </span>
-                  </Link>
+                  {isAdmin && (
+                    <Link href="/admin">
+                      <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all cursor-pointer shrink-0">
+                        <Shield className="h-3 w-3" />
+                        Admin
+                      </span>
+                    </Link>
+                  )}
                   <Link href="/dashboard">
                     <Button size="sm" className="h-8.5 px-3 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
                       <LayoutDashboard className="h-3.5 w-3.5" />

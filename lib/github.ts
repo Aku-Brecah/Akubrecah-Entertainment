@@ -37,7 +37,7 @@ export interface GithubUserStats {
 
 export { GITHUB_LANGUAGE_COLORS } from './github-constants';
 
-const DEFAULT_USERNAME = 'Akubrecah';
+const DEFAULT_USERNAME = process.env.GITHUB_USERNAME || 'Aku-brecah';
 
 /**
  * Fetches all public GitHub repositories for the given username.
@@ -356,7 +356,7 @@ export async function getRepoReadme(repoName: string, defaultBranch = 'main'): P
 
   // 1. Try official GitHub API readme endpoint
   try {
-    const res = await fetch(`https://api.github.com/repos/Akubrecah/${encodeURIComponent(repoName)}/readme`, {
+    const res = await fetch(`https://api.github.com/repos/${DEFAULT_USERNAME}/${encodeURIComponent(repoName)}/readme`, {
       headers,
       next: { revalidate: 3600 },
     });
@@ -374,7 +374,7 @@ export async function getRepoReadme(repoName: string, defaultBranch = 'main'): P
       if (raw && !raw.startsWith('{"message":')) break;
       try {
         const rawRes = await fetch(
-          `https://raw.githubusercontent.com/Akubrecah/${encodeURIComponent(repoName)}/${b}/README.md`,
+          `https://raw.githubusercontent.com/${DEFAULT_USERNAME}/${encodeURIComponent(repoName)}/${b}/README.md`,
           { next: { revalidate: 3600 } }
         );
         if (rawRes.ok) {
@@ -392,8 +392,8 @@ export async function getRepoReadme(repoName: string, defaultBranch = 'main'): P
     return { content: '', hasReadme: false };
   }
 
-  const rawBase = `https://raw.githubusercontent.com/Akubrecah/${repoName}/${defaultBranch}`;
-  const blobBase = `https://github.com/Akubrecah/${repoName}/blob/${defaultBranch}`;
+  const rawBase = `https://raw.githubusercontent.com/${DEFAULT_USERNAME}/${repoName}/${defaultBranch}`;
+  const blobBase = `https://github.com/${DEFAULT_USERNAME}/${repoName}/blob/${defaultBranch}`;
 
   let processed = raw;
 

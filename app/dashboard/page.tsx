@@ -16,6 +16,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import prisma, { createSystemLog } from "@/lib/prisma";
 import ProfileWarningPopup from "@/components/profile-warning-popup";
+import { CyberSubscriptionCard } from "@/components/cyber-subscription-card";
 
 export default async function TaxpayerDashboard() {
   const user = await currentUser();
@@ -74,14 +75,22 @@ export default async function TaxpayerDashboard() {
     try {
       const actorIds = [userId, email].filter(Boolean) as string[];
       const db = prisma as any;
-      if (typeof db.systemLog?.count === "function") {
-        certificatesCount = await db.systemLog.count({
-          where: {
-            actor: { in: actorIds },
-            service: "Certificate-Generation",
-          },
-        });
-      }
+      const [systemLogCertCount, certDownloadsCount] = await Promise.all([
+        typeof db.systemLog?.count === "function"
+          ? db.systemLog.count({
+              where: {
+                actor: { in: actorIds },
+                service: "Certificate-Generation",
+              },
+            })
+          : 0,
+        typeof db.certificateDownload?.count === "function"
+          ? db.certificateDownload.count({
+              where: { clerkId: userId },
+            })
+          : 0,
+      ]);
+      certificatesCount = Math.max(certDownloadsCount || 0, systemLogCertCount || 0);
     } catch (error: any) {
       if (error?.code !== "P2021") console.warn("[Dashboard stats notice]:", error?.message || error);
     }
@@ -203,7 +212,7 @@ export default async function TaxpayerDashboard() {
               <span>Filing Module</span>
               <span className="font-semibold text-amber-600 dark:text-amber-400">Preview Mode</span>
             </div>
-            <Link href="/retrieval-portal" className="block w-full">
+            <Link href="/retrieval-portal?view=filing" className="block w-full">
               <Button className="w-full h-11 rounded-xl bg-primary text-white font-bold text-xs shadow-xs hover:bg-primary/95 flex items-center justify-center gap-2 group-hover:shadow-md transition-all">
                 <span>Explore Filing Demo</span>
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -246,6 +255,9 @@ export default async function TaxpayerDashboard() {
           </Card>
         )}
       </div>
+
+      {/* Cyber Cafe Monthly Unlimited Subscription */}
+      <CyberSubscriptionCard />
 
       {/* Account Details & Compliance Profile Card */}
       <Card className="bg-surface-container-lowest border-outline-variant shadow-soft rounded-2xl">

@@ -183,6 +183,8 @@ export default clerkMiddleware(async (auth, request) => {
       pathname === '/articles' || pathname.startsWith('/articles/') ||
       pathname === '/projects' || pathname.startsWith('/projects/') ||
       pathname === '/inquiries' || pathname.startsWith('/inquiries/') ||
+      pathname === '/messages' || pathname.startsWith('/messages/') ||
+      pathname === '/brand' || pathname.startsWith('/brand/') ||
       pathname === '/system-health' || pathname.startsWith('/system-health/') ||
       pathname === '/system-logs' || pathname.startsWith('/system-logs/') ||
       pathname === '/user-management' || pathname.startsWith('/user-management/') ||
