@@ -82,26 +82,41 @@ export async function handleWhatsAppChat(params: {
       };
     }
 
-    // 1. Fetch or initialize conversation state in Prisma
-    let conversation = await db.ai_conversations?.findFirst({
-      where: {
-        channel: 'whatsapp',
-        user_phone: userPhone,
-        status: 'active',
-      },
-    });
-
-    if (!conversation) {
-      const convId = 'wa_' + userPhone + '_' + Date.now();
-      conversation = await db.ai_conversations?.create({
-        data: {
-          id: convId,
+    // 1. Fetch or initialize conversation state in Prisma (with in-memory fallback when DB is unavailable)
+    let conversation: any = null;
+    try {
+      conversation = await db.ai_conversations?.findFirst({
+        where: {
           channel: 'whatsapp',
           user_phone: userPhone,
           status: 'active',
-          metadata: { step: 'IDLE' },
         },
       });
+
+      if (!conversation) {
+        const convId = 'wa_' + userPhone + '_' + Date.now();
+        conversation = await db.ai_conversations?.create({
+          data: {
+            id: convId,
+            channel: 'whatsapp',
+            user_phone: userPhone,
+            status: 'active',
+            metadata: { step: 'IDLE' },
+          },
+        });
+      }
+    } catch (dbErr: any) {
+      log.warn('[WhatsApp Chat] DB conversation lookup unavailable, using transient session:', dbErr?.message || dbErr);
+    }
+
+    if (!conversation) {
+      conversation = {
+        id: 'wa_' + userPhone + '_' + Date.now(),
+        channel: 'whatsapp',
+        user_phone: userPhone,
+        status: 'active',
+        metadata: { step: 'IDLE' },
+      };
     }
 
     const metadata: Record<string, any> = (conversation.metadata as Record<string, any>) || { step: 'IDLE' };
@@ -114,13 +129,17 @@ export async function handleWhatsAppChat(params: {
       metadata.activeSession = newStep !== 'IDLE' && newStep !== 'COMPLETED';
       Object.assign(metadata, extraMeta);
 
-      await db.ai_conversations?.update({
-        where: { id: conversation.id },
-        data: {
-          metadata,
-          updated_at: new Date(),
-        },
-      });
+      try {
+        await db.ai_conversations?.update({
+          where: { id: conversation.id },
+          data: {
+            metadata,
+            updated_at: new Date(),
+          },
+        });
+      } catch (saveErr: any) {
+        log.warn('[WhatsApp Chat] DB state save unavailable, continuing with in-memory state:', saveErr?.message || saveErr);
+      }
       nextStep = newStep;
     }
 

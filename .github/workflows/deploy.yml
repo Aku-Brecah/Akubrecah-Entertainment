@@ -49,6 +49,9 @@ jobs:
         run: npm run typecheck
 
       - name: 🧪 Automated Test Suite (Vitest)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres?schema=public' }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL || 'postgresql://postgres:postgres@localhost:5432/postgres?schema=public' }}
         run: npm test
 
       - name: 🏗️ Production Build Verification
