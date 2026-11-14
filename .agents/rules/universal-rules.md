@@ -31,3 +31,12 @@ When user's prompt is NOT in English:
 - **Infra/Safety**: 5-Phase Deployment. Verify secrets security.
 
 ---
+
+## 🔄 Automatic Skill Creation (Always Active)
+
+**Whenever a workflow or fix pattern repeats 2+ times, invoke `@[skills/skillify]` and create or update a reusable skill in `.agents/skills/<skill-name>/SKILL.md`.**
+
+- Enforced in detail by `.agents/rules/auto-skillify.md` (`priority: P0`, `trigger: always_on`).
+- Check existing `.agents/skills/` and `.agent/skills/` before creating a new skill to prevent duplicates.
+
+---

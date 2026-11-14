@@ -112,6 +112,11 @@ When user's prompt is NOT in English:
 - **Performance**: Measure first. Adhere to 2025 standards (Core Web Vitals).
 - **Infra/Safety**: 5-Phase Deployment. Verify secrets security.
 
+### 🔄 Automatic Skill Creation (Auto-Skillify)
+
+- Whenever you perform or are asked for a repetitive multi-step task or pattern **2 or more times**, you MUST load `@[skills/skillify]` and extract a reusable skill into `.agents/skills/<kebab-case-name>/SKILL.md` (following `.agents/rules/auto-skillify.md`).
+- Always check `.agents/skills/` and `.agent/skills/` first to avoid duplicating existing skills.
+
 ### 📁 File Dependency Awareness
 
 **Before modifying ANY file:**

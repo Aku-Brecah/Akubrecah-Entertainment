@@ -896,11 +896,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     exit: { opacity: 0, x: -20 }
   }
 
-  // Ergonomic, high-contrast, auto-fitting input & button classes (WCAG AAA compliant)
-  const inputClass = "w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl text-sm font-semibold text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-red-600 dark:focus:border-red-500 focus:ring-2 focus:ring-red-600/20 px-3.5 py-2 h-11 transition-all shadow-2xs"
-  const labelClass = "block text-xs font-bold text-zinc-800 dark:text-zinc-200 mb-1.5 uppercase tracking-wider"
-  const primaryButtonClass = "inline-flex items-center justify-center gap-2 px-5 py-2.5 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm active:scale-[0.98] transition-all shadow-sm shadow-red-600/20 cursor-pointer whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-  const secondaryButtonClass = "inline-flex items-center justify-center gap-2 px-4 py-2.5 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 font-semibold text-xs sm:text-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
+  // Ergonomic, high-contrast, auto-fitting input & button classes
+  const inputClass = "w-full bg-surface-container-lowest border border-outline-variant rounded-xl text-sm font-semibold text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 px-3.5 py-2 h-11 transition-all shadow-2xs"
+  const labelClass = "block text-xs font-bold text-on-surface-variant mb-1.5 uppercase tracking-wider"
+  const primaryButtonClass = "inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-xs sm:text-sm active:scale-[0.98] transition-all shadow-sm shadow-primary/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+  const secondaryButtonClass = "inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-surface-container border border-outline-variant text-on-surface font-semibold text-xs sm:text-sm hover:bg-surface-container-high active:scale-[0.98] transition-all cursor-pointer"
 
   const renderMpesaCheckoutPanel = (variant: "inline" | "modal") => {
     const phoneInputId = variant === "inline" ? "same-page-phone-input" : "modal-phone-input"
@@ -916,9 +916,9 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     return (
       <div
         className={cn(
-          "w-full text-left space-y-5",
+          "w-full text-left space-y-5 min-w-0",
           variant === "inline"
-            ? "rounded-2xl bg-surface-container-lowest dark:bg-zinc-900/95 border border-outline-variant p-4 sm:p-5 shadow-sm"
+            ? "rounded-2xl bg-surface-container-low/80 border border-outline-variant/80 p-4 sm:p-5 shadow-2xs overflow-hidden"
             : ""
         )}
       >
@@ -951,8 +951,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         </div>
 
         {/* Order & Service Summary Strip */}
-        <div className="rounded-xl bg-surface-container/60 dark:bg-zinc-800/50 border border-outline-variant/70 p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="min-w-0">
+        <div className="rounded-xl bg-surface-container-lowest border border-outline-variant/70 p-3 sm:p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+          <div className="min-w-0 sm:col-span-2">
             <span className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant block">
               Taxpayer
             </span>
@@ -960,21 +960,21 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
               {formData.fullName || "Registered Taxpayer"}
             </p>
           </div>
-          <div>
+          <div className="min-w-0">
             <span className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant block">
               KRA PIN
             </span>
-            <p className="font-mono font-bold text-primary">
+            <p className="font-mono font-bold text-primary truncate">
               {isRecordUnlocked
                 ? ((formData.rawPin && !formData.rawPin.startsWith("kraseal1:")) ? formData.rawPin : formData.pin)
                 : (maskPin(formData.pin) || "A01*****78Z")}
             </p>
           </div>
-          <div>
+          <div className="min-w-0">
             <span className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant block">
               Deliverable
             </span>
-            <p className="font-semibold text-on-surface">
+            <p className="font-semibold text-on-surface truncate">
               KRA PIN Certificate (PDF)
             </p>
           </div>
@@ -992,7 +992,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             : (maskPin(formData.pin) || "OFFICIAL")
 
           return (
-            <div className="rounded-2xl bg-emerald-500/[0.06] dark:bg-emerald-950/30 border border-emerald-500/30 p-5 sm:p-6 space-y-5 shadow-xs">
+            <div className="rounded-2xl bg-surface-container-lowest border border-emerald-500/30 p-4 sm:p-5 space-y-5 shadow-2xs">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3.5 text-center sm:text-left">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center mx-auto sm:mx-0 shrink-0 shadow-sm shadow-emerald-600/25">
                   <CheckCircle2 className="w-6 h-6" />
@@ -1011,8 +1011,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-                <div className="min-w-0 rounded-xl bg-surface-container-lowest dark:bg-zinc-900/90 border border-outline-variant/60 p-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                <div className="min-w-0 rounded-xl bg-surface-container-low border border-outline-variant/70 p-3.5">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant block mb-1">
                     {primaryRefLabel}
                   </span>
@@ -1032,7 +1032,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                   )}
                 </div>
 
-                <div className="min-w-0 rounded-xl bg-surface-container-lowest dark:bg-zinc-900/90 border border-outline-variant/60 p-3.5">
+                <div className="min-w-0 rounded-xl bg-surface-container-low border border-outline-variant/70 p-3.5">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant block mb-1">
                     Amount Settled
                   </span>
@@ -1046,7 +1046,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                   </div>
                 </div>
 
-                <div className="min-w-0 rounded-xl bg-surface-container-lowest dark:bg-zinc-900/90 border border-outline-variant/60 p-3.5">
+                <div className="min-w-0 sm:col-span-2 rounded-xl bg-surface-container-low border border-outline-variant/70 p-3.5">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant block mb-1">
                     Taxpayer PIN
                   </span>
@@ -1102,7 +1102,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         })() : (
           <div className="flex flex-col gap-4 min-w-0">
               {/* Clean Segmented Payment Mode Switcher */}
-              <div className="grid grid-cols-2 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 gap-1">
+              <div className="grid grid-cols-2 p-1 rounded-xl bg-surface-container border border-outline-variant/80 gap-1">
                 <button
                   type="button"
                   onClick={() => {
@@ -1110,40 +1110,40 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     setPaymentError(null)
                   }}
                   className={cn(
-                    "h-10 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap",
+                    "min-h-[40px] px-2.5 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
                     paymentMethod === "stk"
-                      ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-xs border border-zinc-200 dark:border-zinc-700"
-                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                      ? "bg-surface-container-lowest text-on-surface shadow-2xs border border-outline-variant/70"
+                      : "text-on-surface-variant hover:text-on-surface"
                   )}
                 >
-                  <Smartphone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>Instant STK Prompt</span>
+                  <Smartphone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="truncate">Instant STK Prompt</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => switchToManualPayment(variant)}
                   className={cn(
-                    "h-10 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap",
+                    "min-h-[40px] px-2.5 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
                     paymentMethod === "manual"
-                      ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-xs border border-zinc-200 dark:border-zinc-700"
-                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                      ? "bg-surface-container-lowest text-on-surface shadow-2xs border border-outline-variant/70"
+                      : "text-on-surface-variant hover:text-on-surface"
                   )}
                 >
                   <Receipt className="w-3.5 h-3.5 text-primary shrink-0" />
-                  <span>Manual Payment</span>
+                  <span className="truncate">Manual Payment</span>
                 </button>
               </div>
 
               {paymentMethod === "stk" ? (
-                <div className="flex-1 flex flex-col justify-between gap-4 rounded-2xl border border-outline-variant/80 bg-surface-container/30 dark:bg-zinc-800/30 p-4 sm:p-5">
+                <div className="flex-1 flex flex-col justify-between gap-4 min-w-0">
                   {/* STATE 1: READY TO SEND STK PUSH */}
                   {mpesaStatus === "ready" && (
                     <div className="space-y-4">
-                      <div className="rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 p-3.5 text-xs text-emerald-900 dark:text-emerald-200 space-y-1.5">
-                        <p className="font-bold uppercase tracking-wider text-[10px] text-emerald-700 dark:text-emerald-300">
+                      <div className="rounded-xl bg-surface-container-lowest border border-outline-variant/70 p-3.5 text-xs text-on-surface space-y-1.5">
+                        <p className="font-bold uppercase tracking-wider text-[10px] text-emerald-700 dark:text-emerald-400">
                           Fastest Checkout · Direct Phone Prompt
                         </p>
-                        <ol className="space-y-1 list-decimal list-inside text-[11px] leading-relaxed">
+                        <ol className="space-y-1 list-decimal list-inside text-[11px] text-on-surface-variant leading-relaxed">
                           <li>Enter your Safaricom M-Pesa number and click Send Prompt.</li>
                           <li>Authorize the KES {settledAmount} PIN prompt on your handset.</li>
                           <li>Your KRA PIN Certificate unlocks and downloads immediately.</li>
@@ -1172,8 +1172,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         {/* Well-fitted inline Phone Input + Submit Button */}
                         <div
                           className={cn(
-                            "flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5",
-                            variant === "inline" && "lg:flex-col lg:items-stretch"
+                            "flex flex-col gap-2.5 w-full",
+                            variant === "modal" && "sm:flex-row sm:items-center"
                           )}
                         >
                           <div className="relative flex-1 min-w-0">
@@ -1226,8 +1226,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                             onClick={() => handleMpesaDarajaPayment()}
                             className={cn(
                               primaryButtonClass,
-                              "sm:w-auto px-5 shrink-0",
-                              variant === "inline" && "lg:w-full"
+                              variant === "inline" ? "w-full justify-center" : "w-full sm:w-auto px-5 shrink-0 justify-center"
                             )}
                           >
                             <span>Send KES {Math.round(Number(settledAmount))} Prompt</span>
@@ -1345,11 +1344,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         </div>
                       )}
 
-                      <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                      <div className="flex flex-col gap-2.5 pt-1 w-full">
                         <button
                           type="button"
                           onClick={handleCheckPaymentStatus}
-                          className={cn(primaryButtonClass, "flex-1")}
+                          className={cn(primaryButtonClass, "w-full justify-center")}
                         >
                           <CheckCircle2 className="w-4 h-4 shrink-0" />
                           <span>I Entered PIN — Verify Now</span>
@@ -1357,7 +1356,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         <button
                           type="button"
                           onClick={handleCancelOrResetPayment}
-                          className={secondaryButtonClass}
+                          className={cn(secondaryButtonClass, "w-full justify-center")}
                         >
                           <span>Change Phone</span>
                         </button>
@@ -1409,11 +1408,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           </p>
                         </div>
                       </div>
-                      <div className="flex flex-col sm:flex-row gap-2.5">
+                      <div className="flex flex-col gap-2.5 w-full">
                         <button
                           type="button"
                           onClick={() => handleMpesaDarajaPayment()}
-                          className={cn(primaryButtonClass, "flex-1")}
+                          className={cn(primaryButtonClass, "w-full justify-center")}
                         >
                           <RotateCcw className="w-4 h-4 shrink-0" />
                           <span>Resend STK Prompt</span>
@@ -1421,7 +1420,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         <button
                           type="button"
                           onClick={handleCancelOrResetPayment}
-                          className={secondaryButtonClass}
+                          className={cn(secondaryButtonClass, "w-full justify-center")}
                         >
                           <span>Edit Number</span>
                         </button>
@@ -1429,7 +1428,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       <button
                         type="button"
                         onClick={() => switchToManualPayment(variant)}
-                        className={cn(secondaryButtonClass, "w-full border-primary/30 text-primary hover:bg-primary/5")}
+                        className={cn(secondaryButtonClass, "w-full justify-center border-primary/30 text-primary hover:bg-primary/5")}
                       >
                         <Receipt className="w-4 h-4 shrink-0" />
                         <span>Pay Manually via Till Instead</span>
@@ -1452,12 +1451,12 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           </p>
                         </div>
                       </div>
-                      <div className="flex flex-col sm:flex-row flex-wrap gap-2.5">
+                      <div className="flex flex-col gap-2.5 w-full">
                         {activeCheckoutId && (
                           <button
                             type="button"
                             onClick={handleCheckPaymentStatus}
-                            className={cn(primaryButtonClass, "flex-1")}
+                            className={cn(primaryButtonClass, "w-full justify-center")}
                           >
                             <CheckCircle2 className="w-4 h-4 shrink-0" />
                             <span>Verify Now</span>
@@ -1466,7 +1465,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         <button
                           type="button"
                           onClick={() => handleMpesaDarajaPayment()}
-                          className={secondaryButtonClass}
+                          className={cn(secondaryButtonClass, "w-full justify-center")}
                         >
                           <RotateCcw className="w-4 h-4 shrink-0" />
                           <span>Retry STK</span>
@@ -1474,7 +1473,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         <button
                           type="button"
                           onClick={() => switchToManualPayment(variant)}
-                          className={cn(secondaryButtonClass, "flex-1 border-primary/30 text-primary hover:bg-primary/5")}
+                          className={cn(secondaryButtonClass, "w-full justify-center border-primary/30 text-primary hover:bg-primary/5")}
                         >
                           <Receipt className="w-4 h-4 shrink-0" />
                           <span>Pay Manually</span>
@@ -1498,11 +1497,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           </p>
                         </div>
                       </div>
-                      <div className="flex flex-col sm:flex-row gap-2.5">
+                      <div className="flex flex-col gap-2.5 w-full">
                         <button
                           type="button"
                           onClick={() => handleMpesaDarajaPayment()}
-                          className={cn(primaryButtonClass, "flex-1")}
+                          className={cn(primaryButtonClass, "w-full justify-center")}
                         >
                           <RotateCcw className="w-4 h-4 shrink-0" />
                           <span>Retry STK Prompt</span>
@@ -1510,7 +1509,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         <button
                           type="button"
                           onClick={handleCancelOrResetPayment}
-                          className={secondaryButtonClass}
+                          className={cn(secondaryButtonClass, "w-full justify-center")}
                         >
                           <span>Edit Number</span>
                         </button>
@@ -1518,7 +1517,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       <button
                         type="button"
                         onClick={() => switchToManualPayment(variant)}
-                        className={cn(secondaryButtonClass, "w-full border-primary/30 text-primary hover:bg-primary/5")}
+                        className={cn(secondaryButtonClass, "w-full justify-center border-primary/30 text-primary hover:bg-primary/5")}
                       >
                         <Receipt className="w-4 h-4 shrink-0" />
                         <span>Use Manual Payment Instead (Recommended)</span>
@@ -1528,17 +1527,17 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                 </div>
               ) : (
                 /* MANUAL PAYMENT FALLBACK PANEL */
-                <div className="flex-1 flex flex-col justify-between gap-4 rounded-2xl border border-outline-variant/80 bg-surface-container/30 dark:bg-zinc-800/30 p-4 sm:p-5">
+                <div className="flex-1 flex flex-col justify-between gap-4 min-w-0">
                   <div className="space-y-4">
-                    <div className="rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 p-3.5 space-y-2.5">
+                    <div className="rounded-xl bg-surface-container-lowest border border-outline-variant/70 p-3.5 space-y-2.5">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">
                           Manual M-Pesa Buy Goods Instructions
                         </span>
                         <button
                           type="button"
                           onClick={() => void handleCopyTill(activeTill)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-900 border border-amber-300 dark:border-amber-700 text-[11px] font-mono font-bold text-on-surface hover:bg-amber-100/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container border border-outline-variant text-[11px] font-mono font-bold text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
                         >
                           {copiedTill ? (
                             <>
@@ -1553,10 +1552,10 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           )}
                         </button>
                       </div>
-                      <ol className="space-y-1 list-decimal list-inside text-xs text-amber-950 dark:text-amber-100 leading-relaxed">
-                        <li>Open SIM Toolkit or M-Pesa App → <strong>Lipa na M-Pesa</strong> → <strong>Buy Goods</strong>.</li>
-                        <li>Enter Till Number <strong className="font-mono">{activeTill}</strong> and Amount <strong className="font-mono">KES {Math.round(Number(settledAmount))}</strong>.</li>
-                        <li>After receiving the M-Pesa SMS, enter the 10-character <strong>Transaction Code</strong> below.</li>
+                      <ol className="space-y-1 list-decimal list-inside text-xs text-on-surface-variant leading-relaxed">
+                        <li>Open SIM Toolkit or M-Pesa App → <strong className="text-on-surface">Lipa na M-Pesa</strong> → <strong className="text-on-surface">Buy Goods</strong>.</li>
+                        <li>Enter Till Number <strong className="font-mono text-on-surface">{activeTill}</strong> and Amount <strong className="font-mono text-on-surface">KES {Math.round(Number(settledAmount))}</strong>.</li>
+                        <li>After receiving the M-Pesa SMS, enter the 10-character <strong className="text-on-surface">Transaction Code</strong> below.</li>
                       </ol>
                     </div>
 
@@ -1566,8 +1565,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       </label>
                       <div
                         className={cn(
-                          "flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5",
-                          variant === "inline" && "lg:flex-col lg:items-stretch"
+                          "flex flex-col gap-2.5 w-full",
+                          variant === "modal" && "sm:flex-row sm:items-center"
                         )}
                       >
                         <div className="relative flex-1 min-w-0">
@@ -1617,8 +1616,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           onClick={() => void handleManualPaymentVerify()}
                           className={cn(
                             primaryButtonClass,
-                            "sm:w-auto px-5 shrink-0",
-                            variant === "inline" && "lg:w-full"
+                            variant === "inline" ? "w-full justify-center" : "w-full sm:w-auto px-5 shrink-0 justify-center"
                           )}
                         >
                           {isVerifyingManual ? (
@@ -1689,10 +1687,10 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       )}
 
       {isVerified && (
-        <div className={cn("w-full mx-auto mb-4", currentStep === 4 ? "max-w-6xl" : "max-w-3xl")}>
-          <Alert className="bg-emerald-500/[0.08] border-emerald-500/25 text-emerald-800 dark:text-emerald-300 rounded-2xl flex items-center gap-3 py-3 px-4 shadow-2xs">
+        <div className={cn("w-full mx-auto mb-4", currentStep === 4 ? "max-w-7xl" : "max-w-3xl")}>
+          <Alert className="bg-surface-container-low border-outline-variant/80 text-on-surface rounded-2xl flex items-center gap-3 py-3 px-4 shadow-2xs">
             <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
-            <AlertDescription className="text-xs font-semibold">
+            <AlertDescription className="text-xs font-semibold text-on-surface-variant">
               Taxpayer compliance record retrieved successfully. Review details below and proceed to download your certificate.
             </AlertDescription>
           </Alert>
@@ -1731,7 +1729,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           <div
             className={cn(
               "bg-surface-container-lowest rounded-2xl sm:rounded-3xl shadow-soft border border-outline-variant p-4 sm:p-6 md:p-7 relative overflow-hidden z-10 mx-auto",
-              currentStep === 4 ? "max-w-6xl" : "max-w-3xl"
+              currentStep === 4 ? "max-w-7xl" : "max-w-3xl"
             )}
           >
             <AnimatePresence mode="wait">
@@ -1742,36 +1740,36 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     <div className="py-8 px-4 flex flex-col items-center justify-center text-center space-y-6">
                       {/* High-Tech Statutory Radar Scanner HUD */}
                       <div className="relative w-24 h-24 flex items-center justify-center">
-                        <div className="absolute inset-0 rounded-full bg-red-600/10" />
-                        <div className="absolute inset-2 rounded-full border-2 border-dashed border-red-600/40 animate-spin [animation-duration:8s]" />
-                        <div className="absolute inset-4 rounded-full bg-red-600/15" />
-                        <div className="relative z-10 w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-600/30">
+                        <div className="absolute inset-0 rounded-full bg-primary/10" />
+                        <div className="absolute inset-2 rounded-full border-2 border-dashed border-primary/40 animate-spin [animation-duration:8s]" />
+                        <div className="absolute inset-4 rounded-full bg-primary/15" />
+                        <div className="relative z-10 w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/30">
                           <ShieldCheck className="w-6 h-6" />
                         </div>
                       </div>
 
                       <div className="space-y-1.5 max-w-sm">
-                        <h3 className="font-extrabold text-base sm:text-lg text-zinc-900 dark:text-zinc-50">
+                        <h3 className="font-extrabold text-base sm:text-lg text-on-surface">
                           Connecting to Tax Records Service
                         </h3>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
+                        <p className="text-xs text-on-surface-variant font-medium">
                           Secure verification in progress. Querying taxpayer identity records...
                         </p>
                       </div>
 
                       {/* Live Verification Step HUD */}
-                      <div className="w-full max-w-sm bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/60 rounded-2xl p-4 text-left space-y-2.5">
+                      <div className="w-full max-w-sm bg-surface-container-low border border-outline-variant/80 rounded-2xl p-4 text-left space-y-2.5">
                         <div className="flex items-center gap-2.5 text-xs">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                          <span className="font-bold text-zinc-900 dark:text-zinc-100">Akubrecah Verification Gateway</span>
-                          <span className="ml-auto text-[10px] font-mono font-bold text-emerald-600">ONLINE</span>
+                          <span className="font-bold text-on-surface">Akubrecah Verification Gateway</span>
+                          <span className="ml-auto text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">ONLINE</span>
                         </div>
                         <div className="flex items-center gap-2.5 text-xs">
-                          <Loader2 className="w-3.5 h-3.5 text-red-600 animate-spin shrink-0" />
-                          <span className="font-semibold text-zinc-800 dark:text-zinc-200">Matching National ID & PIN Registry...</span>
+                          <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />
+                          <span className="font-semibold text-on-surface">Matching National ID & PIN Registry...</span>
                         </div>
-                        <div className="flex items-center gap-2.5 text-xs text-zinc-500 dark:text-zinc-400">
-                          <span className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-600 shrink-0" />
+                        <div className="flex items-center gap-2.5 text-xs text-on-surface-variant">
+                          <span className="w-2 h-2 rounded-full bg-outline-variant shrink-0" />
                           <span>Generating Cryptographic Compliance Certificate</span>
                         </div>
                       </div>
@@ -1780,25 +1778,25 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     <motion.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
 
                       {/* Third-Party Service Disclaimer Banner */}
-                      <div className="max-w-md mx-auto p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-[11px] leading-relaxed text-center">
-                        <span className="font-bold">Third-Party Cyber Facilitation:</span> Akubrecah Technologies is an independent digital service provider and is not affiliated with the Kenya Revenue Authority (KRA). Free official services are available at{" "}
-                        <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline font-semibold hover:text-amber-950 dark:hover:text-white">
+                      <div className="max-w-md mx-auto p-3 rounded-2xl bg-surface-container-low border border-outline-variant/80 text-on-surface-variant text-[11px] leading-relaxed text-center">
+                        <span className="font-bold text-on-surface">Third-Party Cyber Facilitation:</span> Akubrecah Technologies is an independent digital service provider and is not affiliated with the Kenya Revenue Authority (KRA). Free official services are available at{" "}
+                        <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline font-semibold text-on-surface hover:text-primary">
                           itax.kra.go.ke
                         </a>.{" "}
-                        <Link href="/legal/disclaimer" className="underline font-bold text-primary dark:text-red-400 hover:text-primary/80 ml-1">
+                        <Link href="/legal/disclaimer" className="underline font-bold text-primary hover:text-primary/80 ml-1">
                           View Full Disclaimer →
                         </Link>
                       </div>
 
                       {/* Lookup Type Segmented Switcher */}
-                      <div className="flex p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl sm:rounded-2xl mb-4 border border-zinc-200 dark:border-zinc-700 max-w-md mx-auto shadow-2xs">
+                      <div className="flex p-1 bg-surface-container rounded-xl sm:rounded-2xl mb-4 border border-outline-variant max-w-md mx-auto shadow-2xs">
                         <button
                           type="button"
                           className={cn(
                             "flex-1 py-2 sm:py-2.5 text-xs rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap",
                             activeTab === "id"
-                              ? "bg-red-600 text-white font-extrabold shadow-xs"
-                              : "text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white font-bold"
+                              ? "bg-primary text-white font-extrabold shadow-xs"
+                              : "text-on-surface-variant hover:text-on-surface font-bold"
                           )}
                           onClick={() => {
                             setActiveTab("id");
@@ -1814,8 +1812,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           className={cn(
                             "flex-1 py-2 sm:py-2.5 text-xs rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap",
                             activeTab === "pin"
-                              ? "bg-red-600 text-white font-extrabold shadow-xs"
-                              : "text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white font-bold"
+                              ? "bg-primary text-white font-extrabold shadow-xs"
+                              : "text-on-surface-variant hover:text-on-surface font-bold"
                           )}
                           onClick={() => {
                             setActiveTab("pin");
@@ -1833,7 +1831,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           <div>
                             <label className={labelClass}>National ID Number</label>
                             <div className="relative">
-                              <BadgeIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-red-600 w-5 h-5" />
+                              <BadgeIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary w-5 h-5" />
                               <input
                                 className={cn(inputClass, "pl-11 text-base tracking-wider font-extrabold")}
                                 placeholder="e.g. 12345678"
@@ -1848,7 +1846,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           <div>
                             <label className={labelClass}>KRA PIN</label>
                             <div className="relative">
-                              <MapPinIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-red-600 w-5 h-5" />
+                              <MapPinIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary w-5 h-5" />
                               <input
                                 className={cn(inputClass, "pl-11 uppercase text-base tracking-wider font-extrabold")}
                                 placeholder="e.g. A012345678Z"
@@ -1865,22 +1863,22 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         <AnimatePresence>
                           {captchaStatus === "loading" && (
                             <motion.div key="captcha-loading" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="flex flex-col items-center gap-2 py-2">
-                              <Loader2 className="w-5 h-5 animate-spin text-red-600" />
-                              <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Loading security stamp...</span>
+                              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                              <span className="text-xs font-semibold text-on-surface-variant">Loading security stamp...</span>
                             </motion.div>
                           )}
                           {captchaStatus === "ready" && captchaImage && (
-                            <motion.div key="captcha-ready" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="flex flex-col items-center gap-3 bg-zinc-50 dark:bg-zinc-800/80 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
+                            <motion.div key="captcha-ready" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="flex flex-col items-center gap-3 bg-surface-container-low rounded-2xl p-4 border border-outline-variant">
                               <label className={labelClass}>Solve Arithmetic Question</label>
                               <div className="relative">
-                                <img src={captchaImage} alt="KRA CAPTCHA" className="rounded-xl border-2 border-zinc-300 dark:border-zinc-600 h-14 mx-auto object-contain bg-white shadow-xs p-1" />
+                                <img src={captchaImage} alt="KRA CAPTCHA" className="rounded-xl border border-outline-variant h-14 mx-auto object-contain bg-white shadow-xs p-1" />
                                 <button
                                   type="button"
                                   onClick={loadCaptcha}
-                                  className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-center transition-all border border-zinc-300 dark:border-zinc-600 shadow-xs"
+                                  className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container flex items-center justify-center transition-all border border-outline-variant shadow-xs"
                                   title="Refresh CAPTCHA"
                                 >
-                                  <RefreshCw className="w-3.5 h-3.5 text-red-600" />
+                                  <RefreshCw className="w-3.5 h-3.5 text-primary" />
                                 </button>
                               </div>
                               <input
@@ -1902,17 +1900,17 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         )}
 
                         {/* Consent checkbox — legally required */}
-                        <div className="flex items-start gap-2.5 text-left py-2 bg-zinc-50 dark:bg-zinc-800/40 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700">
+                        <div className="flex items-start gap-2.5 text-left py-2 bg-surface-container-low p-3 rounded-xl border border-outline-variant/80">
                           <input
                             type="checkbox"
                             id="kra-consent"
                             checked={hasConsented}
                             onChange={(e) => setHasConsented(e.target.checked)}
-                            className="mt-0.5 w-4 h-4 accent-red-600 rounded border-zinc-300 cursor-pointer"
+                            className="mt-0.5 w-4 h-4 accent-primary rounded border-outline-variant cursor-pointer"
                           />
-                          <label htmlFor="kra-consent" className="text-xs font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer leading-snug">
+                          <label htmlFor="kra-consent" className="text-xs font-medium text-on-surface-variant cursor-pointer leading-snug">
                             I confirm I am the rightful owner or authorized agent for these credentials and I accept the{" "}
-                            <a href="/legal/terms" target="_blank" className="text-red-600 dark:text-red-400 font-bold hover:underline">Terms of Service</a>.
+                            <a href="/legal/terms" target="_blank" className="text-primary font-bold hover:underline">Terms of Service</a>.
                           </label>
                         </div>
 
@@ -1927,7 +1925,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                             {captchaStatus === "ready" ? "Verify Security Code" : "Retrieve Certificate"}
                           </button>
                           <button
-                            className="w-full sm:w-auto h-12 px-4 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-bold text-xs rounded-xl transition-all inline-flex justify-center items-center gap-1.5 cursor-pointer"
+                            className="w-full sm:w-auto h-11 px-4 text-on-surface-variant hover:text-on-surface font-bold text-xs rounded-xl transition-all inline-flex justify-center items-center gap-1.5 cursor-pointer"
                             type="button"
                             onClick={() => setCurrentStep(2)}
                           >
@@ -2148,13 +2146,13 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     const isRecordUnlocked = Boolean(verifiedDownloadId || isAdmin);
                     return (
                       <>
-                        <div className="w-full bg-emerald-500/[0.07] dark:bg-emerald-950/30 border border-emerald-500/25 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left shadow-2xs">
+                        <div className="w-full bg-surface-container-low border border-outline-variant/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left shadow-2xs">
                           <div className="flex items-center gap-3">
                             <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 shrink-0">
                               <CheckCircle2 className="w-5 h-5" />
                             </div>
                             <div>
-                              <p className="text-xs sm:text-sm font-black text-on-surface flex items-center gap-2">
+                              <p className="text-xs sm:text-sm font-black text-on-surface flex flex-wrap items-center gap-2">
                                 {isRecordUnlocked ? "Compliance Certificate Ready" : "Official Compliance Record Ready"}
                                 <span className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold">
                                   {isRecordUnlocked ? "Paid & Unmasked" : "100% Verified"}
@@ -2185,7 +2183,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           {/* LEFT: Taxpayer Preview Data Grid */}
                           <div
                             className={cn(
-                              "w-full bg-surface-container-low/60 rounded-2xl p-4 sm:p-6 border border-outline-variant space-y-4 shadow-2xs",
+                              "w-full bg-surface-container-low/80 rounded-2xl p-4 sm:p-5 border border-outline-variant/80 space-y-4 shadow-2xs",
                               (!isRecordUnlocked || mpesaStatus === "success") ? "lg:col-span-7" : "max-w-4xl mx-auto"
                             )}
                           >
