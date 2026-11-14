@@ -714,11 +714,10 @@ export default function AdminOverviewPage() {
       <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-surface-container border border-outline-variant/60 overflow-x-auto scrollbar-none -mx-1 sm:mx-0">
         <button
           onClick={() => setActiveTab("overview")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs transition-all whitespace-nowrap shrink-0 ${
-            activeTab === "overview"
-              ? "bg-primary text-white font-black shadow-md shadow-primary/20 ring-1 ring-primary/30"
-              : "bg-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-semibold"
-          }`}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs transition-all whitespace-nowrap shrink-0 ${activeTab === "overview"
+            ? "bg-primary text-white font-black shadow-md shadow-primary/20 ring-1 ring-primary/30"
+            : "bg-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-semibold"
+            }`}
         >
           <Layers className="w-4 h-4" />
           <span>Executive Overview</span>
@@ -726,20 +725,18 @@ export default function AdminOverviewPage() {
 
         <button
           onClick={() => setActiveTab("daraja")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs transition-all whitespace-nowrap shrink-0 ${
-            activeTab === "daraja"
-              ? "bg-primary text-white font-black shadow-md shadow-primary/20 ring-1 ring-primary/30"
-              : "bg-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-semibold"
-          }`}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs transition-all whitespace-nowrap shrink-0 ${activeTab === "daraja"
+            ? "bg-primary text-white font-black shadow-md shadow-primary/20 ring-1 ring-primary/30"
+            : "bg-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-semibold"
+            }`}
         >
           <Smartphone className="w-4 h-4" />
           <span>Daraja M-Pesa Live</span>
           {darajaLive?.completedVolumeKes !== undefined && (
-            <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-              activeTab === "daraja"
-                ? "bg-white/25 text-white"
-                : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-            }`}>
+            <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${activeTab === "daraja"
+              ? "bg-white/25 text-white"
+              : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+              }`}>
               KES {darajaLive.completedVolumeKes.toLocaleString()}
             </span>
           )}
@@ -747,11 +744,10 @@ export default function AdminOverviewPage() {
 
         <button
           onClick={() => setActiveTab("transactions")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs transition-all whitespace-nowrap shrink-0 ${
-            activeTab === "transactions"
-              ? "bg-primary text-white font-black shadow-md shadow-primary/20 ring-1 ring-primary/30"
-              : "bg-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-semibold"
-          }`}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs transition-all whitespace-nowrap shrink-0 ${activeTab === "transactions"
+            ? "bg-primary text-white font-black shadow-md shadow-primary/20 ring-1 ring-primary/30"
+            : "bg-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-semibold"
+            }`}
         >
           <FileText className="w-4 h-4" />
           <span>All Transactions & Instant Downloads</span>
@@ -759,19 +755,17 @@ export default function AdminOverviewPage() {
 
         <button
           onClick={() => setActiveTab("whatsapp")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs transition-all whitespace-nowrap shrink-0 ${
-            activeTab === "whatsapp"
-              ? "bg-primary text-white font-black shadow-md shadow-primary/20 ring-1 ring-primary/30"
-              : "bg-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-semibold"
-          }`}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs transition-all whitespace-nowrap shrink-0 ${activeTab === "whatsapp"
+            ? "bg-primary text-white font-black shadow-md shadow-primary/20 ring-1 ring-primary/30"
+            : "bg-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high font-semibold"
+            }`}
         >
           <MessageSquare className="w-4 h-4" />
           <span>WhatsApp Bot Telemetry</span>
-          <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-            activeTab === "whatsapp"
-              ? "bg-white/25 text-white"
-              : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-          }`}>
+          <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${activeTab === "whatsapp"
+            ? "bg-white/25 text-white"
+            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+            }`}>
             {bot?.totalUsers || 0} users
           </span>
         </button>
@@ -850,19 +844,19 @@ export default function AdminOverviewPage() {
               <span className="text-sm font-bold text-on-surface-variant">PC (Desktop)</span>
             </div>
             <div className="w-full h-2 rounded-full bg-surface-container-highest mt-3 overflow-hidden flex">
-              <div 
-                className="bg-primary h-full transition-all duration-500" 
-                style={{ width: `${dev?.pcPercentage || 65}%` }} 
+              <div
+                className="bg-primary h-full transition-all duration-500"
+                style={{ width: `${dev?.pcPercentage || 65}%` }}
                 title="PC Desktop Sessions"
               />
-              <div 
-                className="bg-amber-500 h-full transition-all duration-500" 
-                style={{ width: `${dev?.mobilePercentage || 30}%` }} 
+              <div
+                className="bg-amber-500 h-full transition-all duration-500"
+                style={{ width: `${dev?.mobilePercentage || 30}%` }}
                 title="Mobile Sessions"
               />
-              <div 
-                className="bg-sky-500 h-full transition-all duration-500" 
-                style={{ width: `${dev?.tabletPercentage || 5}%` }} 
+              <div
+                className="bg-sky-500 h-full transition-all duration-500"
+                style={{ width: `${dev?.tabletPercentage || 5}%` }}
                 title="Tablet Sessions"
               />
             </div>
@@ -1382,11 +1376,10 @@ export default function AdminOverviewPage() {
                 <span className="px-2.5 py-1 rounded-full bg-surface-container text-on-surface border border-outline-variant/60">
                   Till (PartyB): {darajaMeta?.config.partyB || "9348469"}
                 </span>
-                <span className={`px-2.5 py-1 rounded-full border font-semibold ${
-                  darajaMeta?.config.hasDaraja
-                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
-                    : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20"
-                }`}>
+                <span className={`px-2.5 py-1 rounded-full border font-semibold ${darajaMeta?.config.hasDaraja
+                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                  : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20"
+                  }`}>
                   {darajaMeta?.config.hasDaraja ? "Credentials Active" : "Loading Config"}
                 </span>
               </div>
@@ -1542,11 +1535,10 @@ export default function AdminOverviewPage() {
               <div className="rounded-2xl border border-outline-variant bg-zinc-950 text-zinc-100 p-4 space-y-2">
                 <div className="flex items-center justify-between gap-2 text-[11px] font-mono">
                   <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded font-bold ${
-                      darajaConsoleOutput.ok
-                        ? "bg-emerald-500/20 text-emerald-300"
-                        : "bg-red-500/20 text-red-300"
-                    }`}>
+                    <span className={`px-2 py-0.5 rounded font-bold ${darajaConsoleOutput.ok
+                      ? "bg-emerald-500/20 text-emerald-300"
+                      : "bg-red-500/20 text-red-300"
+                      }`}>
                       {darajaConsoleOutput.ok ? "OK" : "ERROR"}
                     </span>
                     <span className="font-bold text-zinc-200">{darajaConsoleOutput.action}</span>
@@ -1674,13 +1666,12 @@ export default function AdminOverviewPage() {
                           {tx.mpesaReceipt || "—"}
                         </td>
                         <td className="py-3.5 px-4">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            tx.status === "COMPLETED"
-                              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                              : tx.status === "PENDING"
-                                ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                                : "bg-red-500/10 text-red-700 dark:text-red-400"
-                          }`}>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${tx.status === "COMPLETED"
+                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                            : tx.status === "PENDING"
+                              ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                              : "bg-red-500/10 text-red-700 dark:text-red-400"
+                            }`}>
                             {tx.status === "COMPLETED" ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                             {tx.status}
                           </span>

@@ -1,19 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  BadgeCheck, 
-  Search, 
-  RefreshCw, 
-  Download, 
-  FileText, 
-  ShieldCheck, 
-  Building2, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  CreditCard, 
-  UserCheck, 
+import {
+  BadgeCheck,
+  Search,
+  RefreshCw,
+  Download,
+  FileText,
+  ShieldCheck,
+  Building2,
+  Phone,
+  Mail,
+  MapPin,
+  CreditCard,
+  UserCheck,
   ExternalLink,
   Copy,
   Check,
@@ -345,7 +345,7 @@ export default function KraRetrievalsAdminPage() {
           <div className="text-2xl sm:text-3xl font-black text-primary">
             KES {data?.stats?.totalRevenueKes?.toLocaleString() ?? "0"}
           </div>
-          <p className="text-[10px] text-on-surface-variant mt-1">KES 20 per cert via M-Pesa / Card</p>
+          <p className="text-[10px] text-on-surface-variant mt-1">KES 20 per cert via Safaricom Daraja M-Pesa (Till 9348469)</p>
         </div>
 
         <div className="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant shadow-xs">
@@ -366,41 +366,37 @@ export default function KraRetrievalsAdminPage() {
         <div className="flex flex-wrap items-center gap-1.5 p-1 bg-surface-container rounded-xl">
           <button
             onClick={() => setActiveTab("taxpayers")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === "taxpayers"
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === "taxpayers"
                 ? "bg-surface text-primary shadow-xs"
                 : "text-on-surface-variant hover:text-on-surface"
-            }`}
+              }`}
           >
             All Taxpayers (Unmasked) ({data?.taxpayers?.length ?? 0})
           </button>
           <button
             onClick={() => setActiveTab("downloads")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === "downloads"
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === "downloads"
                 ? "bg-surface text-primary shadow-xs"
                 : "text-on-surface-variant hover:text-on-surface"
-            }`}
+              }`}
           >
             Downloads & Payments ({data?.downloads?.length ?? 0})
           </button>
           <button
             onClick={() => setActiveTab("logs")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === "logs"
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === "logs"
                 ? "bg-surface text-primary shadow-xs"
                 : "text-on-surface-variant hover:text-on-surface"
-            }`}
+              }`}
           >
             Gateway Logs ({data?.logs?.length ?? 0})
           </button>
           <button
             onClick={() => setActiveTab("live-test")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === "live-test"
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === "live-test"
                 ? "bg-primary text-white shadow-xs"
                 : "text-on-surface-variant hover:text-on-surface"
-            }`}
+              }`}
           >
             Live Gateway Tester
           </button>
@@ -550,11 +546,16 @@ export default function KraRetrievalsAdminPage() {
       {/* Tab 2: Certificate Orders & Payments Audit */}
       {activeTab === "downloads" && (
         <div className="bg-surface-container-lowest rounded-3xl border border-outline-variant overflow-hidden shadow-sm">
-          <div className="p-4 sm:p-5 border-b border-outline-variant">
-            <h2 className="text-base font-bold text-on-surface">Certificate Download Orders & M-Pesa Audit</h2>
-            <p className="text-xs text-on-surface-variant">
-              Every certificate download recorded along with payment receipts (KES 20) and associated user profiles.
-            </p>
+          <div className="p-4 sm:p-5 border-b border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 className="text-base font-bold text-on-surface">Certificate Download Orders &amp; Safaricom Daraja M-Pesa Audit</h2>
+              <p className="text-xs text-on-surface-variant">
+                Every verified download unlocks the sole deliverable — the Official KRA PIN Certificate (PDF) — settled via Safaricom Daraja M-Pesa Express (KES 20).
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 text-[10px] font-black uppercase tracking-wider shrink-0">
+              Safaricom Daraja · Certificate PDF Only
+            </span>
           </div>
 
           <div className="overflow-x-auto">
@@ -563,9 +564,10 @@ export default function KraRetrievalsAdminPage() {
                 <tr>
                   <th className="py-3 px-4">Order ID</th>
                   <th className="py-3 px-4">KRA PIN</th>
+                  <th className="py-3 px-4">Deliverable</th>
                   <th className="py-3 px-4">Amount</th>
-                  <th className="py-3 px-4">Payment Receipt / Reference</th>
-                  <th className="py-3 px-4">Checkout Type</th>
+                  <th className="py-3 px-4">M-Pesa Receipt / Checkout</th>
+                  <th className="py-3 px-4">Gateway</th>
                   <th className="py-3 px-4">Customer Email</th>
                   <th className="py-3 px-4">Timestamp</th>
                 </tr>
@@ -573,42 +575,56 @@ export default function KraRetrievalsAdminPage() {
               <tbody className="divide-y divide-outline-variant">
                 {!data?.downloads || data.downloads.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-on-surface-variant">
+                    <td colSpan={8} className="py-12 text-center text-on-surface-variant">
                       No certificate downloads recorded yet.
                     </td>
                   </tr>
                 ) : (
-                  data.downloads.map((d) => (
-                    <tr key={d.id} className="hover:bg-surface-variant/20 transition-colors">
-                      <td className="py-3 px-4 font-mono font-bold text-on-surface-variant text-[11px]">
-                        {d.id.slice(0, 12)}...
-                      </td>
-                      <td className="py-3 px-4 font-mono font-bold text-primary">
-                        {d.pin}
-                      </td>
-                      <td className="py-3 px-4 font-black text-emerald-600 dark:text-emerald-400">
-                        KES {d.amountCharged || 20}
-                      </td>
-                      <td className="py-3 px-4 font-mono font-semibold text-on-surface">
-                        {d.mpesaReceipt || d.checkoutId || <span className="text-on-surface-variant italic">Direct/Admin</span>}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                          d.downloadType === "admin"
-                            ? "bg-purple-500/10 text-purple-600"
-                            : "bg-emerald-500/10 text-emerald-600"
-                        }`}>
-                          {d.downloadType}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-on-surface">
-                        {d.users?.email || d.clerkId || "Guest"}
-                      </td>
-                      <td className="py-3 px-4 text-on-surface-variant whitespace-nowrap">
-                        {new Date(d.createdAt).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))
+                  data.downloads.map((d) => {
+                    const isDaraja =
+                      d.downloadType === "mpesa" ||
+                      d.downloadType === "pay_per_download" ||
+                      Boolean(d.checkoutId?.startsWith("ws_CO_"));
+                    return (
+                      <tr key={d.id} className="hover:bg-surface-variant/20 transition-colors">
+                        <td className="py-3 px-4 font-mono font-bold text-on-surface-variant text-[11px]">
+                          {d.id.slice(0, 12)}...
+                        </td>
+                        <td className="py-3 px-4 font-mono font-bold text-primary">
+                          {d.pin}
+                        </td>
+                        <td className="py-3 px-4 text-on-surface font-semibold whitespace-nowrap">
+                          KRA PIN Certificate (PDF)
+                        </td>
+                        <td className="py-3 px-4 font-black text-emerald-600 dark:text-emerald-400">
+                          KES {d.amountCharged || 20}
+                        </td>
+                        <td className="py-3 px-4 font-mono font-semibold text-on-surface">
+                          {d.mpesaReceipt || d.checkoutId || <span className="text-on-surface-variant italic">Direct/Admin</span>}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${d.downloadType === "admin"
+                              ? "bg-primary/10 text-primary"
+                              : isDaraja
+                                ? "bg-emerald-500/10 text-emerald-600"
+                                : "bg-surface-container text-on-surface-variant"
+                            }`}>
+                            {d.downloadType === "admin"
+                              ? "Admin Instant"
+                              : isDaraja
+                                ? "Safaricom Daraja M-Pesa"
+                                : d.downloadType}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-on-surface">
+                          {d.users?.email || d.clerkId || "Guest"}
+                        </td>
+                        <td className="py-3 px-4 text-on-surface-variant whitespace-nowrap">
+                          {new Date(d.createdAt).toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -652,11 +668,10 @@ export default function KraRetrievalsAdminPage() {
                         {new Date(l.timestamp).toLocaleTimeString()}
                       </td>
                       <td className="py-2.5 px-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                          l.level === "error" ? "bg-red-500/10 text-red-600" :
-                          l.level === "warning" ? "bg-amber-500/10 text-amber-600" :
-                          "bg-emerald-500/10 text-emerald-600"
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${l.level === "error" ? "bg-red-500/10 text-red-600" :
+                            l.level === "warning" ? "bg-amber-500/10 text-amber-600" :
+                              "bg-emerald-500/10 text-emerald-600"
+                          }`}>
                           {l.level}
                         </span>
                       </td>

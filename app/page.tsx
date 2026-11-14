@@ -1,6 +1,6 @@
-import { 
-  ArrowRight, 
-  ExternalLink 
+import {
+  ArrowRight,
+  ExternalLink
 } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from "next/link"
@@ -14,14 +14,14 @@ export const revalidate = 3600;
 export const metadata: Metadata = {
   title: 'Akubrecah Entertainment | Software Engineering, GovTech & Brand Production',
   description:
-    'Full-cycle digital innovation house in Nairobi, Kenya. Mission-critical KRA statutory compliance portals, fiscal thermal ETR receipts, bespoke web platforms, native mobile ecosystems, and creative brand identity.',
+    'Full-cycle digital innovation house in Nairobi, Kenya. Mission-critical KRA statutory compliance portals, Safaricom Daraja M-Pesa Express automation, bespoke web platforms, native mobile ecosystems, and creative brand identity.',
   keywords: [
     'Akubrecah Entertainment',
     'Software Engineering Kenya',
     'GovTech Automation East Africa',
     'KRA Compliance Portal',
     'KRA PIN Certificate Retrieval',
-    'Thermal ETR Receipt Printer Kenya',
+    'Statutory Compliance Data Grid',
     'Nil Returns Filing Automation',
     'Enterprise Mobile Applications Nairobi',
     'Fintech Daraja M-Pesa API Architecture',
@@ -66,25 +66,25 @@ export default async function Home() {
   const articles = allArticles.slice(0, 2);
 
   const capabilities = [
-    { 
-      label: "GovTech & Compliance", 
-      desc: "Automated Tax Verification, Portals & POS Fiscal Thermal Systems", 
+    {
+      label: "GovTech & Compliance",
+      desc: "Automated Tax Verification, Statutory Compliance Data Grid & Certificate Delivery",
       href: "/solutions#govtech",
       badge: "Flagship"
     },
-    { 
-      label: "Web Engineering", 
-      desc: "High-Scale Server-Rendered Platforms, APIs & Microservices", 
-      href: "/services#web" 
+    {
+      label: "Web Engineering",
+      desc: "High-Scale Server-Rendered Platforms, APIs & Microservices",
+      href: "/services#web"
     },
-    { 
-      label: "Mobile Ecosystems", 
-      desc: "Native iOS, Android & Universal React Native Applications", 
-      href: "/services#mobile" 
+    {
+      label: "Mobile Ecosystems",
+      desc: "Native iOS, Android & Universal React Native Applications",
+      href: "/services#mobile"
     },
-    { 
-      label: "Brand & Thermal Print", 
-      desc: "80mm POS Layouts, Fiscal Thermal Receipts & Corporate Identity", 
+    {
+      label: "Daraja M-Pesa & Brand",
+      desc: "Safaricom Daraja M-Pesa Express Checkout & Corporate Identity",
       href: "/services",
     },
   ]
@@ -95,10 +95,10 @@ export default async function Home() {
 
         {/* ============================= HERO SECTION ============================= */}
         <section id="hero" className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          
+
           {/* Left: Text & Action Center */}
           <div className="flex-1 space-y-7">
-            
+
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-on-surface tracking-tight leading-[1.05]">
               Engineering<br />
               <span className="text-primary">
@@ -108,8 +108,8 @@ export default async function Home() {
             </h1>
 
             <p className="text-base sm:text-lg text-on-surface-variant max-w-xl leading-relaxed">
-              Full-cycle software engineering, mission-critical statutory compliance portals, and creative brand production. 
-              From automated KRA PIN retrieval and fiscal thermal ETR receipts to enterprise cloud platforms and native mobile apps.
+              Full-cycle software engineering, mission-critical statutory compliance portals, and creative brand production.
+              From automated KRA PIN retrieval and Safaricom Daraja M-Pesa Express billing to enterprise cloud platforms and native mobile apps.
             </p>
 
             {/* Action Center */}
@@ -138,7 +138,7 @@ export default async function Home() {
             <div className="pt-2 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-on-surface-variant border-t border-outline-variant/60">
               <span className="font-semibold text-on-surface">Headquartered in Nairobi, Kenya</span>
               <span className="hidden sm:inline text-outline-variant">•</span>
-              <span>Statutory GovTech & Thermal ETR Systems</span>
+              <span>Statutory GovTech & Safaricom Daraja M-Pesa Express</span>
               <span className="hidden sm:inline text-outline-variant">•</span>
               <span>Custom Enterprise Software</span>
             </div>
@@ -368,7 +368,7 @@ export default async function Home() {
               Ready to Build Your Next Digital System?
             </h2>
             <p className="text-white/90 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
-              Akubrecah Entertainment provides end-to-end engineering, automated GovTech gateways, and creative brand design. 
+              Akubrecah Entertainment provides end-to-end engineering, automated GovTech gateways, and creative brand design.
               Let&apos;s build software that scales.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center pt-2">

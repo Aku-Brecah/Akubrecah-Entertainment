@@ -92,13 +92,13 @@ export default function BrandBookPage() {
 
   return (
     <div className="relative w-full bg-background text-on-background font-sans overflow-x-hidden min-h-screen">
-      
+
       {/* Background glow — deep red, no purple */}
       <div className="absolute top-0 inset-x-0 h-[600px] bg-[radial-gradient(ellipse_at_30%_0%,rgba(186,26,26,0.12)_0%,transparent_70%)] pointer-events-none z-0" />
       <div className="absolute top-40 right-[10%] w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none z-0" />
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-24 space-y-20">
-        
+
         {/* Navigation Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-on-surface-variant">
           <Link href="/admin" className="hover:text-primary transition-colors">Admin Dashboard</Link>
@@ -123,7 +123,7 @@ export default function BrandBookPage() {
           </h1>
 
           <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">
-            The official brand guide and design token architecture for Akubrecah Entertainment. 
+            The official brand guide and design token architecture for Akubrecah Entertainment.
             Defining our monolithic aesthetic, color spectrum, typographic discipline, and interactive digital standards.
           </p>
 
@@ -154,8 +154,8 @@ export default function BrandBookPage() {
                 &ldquo;Engineering digital products that scale.&rdquo;
               </h2>
               <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-                Akubrecah Entertainment is a full-cycle software engineering and digital innovation house based in Nairobi, Kenya. 
-                The firm architects mission-critical GovTech compliance portals, cloud infrastructure, native mobile apps, 
+                Akubrecah Entertainment is a full-cycle software engineering and digital innovation house based in Nairobi, Kenya.
+                The firm architects mission-critical GovTech compliance portals, cloud infrastructure, native mobile apps,
                 and high-fidelity brand identities serving enterprises, startups, and government workflows across East Africa.
               </p>
             </div>
@@ -170,8 +170,8 @@ export default function BrandBookPage() {
                 </div>
                 <div className="p-3 rounded-xl bg-surface dark:bg-slate-900 border border-outline-variant/60">
                   <span className="font-mono text-primary font-bold">02.</span>
-                  <p className="font-bold text-on-surface mt-1">Print</p>
-                  <p className="text-[11px] text-on-surface-variant">80mm Fiscal ETR Thermal POS</p>
+                  <p className="font-bold text-on-surface mt-1">Data Grid</p>
+                  <p className="text-[11px] text-on-surface-variant">Statutory Compliance Data Grid (KDPA Masked + Unmasked)</p>
                 </div>
                 <div className="p-3 rounded-xl bg-surface dark:bg-slate-900 border border-outline-variant/60">
                   <span className="font-mono text-primary font-bold">03.</span>
@@ -196,7 +196,7 @@ export default function BrandBookPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
+
             {/* Light Variant */}
             <div className="p-8 rounded-3xl bg-white border border-slate-200 text-slate-900 space-y-6 flex flex-col justify-between shadow-soft">
               <div>
@@ -278,26 +278,23 @@ export default function BrandBookPage() {
                 >
                   {/* Swatch preview */}
                   <div
-                    className={`h-28 w-full p-4 flex flex-col justify-between transition-transform duration-300 group-hover:scale-[1.02] ${
-                      color.borderRequired ? "border-b border-outline-variant" : ""
-                    }`}
+                    className={`h-28 w-full p-4 flex flex-col justify-between transition-transform duration-300 group-hover:scale-[1.02] ${color.borderRequired ? "border-b border-outline-variant" : ""
+                      }`}
                     style={{ backgroundColor: color.hex }}
                   >
                     <div className="flex items-center justify-between">
                       <span
-                        className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md ${
-                          color.isDarkText ? "bg-black/10 text-slate-900" : "bg-white/20 text-white"
-                        }`}
+                        className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md ${color.isDarkText ? "bg-black/10 text-slate-900" : "bg-white/20 text-white"
+                          }`}
                       >
                         {color.hex}
                       </span>
                       <button
                         type="button"
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          color.isDarkText
+                        className={`p-1.5 rounded-lg transition-colors ${color.isDarkText
                             ? "bg-black/10 text-slate-900 hover:bg-black/20"
                             : "bg-white/20 text-white hover:bg-white/30"
-                        }`}
+                          }`}
                         aria-label={`Copy ${color.hex}`}
                       >
                         {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -339,7 +336,7 @@ export default function BrandBookPage() {
               Primary Typeface: Inter
             </h2>
             <p className="text-xs sm:text-sm text-on-surface-variant max-w-2xl leading-relaxed">
-              Designed for computer screens, Inter features a tall x-height to aid in readability of mixed-case and lower-case text. 
+              Designed for computer screens, Inter features a tall x-height to aid in readability of mixed-case and lower-case text.
               Paired with strict tabular numbers for official PIN and tax records.
             </p>
           </div>
@@ -413,7 +410,7 @@ export default function BrandBookPage() {
           </div>
 
           <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-            
+
             {/* Aesthetic Pillars */}
             <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-3">
               <span className="text-xs font-black uppercase tracking-widest text-red-400">

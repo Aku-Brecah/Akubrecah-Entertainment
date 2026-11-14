@@ -140,6 +140,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null)
   const stkTransitionRef = useRef<NodeJS.Timeout | null>(null)
+  const initialPollTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const isMpesaBusy =
     mpesaStatus === "initiating" ||
@@ -147,6 +148,13 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     mpesaStatus === "waiting" ||
     mpesaStatus === "verifying"
   const isRecordUnlocked = Boolean(verifiedDownloadId || isAdmin)
+
+  const isValidUnmaskedKenyanPhone = (raw: string) => {
+    const trimmed = raw.trim()
+    if (!trimmed || trimmed.includes("•") || trimmed.includes("*")) return false
+    const clean = trimmed.replace(/[\s\-()]/g, "")
+    return /^(?:\+?254|0)?(?:7|1)\d{8}$/.test(clean)
+  }
 
   const clearPaymentTimers = () => {
     if (pollTimerRef.current) {
@@ -161,14 +169,31 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       clearTimeout(stkTransitionRef.current)
       stkTransitionRef.current = null
     }
+    if (initialPollTimerRef.current) {
+      clearTimeout(initialPollTimerRef.current)
+      initialPollTimerRef.current = null
+    }
   }
 
-  // Sync phone number from taxpayer profile if available
+  // Sync phone number from taxpayer profile only when it is a valid unmasked Kenyan number
   useEffect(() => {
-    if (formData.phoneNumber && !paymentPhone) {
-      setPaymentPhone(formData.phoneNumber)
+    if (!paymentPhone && isValidUnmaskedKenyanPhone(formData.phoneNumber || "")) {
+      setPaymentPhone(formData.phoneNumber.trim())
     }
   }, [formData.phoneNumber, paymentPhone])
+
+  // Auto-focus the payment phone input when Step 4 opens and awaits payment
+  useEffect(() => {
+    if (currentStep !== 4 || isRecordUnlocked || mpesaStatus !== "ready") return
+    const timer = setTimeout(() => {
+      const targetId = showPaymentModal ? "modal-phone-input" : "same-page-phone-input"
+      const el = document.getElementById(targetId)
+      if (el && document.activeElement !== el) {
+        el.focus({ preventScroll: true })
+      }
+    }, 120)
+    return () => clearTimeout(timer)
+  }, [currentStep, isRecordUnlocked, mpesaStatus, showPaymentModal])
 
   // Cleanup polling intervals on unmount
   useEffect(() => {
@@ -191,6 +216,9 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   }, [])
 
   const handleInputChange = (field: string, value: string) => {
+    if (field === 'phoneNumber' && isValidUnmaskedKenyanPhone(value)) {
+      setPaymentPhone(value.trim())
+    }
     setFormData(prev => {
       const updated = { ...prev, [field]: value }
       if (field === 'idNumber') {
@@ -388,11 +416,13 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       setPaymentError(null)
       setCurrentStep(4)
       toast.success(
-        `M-Pesa payment confirmed${receipt ? ` (${receipt})` : ''}. Compiling your certificate...`,
+        `M-Pesa payment confirmed${receipt ? ` (${receipt})` : ''}. Unlocking record & downloading certificate...`,
         { duration: 5000 }
       )
-      await refreshVerifiedData(vData.downloadId, vData.pin || certPin)
-      await executeDownload(vData.downloadId)
+      await Promise.all([
+        refreshVerifiedData(vData.downloadId, vData.pin || certPin),
+        executeDownload(vData.downloadId),
+      ])
       return true
     }
 
@@ -496,7 +526,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
       stkTransitionRef.current = setTimeout(() => {
         setMpesaStatus((prev) => (prev === "stk_sent" ? "waiting" : prev))
-      }, 1800)
+      }, 600)
 
       let seconds = 60
       pollTimerRef.current = setInterval(() => {
@@ -514,9 +544,9 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         }
       }, 1000)
 
-      // Poll Daraja verification endpoint every 3 seconds without overlapping in-flight requests
+      // Poll Daraja verification endpoint aggressively without overlapping in-flight requests
       let pollInFlight = false
-      pollIntervalRef.current = setInterval(async () => {
+      const runPollCheck = async () => {
         if (pollInFlight) return
         pollInFlight = true
         try {
@@ -532,7 +562,14 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         } finally {
           pollInFlight = false
         }
-      }, 3000)
+      }
+
+      initialPollTimerRef.current = setTimeout(() => {
+        void runPollCheck()
+      }, 1200)
+      pollIntervalRef.current = setInterval(() => {
+        void runPollCheck()
+      }, 1500)
     } catch (err: any) {
       clearPaymentTimers()
       setMpesaStatus("failed")
@@ -901,12 +938,36 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     setPaymentPhone(e.target.value)
                     setPaymentError(null)
                   }}
-                  placeholder="0712345678 or 0112345678"
-                  className="w-full h-12 pl-10 pr-4 py-2.5 rounded-xl border-2 border-outline-variant bg-surface dark:bg-zinc-800 text-on-surface text-sm font-mono font-semibold placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleMpesaDarajaPayment()
+                    }
+                  }}
+                  placeholder="Enter payment M-Pesa number (e.g. 0712345678)"
+                  className={cn(
+                    "w-full h-12 pl-10 py-2.5 rounded-xl border-2 border-outline-variant bg-surface dark:bg-zinc-800 text-on-surface text-sm font-mono font-semibold placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all",
+                    paymentPhone.length > 0 ? "pr-10" : "pr-4"
+                  )}
                 />
+                {paymentPhone.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentPhone("")
+                      setPaymentError(null)
+                      document.getElementById(phoneInputId)?.focus()
+                    }}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface-variant hover:text-on-surface cursor-pointer"
+                    aria-label="Clear M-Pesa phone number"
+                    title="Clear phone number"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
               <p className="text-[11px] text-on-surface-variant mt-1">
-                Supported Kenyan M-Pesa formats: <span className="font-mono">07XXXXXXXX</span>, <span className="font-mono">01XXXXXXXX</span>, or <span className="font-mono">+2547XXXXXXXX</span>.
+                Enter the Safaricom M-Pesa phone number to receive the KES 20.00 STK Push prompt (<span className="font-mono">07XXXXXXXX</span>, <span className="font-mono">01XXXXXXXX</span>, or <span className="font-mono">+2547XXXXXXXX</span>).
               </p>
             </div>
 
@@ -965,58 +1026,63 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           </div>
         )}
 
-        {/* STATE 3: STK PUSH SENT */}
-        {mpesaStatus === "stk_sent" && (
-          <div className="py-5 px-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-500/30 text-center space-y-3">
+        {/* STATE 3 & 4: STK PUSH SENT / WAITING FOR CUSTOMER AUTHORIZATION */}
+        {(mpesaStatus === "stk_sent" || mpesaStatus === "waiting") && (
+          <div
+            className={cn(
+              "py-4 px-3 sm:px-4 rounded-2xl border text-center space-y-4",
+              mpesaStatus === "stk_sent"
+                ? "bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-500/30"
+                : "bg-surface-container/70 border-outline-variant"
+            )}
+          >
             <div className="relative mx-auto w-14 h-14">
               <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
-              <div className="relative w-14 h-14 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-sm">
-                <Smartphone className="w-7 h-7" />
-              </div>
-            </div>
-            <div>
-              <span className="inline-block text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300 mb-1">
-                Step 2 of 3 · STK Prompt Delivered
-              </span>
-              <h4 className="font-bold text-sm sm:text-base text-on-surface">
-                M-Pesa Prompt Sent to {paymentPhone}
-              </h4>
-              <p className="text-xs text-on-surface-variant mt-1 max-w-md mx-auto leading-relaxed">
-                Look at your phone screen now. An M-Pesa payment prompt for{" "}
-                <span className="font-mono font-bold text-on-surface">KES 20.00</span> (Buy Goods Till{" "}
-                <span className="font-mono font-bold text-on-surface">9348469</span>) is opening.
-              </p>
-              {activeCheckoutId && (
-                <p className="text-[10px] font-mono text-on-surface-variant mt-2">
-                  Request ID: {activeCheckoutId}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* STATE 4: WAITING FOR CUSTOMER AUTHORIZATION */}
-        {mpesaStatus === "waiting" && (
-          <div className="py-4 px-3 sm:px-4 rounded-2xl bg-surface-container/70 border border-outline-variant text-center space-y-4">
-            <div className="relative mx-auto w-14 h-14">
-              <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
-              <div className="relative w-14 h-14 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                <Smartphone className="w-7 h-7 animate-pulse" />
+              <div
+                className={cn(
+                  "relative w-14 h-14 rounded-full flex items-center justify-center",
+                  mpesaStatus === "stk_sent"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                )}
+              >
+                <Smartphone className={cn("w-7 h-7", mpesaStatus === "waiting" && "animate-pulse")} />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-[11px] font-mono font-bold text-amber-700 dark:text-amber-300 tabular-nums">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Awaiting M-Pesa PIN · {pollingSecondsLeft}s</span>
-              </span>
+              {mpesaStatus === "stk_sent" ? (
+                <span className="inline-block text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300 mb-1">
+                  Step 2 of 3 · STK Prompt Delivered · {pollingSecondsLeft}s
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-[11px] font-mono font-bold text-amber-700 dark:text-amber-300 tabular-nums">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Awaiting M-Pesa PIN · {pollingSecondsLeft}s</span>
+                </span>
+              )}
+
               <h4 className="font-bold text-sm sm:text-base text-on-surface">
-                Authorize KES 20.00 on Your Phone
+                {mpesaStatus === "stk_sent"
+                  ? `M-Pesa Prompt Sent to ${paymentPhone}`
+                  : "Authorize KES 20.00 on Your Phone"}
               </h4>
+
               <p className="text-xs text-on-surface-variant max-w-md mx-auto leading-relaxed">
-                Enter your 4-digit M-Pesa PIN on{" "}
-                <span className="font-mono font-bold text-on-surface">{paymentPhone}</span>. Payment is not complete until Safaricom confirms your transaction — this page updates automatically without refreshing.
+                {mpesaStatus === "stk_sent" ? (
+                  <>
+                    Look at your phone screen now. An M-Pesa payment prompt for{" "}
+                    <span className="font-mono font-bold text-on-surface">KES 20.00</span> (Buy Goods Till{" "}
+                    <span className="font-mono font-bold text-on-surface">9348469</span>) is opening.
+                  </>
+                ) : (
+                  <>
+                    Enter your 4-digit M-Pesa PIN on{" "}
+                    <span className="font-mono font-bold text-on-surface">{paymentPhone}</span>. Payment is not complete until Safaricom confirms your transaction — your KRA PIN Certificate unlocks and downloads automatically.
+                  </>
+                )}
               </p>
+
               {activeCheckoutId && (
                 <p className="text-[10px] font-mono text-on-surface-variant pt-1 break-all">
                   CheckoutRef: {activeCheckoutId}
