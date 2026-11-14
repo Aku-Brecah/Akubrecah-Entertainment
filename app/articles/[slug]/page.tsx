@@ -6,7 +6,15 @@ import { Metadata } from 'next';
 import { MarkdownContent } from '@/components/markdown-content';
 import { GooglePreferredSourceButton } from '@/components/google-preferred-source-button';
 
-import { ArticleSchema, BreadcrumbSchema } from '@/components/seo/site-schema';
+import { ArticleSchema, BreadcrumbSchema, FaqSchema, type FaqItem } from '@/components/seo/site-schema';
+
+function toAbsoluteImageUrl(imagePath?: string | null): string {
+  if (!imagePath) return 'https://akubrecah.com/og-image.jpg';
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  return `https://akubrecah.com${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
+}
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -25,6 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = article.seoTitle || article.title;
   const description = article.seoDescription || article.excerpt;
   const publishedIso = new Date(article.publishedAt).toISOString();
+  const absoluteImage = toAbsoluteImageUrl(article.featuredImage);
 
   return {
     title: `${title} | Akubrecah Engineering`,
@@ -40,7 +49,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: 'article',
       publishedTime: publishedIso,
       tags: article.tags,
-      images: article.featuredImage ? [article.featuredImage] : ['https://akubrecah.com/og-image.jpg'],
+      images: [
+        {
+          url: absoluteImage,
+          alt: article.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [absoluteImage],
     },
   };
 }
@@ -54,6 +74,10 @@ export default async function ArticleDetailPage({ params }: Props) {
   }
 
   const publishedIso = new Date(article.publishedAt).toISOString();
+  const absoluteImage = toAbsoluteImageUrl(article.featuredImage);
+  const articleFaqs: FaqItem[] = Array.isArray((article as { faqs?: unknown }).faqs)
+    ? ((article as { faqs?: FaqItem[] }).faqs ?? [])
+    : [];
 
   return (
     <article className="min-h-screen bg-background text-on-background">
@@ -63,8 +87,10 @@ export default async function ArticleDetailPage({ params }: Props) {
         url={`https://akubrecah.com/articles/${slug}`}
         publishedAt={publishedIso}
         authorName="Akubrecah Engineering"
-        imageUrl={article.featuredImage}
+        imageUrl={absoluteImage}
+        keywords={article.tags}
       />
+      {articleFaqs.length > 0 && <FaqSchema items={articleFaqs} />}
       <BreadcrumbSchema
         items={[
           { name: 'Home', url: 'https://akubrecah.com' },

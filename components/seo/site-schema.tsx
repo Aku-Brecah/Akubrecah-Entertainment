@@ -231,6 +231,7 @@ export function ArticleSchema({
   updatedAt,
   authorName = 'Akubrecah Engineering',
   imageUrl,
+  keywords,
 }: {
   title: string;
   description: string;
@@ -238,9 +239,16 @@ export function ArticleSchema({
   publishedAt: string;
   updatedAt?: string;
   authorName?: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
+  keywords?: string[];
 }): JSX.Element {
-  const schema = {
+  const resolvedImage = imageUrl
+    ? imageUrl.startsWith('http://') || imageUrl.startsWith('https://')
+      ? imageUrl
+      : `https://akubrecah.com${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`
+    : 'https://akubrecah.com/og-image.jpg';
+
+  const schema: Record<string, any> = {
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
     headline: title,
@@ -262,12 +270,20 @@ export function ArticleSchema({
         url: 'https://akubrecah.com/logo-circle.png',
       },
     },
-    image: imageUrl || 'https://akubrecah.com/og-image.jpg',
+    image: resolvedImage,
     mainEntityOfPage: {
       '@type': 'WebPage',
       '@id': url,
     },
   };
+
+  if (Array.isArray(keywords) && keywords.length > 0) {
+    schema.keywords = keywords.join(', ');
+    schema.about = {
+      '@type': 'Thing',
+      name: 'KRA PIN Retrieval & Kenya Revenue Authority iTax Compliance',
+    };
+  }
 
   return (
     <script

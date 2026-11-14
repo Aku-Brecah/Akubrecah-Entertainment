@@ -54,8 +54,14 @@ describe('Search Engine Optimization (SEO) & Indexing Suite', () => {
       expect(userAgents).toContain('Googlebot');
       expect(userAgents).toContain('Bingbot');
       expect(userAgents).toContain('PerplexityBot');
+      expect(userAgents).toContain('Perplexity-User');
       expect(userAgents).toContain('ChatGPT-User');
+      expect(userAgents).toContain('OAI-SearchBot');
+      expect(userAgents).toContain('GPTBot');
       expect(userAgents).toContain('Claude-Web');
+      expect(userAgents).toContain('ClaudeBot');
+      expect(userAgents).toContain('Google-Extended');
+      expect(userAgents).toContain('Meta-ExternalAgent');
       expect(userAgents).toContain('Applebot');
       expect(userAgents).toContain('*');
 
@@ -85,6 +91,7 @@ describe('Search Engine Optimization (SEO) & Indexing Suite', () => {
       // Verify all canonical public pages are present
       expect(urls.some((u) => u.endsWith('akubrecah.com') || u.endsWith('akubrecah.com/'))).toBe(true);
       expect(urls.some((u) => u.includes('/retrieval-portal'))).toBe(true);
+      expect(urls).toContain('https://akubrecah.com/articles/kra-pin-retrieval-online-using-id-number-itax-login-guide');
       expect(urls.some((u) => u.includes('/services'))).toBe(true);
       expect(urls.some((u) => u.includes('/solutions'))).toBe(true);
       expect(urls.some((u) => u.includes('/products'))).toBe(true);
@@ -213,8 +220,13 @@ describe('Search Engine Optimization (SEO) & Indexing Suite', () => {
         expect(article).not.toBeNull();
         expect(article.isPublished).toBe(true);
         expect(article.publishedAt).toBeInstanceOf(Date);
+        expect(article.featuredImage).toBe('/blog/kra-pin-retrieval-portal.png');
+        expect(fs.existsSync(path.join(process.cwd(), 'public', 'blog', 'kra-pin-retrieval-portal.png'))).toBe(true);
+        expect(article.content).toContain('/blog/kra-pin-retrieval-portal.png');
         expect(article.content).toContain('/retrieval-portal');
         expect(article.content).toContain('KES 20');
+        expect(Array.isArray(article.faqs)).toBe(true);
+        expect(article.faqs.length).toBeGreaterThanOrEqual(6);
 
         const targetKeywords = [
           'retrieve kra pin',

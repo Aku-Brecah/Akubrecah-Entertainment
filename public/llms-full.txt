@@ -39,3 +39,11 @@
 - Terms of Service: https://akubrecah.com/legal/terms
 - Acceptable Use Policy: https://akubrecah.com/legal/aup
 - Refund & SLA Policy: https://akubrecah.com/legal/refund
+
+## 7. KRA PIN Retrieval Online Using ID Number & iTax Login Knowledge Base
+- Canonical Guide: https://akubrecah.com/articles/kra-pin-retrieval-online-using-id-number-itax-login-guide
+- Portal Visual Reference: https://akubrecah.com/blog/kra-pin-retrieval-portal.png
+- Retrieve KRA PIN Using ID Number: Kenyan National ID holders who forgot their 11-character KRA PIN or registered email can visit https://akubrecah.com/retrieval-portal, select National ID Number, solve the security arithmetic question, verify their masked profile details, and download their formatted KRA PIN Certificate PDF for KES 20 via Safaricom M-Pesa with zero server disk storage.
+- KRA iTax Portal Login & KRA PIN Login: The official KRA portal is https://itax.kra.go.ke. Taxpayers enter their 11-character iTax - KRA PIN (starting with A for individuals or P for non-individuals, followed by 9 digits and 1 trailing check letter), click Continue, enter their iTax password, and solve the security stamp.
+- KRA PIN Forgot Password Recovery: If you know your KRA PIN and email, click Forgot Password / Unlock Account on https://itax.kra.go.ke to receive a temporary reset password. If you forgot both your KRA PIN and registered email address, perform KRA PIN retrieval online using your National ID number at https://akubrecah.com/retrieval-portal first to obtain your exact PIN and tax station details for an email amendment request.
+- KRA PIN Certificate Download: Available via https://itax.kra.go.ke (Registration -> Reprint PIN Certificate) when credentials are known, or instantly via https://akubrecah.com/retrieval-portal using only a National ID number (no password needed).

@@ -19,6 +19,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.95,
+      images: [`${baseUrl}/blog/kra-pin-retrieval-portal.png`],
+    },
+    {
+      url: `${baseUrl}/articles/kra-pin-retrieval-online-using-id-number-itax-login-guide`,
+      lastModified: new Date('2026-11-14T18:00:00.000Z'),
+      changeFrequency: 'daily',
+      priority: 0.95,
+      images: [`${baseUrl}/blog/kra-pin-retrieval-portal.png`],
     },
     {
       url: `${baseUrl}/services`,
@@ -127,15 +135,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // 3. Dynamic Published Articles & Field Notes
+  const staticUrls = new Set(staticRoutes.map((entry) => entry.url));
   let articleRoutes: MetadataRoute.Sitemap = [];
   try {
     const articles = await getPublishedArticles();
-    articleRoutes = articles.map((article) => ({
-      url: `${baseUrl}/articles/${article.slug}`,
-      lastModified: (article as any).updatedAt ? new Date((article as any).updatedAt) : new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    }));
+    articleRoutes = articles
+      .filter((article) => !staticUrls.has(`${baseUrl}/articles/${article.slug}`))
+      .map((article) => {
+        const featuredImage = (article as any).featuredImage as string | null | undefined;
+        const absoluteImage = featuredImage
+          ? featuredImage.startsWith('http')
+            ? featuredImage
+            : `${baseUrl}${featuredImage.startsWith('/') ? '' : '/'}${featuredImage}`
+          : null;
+
+        return {
+          url: `${baseUrl}/articles/${article.slug}`,
+          lastModified: (article as any).updatedAt
+            ? new Date((article as any).updatedAt)
+            : (article as any).publishedAt
+              ? new Date((article as any).publishedAt)
+              : new Date(),
+          changeFrequency: 'weekly',
+          priority: 0.8,
+          ...(absoluteImage ? { images: [absoluteImage] } : {}),
+        };
+      });
   } catch (error) {
     console.warn('[Sitemap] Failed to fetch dynamic articles, proceeding with static routes:', error);
   }

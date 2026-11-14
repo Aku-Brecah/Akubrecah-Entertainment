@@ -68,19 +68,31 @@ export default function robots(): MetadataRoute.Robots {
       },
       // Perplexity AI Search Crawler
       {
-        userAgent: 'PerplexityBot',
+        userAgent: ['PerplexityBot', 'Perplexity-User'],
         allow: '/',
         disallow: privateDisallows,
       },
-      // OpenAI ChatGPT Search
+      // OpenAI ChatGPT & SearchGPT Crawlers
       {
-        userAgent: ['ChatGPT-User', 'OAI-SearchBot'],
+        userAgent: ['ChatGPT-User', 'OAI-SearchBot', 'GPTBot'],
         allow: '/',
         disallow: privateDisallows,
       },
-      // Anthropic Claude Web Search
+      // Anthropic Claude Web & Search Crawlers
       {
-        userAgent: 'Claude-Web',
+        userAgent: ['Claude-Web', 'ClaudeBot', 'anthropic-ai'],
+        allow: '/',
+        disallow: privateDisallows,
+      },
+      // Google Gemini / AI Overviews Training & Grounding Crawler
+      {
+        userAgent: 'Google-Extended',
+        allow: '/',
+        disallow: privateDisallows,
+      },
+      // Meta AI Search Crawler
+      {
+        userAgent: 'Meta-ExternalAgent',
         allow: '/',
         disallow: privateDisallows,
       },

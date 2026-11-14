@@ -4,7 +4,7 @@
 
 ## Core Offerings
 
-- [Retrieval Portal](https://akubrecah.com/retrieval-portal): Instant Kenya Revenue Authority (KRA) PIN certificate retrieval and automated nil tax returns filing.
+- [Retrieval Portal](https://akubrecah.com/retrieval-portal): Instant KRA PIN retrieval online using National ID number, certificate download (KES 20 PDF), and automated nil tax returns filing.
 - [Engineering Services](https://akubrecah.com/services): Full-stack web engineering (Next.js/React), iOS & Android mobile development, cloud DevOps (AWS/GCP), and statutory compliance integrations.
 - [Industry Solutions](https://akubrecah.com/solutions): Tailored enterprise software systems across FinTech (M-Pesa Daraja, multi-currency ledgers), GovTech, ERP, and SaaS product engineering.
 - [In-House Products](https://akubrecah.com/products): Akubrecah API Gateway, distributed microservice routing, client telemetry consoles, and tax compliance automation tools.
