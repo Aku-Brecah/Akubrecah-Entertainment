@@ -26,7 +26,6 @@ import {
   CheckCircle2,
   X,
   ExternalLink,
-  QrCode,
   Copy,
   Receipt
 } from 'lucide-react'
@@ -142,15 +141,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const [paymentMethod, setPaymentMethod] = useState<"stk" | "manual">("stk")
   const [manualMpesaCode, setManualMpesaCode] = useState("")
   const [isVerifyingManual, setIsVerifyingManual] = useState(false)
-  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
-  const [qrMeta, setQrMeta] = useState<{
-    tillNumber: string
-    amount: number
-    reference: string
-    source?: string
-  } | null>(null)
-  const [qrStatus, setQrStatus] = useState<"idle" | "loading" | "ready" | "error">("idle")
-  const [qrPinKey, setQrPinKey] = useState<string>("")
   const [copiedTill, setCopiedTill] = useState(false)
   const [pollingSecondsLeft, setPollingSecondsLeft] = useState(60)
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -210,45 +200,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     }, 120)
     return () => clearTimeout(timer)
   }, [currentStep, isRecordUnlocked, mpesaStatus, showPaymentModal, paymentMethod])
-
-  const loadPaymentQr = async (force = false) => {
-    const activePin = (formData.rawPin || formData.pin || "").trim()
-    if (!force && qrStatus === "ready" && qrCodeUrl && qrPinKey === activePin) return
-
-    setQrStatus("loading")
-    try {
-      const res = await fetch('/api/mpesa/qrcode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: activePin || undefined }),
-      })
-      const data = await res.json()
-      if (!res.ok || !data.success || !data.qrImageUrl) {
-        throw new Error(data.error || "Unable to generate payment QR code.")
-      }
-      setQrCodeUrl(String(data.qrImageUrl))
-      setQrMeta({
-        tillNumber: String(data.tillNumber || "9348469"),
-        amount: Number(data.amount || 20),
-        reference: String(data.reference || "KRA-CERT"),
-        source: data.source ? String(data.source) : undefined,
-      })
-      setQrPinKey(activePin)
-      setQrStatus("ready")
-    } catch {
-      setQrStatus("error")
-    }
-  }
-
-  // Generate/refresh custom M-Pesa QR code whenever checkout becomes visible
-  useEffect(() => {
-    if ((currentStep !== 4 && !showPaymentModal) || isRecordUnlocked) return
-    const activePin = (formData.rawPin || formData.pin || "").trim()
-    if (qrStatus === "idle" || (qrPinKey !== activePin && qrStatus !== "loading")) {
-      void loadPaymentQr()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, showPaymentModal, isRecordUnlocked, formData.rawPin, formData.pin])
 
   // Cleanup polling intervals on unmount
   useEffect(() => {
@@ -959,9 +910,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     const isPhoneFormatValid =
       /^(?:254|0)(?:7\d{8}|1\d{8})$/.test(cleanPhonePreview) ||
       /^(?:7|1)\d{8}$/.test(cleanPhonePreview)
-    const activeTill = qrMeta?.tillNumber || "9348469"
-    const activeRef = qrMeta?.reference || "KRA-CERT"
-    const settledAmount = (accessInfo?.feeKes ?? qrMeta?.amount ?? 20).toFixed(2)
+    const activeTill = "9348469"
+    const settledAmount = (accessInfo?.feeKes ?? 20).toFixed(2)
 
     return (
       <div
@@ -985,7 +935,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                   : "Complete Payment to Unlock Official PDF"}
               </h3>
               <p className="text-xs text-on-surface-variant mt-0.5">
-                Instant STK Push, Custom M-Pesa QR Scan, or Manual Receipt Verification
+                Instant STK Push Prompt or Manual M-Pesa Receipt Verification
               </p>
             </div>
           </div>
@@ -1150,10 +1100,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             </div>
           )
         })() : (
-          /* RESPONSIVE 2-COLUMN CHECKOUT: LEFT = STK PUSH / MANUAL CODE | RIGHT = CUSTOM QR CODE */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-            {/* LEFT COLUMN: STK PUSH & MANUAL FALLBACK */}
-            <div className="lg:col-span-7 flex flex-col gap-4 min-w-0">
+          <div className="flex flex-col gap-4 min-w-0">
               {/* Clean Segmented Payment Mode Switcher */}
               <div className="grid grid-cols-2 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 gap-1">
                 <button
@@ -1599,7 +1546,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       </div>
                       <ol className="space-y-1 list-decimal list-inside text-xs text-amber-950 dark:text-amber-100 leading-relaxed">
                         <li>Open SIM Toolkit or M-Pesa App → <strong>Lipa na M-Pesa</strong> → <strong>Buy Goods</strong>.</li>
-                        <li>Enter Till Number <strong className="font-mono">{activeTill}</strong> and Amount <strong className="font-mono">KES {Math.round(Number(settledAmount))}</strong> (or scan the QR code on the right).</li>
+                        <li>Enter Till Number <strong className="font-mono">{activeTill}</strong> and Amount <strong className="font-mono">KES {Math.round(Number(settledAmount))}</strong>.</li>
                         <li>After receiving the M-Pesa SMS, enter the 10-character <strong>Transaction Code</strong> below.</li>
                       </ol>
                     </div>
@@ -1700,112 +1647,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* RIGHT COLUMN: CUSTOM QR PAYMENT CARD ON THE SIDE */}
-            <div className="lg:col-span-5 flex flex-col">
-              <div className="flex-1 rounded-2xl bg-surface-container/60 dark:bg-zinc-800/50 border border-outline-variant p-4 sm:p-5 flex flex-col items-center justify-between text-center gap-4">
-                <div className="w-full flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-left">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-600/15 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
-                      <QrCode className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-extrabold text-on-surface">
-                        Scan M-Pesa QR Code
-                      </h4>
-                      <p className="text-[10px] text-on-surface-variant">
-                        Pay KES {settledAmount} via M-Pesa App
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void loadPaymentQr(true)}
-                    disabled={qrStatus === "loading"}
-                    className="p-2 rounded-lg border border-outline-variant bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer disabled:opacity-50"
-                    title="Refresh payment QR code"
-                    aria-label="Refresh payment QR code"
-                  >
-                    <RefreshCw className={cn("w-3.5 h-3.5", qrStatus === "loading" && "animate-spin")} />
-                  </button>
-                </div>
-
-                {/* Styled QR Frame with Scan Corner Brackets */}
-                <div className="relative p-3.5 rounded-2xl bg-white border border-zinc-200 shadow-xs inline-flex items-center justify-center">
-                  <span className="absolute top-1.5 left-1.5 w-3.5 h-3.5 border-t-2 border-l-2 border-emerald-600 rounded-tl-md pointer-events-none" />
-                  <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 border-t-2 border-r-2 border-emerald-600 rounded-tr-md pointer-events-none" />
-                  <span className="absolute bottom-1.5 left-1.5 w-3.5 h-3.5 border-b-2 border-l-2 border-emerald-600 rounded-bl-md pointer-events-none" />
-                  <span className="absolute bottom-1.5 right-1.5 w-3.5 h-3.5 border-b-2 border-r-2 border-emerald-600 rounded-br-md pointer-events-none" />
-
-                  {qrStatus === "loading" ? (
-                    <div className="w-40 h-40 sm:w-44 sm:h-44 flex flex-col items-center justify-center gap-2 text-zinc-500">
-                      <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
-                      <span className="text-[11px] font-semibold">Generating QR...</span>
-                    </div>
-                  ) : qrCodeUrl ? (
-                    <img
-                      src={qrCodeUrl}
-                      alt={`M-Pesa Buy Goods QR Code for KES ${settledAmount}`}
-                      className="w-40 h-40 sm:w-44 sm:h-44 object-contain"
-                    />
-                  ) : (
-                    <div className="w-40 h-40 sm:w-44 sm:h-44 flex flex-col items-center justify-center gap-2 text-zinc-500 px-2">
-                      <AlertCircle className="w-6 h-6 text-amber-600" />
-                      <span className="text-[11px] font-medium">QR unavailable</span>
-                      <button
-                        type="button"
-                        onClick={() => void loadPaymentQr(true)}
-                        className="text-xs font-bold text-primary hover:underline cursor-pointer"
-                      >
-                        Retry QR
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Populated QR Metadata Rows */}
-                <div className="w-full rounded-xl bg-surface-container-lowest dark:bg-zinc-900/90 border border-outline-variant/70 p-3 space-y-1.5 text-[11px] text-left">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-on-surface-variant">Pay Method</span>
-                    <span className="font-bold text-on-surface">M-Pesa Buy Goods</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-on-surface-variant">Till Number</span>
-                    <button
-                      type="button"
-                      onClick={() => void handleCopyTill(activeTill)}
-                      className="font-mono font-bold text-on-surface inline-flex items-center gap-1 hover:text-primary cursor-pointer"
-                      title="Copy Till Number"
-                    >
-                      <span>{activeTill}</span>
-                      {copiedTill ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-on-surface-variant">Amount</span>
-                    <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300">
-                      KES {settledAmount}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-on-surface-variant">Reference</span>
-                    <span className="font-mono font-semibold text-on-surface truncate max-w-[140px]" title={activeRef}>
-                      {activeRef}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => switchToManualPayment(variant)}
-                  className={cn(secondaryButtonClass, "w-full h-10 text-xs justify-center")}
-                >
-                  <span>Paid via QR? Verify M-Pesa Code</span>
-                  <ArrowRight className="w-3.5 h-3.5 shrink-0" />
-                </button>
-              </div>
-            </div>
           </div>
         )}
       </div>
@@ -2505,7 +2346,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
 
 
-                  {/* ── CHECKOUT, MANUAL PAYMENT & CUSTOM QR PANEL ── */}
+                  {/* ── CHECKOUT & MANUAL PAYMENT PANEL ── */}
                   {(!isRecordUnlocked || mpesaStatus === "success") &&
                     renderMpesaCheckoutPanel("inline")}
 
@@ -2545,7 +2386,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       {/* ── Official KRA Payment & Checkout Gate Modal ── */}
       {showPaymentModal && accessInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md px-3 sm:px-4 py-4 sm:py-6 overflow-y-auto">
-          <div className="bg-surface border border-outline-variant/80 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden relative my-auto">
+          <div className="bg-surface border border-outline-variant/80 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden relative my-auto">
             {/* Top KRA Red decorative brand strip */}
             <div className="h-1.5 w-full bg-gradient-to-r from-primary-container via-primary to-primary-container" />
 

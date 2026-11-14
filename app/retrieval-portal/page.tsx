@@ -16,7 +16,6 @@ import {
   ArrowRight,
   CheckCircle2,
   Smartphone,
-  QrCode,
   Receipt,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -249,15 +248,15 @@ function FlagshipPortalContent() {
                 Flexible Checkout · KES 20.00 Per Certificate
               </span>
               <h2 id="payment-options-heading" className="text-base sm:text-lg font-black text-on-surface tracking-tight">
-                Three Ways to Pay &amp; Unlock Instantly
+                Two Ways to Pay &amp; Unlock Instantly
               </h2>
             </div>
             <span className="text-[11px] font-medium text-on-surface-variant">
-              Instant confirmation via STK Push, Custom QR Code, or Manual Till verification
+              Instant confirmation via STK Push or Manual Till verification
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-soft flex flex-col gap-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="w-9 h-9 rounded-xl bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
@@ -279,30 +278,11 @@ function FlagshipPortalContent() {
 
             <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-soft flex flex-col gap-3">
               <div className="flex items-center justify-between gap-2">
-                <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <QrCode className="w-4.5 h-4.5" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                  Option 2 · Scan to Pay
-                </span>
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-sm font-bold text-on-surface">
-                  Scan Custom M-Pesa QR Code
-                </h3>
-                <p className="text-xs text-on-surface-variant leading-relaxed">
-                  A unique custom QR code for KES 20.00 is generated beside checkout. Scan from your M-Pesa App&apos;s QR scanner without typing Till digits.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-soft flex flex-col gap-3">
-              <div className="flex items-center justify-between gap-2">
                 <div className="w-9 h-9 rounded-xl bg-amber-500/12 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
                   <Receipt className="w-4.5 h-4.5" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/12 text-amber-700 dark:text-amber-300">
-                  Option 3 · Fallback
+                  Option 2 · Fallback
                 </span>
               </div>
               <div className="space-y-1">

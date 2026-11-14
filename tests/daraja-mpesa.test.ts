@@ -734,7 +734,7 @@ describe('Safaricom Daraja M-Pesa Express Integration', () => {
     });
   });
 
-  describe('Manual M-Pesa fallback & Custom QR payment endpoint', () => {
+  describe('Manual M-Pesa receipt fallback verification', () => {
     it('extractMpesaReceiptCode parses raw codes, extracts from full SMS, and rejects placeholders', async () => {
       const { extractMpesaReceiptCode } = await import('@/lib/mpesa-verification');
 
@@ -815,33 +815,6 @@ describe('Safaricom Daraja M-Pesa Express Integration', () => {
       const invalidData = await invalidRes.json();
       expect(invalidRes.status).toBe(400);
       expect(invalidData.verified).toBe(false);
-    });
-
-    it('POST /api/mpesa/qrcode returns custom QR PNG data URI with till 9348469, KES 20, and CERT reference', async () => {
-      process.env.MPESA_TILL_NUMBER = '9348469';
-      process.env.DARAJA_TRANSACTION_TYPE = 'CustomerBuyGoodsOnline';
-
-      global.fetch = vi.fn(async () => new Response('Daraja QR timeout', { status: 503 })) as any;
-
-      const { POST } = await import('@/app/api/mpesa/qrcode/route');
-      const res = await POST(
-        new NextRequest('https://kra.akubrecah.com/api/mpesa/qrcode', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            pin: 'A012345678Z',
-          }),
-        })
-      );
-      const data = await res.json();
-
-      expect(res.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.source).toBe('custom');
-      expect(data.qrImageUrl).toMatch(/^data:image\/png;base64,/);
-      expect(data.tillNumber).toBe('9348469');
-      expect(data.amount).toBe(20);
-      expect(data.reference).toBe('CERT-A012345678Z');
     });
   });
 });
