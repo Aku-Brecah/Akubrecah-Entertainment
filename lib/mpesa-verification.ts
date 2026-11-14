@@ -44,10 +44,12 @@ export async function verifyAndFulfillMpesaCheckout({
   checkoutRequestId,
   rawPinInput,
   clerkId,
+  forceQuery,
 }: {
   checkoutRequestId: string;
   rawPinInput?: string | null;
   clerkId?: string | null;
+  forceQuery?: boolean;
 }): Promise<MpesaVerificationResult> {
   const db = prisma as any;
   const requestedPin = resolveExplicitPin(rawPinInput);
@@ -208,7 +210,7 @@ export async function verifyAndFulfillMpesaCheckout({
     liveDesc = cb.resultDesc || '';
     liveReceipt = cb.metadata?.mpesaReceiptNumber || cb.MpesaReceiptNumber || checkoutRequestId;
   } else {
-    const queryResult = await queryMpesaStkPushStatus(checkoutRequestId);
+    const queryResult = await queryMpesaStkPushStatus(checkoutRequestId, { force: forceQuery });
     liveStatus = queryResult.status;
     liveCode = queryResult.resultCode ?? null;
     liveDesc = queryResult.resultDesc || '';

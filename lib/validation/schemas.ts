@@ -43,6 +43,7 @@ export const mpesaVerifySchema = z.object({
     .max(120)
     .regex(/^[A-Za-z0-9_-]+$/, 'checkoutRequestId contains invalid characters'),
   pin: pinField.optional(),
+  force: z.boolean().optional(),
 });
 
 /** POST /api/certificate/record-download */

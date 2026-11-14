@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
       checkoutRequestId: parsed.data.checkoutRequestId,
       rawPinInput: parsed.data.pin,
       clerkId,
+      forceQuery: Boolean(parsed.data.force),
     });
 
     if (result.httpStatus && result.httpStatus >= 400) {

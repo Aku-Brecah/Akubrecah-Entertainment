@@ -222,7 +222,7 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
       } catch {
         // Continue polling on transient network error
       }
-    }, 2500);
+    }, 1000);
 
     return () => {
       clearInterval(countdown);

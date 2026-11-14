@@ -538,10 +538,10 @@ export async function queryMpesaStkPushStatus(
     };
   }
 
-  // Rate-protect per checkoutRequestId (minimum 3s between active Daraja queries)
+  // Rate-protect per checkoutRequestId (minimum 1.2s between active Daraja queries)
   g.darajaQueryLastAt = g.darajaQueryLastAt || ({} as Record<string, number>);
   const lastQueriedAt = g.darajaQueryLastAt[checkoutRequestId] || 0;
-  if (!opts?.force && Date.now() - lastQueriedAt < 3000) {
+  if (!opts?.force && Date.now() - lastQueriedAt < 1200) {
     return { status: 'pending' };
   }
   g.darajaQueryLastAt[checkoutRequestId] = Date.now();

@@ -415,11 +415,12 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     certPin: string,
     options?: { silentPending?: boolean }
   ): Promise<boolean> => {
-    if (vData?.verified && vData?.status === 'success' && vData?.downloadId) {
+    if (vData?.verified && vData?.status === 'success') {
       clearPaymentTimers()
       const receipt = vData.mpesaReceipt || vData.checkoutRequestId || activeCheckoutId
+      const resolvedDlId = vData.downloadId || vData.checkoutRequestId || activeCheckoutId
       setVerifiedReceipt(receipt)
-      setVerifiedDownloadId(vData.downloadId)
+      setVerifiedDownloadId(resolvedDlId)
       setMpesaStatus("success")
       setPaymentError(null)
       setCurrentStep(4)
@@ -428,8 +429,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         { duration: 5000 }
       )
       await Promise.all([
-        refreshVerifiedData(vData.downloadId, vData.pin || certPin),
-        executeDownload(vData.downloadId),
+        refreshVerifiedData(resolvedDlId, vData.pin || certPin),
+        resolvedDlId ? executeDownload(resolvedDlId) : Promise.resolve(),
       ])
       return true
     }
@@ -574,10 +575,10 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
       initialPollTimerRef.current = setTimeout(() => {
         void runPollCheck()
-      }, 1200)
+      }, 800)
       pollIntervalRef.current = setInterval(() => {
         void runPollCheck()
-      }, 1500)
+      }, 1000)
     } catch (err: any) {
       clearPaymentTimers()
       setMpesaStatus("failed")
@@ -601,7 +602,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       const vRes = await fetch('/api/mpesa/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checkoutRequestId: activeCheckoutId, pin: certPin }),
+        body: JSON.stringify({ checkoutRequestId: activeCheckoutId, pin: certPin, force: true }),
       })
       const vData = await vRes.json()
       toast.dismiss(toastId)

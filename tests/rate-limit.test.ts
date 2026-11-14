@@ -11,7 +11,8 @@ describe('Rate Limiter Module', () => {
       expect(tier1.limit).toBe(10);
 
       const tier2 = getTierForRoute('/api/mpesa/verify');
-      expect(tier2.tierKey).toBe('strict');
+      expect(tier2.tierKey).toBe('mpesa_poll');
+      expect(tier2.limit).toBe(180);
 
       const tier3 = getTierForRoute('/api/kra/nil-return');
       expect(tier3.tierKey).toBe('strict');
