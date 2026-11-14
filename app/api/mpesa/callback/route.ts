@@ -508,7 +508,7 @@ export async function POST(req: NextRequest) {
           if (conversation && conversation.metadata?.activeSession) {
             const targetPhone = conversation.user_phone;
             const failMsg =
-              `⚠️ M-Pesa payment not completed (${ResultDesc || 'timed out'}).\n` +
+              `M-Pesa payment not completed (${ResultDesc || 'timed out'}).\n` +
               `Reply 1 to resend prompt, or 0 to cancel.`;
 
             const { sendEvolutionTextMessage } = await import('@/lib/evolution');

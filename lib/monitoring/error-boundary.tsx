@@ -48,7 +48,20 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="w-full p-6 my-4 rounded-xl border border-red-500/30 bg-red-950/20 text-red-200">
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-xl">⚠️</span>
+            <svg
+              className="w-5 h-5 text-red-400 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+              <path d="M12 9v4" />
+              <path d="M12 17h.01" />
+            </svg>
             <h3 className="font-semibold text-lg text-white">Something went wrong</h3>
           </div>
           <p className="text-sm text-zinc-400 mb-4">

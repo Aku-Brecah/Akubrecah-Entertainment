@@ -55,13 +55,13 @@ function FlagshipPortalContent() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-bright text-on-surface font-sans selection:bg-primary/20 selection:text-primary flex flex-col">
+    <div className="min-h-screen bg-surface text-on-surface font-sans selection:bg-primary/20 selection:text-primary flex flex-col">
       
       {/* ============================================================== */}
       {/* 1. ADAPTIVE RESPONSIVE GOVTECH TOP NAVIGATION BAR */}
       {/* ============================================================== */}
-      <header className="sticky top-0 z-50 bg-surface/95 dark:bg-surface-dark/95 backdrop-blur-md border-b border-outline-variant/80">
-        <div className="max-w-5xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+      <header className="sticky top-0 z-50 w-full bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant/80 shadow-2xs">
+        <div className="w-full max-w-none px-4 sm:px-6 lg:px-10 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* Brand Mark & Identity */}
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-90 shrink-0">
@@ -114,7 +114,12 @@ function FlagshipPortalContent() {
 
           {/* Right Header Status & Profile */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <div className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+            <div className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container border border-outline-variant text-[11px] font-semibold text-on-surface-variant">
+              <Lock className="w-3 h-3 text-primary" />
+              <span>Zero PDF Storage · Ephemeral Stream</span>
+            </div>
+
+            <div className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Gateway Live</span>
             </div>
@@ -447,7 +452,7 @@ function FlagshipPortalContent() {
       {/* 3. MINIMAL GOVTECH FOOTER */}
       {/* ============================================================== */}
       <footer className="mt-auto border-t border-outline-variant/60 bg-surface-container-lowest/80 py-5 sm:py-6 text-xs text-on-surface-variant">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
+        <div className="w-full max-w-none px-4 sm:px-6 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
           <p className="text-[11px] text-on-surface-variant">
             &copy; {new Date().getFullYear()} Akubrecah Technologies. Independent third-party cyber assistance provider. Not affiliated with the Kenya Revenue Authority (KRA).
           </p>
@@ -483,7 +488,7 @@ export default function RetrievalPortalPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-surface-bright flex items-center justify-center">
+        <div className="min-h-screen bg-surface flex items-center justify-center">
           <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
         </div>
       }

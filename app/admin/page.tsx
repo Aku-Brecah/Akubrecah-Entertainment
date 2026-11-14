@@ -521,7 +521,7 @@ export default function AdminOverviewPage() {
 
   if (loading && !data) {
     return (
-      <div className="w-full p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto space-y-6 md:space-y-8 animate-pulse text-on-surface">
+      <div className="w-full max-w-none p-4 sm:p-6 md:p-8 space-y-6 md:space-y-8 animate-pulse text-on-surface">
         {/* Header Skeleton */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-outline-variant/60">
           <div className="space-y-2.5">
@@ -648,7 +648,7 @@ export default function AdminOverviewPage() {
   );
 
   return (
-    <div className="w-full p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto space-y-6 md:space-y-8 text-on-surface relative">
+    <div className="w-full max-w-none p-4 sm:p-6 md:p-8 space-y-6 md:space-y-8 text-on-surface relative">
       {/* Subtle ambient red spotlight blur matching the website hero */}
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none" />
 
@@ -1714,7 +1714,7 @@ export default function AdminOverviewPage() {
             <div>
               <h2 className="text-lg font-black text-on-surface">Unified Real-Time Transaction Logs</h2>
               <p className="text-xs text-on-surface-variant">
-                Official audit history of all certificate downloads across Web & WhatsApp. Instant 1-click certificate download available for admin.
+                Official payment and order audit trail across Web &amp; WhatsApp. Generated PDFs are streamed ephemerally to the user and are never stored on the site.
               </p>
             </div>
 
@@ -1771,8 +1771,7 @@ export default function AdminOverviewPage() {
                   <th className="py-3 px-4">Receipt Ref</th>
                   <th className="py-3 px-4">Amount</th>
                   <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Date & Time</th>
-                  <th className="py-3 px-4 text-right">Admin Actions</th>
+                  <th className="py-3 px-4">Date &amp; Time</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/60">
@@ -1827,26 +1826,11 @@ export default function AdminOverviewPage() {
                         {new Date(tx.createdAt).toLocaleDateString("en-KE")}{" "}
                         {new Date(tx.createdAt).toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })}
                       </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => handleInstantDownload(tx.pin, tx.id)}
-                          disabled={downloadingPin === tx.pin}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all text-xs font-bold border border-primary/20 disabled:opacity-50 whitespace-nowrap"
-                          title="Generate and stream authentic KRA PDF"
-                        >
-                          {downloadingPin === tx.pin ? (
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Download className="w-3.5 h-3.5" />
-                          )}
-                          <span>Download PDF</span>
-                        </button>
-                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-on-surface-variant">
+                    <td colSpan={8} className="py-12 text-center text-on-surface-variant">
                       No transaction records match the selected filter criteria.
                     </td>
                   </tr>
@@ -1988,9 +1972,10 @@ export default function AdminOverviewPage() {
               </div>
               <button
                 onClick={() => setShowBotModal(false)}
-                className="text-on-surface-variant hover:text-on-surface p-1"
+                className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container transition-colors"
+                aria-label="Close modal"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 

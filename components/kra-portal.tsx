@@ -1675,14 +1675,14 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     <div className="w-full">
       {!hideHeader && (
         <div className="mb-4 flex flex-col items-center justify-center text-center space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-[11px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest shadow-2xs">
-            <ShieldCheck className="w-3.5 h-3.5 text-red-600" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-[11px] font-black text-primary uppercase tracking-widest shadow-2xs">
+            <ShieldCheck className="w-3.5 h-3.5 text-primary" />
             Akubrecah Statutory Verification Engine
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
             Retrieve Tax Compliance Certificate
           </h2>
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-md leading-relaxed">
+          <p className="text-xs text-on-surface-variant max-w-md leading-relaxed">
             Instant verification by National ID or PIN · KES 20 download fee
           </p>
         </div>
@@ -1690,7 +1690,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
       {isVerified && (
         <div className={cn("w-full mx-auto mb-4", currentStep === 4 ? "max-w-6xl" : "max-w-3xl")}>
-          <Alert className="bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 rounded-2xl flex items-center gap-3 py-3 px-4 shadow-sm">
+          <Alert className="bg-emerald-500/[0.08] border-emerald-500/25 text-emerald-800 dark:text-emerald-300 rounded-2xl flex items-center gap-3 py-3 px-4 shadow-2xs">
             <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
             <AlertDescription className="text-xs font-semibold">
               Taxpayer compliance record retrieved successfully. Review details below and proceed to download your certificate.
@@ -1699,21 +1699,21 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         </div>
       )}
 
-      {/* Eye-Catching Step Progress Bar */}
+      {/* Clean Step Progress Bar */}
       <div className="w-full max-w-lg mx-auto mb-4 sm:mb-5 px-1 sm:px-3">
         <div className="flex justify-between items-center text-[10px] sm:text-[11px] font-black tracking-wide mb-2">
-          <span className={cn(currentStep >= 1 ? "text-red-600 dark:text-red-400 font-black" : "text-zinc-400")}>
+          <span className={cn(currentStep >= 1 ? "text-primary font-black" : "text-on-surface-variant/60")}>
             1. <span className="hidden sm:inline">Identify</span><span className="sm:hidden">ID</span>
           </span>
-          <span className={cn(currentStep >= 2 ? "text-red-600 dark:text-red-400 font-black" : "text-zinc-400")}>2. Details</span>
-          <span className={cn(currentStep >= 3 ? "text-red-600 dark:text-red-400 font-black" : "text-zinc-400")}>3. Address</span>
-          <span className={cn(currentStep >= 4 ? "text-red-600 dark:text-red-400 font-black" : "text-zinc-400")}>
+          <span className={cn(currentStep >= 2 ? "text-primary font-black" : "text-on-surface-variant/60")}>2. Details</span>
+          <span className={cn(currentStep >= 3 ? "text-primary font-black" : "text-on-surface-variant/60")}>3. Address</span>
+          <span className={cn(currentStep >= 4 ? "text-primary font-black" : "text-on-surface-variant/60")}>
             4. Download<span className="hidden sm:inline"> (KES 20)</span>
           </span>
         </div>
-        <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden relative border border-zinc-200 dark:border-zinc-700">
+        <div className="h-2 w-full bg-surface-container-high rounded-full overflow-hidden relative border border-outline-variant">
           <motion.div
-            className="h-full bg-gradient-to-r from-red-600 via-rose-500 to-red-600 rounded-full shadow-xs"
+            className="h-full bg-primary rounded-full shadow-2xs"
             initial={{ width: "25%" }}
             animate={{ width: `${(currentStep / 4) * 100}%` }}
             transition={{ type: "spring", stiffness: 200, damping: 20 }}
@@ -1730,7 +1730,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         >
           <div
             className={cn(
-              "bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl shadow-sm border-2 border-zinc-200 dark:border-zinc-800 p-4 sm:p-6 md:p-7 relative overflow-hidden z-10 mx-auto",
+              "bg-surface-container-lowest rounded-2xl sm:rounded-3xl shadow-soft border border-outline-variant p-4 sm:p-6 md:p-7 relative overflow-hidden z-10 mx-auto",
               currentStep === 4 ? "max-w-6xl" : "max-w-3xl"
             )}
           >
@@ -2148,28 +2148,28 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     const isRecordUnlocked = Boolean(verifiedDownloadId || isAdmin);
                     return (
                       <>
-                        <div className="w-full bg-gradient-to-r from-emerald-500/10 via-red-500/5 to-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left shadow-xs">
+                        <div className="w-full bg-emerald-500/[0.07] dark:bg-emerald-950/30 border border-emerald-500/25 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left shadow-2xs">
                           <div className="flex items-center gap-3">
-                            <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
+                            <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 shrink-0">
                               <CheckCircle2 className="w-5 h-5" />
                             </div>
                             <div>
-                              <p className="text-xs sm:text-sm font-black text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                              <p className="text-xs sm:text-sm font-black text-on-surface flex items-center gap-2">
                                 {isRecordUnlocked ? "Compliance Certificate Ready" : "Official Compliance Record Ready"}
-                                <span className="text-[10px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold">
+                                <span className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold">
                                   {isRecordUnlocked ? "Paid & Unmasked" : "100% Verified"}
                                 </span>
                               </p>
-                              <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5 leading-relaxed font-medium">
+                              <p className="text-[11px] text-on-surface-variant mt-0.5 leading-relaxed font-medium">
                                 {isRecordUnlocked
                                   ? "Payment verified. Your certificate is compiled and full taxpayer details are unmasked below."
                                   : <>Taxpayer record matched directly with government registries. Confidential fields remain masked until you pay strictly <strong>KES 20 (20 bob)</strong> to unmask and download your official tamper-proof PDF.</>}
                               </p>
                             </div>
                           </div>
-                          <div className="shrink-0 bg-red-100 dark:bg-red-950/60 border border-red-200 dark:border-red-800 rounded-xl px-3.5 py-2 text-center w-full sm:w-auto">
-                            <span className="block text-[10px] uppercase font-black text-red-600 dark:text-red-400 tracking-wider">Download Fee</span>
-                            <span className="text-sm sm:text-base font-black text-red-600 dark:text-red-400">
+                          <div className="shrink-0 bg-primary/10 border border-primary/25 rounded-xl px-3.5 py-2 text-center w-full sm:w-auto">
+                            <span className="block text-[10px] uppercase font-black text-primary tracking-wider">Download Fee</span>
+                            <span className="text-sm sm:text-base font-black text-primary">
                               {isRecordUnlocked ? "PAID" : "KES 20 only"}
                             </span>
                           </div>
@@ -2185,7 +2185,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           {/* LEFT: Taxpayer Preview Data Grid */}
                           <div
                             className={cn(
-                              "w-full bg-surface-variant/30 rounded-2xl p-4 sm:p-6 border border-outline-variant space-y-4 shadow-sm",
+                              "w-full bg-surface-container-low/60 rounded-2xl p-4 sm:p-6 border border-outline-variant space-y-4 shadow-2xs",
                               (!isRecordUnlocked || mpesaStatus === "success") ? "lg:col-span-7" : "max-w-4xl mx-auto"
                             )}
                           >

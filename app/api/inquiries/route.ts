@@ -119,15 +119,15 @@ export async function POST(req: NextRequest) {
     // 5. Automated Multi-Channel Admin Notifications
     const adminPhone = process.env.SUPER_ADMIN_PHONE || '254791497858';
     const alertText =
-      `🔔 *NEW CLIENT INQUIRY RECEIVED*\n\n` +
-      `👤 *Client:* ${inquiry.name}\n` +
-      `📧 *Email:* ${inquiry.email}\n` +
-      `📱 *Phone:* ${inquiry.phone || 'Not provided'}\n` +
-      `🏢 *Company:* ${inquiry.company || 'Individual / Startup'}\n` +
-      `🛠️ *Project Type:* ${inquiry.projectType}\n` +
-      `🏷️ *Subject:* ${inquiry.subject}\n` +
-      `💰 *Budget:* ${inquiry.budget}\n\n` +
-      `📝 *Message:*\n"${inquiry.message}"\n\n` +
+      `*NEW CLIENT INQUIRY RECEIVED*\n\n` +
+      `*Client:* ${inquiry.name}\n` +
+      `*Email:* ${inquiry.email}\n` +
+      `*Phone:* ${inquiry.phone || 'Not provided'}\n` +
+      `*Company:* ${inquiry.company || 'Individual / Startup'}\n` +
+      `*Project Type:* ${inquiry.projectType}\n` +
+      `*Subject:* ${inquiry.subject}\n` +
+      `*Budget:* ${inquiry.budget}\n\n` +
+      `*Message:*\n"${inquiry.message}"\n\n` +
       `_Status: NEW. View and manage in your Admin Portal at /admin/inquiries_`;
 
     sendEvolutionTextMessage(adminPhone, alertText).catch((err) => {
