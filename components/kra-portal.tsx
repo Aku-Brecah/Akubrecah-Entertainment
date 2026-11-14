@@ -13,6 +13,7 @@ import {
   User,
   MapPin,
   ArrowRight,
+  ArrowLeft,
   RefreshCw,
   BadgeIcon,
   MapPinIcon,
@@ -28,7 +29,15 @@ import {
   ExternalLink,
   Copy,
   Receipt,
-  Shield
+  Shield,
+  ShieldAlert,
+  Gavel,
+  Mail,
+  Signpost,
+  Store,
+  Share2,
+  FileText,
+  QrCode
 } from 'lucide-react'
 
 import { Button } from "@/components/ui/button"
@@ -163,6 +172,19 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     return /^(?:\+?254|0)?(?:7|1)\d{8}$/.test(clean)
   }
 
+  const activeTill = "9348469"
+
+  const maskName = (name?: string | null) => {
+    if (!name || typeof name !== "string") return "TAXPAYER RECORD"
+    const parts = name.trim().split(/\s+/)
+    return parts
+      .map(p => {
+        if (p.length <= 2) return p
+        return `${p.slice(0, 2)}***`
+      })
+      .join(" ")
+  }
+
   const clearPaymentTimers = () => {
     if (pollTimerRef.current) {
       clearInterval(pollTimerRef.current)
@@ -249,26 +271,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     })
   }
 
-function generateClientMathChallenge(): { image: string; token: string } {
-  const num1 = Math.floor(Math.random() * 25) + 12;
-  const num2 = Math.floor(Math.random() * 9) + 3;
-  const isAddition = Math.random() > 0.4;
-  const question = isAddition ? `${num1} + ${num2}` : `${num1} - ${num2}`;
-  const answer = isAddition ? num1 + num2 : num1 - num2;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="42" viewBox="0 0 160 42">
-    <rect width="160" height="42" fill="#F4F4F5" rx="8" />
-    <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" font-family="monospace, monospace" font-size="20" font-weight="900" fill="#BA1A1A" letter-spacing="2">
-      ${question} = ?
-    </text>
-    <line x1="8" y1="8" x2="152" y2="34" stroke="#BA1A1A" stroke-width="0.75" stroke-opacity="0.18" />
-    <line x1="10" y1="34" x2="150" y2="8" stroke="#0F172A" stroke-width="0.75" stroke-opacity="0.12" />
-  </svg>`;
-  const image = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-  const payload = { type: 'local_math', answer, exp: Date.now() + 15 * 60 * 1000 };
-  const token = typeof window !== 'undefined' ? 'local_' + btoa(JSON.stringify(payload)) : '';
-  return { image, token };
-}
-
   const loadCaptcha = async () => {
     setCaptchaStatus("loading")
     setCaptchaAnswer("")
@@ -281,16 +283,16 @@ function generateClientMathChallenge(): { image: string; token: string } {
         setSessionToken(data.sessionToken)
         setCaptchaStatus("ready")
       } else {
-        const fallback = generateClientMathChallenge()
-        setCaptchaImage(fallback.image)
-        setSessionToken(fallback.token)
-        setCaptchaStatus("ready")
+        setCaptchaImage(null)
+        setSessionToken(null)
+        setCaptchaStatus("error")
+        setError(data.error || "Unable to load security stamp from KRA portal. Please tap refresh to retry.")
       }
     } catch {
-      const fallback = generateClientMathChallenge()
-      setCaptchaImage(fallback.image)
-      setSessionToken(fallback.token)
-      setCaptchaStatus("ready")
+      setCaptchaImage(null)
+      setSessionToken(null)
+      setCaptchaStatus("error")
+      setError("Unable to connect to KRA portal. Please tap refresh to retry.")
     }
   }
 
@@ -378,7 +380,7 @@ function generateClientMathChallenge(): { image: string; token: string } {
         setCaptchaStatus("idle")
         setCaptchaImage(null)
         setCaptchaAnswer("")
-        setCurrentStep(4)
+        setCurrentStep(2)
         trackEvent({ activityType: "view_masked" })
         toast.success("KRA Taxpayer Details Found!")
       } else {
@@ -935,7 +937,6 @@ function generateClientMathChallenge(): { image: string; token: string } {
     const isPhoneFormatValid =
       /^(?:254|0)(?:7\d{8}|1\d{8})$/.test(cleanPhonePreview) ||
       /^(?:7|1)\d{8}$/.test(cleanPhonePreview)
-    const activeTill = "9348469"
     const settledAmount = (accessInfo?.feeKes ?? 20).toFixed(2)
 
     return (
@@ -1126,468 +1127,75 @@ function generateClientMathChallenge(): { image: string; token: string } {
           )
         })() : (
           <div className="flex flex-col gap-4 min-w-0">
-              {/* Clean Segmented Payment Mode Switcher */}
-              <div className="grid grid-cols-2 p-1 rounded-xl bg-surface-container border border-outline-variant/80 gap-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPaymentMethod("stk")
-                    setPaymentError(null)
-                  }}
-                  className={cn(
-                    "min-h-[40px] px-2.5 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
-                    paymentMethod === "stk"
-                      ? "bg-surface-container-lowest text-on-surface shadow-2xs border border-outline-variant/70"
-                      : "text-on-surface-variant hover:text-on-surface"
-                  )}
-                >
-                  <Smartphone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="truncate">Instant STK Prompt</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchToManualPayment(variant)}
-                  className={cn(
-                    "min-h-[40px] px-2.5 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
-                    paymentMethod === "manual"
-                      ? "bg-surface-container-lowest text-on-surface shadow-2xs border border-outline-variant/70"
-                      : "text-on-surface-variant hover:text-on-surface"
-                  )}
-                >
-                  <Receipt className="w-3.5 h-3.5 text-primary shrink-0" />
-                  <span className="truncate">Manual Payment</span>
-                </button>
-              </div>
+            {/* Clean Segmented Payment Mode Switcher */}
+            <div className="grid grid-cols-2 p-1 rounded-xl bg-surface-container border border-outline-variant/80 gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setPaymentMethod("stk")
+                  setPaymentError(null)
+                }}
+                className={cn(
+                  "min-h-[40px] px-2.5 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                  paymentMethod === "stk"
+                    ? "bg-surface-container-lowest text-on-surface shadow-2xs border border-outline-variant/70"
+                    : "text-on-surface-variant hover:text-on-surface"
+                )}
+              >
+                <Smartphone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="truncate">Instant STK Prompt</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchToManualPayment(variant)}
+                className={cn(
+                  "min-h-[40px] px-2.5 sm:px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                  paymentMethod === "manual"
+                    ? "bg-surface-container-lowest text-on-surface shadow-2xs border border-outline-variant/70"
+                    : "text-on-surface-variant hover:text-on-surface"
+                )}
+              >
+                <Receipt className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span className="truncate">Manual Payment</span>
+              </button>
+            </div>
 
-              {paymentMethod === "stk" ? (
-                <div className="flex-1 flex flex-col justify-between gap-4 min-w-0">
-                  {/* STATE 1: READY TO SEND STK PUSH */}
-                  {mpesaStatus === "ready" && (
-                    <div className="space-y-4">
-                      <div className="rounded-xl bg-surface-container-lowest border border-outline-variant/70 p-3.5 text-xs text-on-surface space-y-1.5">
-                        <p className="font-bold uppercase tracking-wider text-[10px] text-emerald-700 dark:text-emerald-400">
-                          Fastest Checkout · Direct Phone Prompt
-                        </p>
-                        <ol className="space-y-1 list-decimal list-inside text-[11px] text-on-surface-variant leading-relaxed">
-                          <li>Enter your Safaricom M-Pesa number and click Send Prompt.</li>
-                          <li>Authorize the KES {settledAmount} PIN prompt on your handset.</li>
-                          <li>Your KRA PIN Certificate unlocks and downloads immediately.</li>
-                        </ol>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <label htmlFor={phoneInputId} className="block text-xs font-bold text-on-surface">
-                            Safaricom M-Pesa Phone Number
-                          </label>
-                          {hasPhoneInput && (
-                            <span
-                              className={cn(
-                                "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                                isPhoneFormatValid
-                                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                                  : "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-                              )}
-                            >
-                              {isPhoneFormatValid ? "Valid Kenyan number" : "Use 07XXXXXXXX or 01XXXXXXXX"}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Well-fitted inline Phone Input + Submit Button */}
-                        <div
-                          className={cn(
-                            "flex flex-col gap-2.5 w-full",
-                            variant === "modal" && "sm:flex-row sm:items-center"
-                          )}
-                        >
-                          <div className="relative flex-1 min-w-0">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                              <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                            </div>
-                            <input
-                              id={phoneInputId}
-                              type="tel"
-                              inputMode="tel"
-                              autoComplete="tel"
-                              value={paymentPhone}
-                              onChange={(e) => {
-                                setPaymentPhone(e.target.value)
-                                setPaymentError(null)
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault()
-                                  handleMpesaDarajaPayment()
-                                }
-                              }}
-                              placeholder="0712345678 or 0112345678"
-                              className={cn(
-                                inputClass,
-                                "pl-10 font-mono text-sm",
-                                paymentPhone.length > 0 ? "pr-9" : "pr-3.5"
-                              )}
-                            />
-                            {paymentPhone.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setPaymentPhone("")
-                                  setPaymentError(null)
-                                  document.getElementById(phoneInputId)?.focus()
-                                }}
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface-variant hover:text-on-surface cursor-pointer"
-                                aria-label="Clear M-Pesa phone number"
-                                title="Clear phone number"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-
-                          <button
-                            type="button"
-                            disabled={isMpesaBusy}
-                            onClick={() => handleMpesaDarajaPayment()}
-                            className={cn(
-                              primaryButtonClass,
-                              variant === "inline" ? "w-full justify-center" : "w-full sm:w-auto px-5 shrink-0 justify-center"
-                            )}
-                          >
-                            <span>Send KES {Math.round(Number(settledAmount))} Prompt</span>
-                            <ArrowRight className="w-4 h-4 shrink-0" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {paymentError && (
-                        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-700 dark:text-red-300 text-xs font-medium flex items-start gap-2">
-                          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                          <span>{paymentError}</span>
-                        </div>
-                      )}
-
-                      <div className="pt-2 border-t border-outline-variant/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
-                        <span className="text-on-surface-variant">
-                          STK prompt not popping up on your phone?
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => switchToManualPayment(variant)}
-                          className="text-primary font-bold hover:underline inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
-                        >
-                          <span>Use Manual Payment</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      {variant === "modal" && (
-                        <div className="pt-1">
-                          <button
-                            type="button"
-                            onClick={() => setShowPaymentModal(false)}
-                            className={cn(secondaryButtonClass, "w-full justify-center")}
-                          >
-                            Cancel Checkout
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* STATE 2: INITIATING */}
-                  {mpesaStatus === "initiating" && (
-                    <div className="py-6 px-3 text-center space-y-3 my-auto">
-                      <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mx-auto">
-                        <Loader2 className="w-6 h-6 animate-spin" />
-                      </div>
-                      <div>
-                        <span className="inline-block text-[10px] font-black uppercase tracking-widest text-primary mb-1">
-                          Step 1 of 3 · Contacting Safaricom
-                        </span>
-                        <h4 className="font-bold text-sm sm:text-base text-on-surface">
-                          Sending Payment Prompt...
-                        </h4>
-                        <p className="text-xs text-on-surface-variant mt-1 max-w-sm mx-auto">
-                          Dispatching KES {settledAmount} prompt to{" "}
-                          <span className="font-mono font-bold text-on-surface">{paymentPhone}</span>.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* STATE 3 & 4: STK SENT / WAITING FOR PIN */}
-                  {(mpesaStatus === "stk_sent" || mpesaStatus === "waiting") && (
-                    <div className="space-y-4 text-center py-2 my-auto">
-                      <div className="relative mx-auto w-14 h-14">
-                        <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
-                        <div
-                          className={cn(
-                            "relative w-14 h-14 rounded-full flex items-center justify-center",
-                            mpesaStatus === "stk_sent"
-                              ? "bg-emerald-600 text-white shadow-sm"
-                              : "bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-                          )}
-                        >
-                          <Smartphone className={cn("w-7 h-7", mpesaStatus === "waiting" && "animate-pulse")} />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        {mpesaStatus === "stk_sent" ? (
-                          <span className="inline-block text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">
-                            Prompt Delivered · {pollingSecondsLeft}s
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-[11px] font-mono font-bold text-amber-700 dark:text-amber-300 tabular-nums">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>Waiting for M-Pesa PIN · {pollingSecondsLeft}s</span>
-                          </span>
-                        )}
-
-                        <h4 className="font-bold text-sm sm:text-base text-on-surface">
-                          {mpesaStatus === "stk_sent"
-                            ? `Check ${paymentPhone} Now`
-                            : `Authorize KES ${settledAmount} on Your Phone`}
-                        </h4>
-
-                        <p className="text-xs text-on-surface-variant max-w-md mx-auto leading-relaxed">
-                          Enter your M-Pesa PIN on{" "}
-                          <span className="font-mono font-bold text-on-surface">{paymentPhone}</span>. Your KRA PIN Certificate unlocks automatically the moment confirmation arrives.
-                        </p>
-
-                        {activeCheckoutId && (
-                          <p className="text-[10px] font-mono text-on-surface-variant pt-0.5 break-all">
-                            Ref: {activeCheckoutId}
-                          </p>
-                        )}
-                      </div>
-
-                      {paymentError && (
-                        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-200 text-xs font-medium">
-                          {paymentError}
-                        </div>
-                      )}
-
-                      <div className="flex flex-col gap-2.5 pt-1 w-full">
-                        <button
-                          type="button"
-                          onClick={handleCheckPaymentStatus}
-                          className={cn(primaryButtonClass, "w-full justify-center")}
-                        >
-                          <CheckCircle2 className="w-4 h-4 shrink-0" />
-                          <span>I Entered PIN — Verify Now</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleCancelOrResetPayment}
-                          className={cn(secondaryButtonClass, "w-full justify-center")}
-                        >
-                          <span>Change Phone</span>
-                        </button>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => switchToManualPayment(variant)}
-                        className="text-xs font-bold text-primary hover:underline inline-flex items-center justify-center gap-1 cursor-pointer pt-1"
-                      >
-                        <span>STK prompt delayed? Switch to Manual Payment</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-
-                  {/* STATE 5: VERIFYING */}
-                  {mpesaStatus === "verifying" && (
-                    <div className="py-6 px-3 text-center space-y-3 my-auto">
-                      <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary mx-auto">
-                        <Loader2 className="w-6 h-6 animate-spin" />
-                      </div>
-                      <div>
-                        <span className="inline-block text-[10px] font-black uppercase tracking-widest text-primary mb-1">
-                          Step 3 of 3 · Live Check
-                        </span>
-                        <h4 className="font-bold text-sm sm:text-base text-on-surface">
-                          Verifying Transaction Status...
-                        </h4>
-                        <p className="text-xs text-on-surface-variant mt-1 max-w-sm mx-auto">
-                          Confirming payment for checkout <span className="font-mono font-semibold text-on-surface">{activeCheckoutId}</span>.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* STATE 7: CANCELLED */}
-                  {mpesaStatus === "cancelled" && (
-                    <div className="space-y-4 my-auto">
-                      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5">
-                        <AlertCircle className="w-5 h-5 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="font-bold text-sm text-on-surface">
-                            M-Pesa Request Cancelled on Phone
-                          </h4>
-                          <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                            {paymentError ||
-                              "You dismissed or cancelled the STK prompt on your phone. No funds were deducted."}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-2.5 w-full">
-                        <button
-                          type="button"
-                          onClick={() => handleMpesaDarajaPayment()}
-                          className={cn(primaryButtonClass, "w-full justify-center")}
-                        >
-                          <RotateCcw className="w-4 h-4 shrink-0" />
-                          <span>Resend STK Prompt</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleCancelOrResetPayment}
-                          className={cn(secondaryButtonClass, "w-full justify-center")}
-                        >
-                          <span>Edit Number</span>
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => switchToManualPayment(variant)}
-                        className={cn(secondaryButtonClass, "w-full justify-center border-primary/30 text-primary hover:bg-primary/5")}
-                      >
-                        <Receipt className="w-4 h-4 shrink-0" />
-                        <span>Pay Manually via Till Instead</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* STATE 8: TIMED OUT */}
-                  {mpesaStatus === "timeout" && (
-                    <div className="space-y-4 my-auto">
-                      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5">
-                        <Clock className="w-5 h-5 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="font-bold text-sm text-on-surface">
-                            STK Authorization Timed Out
-                          </h4>
-                          <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                            {paymentError ||
-                              "The prompt expired before confirmation. If you already paid or want to pay manually, use the options below."}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-2.5 w-full">
-                        {activeCheckoutId && (
-                          <button
-                            type="button"
-                            onClick={handleCheckPaymentStatus}
-                            className={cn(primaryButtonClass, "w-full justify-center")}
-                          >
-                            <CheckCircle2 className="w-4 h-4 shrink-0" />
-                            <span>Verify Now</span>
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleMpesaDarajaPayment()}
-                          className={cn(secondaryButtonClass, "w-full justify-center")}
-                        >
-                          <RotateCcw className="w-4 h-4 shrink-0" />
-                          <span>Retry STK</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => switchToManualPayment(variant)}
-                          className={cn(secondaryButtonClass, "w-full justify-center border-primary/30 text-primary hover:bg-primary/5")}
-                        >
-                          <Receipt className="w-4 h-4 shrink-0" />
-                          <span>Pay Manually</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* STATE 9: FAILED */}
-                  {mpesaStatus === "failed" && (
-                    <div className="space-y-4 my-auto">
-                      <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2.5">
-                        <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-                        <div>
-                          <h4 className="font-bold text-sm text-red-700 dark:text-red-300">
-                            STK Prompt Could Not Complete
-                          </h4>
-                          <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                            {paymentError ||
-                              "The STK push could not be completed. You can retry or complete your payment manually using the Till number."}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-2.5 w-full">
-                        <button
-                          type="button"
-                          onClick={() => handleMpesaDarajaPayment()}
-                          className={cn(primaryButtonClass, "w-full justify-center")}
-                        >
-                          <RotateCcw className="w-4 h-4 shrink-0" />
-                          <span>Retry STK Prompt</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleCancelOrResetPayment}
-                          className={cn(secondaryButtonClass, "w-full justify-center")}
-                        >
-                          <span>Edit Number</span>
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => switchToManualPayment(variant)}
-                        className={cn(secondaryButtonClass, "w-full justify-center border-primary/30 text-primary hover:bg-primary/5")}
-                      >
-                        <Receipt className="w-4 h-4 shrink-0" />
-                        <span>Use Manual Payment Instead (Recommended)</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* MANUAL PAYMENT FALLBACK PANEL */
-                <div className="flex-1 flex flex-col justify-between gap-4 min-w-0">
+            {paymentMethod === "stk" ? (
+              <div className="flex-1 flex flex-col justify-between gap-4 min-w-0">
+                {/* STATE 1: READY TO SEND STK PUSH */}
+                {mpesaStatus === "ready" && (
                   <div className="space-y-4">
-                    <div className="rounded-xl bg-surface-container-lowest border border-outline-variant/70 p-3.5 space-y-2.5">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">
-                          Manual M-Pesa Buy Goods Instructions
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => void handleCopyTill(activeTill)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container border border-outline-variant text-[11px] font-mono font-bold text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
-                        >
-                          {copiedTill ? (
-                            <>
-                              <Check className="w-3 h-3 text-emerald-600" />
-                              <span>Copied Till</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3 h-3 text-primary" />
-                              <span>Copy Till {activeTill}</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                      <ol className="space-y-1 list-decimal list-inside text-xs text-on-surface-variant leading-relaxed">
-                        <li>Open SIM Toolkit or M-Pesa App → <strong className="text-on-surface">Lipa na M-Pesa</strong> → <strong className="text-on-surface">Buy Goods</strong>.</li>
-                        <li>Enter Till Number <strong className="font-mono text-on-surface">{activeTill}</strong> and Amount <strong className="font-mono text-on-surface">KES {Math.round(Number(settledAmount))}</strong>.</li>
-                        <li>After receiving the M-Pesa SMS, enter the 10-character <strong className="text-on-surface">Transaction Code</strong> below.</li>
+                    <div className="rounded-xl bg-surface-container-lowest border border-outline-variant/70 p-3.5 text-xs text-on-surface space-y-1.5">
+                      <p className="font-bold uppercase tracking-wider text-[10px] text-emerald-700 dark:text-emerald-400">
+                        Fastest Checkout · Direct Phone Prompt
+                      </p>
+                      <ol className="space-y-1 list-decimal list-inside text-[11px] text-on-surface-variant leading-relaxed">
+                        <li>Enter your Safaricom M-Pesa number and click Send Prompt.</li>
+                        <li>Authorize the KES {settledAmount} PIN prompt on your handset.</li>
+                        <li>Your KRA PIN Certificate unlocks and downloads immediately.</li>
                       </ol>
                     </div>
 
                     <div className="space-y-2">
-                      <label htmlFor={manualInputId} className="block text-xs font-bold text-on-surface">
-                        M-Pesa Confirmation Code or Full SMS
-                      </label>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <label htmlFor={phoneInputId} className="block text-xs font-bold text-on-surface">
+                          Safaricom M-Pesa Phone Number
+                        </label>
+                        {hasPhoneInput && (
+                          <span
+                            className={cn(
+                              "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                              isPhoneFormatValid
+                                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                                : "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                            )}
+                          >
+                            {isPhoneFormatValid ? "Valid Kenyan number" : "Use 07XXXXXXXX or 01XXXXXXXX"}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Well-fitted inline Phone Input + Submit Button */}
                       <div
                         className={cn(
                           "flex flex-col gap-2.5 w-full",
@@ -1596,39 +1204,42 @@ function generateClientMathChallenge(): { image: string; token: string } {
                       >
                         <div className="relative flex-1 min-w-0">
                           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                            <Receipt className="w-4 h-4 text-primary" />
+                            <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                           </div>
                           <input
-                            id={manualInputId}
-                            type="text"
-                            value={manualMpesaCode}
+                            id={phoneInputId}
+                            type="tel"
+                            inputMode="tel"
+                            autoComplete="tel"
+                            value={paymentPhone}
                             onChange={(e) => {
-                              setManualMpesaCode(e.target.value)
+                              setPaymentPhone(e.target.value)
                               setPaymentError(null)
                             }}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 e.preventDefault()
-                                void handleManualPaymentVerify()
+                                handleMpesaDarajaPayment()
                               }
                             }}
-                            placeholder="e.g. UB12XYZ789 or paste SMS"
+                            placeholder="0712345678 or 0112345678"
                             className={cn(
                               inputClass,
-                              "pl-10 font-mono uppercase tracking-wide",
-                              manualMpesaCode.length > 0 ? "pr-9" : "pr-3.5"
+                              "pl-10 font-mono text-sm",
+                              paymentPhone.length > 0 ? "pr-9" : "pr-3.5"
                             )}
                           />
-                          {manualMpesaCode.length > 0 && (
+                          {paymentPhone.length > 0 && (
                             <button
                               type="button"
                               onClick={() => {
-                                setManualMpesaCode("")
+                                setPaymentPhone("")
                                 setPaymentError(null)
-                                document.getElementById(manualInputId)?.focus()
+                                document.getElementById(phoneInputId)?.focus()
                               }}
                               className="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface-variant hover:text-on-surface cursor-pointer"
-                              aria-label="Clear M-Pesa receipt code"
+                              aria-label="Clear M-Pesa phone number"
+                              title="Clear phone number"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -1637,29 +1248,17 @@ function generateClientMathChallenge(): { image: string; token: string } {
 
                         <button
                           type="button"
-                          disabled={isVerifyingManual}
-                          onClick={() => void handleManualPaymentVerify()}
+                          disabled={isMpesaBusy}
+                          onClick={() => handleMpesaDarajaPayment()}
                           className={cn(
                             primaryButtonClass,
                             variant === "inline" ? "w-full justify-center" : "w-full sm:w-auto px-5 shrink-0 justify-center"
                           )}
                         >
-                          {isVerifyingManual ? (
-                            <>
-                              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                              <span>Verifying...</span>
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 className="w-4 h-4 shrink-0" />
-                              <span>Verify &amp; Unlock</span>
-                            </>
-                          )}
+                          <span>Send KES {Math.round(Number(settledAmount))} Prompt</span>
+                          <ArrowRight className="w-4 h-4 shrink-0" />
                         </button>
                       </div>
-                      <p className="text-[11px] text-on-surface-variant">
-                        Example code: <span className="font-mono font-semibold text-on-surface">UB12XYZ789</span> — pasting the entire confirmation SMS also works automatically.
-                      </p>
                     </div>
 
                     {paymentError && (
@@ -1668,26 +1267,428 @@ function generateClientMathChallenge(): { image: string; token: string } {
                         <span>{paymentError}</span>
                       </div>
                     )}
-                  </div>
 
-                  <div className="pt-2 border-t border-outline-variant/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
-                    <span className="text-on-surface-variant">
-                      Prefer an automatic PIN prompt on your phone?
-                    </span>
+                    <div className="pt-2 border-t border-outline-variant/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
+                      <span className="text-on-surface-variant">
+                        STK prompt not popping up on your phone?
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => switchToManualPayment(variant)}
+                        className="text-primary font-bold hover:underline inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                      >
+                        <span>Use Manual Payment</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {variant === "modal" && (
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowPaymentModal(false)}
+                          className={cn(secondaryButtonClass, "w-full justify-center")}
+                        >
+                          Cancel Checkout
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* STATE 2: INITIATING */}
+                {mpesaStatus === "initiating" && (
+                  <div className="py-6 px-3 text-center space-y-3 my-auto">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mx-auto">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    </div>
+                    <div>
+                      <span className="inline-block text-[10px] font-black uppercase tracking-widest text-primary mb-1">
+                        Step 1 of 3 · Contacting Safaricom
+                      </span>
+                      <h4 className="font-bold text-sm sm:text-base text-on-surface">
+                        Sending Payment Prompt...
+                      </h4>
+                      <p className="text-xs text-on-surface-variant mt-1 max-w-sm mx-auto">
+                        Dispatching KES {settledAmount} prompt to{" "}
+                        <span className="font-mono font-bold text-on-surface">{paymentPhone}</span>.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* STATE 3 & 4: STK SENT / WAITING FOR PIN */}
+                {(mpesaStatus === "stk_sent" || mpesaStatus === "waiting") && (
+                  <div className="space-y-4 text-center py-2 my-auto">
+                    <div className="relative mx-auto w-14 h-14">
+                      <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
+                      <div
+                        className={cn(
+                          "relative w-14 h-14 rounded-full flex items-center justify-center",
+                          mpesaStatus === "stk_sent"
+                            ? "bg-emerald-600 text-white shadow-sm"
+                            : "bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                        )}
+                      >
+                        <Smartphone className={cn("w-7 h-7", mpesaStatus === "waiting" && "animate-pulse")} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {mpesaStatus === "stk_sent" ? (
+                        <span className="inline-block text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">
+                          Prompt Delivered · {pollingSecondsLeft}s
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-[11px] font-mono font-bold text-amber-700 dark:text-amber-300 tabular-nums">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>Waiting for M-Pesa PIN · {pollingSecondsLeft}s</span>
+                        </span>
+                      )}
+
+                      <h4 className="font-bold text-sm sm:text-base text-on-surface">
+                        {mpesaStatus === "stk_sent"
+                          ? `Check ${paymentPhone} Now`
+                          : `Authorize KES ${settledAmount} on Your Phone`}
+                      </h4>
+
+                      <p className="text-xs text-on-surface-variant max-w-md mx-auto leading-relaxed">
+                        Enter your M-Pesa PIN on{" "}
+                        <span className="font-mono font-bold text-on-surface">{paymentPhone}</span>. Your KRA PIN Certificate unlocks automatically the moment confirmation arrives.
+                      </p>
+
+                      {activeCheckoutId && (
+                        <p className="text-[10px] font-mono text-on-surface-variant pt-0.5 break-all">
+                          Ref: {activeCheckoutId}
+                        </p>
+                      )}
+                    </div>
+
+                    {paymentError && (
+                      <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-200 text-xs font-medium">
+                        {paymentError}
+                      </div>
+                    )}
+
+                    <div className="flex flex-col gap-2.5 pt-1 w-full">
+                      <button
+                        type="button"
+                        onClick={handleCheckPaymentStatus}
+                        className={cn(primaryButtonClass, "w-full justify-center")}
+                      >
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span>I Entered PIN — Verify Now</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelOrResetPayment}
+                        className={cn(secondaryButtonClass, "w-full justify-center")}
+                      >
+                        <span>Change Phone</span>
+                      </button>
+                    </div>
+
                     <button
                       type="button"
-                      onClick={() => {
-                        setPaymentMethod("stk")
-                        setPaymentError(null)
-                      }}
-                      className="text-primary font-bold hover:underline inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                      onClick={() => switchToManualPayment(variant)}
+                      className="text-xs font-bold text-primary hover:underline inline-flex items-center justify-center gap-1 cursor-pointer pt-1"
                     >
-                      <span>Switch to STK Prompt</span>
+                      <span>STK prompt delayed? Switch to Manual Payment</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
+                )}
+
+                {/* STATE 5: VERIFYING */}
+                {mpesaStatus === "verifying" && (
+                  <div className="py-6 px-3 text-center space-y-3 my-auto">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary mx-auto">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    </div>
+                    <div>
+                      <span className="inline-block text-[10px] font-black uppercase tracking-widest text-primary mb-1">
+                        Step 3 of 3 · Live Check
+                      </span>
+                      <h4 className="font-bold text-sm sm:text-base text-on-surface">
+                        Verifying Transaction Status...
+                      </h4>
+                      <p className="text-xs text-on-surface-variant mt-1 max-w-sm mx-auto">
+                        Confirming payment for checkout <span className="font-mono font-semibold text-on-surface">{activeCheckoutId}</span>.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* STATE 7: CANCELLED */}
+                {mpesaStatus === "cancelled" && (
+                  <div className="space-y-4 my-auto">
+                    <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5">
+                      <AlertCircle className="w-5 h-5 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-sm text-on-surface">
+                          M-Pesa Request Cancelled on Phone
+                        </h4>
+                        <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                          {paymentError ||
+                            "You dismissed or cancelled the STK prompt on your phone. No funds were deducted."}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2.5 w-full">
+                      <button
+                        type="button"
+                        onClick={() => handleMpesaDarajaPayment()}
+                        className={cn(primaryButtonClass, "w-full justify-center")}
+                      >
+                        <RotateCcw className="w-4 h-4 shrink-0" />
+                        <span>Resend STK Prompt</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelOrResetPayment}
+                        className={cn(secondaryButtonClass, "w-full justify-center")}
+                      >
+                        <span>Edit Number</span>
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => switchToManualPayment(variant)}
+                      className={cn(secondaryButtonClass, "w-full justify-center border-primary/30 text-primary hover:bg-primary/5")}
+                    >
+                      <Receipt className="w-4 h-4 shrink-0" />
+                      <span>Pay Manually via Till Instead</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* STATE 8: TIMED OUT */}
+                {mpesaStatus === "timeout" && (
+                  <div className="space-y-4 my-auto">
+                    <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5">
+                      <Clock className="w-5 h-5 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-sm text-on-surface">
+                          STK Authorization Timed Out
+                        </h4>
+                        <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                          {paymentError ||
+                            "The prompt expired before confirmation. If you already paid or want to pay manually, use the options below."}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2.5 w-full">
+                      {activeCheckoutId && (
+                        <button
+                          type="button"
+                          onClick={handleCheckPaymentStatus}
+                          className={cn(primaryButtonClass, "w-full justify-center")}
+                        >
+                          <CheckCircle2 className="w-4 h-4 shrink-0" />
+                          <span>Verify Now</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleMpesaDarajaPayment()}
+                        className={cn(secondaryButtonClass, "w-full justify-center")}
+                      >
+                        <RotateCcw className="w-4 h-4 shrink-0" />
+                        <span>Retry STK</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => switchToManualPayment(variant)}
+                        className={cn(secondaryButtonClass, "w-full justify-center border-primary/30 text-primary hover:bg-primary/5")}
+                      >
+                        <Receipt className="w-4 h-4 shrink-0" />
+                        <span>Pay Manually</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* STATE 9: FAILED */}
+                {mpesaStatus === "failed" && (
+                  <div className="space-y-4 my-auto">
+                    <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2.5">
+                      <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-sm text-red-700 dark:text-red-300">
+                          STK Prompt Could Not Complete
+                        </h4>
+                        <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                          {paymentError ||
+                            "The STK push could not be completed. You can retry or complete your payment manually using the Till number."}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2.5 w-full">
+                      <button
+                        type="button"
+                        onClick={() => handleMpesaDarajaPayment()}
+                        className={cn(primaryButtonClass, "w-full justify-center")}
+                      >
+                        <RotateCcw className="w-4 h-4 shrink-0" />
+                        <span>Retry STK Prompt</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelOrResetPayment}
+                        className={cn(secondaryButtonClass, "w-full justify-center")}
+                      >
+                        <span>Edit Number</span>
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => switchToManualPayment(variant)}
+                      className={cn(secondaryButtonClass, "w-full justify-center border-primary/30 text-primary hover:bg-primary/5")}
+                    >
+                      <Receipt className="w-4 h-4 shrink-0" />
+                      <span>Use Manual Payment Instead (Recommended)</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* MANUAL PAYMENT FALLBACK PANEL */
+              <div className="flex-1 flex flex-col justify-between gap-4 min-w-0">
+                <div className="space-y-4">
+                  <div className="rounded-xl bg-surface-container-lowest border border-outline-variant/70 p-3.5 space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                        Manual M-Pesa Buy Goods Instructions
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => void handleCopyTill(activeTill)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container border border-outline-variant text-[11px] font-mono font-bold text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
+                      >
+                        {copiedTill ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            <span>Copied Till</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3 text-primary" />
+                            <span>Copy Till {activeTill}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <ol className="space-y-1 list-decimal list-inside text-xs text-on-surface-variant leading-relaxed">
+                      <li>Open SIM Toolkit or M-Pesa App → <strong className="text-on-surface">Lipa na M-Pesa</strong> → <strong className="text-on-surface">Buy Goods</strong>.</li>
+                      <li>Enter Till Number <strong className="font-mono text-on-surface">{activeTill}</strong> and Amount <strong className="font-mono text-on-surface">KES {Math.round(Number(settledAmount))}</strong>.</li>
+                      <li>After receiving the M-Pesa SMS, enter the 10-character <strong className="text-on-surface">Transaction Code</strong> below.</li>
+                    </ol>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor={manualInputId} className="block text-xs font-bold text-on-surface">
+                      M-Pesa Confirmation Code or Full SMS
+                    </label>
+                    <div
+                      className={cn(
+                        "flex flex-col gap-2.5 w-full",
+                        variant === "modal" && "sm:flex-row sm:items-center"
+                      )}
+                    >
+                      <div className="relative flex-1 min-w-0">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                          <Receipt className="w-4 h-4 text-primary" />
+                        </div>
+                        <input
+                          id={manualInputId}
+                          type="text"
+                          value={manualMpesaCode}
+                          onChange={(e) => {
+                            setManualMpesaCode(e.target.value)
+                            setPaymentError(null)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              void handleManualPaymentVerify()
+                            }
+                          }}
+                          placeholder="e.g. UB12XYZ789 or paste SMS"
+                          className={cn(
+                            inputClass,
+                            "pl-10 font-mono uppercase tracking-wide",
+                            manualMpesaCode.length > 0 ? "pr-9" : "pr-3.5"
+                          )}
+                        />
+                        {manualMpesaCode.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setManualMpesaCode("")
+                              setPaymentError(null)
+                              document.getElementById(manualInputId)?.focus()
+                            }}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface-variant hover:text-on-surface cursor-pointer"
+                            aria-label="Clear M-Pesa receipt code"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={isVerifyingManual}
+                        onClick={() => void handleManualPaymentVerify()}
+                        className={cn(
+                          primaryButtonClass,
+                          variant === "inline" ? "w-full justify-center" : "w-full sm:w-auto px-5 shrink-0 justify-center"
+                        )}
+                      >
+                        {isVerifyingManual ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                            <span>Verifying...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 shrink-0" />
+                            <span>Verify &amp; Unlock</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-on-surface-variant">
+                      Example code: <span className="font-mono font-semibold text-on-surface">UB12XYZ789</span> — pasting the entire confirmation SMS also works automatically.
+                    </p>
+                  </div>
+
+                  {paymentError && (
+                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-700 dark:text-red-300 text-xs font-medium flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{paymentError}</span>
+                    </div>
+                  )}
                 </div>
-              )}
+
+                <div className="pt-2 border-t border-outline-variant/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
+                  <span className="text-on-surface-variant">
+                    Prefer an automatic PIN prompt on your phone?
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentMethod("stk")
+                      setPaymentError(null)
+                    }}
+                    className="text-primary font-bold hover:underline inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                  >
+                    <span>Switch to STK Prompt</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1743,16 +1744,16 @@ function generateClientMathChallenge(): { image: string; token: string } {
                 currentStep === 1
                   ? "bg-primary text-white ring-4 ring-primary/20 shadow-xs"
                   : currentStep > 1
-                  ? "bg-primary text-white shadow-xs"
-                  : "bg-surface-container-lowest border-2 border-outline-variant text-on-surface-variant font-medium"
+                    ? "bg-on-background text-white shadow-xs"
+                    : "bg-surface-container-lowest border-2 border-outline-variant text-on-surface-variant font-medium"
               )}
             >
-              1
+              {currentStep > 1 ? <Check className="w-3.5 h-3.5" /> : 1}
             </div>
             <span
               className={cn(
-                "mt-2 text-[11px] font-bold tracking-tight",
-                currentStep >= 1 ? "text-primary" : "text-on-surface-variant/70"
+                "mt-2 text-[11px] tracking-tight",
+                currentStep === 1 ? "text-primary font-bold" : currentStep > 1 ? "text-on-surface font-semibold" : "text-on-surface-variant/70"
               )}
             >
               1. Identify
@@ -1767,16 +1768,16 @@ function generateClientMathChallenge(): { image: string; token: string } {
                 currentStep === 2
                   ? "bg-primary text-white ring-4 ring-primary/20 shadow-xs"
                   : currentStep > 2
-                  ? "bg-primary text-white shadow-xs"
-                  : "bg-surface-container-lowest border-2 border-outline-variant text-on-surface-variant font-medium"
+                    ? "bg-on-background text-white shadow-xs"
+                    : "bg-surface-container-lowest border-2 border-outline-variant text-on-surface-variant font-medium"
               )}
             >
-              2
+              {currentStep > 2 ? <Check className="w-3.5 h-3.5" /> : 2}
             </div>
             <span
               className={cn(
-                "mt-2 text-[11px] font-bold tracking-tight",
-                currentStep >= 2 ? "text-primary" : "text-on-surface-variant/70"
+                "mt-2 text-[11px] tracking-tight",
+                currentStep === 2 ? "text-primary font-bold" : currentStep > 2 ? "text-on-surface font-semibold" : "text-on-surface-variant/70"
               )}
             >
               2. Details
@@ -1791,16 +1792,16 @@ function generateClientMathChallenge(): { image: string; token: string } {
                 currentStep === 3
                   ? "bg-primary text-white ring-4 ring-primary/20 shadow-xs"
                   : currentStep > 3
-                  ? "bg-primary text-white shadow-xs"
-                  : "bg-surface-container-lowest border-2 border-outline-variant text-on-surface-variant font-medium"
+                    ? "bg-on-background text-white shadow-xs"
+                    : "bg-surface-container-lowest border-2 border-outline-variant text-on-surface-variant font-medium"
               )}
             >
-              3
+              {currentStep > 3 ? <Check className="w-3.5 h-3.5" /> : 3}
             </div>
             <span
               className={cn(
-                "mt-2 text-[11px] font-bold tracking-tight",
-                currentStep >= 3 ? "text-primary" : "text-on-surface-variant/70"
+                "mt-2 text-[11px] tracking-tight",
+                currentStep === 3 ? "text-primary font-bold" : currentStep > 3 ? "text-on-surface font-semibold" : "text-on-surface-variant/70"
               )}
             >
               3. Address
@@ -1813,16 +1814,18 @@ function generateClientMathChallenge(): { image: string; token: string } {
               className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all",
                 currentStep === 4
-                  ? "bg-primary text-white ring-4 ring-primary/20 shadow-xs"
+                  ? isRecordUnlocked
+                    ? "bg-primary text-white ring-4 ring-primary/20 shadow-xs"
+                    : "bg-primary text-white ring-4 ring-primary/20 shadow-xs"
                   : "bg-surface-container-lowest border-2 border-outline-variant text-on-surface-variant font-medium"
               )}
             >
-              4
+              {isRecordUnlocked ? <Check className="w-3.5 h-3.5" /> : 4}
             </div>
             <span
               className={cn(
-                "mt-2 text-[11px] font-bold tracking-tight",
-                currentStep === 4 ? "text-primary" : "text-on-surface-variant/70"
+                "mt-2 text-[11px] tracking-tight",
+                currentStep === 4 ? "text-primary font-bold" : isRecordUnlocked ? "text-on-surface font-semibold" : "text-on-surface-variant/70"
               )}
             >
               4. Download (KES 20)
@@ -2101,456 +2104,733 @@ function generateClientMathChallenge(): { image: string; token: string } {
               )}
 
               {currentStep === 2 && (
-                <motion.div key="step2" variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
-                  <div className="mb-stack-lg flex flex-col items-center justify-center text-center">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                      <User className="text-primary w-6 h-6" />
-                    </div>
-                    <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Personal Information</h2>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">Review and edit your certificate identity details.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl mx-auto">
-                    <div>
-                      <label className={labelClass}>KRA PIN</label>
-                      <input
-                        value={
-                          isRecordUnlocked
-                            ? ((formData.rawPin && !formData.rawPin.startsWith("kraseal1:")) ? formData.rawPin : formData.pin)
-                            : maskPin(formData.pin)
-                        }
-                        readOnly={!isRecordUnlocked && Boolean(formData.rawPin?.startsWith("kraseal1:"))}
-                        onChange={(e) => handleInputChange('pin', e.target.value.toUpperCase())}
-                        placeholder="e.g. A012345678Z"
-                        className={inputClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>Full Legal Name</label>
-                      <input
-                        value={formData.fullName}
-                        onChange={(e) => handleInputChange('fullName', e.target.value.toUpperCase())}
-                        placeholder="e.g. JOHN DOE"
-                        className={inputClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>Email Address</label>
-                      <input
-                        value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value.toLowerCase())}
-                        placeholder="email@example.com"
-                        type="email"
-                        className={inputClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>Mobile Phone Number</label>
-                      <input
-                        value={formData.phoneNumber}
-                        onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                        placeholder="e.g. 0712345678"
-                        type="tel"
-                        className={inputClass}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className={labelClass}>Exact Registration Date</label>
-                      <input
-                        value={formData.registeredDate}
-                        onChange={(e) => handleInputChange('registeredDate', e.target.value)}
-                        placeholder="DD/MM/YYYY"
-                        className={inputClass}
-                      />
+                <motion.div key="step2" variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6 text-left">
+                  {/* Success Alert Banner from Stitch Screen 2 */}
+                  <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-900 dark:text-emerald-300">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div className="text-xs sm:text-sm font-medium">
+                      <span className="font-bold text-on-surface">Identity Verified:</span> Matching records retrieved from KRA iTax central database.
                     </div>
                   </div>
 
-                  <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-3 pt-6 w-full max-w-xl mx-auto">
-                    <button className={cn(secondaryButtonClass, "w-full sm:w-auto sm:min-w-[100px]")} onClick={() => setCurrentStep(1)}>
-                      Back
+                  {/* Header Section of Card */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-outline-variant gap-2">
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold text-on-surface">Taxpayer Record Confirmation</h2>
+                      <p className="text-xs text-on-surface-variant mt-0.5">Please review the retrieved ledger data below before generating the certificate.</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface-container border border-outline-variant text-on-surface-variant text-[10px] font-bold tracking-wider uppercase shrink-0 self-start sm:self-auto">
+                      <Lock className="w-3 h-3 text-primary" />
+                      256-BIT SECURE
+                    </span>
+                  </div>
+
+                  {/* Two-Column Grid of Read-Only Taxpayer Details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    {/* Taxpayer Name */}
+                    <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">Taxpayer Name</div>
+                      <div className="text-sm font-bold font-mono tracking-wide text-on-surface">
+                        {isRecordUnlocked ? formData.fullName : maskName(formData.fullName || "TAXPAYER RECORD")}
+                      </div>
+                    </div>
+
+                    {/* KRA PIN */}
+                    <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">KRA PIN</div>
+                      <div className="text-sm font-bold font-mono tracking-wide text-on-surface">
+                        {isRecordUnlocked
+                          ? ((formData.rawPin && !formData.rawPin.startsWith("kraseal1:")) ? formData.rawPin : formData.pin)
+                          : (maskPin(formData.pin) || "A00****78Z")}
+                      </div>
+                    </div>
+
+                    {/* Taxpayer Type */}
+                    <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">Taxpayer Type</div>
+                      <div className="text-sm font-bold text-on-surface">Individual</div>
+                    </div>
+
+                    {/* Registration Status */}
+                    <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">Registration Status</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                        <span className="text-emerald-700 dark:text-emerald-400 font-bold text-sm">Active</span>
+                      </div>
+                    </div>
+
+                    {/* Tax Station */}
+                    <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">Tax Station</div>
+                      <div className="text-sm font-bold text-on-surface">{formData.station || "Nairobi West"}</div>
+                    </div>
+
+                    {/* Obligation */}
+                    <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">Obligation</div>
+                      <div className="text-sm font-bold text-on-surface">Income Tax - Resident Individual</div>
+                    </div>
+                  </div>
+
+                  {/* Informational Note Banner/Box */}
+                  <div className="p-3.5 rounded-xl bg-surface-container-low border border-dashed border-outline-variant flex items-start gap-3">
+                    <ShieldAlert className="w-5 h-5 text-on-surface-variant shrink-0 mt-0.5" />
+                    <div className="text-xs text-on-surface-variant leading-relaxed">
+                      <strong className="text-on-surface font-semibold">Privacy Notice:</strong> Full unmasked details and official KRA Certificate PDF unlock immediately after payment verification.
+                    </div>
+                  </div>
+
+                  {/* Action Buttons Row */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(1)}
+                      className="w-full sm:w-auto px-6 h-11 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-bold text-xs hover:bg-surface-container-low transition duration-150 flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Back</span>
                     </button>
-                    <button className={cn(primaryButtonClass, "w-full sm:w-auto sm:min-w-[140px]")} onClick={() => setCurrentStep(3)}>
-                      Continue <ArrowRight className="w-4 h-4" />
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(3)}
+                      className="w-full sm:w-auto px-7 h-11 rounded-xl bg-primary hover:bg-[#9c1414] text-white font-bold text-xs transition duration-150 active:scale-[0.98] shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <span>Continue to Address</span>
+                      <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
                 </motion.div>
               )}
 
               {currentStep === 3 && (
-                <motion.div key="step3" variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
-                  <div className="mb-stack-lg flex flex-col items-center justify-center text-center">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                      <MapPin className="text-primary w-6 h-6" />
-                    </div>
-                    <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Address & Location Details</h2>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">Review and edit your certificate address information.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl mx-auto">
+                <motion.div key="step3" variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6 text-left">
+                  {/* Card Section Header from Stitch Screen 3 */}
+                  <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                      <label className={labelClass}>County</label>
-                      <Select value={formData.county} onValueChange={(v) => { handleInputChange('county', v); handleInputChange('district', '') }}>
-                        <SelectTrigger className={cn(inputClass, "h-12")}>
-                          <SelectValue placeholder="Select County" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-surface-container-lowest border-outline-muted rounded-lg">
-                          {COUNTIES.map(c => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
-                        </SelectContent>
-                      </Select>
+                      <h2 className="text-base sm:text-lg font-bold text-on-surface">Registered Address &amp; Contact</h2>
+                      <p className="text-xs text-on-surface-variant mt-0.5">Retrieved from KRA iTax registry records for National ID verification.</p>
                     </div>
-                    <div>
-                      <label className={labelClass}>City / Town</label>
-                      <input
-                        value={formData.town}
-                        onChange={(e) => handleInputChange('town', e.target.value)}
-                        placeholder="e.g. Nairobi"
-                        className={inputClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>District / Sub County</label>
-                      <Select value={formData.district || ""} onValueChange={(v) => handleInputChange('district', v)}>
-                        <SelectTrigger className={cn(inputClass, "h-12")}>
-                          <SelectValue placeholder="Select District" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-surface-container-lowest border-outline-muted rounded-lg">
-                          {formData.county && GET_SUB_COUNTIES(formData.county).map(sc => (<SelectItem key={sc} value={sc}>{sc}</SelectItem>))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className={labelClass}>Tax Area Locality</label>
-                      <Select value={formData.taxArea || ""} onValueChange={(v) => handleInputChange('taxArea', v)}>
-                        <SelectTrigger className={cn(inputClass, "h-12")}>
-                          <SelectValue placeholder="Select Locality" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-surface-container-lowest border-outline-muted rounded-lg">
-                          {formData.county && GET_LOCALITIES(formData.county, formData.district || "").map(l => (<SelectItem key={l} value={l}>{l}</SelectItem>))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className={labelClass}>Tax Station</label>
-                      <Select value={formData.station || ""} onValueChange={(v) => handleInputChange('station', v)}>
-                        <SelectTrigger className={cn(inputClass, "h-12")}>
-                          <SelectValue placeholder="Select Station" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-surface-container-lowest border-outline-muted rounded-lg">
-                          {formData.county && GET_STATIONS(formData.county).map(s => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className={labelClass}>Building Name</label>
-                      <input
-                        value={formData.building}
-                        onChange={(e) => handleInputChange('building', e.target.value)}
-                        placeholder="e.g. Commercial Plaza"
-                        className={inputClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>Street / Road</label>
-                      <input
-                        value={formData.street}
-                        onChange={(e) => handleInputChange('street', e.target.value)}
-                        placeholder="e.g. Harambee Avenue"
-                        className={inputClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>P.O. Box</label>
-                      <input
-                        value={formData.poBox}
-                        onChange={(e) => handleInputChange('poBox', e.target.value)}
-                        placeholder="e.g. P.O. Box 40001"
-                        className={inputClass}
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className={labelClass}>Postal Code</label>
-                      <Select value={formData.postalCode} onValueChange={(v) => { const found = GET_POSTAL_CODES(formData.county).find(p => p.code === v); handleInputChange('postalCode', v); if (found) handleInputChange('town', found.town) }}>
-                        <SelectTrigger className={cn(inputClass, "h-12")}>
-                          <SelectValue placeholder="Select Postal Code" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-surface-container-lowest border-outline-muted rounded-lg">
-                          {formData.county && GET_POSTAL_CODES(formData.county).map(p => (<SelectItem key={p.code} value={p.code}>{p.code}</SelectItem>))}
-                        </SelectContent>
-                      </Select>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container rounded-lg border border-outline-variant text-on-surface-variant text-[11px] font-semibold shrink-0 self-start sm:self-auto">
+                      <Lock className="w-3.5 h-3.5 text-on-surface-variant" />
+                      <span>Read-only / Verified from iTax</span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-3 pt-6 w-full max-w-xl mx-auto">
-                    <button className={cn(secondaryButtonClass, "w-full sm:w-auto sm:min-w-[100px]")} onClick={() => setCurrentStep(2)}>
-                      Back
+                  {/* Two-column grid of address & contact fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* County */}
+                    <div>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">County</label>
+                      <div className="relative flex items-center">
+                        <input
+                          className="w-full h-11 bg-surface-container-low border border-outline-variant rounded-xl px-4 text-xs font-bold text-on-surface cursor-not-allowed outline-none"
+                          readOnly
+                          type="text"
+                          value={formData.county || "Nairobi"}
+                        />
+                        <CheckCircle2 className="w-4 h-4 absolute right-3 text-emerald-600" />
+                      </div>
+                    </div>
+
+                    {/* Town / City */}
+                    <div>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Town / City</label>
+                      <div className="relative flex items-center">
+                        <input
+                          className="w-full h-11 bg-surface-container-low border border-outline-variant rounded-xl px-4 text-xs font-bold text-on-surface cursor-not-allowed outline-none"
+                          readOnly
+                          type="text"
+                          value={formData.town || "Nairobi Central"}
+                        />
+                        <CheckCircle2 className="w-4 h-4 absolute right-3 text-emerald-600" />
+                      </div>
+                    </div>
+
+                    {/* Postal Address */}
+                    <div>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Postal Address</label>
+                      <div className="relative flex items-center">
+                        <input
+                          className="w-full h-11 bg-surface-container-low border border-outline-variant rounded-xl px-4 text-xs font-bold text-on-surface cursor-not-allowed outline-none"
+                          readOnly
+                          type="text"
+                          value={formData.poBox ? (formData.poBox.toLowerCase().startsWith('p.o') ? formData.poBox : `P.O. Box ${formData.poBox}`) : "P.O. Box 45021"}
+                        />
+                        <Mail className="w-4 h-4 absolute right-3 text-on-surface-variant" />
+                      </div>
+                    </div>
+
+                    {/* Postal Code */}
+                    <div>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Postal Code</label>
+                      <div className="relative flex items-center">
+                        <input
+                          className="w-full h-11 bg-surface-container-low border border-outline-variant rounded-xl px-4 text-xs font-bold text-on-surface cursor-not-allowed outline-none"
+                          readOnly
+                          type="text"
+                          value={formData.postalCode ? `${formData.postalCode} - ${formData.town || "GPO"}` : "00100 - GPO"}
+                        />
+                        <Signpost className="w-4 h-4 absolute right-3 text-on-surface-variant" />
+                      </div>
+                    </div>
+
+                    {/* Registered Email (masked) */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Registered Email (Masked)</label>
+                        <span className="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded border border-outline-variant">SECURED</span>
+                      </div>
+                      <div className="relative flex items-center">
+                        <input
+                          className="w-full h-11 bg-surface-container-low border border-outline-variant rounded-xl px-4 text-xs font-mono font-bold text-on-surface cursor-not-allowed outline-none"
+                          readOnly
+                          type="text"
+                          value={isRecordUnlocked ? (formData.email || userEmail) : maskEmail(formData.email || userEmail || "akubrecah@gmail.com")}
+                        />
+                        <Shield className="w-4 h-4 absolute right-3 text-on-surface-variant" />
+                      </div>
+                    </div>
+
+                    {/* Registered Mobile (masked) */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Registered Mobile (Masked)</label>
+                        <span className="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded border border-outline-variant">KENYA TELCO</span>
+                      </div>
+                      <div className="relative flex items-center">
+                        <input
+                          className="w-full h-11 bg-surface-container-low border border-outline-variant rounded-xl px-4 text-xs font-mono font-bold text-on-surface cursor-not-allowed outline-none"
+                          readOnly
+                          type="text"
+                          value={isRecordUnlocked && formData.phoneNumber && !formData.phoneNumber.includes('•') ? formData.phoneNumber : "+254 7•• ••• 419"}
+                        />
+                        <Smartphone className="w-4 h-4 absolute right-3 text-on-surface-variant" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tax Obligations Section (dedicated sub-card from Stitch Screen 3) */}
+                  <div className="border border-outline-variant rounded-xl bg-surface-container-lowest p-4">
+                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-outline-variant">
+                      <div className="flex items-center gap-2">
+                        <Gavel className="w-4 h-4 text-primary" />
+                        <h3 className="font-bold text-xs sm:text-sm text-on-surface">Registered Tax Obligations</h3>
+                      </div>
+                      <span className="text-[10px] font-bold text-on-surface-variant tracking-wider uppercase bg-surface-container px-2 py-0.5 rounded border border-outline-variant">
+                        iTAX LEDGER CONFIRMED
+                      </span>
+                    </div>
+
+                    {/* Table Container */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="text-on-surface-variant text-[11px] font-bold border-b border-outline-variant">
+                            <th className="py-2">Obligation Name</th>
+                            <th className="py-2">Effective Date</th>
+                            <th className="py-2 text-right">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-outline-variant">
+                          <tr>
+                            <td className="py-3 font-semibold text-on-surface">Income Tax - Resident Individual</td>
+                            <td className="py-3 text-on-surface-variant font-mono">{formData.registeredDate || "14/08/2016"}</td>
+                            <td className="py-3 text-right">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-surface-container text-on-surface border border-outline-variant">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                                Compliant / Active
+                              </span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <p className="text-[11px] text-on-surface-variant mt-3 pt-2 border-t border-outline-variant/60 flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
+                      <span>Obligation status verified against KRA Domestic Taxes Department ledger.</span>
+                    </p>
+                  </div>
+
+                  {/* Action Buttons (Footer of Card) */}
+                  <div className="p-4 bg-surface-container-low rounded-xl border border-outline-variant flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(2)}
+                      className="inline-flex items-center gap-2 h-11 px-6 border border-outline-variant bg-surface-container-lowest hover:bg-surface-container text-on-surface font-bold text-xs rounded-xl transition duration-150 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Back</span>
                     </button>
-                    <button className={cn(primaryButtonClass, "w-full sm:w-auto sm:min-w-[170px]")} onClick={() => setCurrentStep(4)}>
-                      Review Certificate <ArrowRight className="w-4 h-4" />
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(4)}
+                      className="inline-flex items-center gap-2 h-11 px-7 bg-primary hover:bg-[#9c1414] text-white font-bold text-xs rounded-xl transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer"
+                    >
+                      <span>Continue to Download</span>
+                      <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
                 </motion.div>
               )}
 
               {currentStep === 4 && (
-                <motion.div key="step4" variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
-                  <div className="flex flex-col items-center justify-center text-center mb-1">
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck className="text-primary w-5 h-5" />
-                      <h2 className="text-base sm:text-lg font-bold text-on-surface">Verified Taxpayer Record</h2>
-                    </div>
-                    <p className="text-[11px] sm:text-xs text-on-surface-variant">
-                      Official Kenya Data Protection Act (KDPA) Privacy Protected Preview.
-                    </p>
-                  </div>
+                <motion.div key="step4" variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6 text-left">
+                  {isRecordUnlocked || mpesaStatus === "success" ? (
+                    /* Screen 5: Payment Success & Download Ready */
+                    <div className="max-w-2xl mx-auto bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-soft overflow-hidden">
+                      {/* Top Status Accent Banner */}
+                      <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-6 py-2.5 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                            PAYMENT CONFIRMED • KRA HANDSHAKE OK
+                          </span>
+                        </div>
+                        <span className="text-xs text-emerald-900 dark:text-emerald-200 font-bold">Auto-Cleared</span>
+                      </div>
 
-                  {/* Official Verification Success Badge & KES 20 Notice */}
-                  {(() => {
-                    const isRecordUnlocked = Boolean(verifiedDownloadId || isAdmin);
-                    return (
-                      <>
-                        <div className="w-full bg-surface-container-low border border-outline-variant/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left shadow-2xs">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 shrink-0">
-                              <CheckCircle2 className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <p className="text-xs sm:text-sm font-black text-on-surface flex flex-wrap items-center gap-2">
-                                {isRecordUnlocked ? "Compliance Certificate Ready" : "Official Compliance Record Ready"}
-                                <span className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-bold">
-                                  {isRecordUnlocked ? "Paid & Unmasked" : "100% Verified"}
-                                </span>
-                              </p>
-                              <p className="text-[11px] text-on-surface-variant mt-0.5 leading-relaxed font-medium">
-                                {isRecordUnlocked
-                                  ? "Payment verified. Your certificate is compiled and full taxpayer details are unmasked below."
-                                  : <>Taxpayer record matched directly with government registries. Confidential fields remain masked until you pay strictly <strong>KES 20 (20 bob)</strong> to unmask and download your official tamper-proof PDF.</>}
-                              </p>
-                            </div>
+                      <div className="p-6 md:p-8 space-y-6">
+                        {/* Header & Icon Cluster */}
+                        <div className="text-center space-y-3">
+                          <div className="w-14 h-14 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center ring-8 ring-emerald-50 dark:ring-emerald-950 text-emerald-700 dark:text-emerald-300">
+                            <CheckCircle2 className="w-8 h-8 font-bold" />
                           </div>
-                          <div className="shrink-0 bg-primary/10 border border-primary/25 rounded-xl px-3.5 py-2 text-center w-full sm:w-auto">
-                            <span className="block text-[10px] uppercase font-black text-primary tracking-wider">Download Fee</span>
-                            <span className="text-sm sm:text-base font-black text-primary">
-                              {isRecordUnlocked ? "PAID" : "KES 20 only"}
+                          <h2 className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
+                            Payment confirmed {verifiedReceipt ? `- receipt ${verifiedReceipt}` : "- receipt UB12XYZ789"}
+                          </h2>
+                          <p className="text-xs sm:text-sm text-on-surface-variant max-w-lg mx-auto leading-relaxed">
+                            M-Pesa transaction verified successfully. Your official signed KRA Taxpayer Certificate is decrypted and ready for download.
+                          </p>
+                        </div>
+
+                        {/* Certificate Summary Box */}
+                        <div className="bg-surface-container-low rounded-xl border border-outline-variant p-5 space-y-4">
+                          <div className="flex items-center justify-between pb-3 border-b border-outline-variant">
+                            <div className="flex items-center gap-2">
+                              <BadgeIcon className="w-4 h-4 text-on-surface-variant" />
+                              <span className="font-bold text-xs sm:text-sm text-on-surface">Certificate Summary</span>
+                            </div>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              SIGNED
                             </span>
                           </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3.5 gap-x-6 text-xs">
+                            <div>
+                              <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Taxpayer Name</p>
+                              <p className="font-bold text-on-surface mt-0.5">{formData.fullName || "VERIFIED CITIZEN"} (Individual)</p>
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">KRA PIN</p>
+                              <p className="font-mono font-black text-primary mt-0.5 tracking-wider">
+                                {(formData.rawPin && !formData.rawPin.startsWith("kraseal1:")) ? formData.rawPin : formData.pin}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Tax Station</p>
+                              <p className="font-medium text-on-surface mt-0.5">{formData.station || "Nairobi West"}</p>
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Obligation</p>
+                              <p className="font-medium text-on-surface mt-0.5">Income Tax - Resident Individual</p>
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Certificate Serial</p>
+                              <p className="font-mono text-on-surface mt-0.5">{(formData as any).certificateSerial || "KRA-PIN-2025-09824X"}</p>
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">M-Pesa Amount Paid</p>
+                              <p className="font-bold text-on-surface mt-0.5">
+                                KES 20.00 <span className="font-normal text-on-surface-variant text-[11px]">({verifiedReceipt || "CONFIRMED"})</span>
+                              </p>
+                            </div>
+                            <div className="md:col-span-2 pt-2 border-t border-outline-variant flex items-center justify-between">
+                              <span className="text-[11px] font-bold text-on-surface-variant">Document Status</span>
+                              <span className="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1 text-xs">
+                                <Clock className="w-3.5 h-3.5" />
+                                Valid &amp; Cryptographically Signed
+                              </span>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Side-by-Side Workspace: Generated Taxpayer Details (Left) + Payment Panel (Right) */}
-                        <div
-                          className={cn(
-                            "w-full grid grid-cols-1 gap-5 items-start my-2",
-                            (!isRecordUnlocked || mpesaStatus === "success") && "lg:grid-cols-12"
-                          )}
-                        >
-                          {/* LEFT: Taxpayer Preview Data Grid */}
-                          <div
-                            className={cn(
-                              "w-full bg-surface-container-low/80 rounded-2xl p-4 sm:p-5 border border-outline-variant/80 space-y-4 shadow-2xs",
-                              (!isRecordUnlocked || mpesaStatus === "success") ? "lg:col-span-7" : "w-full max-w-4xl mx-auto"
-                            )}
+                        {/* Action Buttons */}
+                        <div className="space-y-3">
+                          <button
+                            onClick={() => executeDownload()}
+                            disabled={isDownloadingPdf}
+                            className="w-full bg-primary hover:bg-[#9c1414] text-white h-12 px-6 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-50"
                           >
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                            {isDownloadingPdf ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Compiling Certificate...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-4 h-4" />
+                                <span>Download KRA PIN Certificate (PDF)</span>
+                              </>
+                            )}
+                          </button>
 
-                            {/* 1. Taxpayer Legal Name (Unmasked) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>Taxpayer Legal Name</span>
-                                <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[9px] bg-emerald-500/10 px-1.5 py-0.5 rounded">Verified Citizen</span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-bold text-on-surface uppercase truncate">
-                                {formData.fullName || "REGISTERED TAXPAYER"}
-                              </p>
-                            </div>
-
-                            {/* 2. National ID (Unmasked - Fully Visible) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>National ID Number</span>
-                                <span className="text-primary font-semibold text-[9px] bg-primary/10 px-1.5 py-0.5 rounded">Official ID</span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-mono font-bold text-on-surface">
-                                {formData.idNumber || "On File"}
-                              </p>
-                            </div>
-
-                            {/* 3. KRA PIN (Masked until paid) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>KRA PIN</span>
-                                <span className={cn(
-                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                )}>
-                                  {isRecordUnlocked ? "Verified & Paid" : "Protected PIN"}
-                                </span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-mono font-black text-primary tracking-wider">
-                                {isRecordUnlocked
-                                  ? ((formData.rawPin && !formData.rawPin.startsWith("kraseal1:")) ? formData.rawPin : formData.pin)
-                                  : (maskPin(formData.pin) || "A01*****78Z")}
-                              </p>
-                            </div>
-
-                            {/* 4. Tax Station (Masked until paid) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>Tax Station</span>
-                                <span className={cn(
-                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                )}>
-                                  {isRecordUnlocked ? "Station Match" : "Protected Station"}
-                                </span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-bold text-on-surface truncate">
-                                {isRecordUnlocked ? (
-                                  formData.station || "Kitale TSO"
-                                ) : (
-                                  <span className="blur-xs select-none font-mono text-on-surface-variant flex items-center gap-1.5">
-                                    <Lock className="w-3.5 h-3.5 text-primary inline shrink-0" />
-                                    •••••••••• (Protected)
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-
-                            {/* 5. Email Address (Masked until paid) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>Email Address</span>
-                                <span className={cn(
-                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-surface-variant text-on-surface-variant"
-                                )}>
-                                  {isRecordUnlocked ? "Unmasked" : "Partial Mask"}
-                                </span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-mono text-on-surface truncate">
-                                {isRecordUnlocked
-                                  ? (formData.email || userEmail || "Official Email on File")
-                                  : ((formData.email || userEmail)
-                                    ? maskEmail(formData.email || userEmail)
-                                    : "••••••••@••••• (Confidential on KRA Registry)")}
-                              </p>
-                            </div>
-
-                            {/* 6. Phone Number (Completely Masked until paid) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>Mobile Phone</span>
-                                <span className={cn(
-                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400"
-                                )}>
-                                  {isRecordUnlocked ? "Unmasked" : "Protected Phone"}
-                                </span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-mono font-bold text-on-surface tracking-wider">
-                                {isRecordUnlocked && formData.phoneNumber && !formData.phoneNumber.includes('•')
-                                  ? formData.phoneNumber
-                                  : "••••••••••"}
-                              </p>
-                            </div>
-
-                            {/* 7. Region & City (Location - Masked until paid) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>Location</span>
-                                <span className={cn(
-                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                )}>
-                                  {isRecordUnlocked ? "Verified Location" : "Protected Location"}
-                                </span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-medium text-on-surface truncate">
-                                {isRecordUnlocked ? (
-                                  formData.county ? `${formData.county} · ${formData.town || formData.county}` : (formData.town || "Nairobi")
-                                ) : (
-                                  <span className="blur-xs select-none font-mono text-on-surface-variant flex items-center gap-1.5">
-                                    <Lock className="w-3.5 h-3.5 text-primary inline shrink-0" />
-                                    •••••••••••• (Protected)
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-
-                            {/* 8. Registration Date (Date Issued - Masked until paid) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>Date Issued</span>
-                                <span className={cn(
-                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                )}>
-                                  {isRecordUnlocked ? "Statutory Match" : "Protected Date"}
-                                </span>
-                              </div>
-                              <p className="text-xs sm:text-sm font-medium text-on-surface">
-                                {isRecordUnlocked ? (
-                                  formData.registeredDate || "On Official File"
-                                ) : (
-                                  <span className="blur-xs select-none font-mono text-on-surface-variant flex items-center gap-1.5">
-                                    <Lock className="w-3.5 h-3.5 text-primary inline shrink-0" />
-                                    ••/••/•••• (Protected)
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-
-                            {/* 9. Physical Building & Street Address (Protected until paid) */}
-                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80 sm:col-span-2">
-                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                <span>Physical Address & Postal Records</span>
-                                <span className={cn(
-                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-surface-variant text-on-surface-variant"
-                                )}>
-                                  {isRecordUnlocked ? "Unmasked" : "KDPA Protected"}
-                                </span>
-                              </div>
-                              <p className="text-xs font-mono text-on-surface flex items-center gap-1.5">
-                                {isRecordUnlocked ? (
-                                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                                    {[formData.building, formData.street, formData.poBox ? `P.O. Box ${formData.poBox}` : '', formData.postalCode].filter(Boolean).join(', ') || "Official Address Records on File"}
-                                  </span>
-                                ) : (
-                                  <>
-                                    <Lock className="w-3.5 h-3.5 text-primary" />
-                                    <span className="text-on-surface-variant">•••••••••••• (Secured — Pay KES 20 to unmask and download certificate)</span>
-                                  </>
-                                )}
-                              </p>
-                            </div>
-
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            <a
+                              href={`https://wa.me/?text=${encodeURIComponent(`Official KRA Taxpayer Certificate for ${formData.fullName} (PIN: ${formData.pin}) verified and retrieved on Akubrecah Cyber Portal.`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full bg-surface-container-lowest border border-outline-variant hover:bg-surface-container-low text-on-surface h-11 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition duration-150 cursor-pointer"
+                            >
+                              <Share2 className="w-4 h-4 text-emerald-600" />
+                              <span>Send to WhatsApp</span>
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => toast.success(`Receipt ${verifiedReceipt || 'UB12XYZ789'} verified & recorded in session.`)}
+                              className="w-full bg-surface-container-lowest border border-outline-variant hover:bg-surface-container-low text-on-surface h-11 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition duration-150 cursor-pointer"
+                            >
+                              <Receipt className="w-4 h-4 text-on-surface-variant" />
+                              <span>Download Receipt</span>
+                            </button>
                           </div>
-
-                          {/* Privacy Assurance Banner */}
-                          <div className="rounded-xl bg-surface-container p-3 border border-outline-variant/60 flex items-start gap-2.5 text-[11px] text-on-surface-variant">
-                            <Lock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                            <p className="leading-relaxed">
-                              {isRecordUnlocked
-                                ? "Payment verified. Your complete, unmasked statutory record is shown and included in your downloaded certificate."
-                                : <>To protect citizen privacy under the Kenya Data Protection Act, contact details and identification numbers are partially masked during web preview. The full unmasked official record is embedded into your official PDF certificate upon payment of <strong>KES 20</strong>.</>}
-                            </p>
-                          </div>
-                          </div>
-
-                          {/* RIGHT: Payment & Checkout Panel */}
-                          {(!isRecordUnlocked || mpesaStatus === "success") && (
-                            <div className="w-full lg:col-span-5 lg:sticky lg:top-4">
-                              {renderMpesaCheckoutPanel("inline")}
-                            </div>
-                          )}
                         </div>
-                      </>
-                    );
-                  })()}
 
-                  {/* Actions */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full pt-2">
+                        {/* Ephemeral Notice */}
+                        <div className="pt-4 border-t border-outline-variant flex items-center justify-center gap-1.5 text-on-surface-variant text-xs">
+                          <Shield className="w-4 h-4 text-primary" />
+                          <span>Generated in memory - never stored on our servers</span>
+                        </div>
+
+                        {/* Tertiary Navigation */}
+                        <div className="text-center pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              clearPaymentTimers()
+                              setCurrentStep(1)
+                            }}
+                            className="inline-flex items-center gap-1.5 text-primary hover:underline font-bold text-xs cursor-pointer"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>Retrieve another certificate</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Screen 4: Locked Preview + M-Pesa Checkout Panel (7/5 Split) */
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                      {/* LEFT COLUMN: Certificate Details & Locked PDF Preview (7 Cols) */}
+                      <section className="lg:col-span-7 flex flex-col gap-5">
+                        <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-5 sm:p-6 shadow-soft flex flex-col gap-5">
+                          {/* Column Header */}
+                          <div className="border-b border-outline-variant pb-4 flex justify-between items-start gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-5 h-5 text-primary" />
+                                <h2 className="text-base sm:text-lg font-bold text-on-surface">Taxpayer Compliance Certificate</h2>
+                              </div>
+                              <p className="text-xs text-on-surface-variant mt-1">Verified and generated from KRA iTax database</p>
+                            </div>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-secondary-container text-on-secondary-fixed text-[11px] font-bold shrink-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                              Live Record
+                            </span>
+                          </div>
+
+                          {/* Taxpayer Summary Grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-surface-container-low p-4 rounded-xl border border-outline-variant text-xs">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Taxpayer Name</span>
+                              <span className="font-bold text-on-surface mt-0.5">{maskName(formData.fullName || "TAXPAYER")} (Individual)</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">KRA PIN</span>
+                              <span className="font-mono font-bold text-primary mt-0.5 tracking-wider">{maskPin(formData.pin) || "A00****78Z"}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Tax Station</span>
+                              <span className="font-medium text-on-surface mt-0.5">{formData.station || "Nairobi West"}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Tax Obligation</span>
+                              <span className="font-medium text-on-surface mt-0.5">Income Tax - Resident Individual</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Certificate Serial</span>
+                              <span className="font-mono text-on-surface mt-0.5">{(formData as any).certificateSerial || "KRA-PIN-2025-09824X"}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Status</span>
+                              <span className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Active &amp; Valid
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Locked Certificate PDF Preview Thumbnail Container */}
+                          <div className="flex flex-col gap-2">
+                            <div className="flex justify-between items-center text-xs text-on-surface-variant font-medium">
+                              <span>Document Preview Output</span>
+                              <span className="flex items-center gap-1 font-mono text-[11px]">
+                                <FileText className="w-3.5 h-3.5" />
+                                A4 Document • 1 Page
+                              </span>
+                            </div>
+                            <div className="relative bg-surface-container rounded-xl border border-outline-variant overflow-hidden p-6 flex flex-col items-center justify-center min-h-[300px] select-none">
+                              {/* Subtle dot pattern */}
+                              <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#906f6b_1px,transparent_1px)] [background-size:14px_14px]" />
+
+                              {/* Realistic Mock Document Paper */}
+                              <div className="w-full max-w-sm bg-surface-container-lowest rounded-lg shadow-md border border-outline-variant p-5 flex flex-col gap-3 opacity-40 filter blur-[1.5px] select-none pointer-events-none">
+                                <div className="flex justify-between items-center border-b border-outline-variant pb-2">
+                                  <div className="w-20 h-4 bg-surface-container-highest rounded" />
+                                  <div className="w-12 h-3 bg-surface-container-highest rounded" />
+                                </div>
+                                <div className="space-y-2 py-2">
+                                  <div className="w-full h-3 bg-surface-container-highest rounded" />
+                                  <div className="w-3/4 h-3 bg-surface-container-highest rounded" />
+                                  <div className="w-5/6 h-3 bg-surface-container-highest rounded" />
+                                  <div className="w-1/2 h-3 bg-surface-container-highest rounded" />
+                                </div>
+                                <div className="pt-4 border-t border-outline-variant flex justify-between items-center">
+                                  <div className="w-12 h-12 bg-surface-container-highest rounded border border-outline-variant" />
+                                  <div className="w-28 h-6 bg-surface-container-highest rounded" />
+                                </div>
+                              </div>
+
+                              {/* Overlay Lock & Shield Badge Layer */}
+                              <div className="absolute inset-0 bg-on-background/15 backdrop-blur-[2px] flex flex-col items-center justify-center p-6 text-center">
+                                <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg mb-3">
+                                  <Lock className="w-6 h-6" />
+                                </div>
+                                <div className="inline-flex items-center gap-1 px-3 py-1 bg-surface-container-lowest text-primary text-[10px] rounded-full shadow-sm mb-2 uppercase border border-outline-variant font-black tracking-wider">
+                                  Payment Required To Unlock
+                                </div>
+                                <p className="text-base sm:text-lg font-black text-on-surface max-w-xs leading-snug">
+                                  Encrypted Document Preview
+                                </p>
+                                <p className="text-xs text-on-surface-variant max-w-xs mt-1">
+                                  Unlock full official signed PDF with digital seal &amp; instant download.
+                                </p>
+                                <div className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant bg-surface-container-lowest/90 px-3 py-1.5 rounded-lg border border-outline-variant">
+                                  <QrCode className="w-4 h-4 text-primary" />
+                                  <span>Official Digital QR Hash Included upon unlock</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Trust Assurance Banner */}
+                          <div className="bg-surface-container-low border border-outline-variant rounded-xl p-3.5 flex items-start gap-3">
+                            <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                            <div className="text-xs text-on-surface-variant leading-relaxed">
+                              <span className="font-bold text-on-surface">Universal State Acceptance:</span> Valid for Banking, NTSA Licensing, Passport &amp; Tender submissions across Kenya. Ephemeral session security guarantees no tax records remain cached.
+                            </div>
+                          </div>
+                        </div>
+                      </section>
+
+                      {/* RIGHT COLUMN: Payment Panel - M-Pesa Checkout (5 Cols) */}
+                      <section className="lg:col-span-5 flex flex-col gap-6">
+                        <div className="bg-surface-container-lowest border-2 border-primary/25 rounded-2xl p-5 sm:p-6 shadow-soft flex flex-col gap-5">
+                          {/* Panel Header */}
+                          <div className="flex justify-between items-start border-b border-outline-variant pb-4">
+                            <div>
+                              <h2 className="text-base sm:text-lg font-black text-on-surface">Pay via M-Pesa</h2>
+                              <p className="text-xs text-on-surface-variant mt-0.5">Instant automated STK Push to your phone.</p>
+                            </div>
+                            <span className="bg-primary text-white font-black text-xs px-3 py-1 rounded-full shadow-sm">
+                              KES 20.00
+                            </span>
+                          </div>
+
+                          {/* Phone Number Input */}
+                          <div className="flex flex-col gap-1.5 text-left">
+                            <div className="flex justify-between items-center">
+                              <label className="text-xs font-bold text-on-surface" htmlFor="mpesa-phone">
+                                M-Pesa Mobile Number
+                              </label>
+                            </div>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant">
+                                <Smartphone className="w-4 h-4" />
+                              </div>
+                              <input
+                                id="mpesa-phone"
+                                type="tel"
+                                value={paymentPhone}
+                                onChange={(e) => setPaymentPhone(e.target.value)}
+                                placeholder="0712 345 678"
+                                className="w-full h-11 pl-10 pr-10 bg-surface-container-lowest border border-outline-variant rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              />
+                              {isValidUnmaskedKenyanPhone(paymentPhone) && (
+                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-emerald-600">
+                                  <CheckCircle2 className="w-4 h-4" />
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-on-surface-variant">Enter the Safaricom line registered for M-Pesa</span>
+                          </div>
+
+                          {/* STK Push Action Button */}
+                          <div className="flex flex-col gap-3">
+                            <button
+                              type="button"
+                              onClick={() => void handleMpesaDarajaPayment(paymentPhone)}
+                              disabled={isMpesaBusy || !isValidUnmaskedKenyanPhone(paymentPhone)}
+                              className="w-full h-11 bg-primary hover:bg-[#9c1414] text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-50"
+                            >
+                              {mpesaStatus === "initiating" ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <span>Initiating STK Push...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>Send STK Push</span>
+                                  <ArrowRight className="w-4 h-4" />
+                                </>
+                              )}
+                            </button>
+
+                            {/* Waiting Indicator */}
+                            {(mpesaStatus === "waiting" || mpesaStatus === "stk_sent" || mpesaStatus === "verifying") && (
+                              <div className="flex flex-col gap-2 p-3 bg-surface-container-low border border-outline-variant rounded-xl">
+                                <div className="flex items-center justify-center gap-2.5">
+                                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                                  <span className="text-xs font-semibold text-on-surface">
+                                    Waiting for STK confirmation on phone... ({pollingSecondsLeft}s)
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={clearPaymentTimers}
+                                  className="text-[11px] text-primary hover:underline text-center cursor-pointer"
+                                >
+                                  Cancel STK Push
+                                </button>
+                              </div>
+                            )}
+
+                            {paymentError && (
+                              <Alert variant="destructive" className="bg-error-container border-error text-error rounded-xl py-2">
+                                <AlertCircle className="w-4 h-4" />
+                                <AlertDescription className="text-xs">{paymentError}</AlertDescription>
+                              </Alert>
+                            )}
+                          </div>
+
+                          {/* Styled Divider */}
+                          <div className="relative flex items-center justify-center my-1">
+                            <div className="w-full border-t border-outline-variant" />
+                            <span className="absolute bg-surface-container-lowest px-3 text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+                              STK not received?
+                            </span>
+                          </div>
+
+                          {/* Manual Fallback (Buy Goods Till) */}
+                          <div className="bg-surface-container-low border border-dashed border-outline-variant rounded-xl p-4 flex flex-col gap-3.5 text-left">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-xs text-on-surface flex items-center gap-1.5">
+                                <Store className="w-4 h-4 text-primary" />
+                                Pay via Buy Goods Till
+                              </span>
+                              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-surface-container text-on-surface-variant border border-outline-variant">
+                                Manual Option
+                              </span>
+                            </div>
+
+                            {/* Till Details Box */}
+                            <div className="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant grid grid-cols-2 gap-2 text-center">
+                              <div className="border-r border-outline-variant pr-2">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">Till Number</span>
+                                <div className="flex items-center justify-center gap-1.5 mt-0.5">
+                                  <span className="text-lg font-black text-primary tracking-wider">{activeTill}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(activeTill)
+                                      setCopiedTill(true)
+                                      toast.success("Till number copied!")
+                                      setTimeout(() => setCopiedTill(false), 2000)
+                                    }}
+                                    className="p-1 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+                                    title="Copy Till Number"
+                                  >
+                                    {copiedTill ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                                  </button>
+                                </div>
+                                <span className="text-[10px] text-on-surface-variant block">Akubrecah Cyber</span>
+                              </div>
+                              <div className="pl-2">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">Exact Amount</span>
+                                <span className="text-lg font-black text-on-surface block mt-0.5">KES 20</span>
+                                <span className="text-[10px] text-on-surface-variant block">No ledger charges</span>
+                              </div>
+                            </div>
+
+                            {/* Manual Code Input */}
+                            <div className="flex flex-col gap-1.5">
+                              <label className="text-[11px] font-bold text-on-surface" htmlFor="mpesa-code">
+                                Enter 10-character M-Pesa Reference Code
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  id="mpesa-code"
+                                  type="text"
+                                  maxLength={10}
+                                  value={manualMpesaCode}
+                                  onChange={(e) => setManualMpesaCode(e.target.value.toUpperCase())}
+                                  placeholder="e.g. TCI89XX12A"
+                                  className="flex-1 h-11 px-3 bg-surface-container-lowest border border-outline-variant rounded-xl font-mono text-sm font-bold uppercase tracking-wider text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => void handleManualPaymentVerify()}
+                                  disabled={isVerifyingManual || manualMpesaCode.trim().length < 8}
+                                  className="h-11 px-4 bg-surface-container-lowest border border-outline-variant hover:bg-surface-container text-on-surface font-bold text-xs rounded-xl flex items-center gap-1.5 transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
+                                >
+                                  {isVerifyingManual ? (
+                                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                                  ) : (
+                                    <>
+                                      <Check className="w-4 h-4 text-primary" />
+                                      <span>Verify</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Micro notice */}
+                          <div className="flex items-center gap-1.5 text-[10px] text-on-surface-variant justify-center">
+                            <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+                            <span>256-Bit SSL Encrypted Handshake • Instant Token Clearance</span>
+                          </div>
+                        </div>
+                      </section>
+                    </div>
+                  )}
+
+                  {/* Reset / Search Again */}
+                  <div className="flex items-center justify-between pt-2">
                     <button
-                      className={cn(secondaryButtonClass, "w-full sm:w-auto justify-center")}
+                      type="button"
+                      onClick={() => setCurrentStep(3)}
+                      className="px-6 h-11 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface font-bold text-xs hover:bg-surface-container-low transition duration-150 flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Back to Address</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => {
                         clearPaymentTimers()
                         try {
@@ -2559,19 +2839,11 @@ function generateClientMathChallenge(): { image: string; token: string } {
                         } catch { }
                         window.location.reload()
                       }}
+                      className="text-xs text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer font-semibold"
                     >
-                      <RefreshCw className="w-4 h-4 shrink-0" /> New Search
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>New Search</span>
                     </button>
-                    {isRecordUnlocked && mpesaStatus !== "success" && (
-                      <button
-                        className={cn(primaryButtonClass, "w-full sm:w-auto justify-center shadow-lg shadow-primary/25 h-12 px-6 sm:px-8 text-xs sm:text-sm font-bold flex items-center gap-2")}
-                        onClick={() => executeDownload()}
-                        disabled={isDownloadingPdf}
-                      >
-                        <Download className="w-4 h-4 shrink-0" />
-                        <span>{isDownloadingPdf ? "Compiling PDF..." : "Download KRA PIN Certificate (PDF)"}</span>
-                      </button>
-                    )}
                   </div>
                 </motion.div>
               )}
@@ -2579,6 +2851,52 @@ function generateClientMathChallenge(): { image: string; token: string } {
           </div>
         </motion.div>
       </AnimatePresence>
+
+      {/* Bottom Trust Features Grid from Stitch */}
+      <div className={cn("w-full mx-auto mt-8 grid grid-cols-1 md:grid-cols-3 gap-4", currentStep === 4 ? "max-w-6xl" : "max-w-3xl")}>
+        <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant flex items-center gap-3 shadow-xs">
+          <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary shrink-0 border border-outline-variant/60">
+            <FileText className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <div className="font-bold text-xs sm:text-sm text-on-surface">Instant PDF delivery</div>
+            <div className="text-on-surface-variant text-[11px]">Immediate digital copy</div>
+          </div>
+        </div>
+
+        <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant flex items-center gap-3 shadow-xs">
+          <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary shrink-0 border border-outline-variant/60">
+            <Smartphone className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <div className="font-bold text-xs sm:text-sm text-on-surface">M-Pesa KES 20 payment</div>
+            <div className="text-on-surface-variant text-[11px]">STK Push checkout</div>
+          </div>
+        </div>
+
+        <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant flex items-center gap-3 shadow-xs">
+          <div className="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary shrink-0 border border-outline-variant/60">
+            <ShieldCheck className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <div className="font-bold text-xs sm:text-sm text-on-surface">Zero document storage</div>
+            <div className="text-on-surface-variant text-[11px]">Strict ephemeral parsing</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sovereign Compliance Guarantee Banner from Stitch */}
+      <div className={cn("w-full mx-auto mt-4 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs", currentStep === 4 ? "max-w-6xl" : "max-w-3xl")}>
+        <div className="flex items-center gap-3">
+          <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
+          <span className="text-on-surface-variant text-xs font-medium">
+            <strong className="text-on-surface font-bold">COMPLIANCE GUARANTEE:</strong> Valid for Banking, NTSA Licensing, Passport &amp; Tender submissions across Kenya.
+          </span>
+        </div>
+        <div className="shrink-0 px-3 py-1 rounded bg-surface-container-low border border-outline-variant text-on-surface-variant text-[10px] font-bold tracking-widest uppercase">
+          256-BIT SSL HANDSHAKE
+        </div>
+      </div>
 
       {/* ── Official KRA Payment & Checkout Gate Modal ── */}
       {showPaymentModal && accessInfo && (

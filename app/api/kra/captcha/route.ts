@@ -39,7 +39,7 @@ function createProxyAgent(proxyUrl: string): any {
             const secureSocket = tls.connect({
               socket,
               servername: opts.host,
-              rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
+              rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true',
             });
             callback(null, secureSocket);
           } else {
@@ -60,80 +60,46 @@ function createProxyAgent(proxyUrl: string): any {
   } as any);
 }
 
-function generateLocalArithmeticChallenge(): { captchaImage: string; sessionToken: string } {
-  const num1 = Math.floor(Math.random() * 25) + 12; // 12 - 36
-  const num2 = Math.floor(Math.random() * 9) + 3;   // 3 - 11
-  const isAddition = Math.random() > 0.4;
-  const question = isAddition ? `${num1} + ${num2}` : `${num1} - ${num2}`;
-  const answer = isAddition ? num1 + num2 : num1 - num2;
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="42" viewBox="0 0 160 42">
-    <rect width="160" height="42" fill="#F4F4F5" rx="8" />
-    <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle" font-family="monospace, monospace" font-size="20" font-weight="900" fill="#BA1A1A" letter-spacing="2">
-      ${question} = ?
-    </text>
-    <line x1="8" y1="8" x2="152" y2="34" stroke="#BA1A1A" stroke-width="0.75" stroke-opacity="0.18" />
-    <line x1="10" y1="34" x2="150" y2="8" stroke="#0F172A" stroke-width="0.75" stroke-opacity="0.12" />
-  </svg>`;
-
-  const captchaImage = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-  const payload = {
-    type: 'local_math',
-    answer,
-    exp: Date.now() + 15 * 60 * 1000,
-  };
-  const sessionToken = 'local_' + Buffer.from(JSON.stringify(payload)).toString('base64');
-
-  return { captchaImage, sessionToken };
-}
-
 export async function GET(req: NextRequest) {
+  const { userId: clerkId } = await auth();
+  let userEmail = "Anonymous";
+  if (clerkId) {
+    try {
+      const client = await clerkClient();
+      const user = await client.users.getUser(clerkId);
+      userEmail = user.primaryEmailAddress?.emailAddress || clerkId;
+    } catch { }
+  }
+  const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+
   try {
     const proxyUrl = process.env.KRA_PROXY_URL || process.env.PROXY_URL || "";
 
-    const { userId: clerkId } = await auth();
-    let userEmail = "Anonymous";
-    if (clerkId) {
-      try {
-        const client = await clerkClient();
-        const user = await client.users.getUser(clerkId);
-        userEmail = user.primaryEmailAddress?.emailAddress || clerkId;
-      } catch { }
+    // 1. Initialize authentic KRA session directly from KRA iTax portal
+    const cookies = await initKraSession(proxyUrl);
+    if (!cookies || Object.keys(cookies).length === 0) {
+      throw new Error('No session cookies returned by KRA portal.');
     }
-    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+    const cookieString = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ');
 
-    let captchaImage = "";
-    let sessionToken = "";
+    // 2. Fetch authentic CAPTCHA image directly from KRA
+    const randNum = Math.floor(Math.random() * 10000);
+    const captchaBuffer = await fetchCaptchaImage(cookieString, randNum, proxyUrl);
 
-    try {
-      // 1. Initialize KRA session
-      const cookies = await initKraSession(proxyUrl);
-      if (!cookies || Object.keys(cookies).length === 0) {
-        throw new Error('No session cookies returned by KRA portal.');
-      }
-      const cookieString = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ');
-
-      // 2. Fetch CAPTCHA image as binary buffer
-      const randNum = Math.floor(Math.random() * 10000);
-      const captchaBuffer = await fetchCaptchaImage(cookieString, randNum, proxyUrl);
-
-      sessionToken = Buffer.from(cookieString).toString('base64');
-      captchaImage = `data:image/png;base64,${captchaBuffer.toString('base64')}`;
-
-      // Log success (non-blocking)
-      void createSystemLog({
-        level: 'info',
-        service: 'KRA-Captcha',
-        message: 'KRA Captcha challenge generated and loaded successfully',
-        actor: userEmail,
-        ip
-      });
-    } catch (err: any) {
-      log.warn('[captcha] Upstream KRA portal offline or unreachable — serving resilient statutory challenge:', err.message);
-      const localChallenge = generateLocalArithmeticChallenge();
-      captchaImage = localChallenge.captchaImage;
-      sessionToken = localChallenge.sessionToken;
+    if (!captchaBuffer || captchaBuffer.length === 0) {
+      throw new Error('Empty CAPTCHA image returned by KRA.');
     }
+
+    const sessionToken = Buffer.from(cookieString).toString('base64');
+    const captchaImage = `data:image/png;base64,${captchaBuffer.toString('base64')}`;
+
+    void createSystemLog({
+      level: 'info',
+      service: 'KRA-Captcha',
+      message: 'Official KRA Captcha challenge loaded successfully from itax.kra.go.ke',
+      actor: userEmail,
+      ip
+    });
 
     return NextResponse.json(
       {
@@ -143,21 +109,32 @@ export async function GET(req: NextRequest) {
       },
       process.env.NODE_ENV !== 'production'
         ? {
-            headers: {
-              'Clear-Site-Data': '"cache"',
-              'Cache-Control': 'no-store',
-            },
-          }
+          headers: {
+            'Clear-Site-Data': '"cache"',
+            'Cache-Control': 'no-store',
+          },
+        }
         : undefined
     );
-  } catch (error: any) {
-    log.error('[captcha] Fallback generator activated:', error.message);
-    const localChallenge = generateLocalArithmeticChallenge();
-    return NextResponse.json({
-      success: true,
-      captchaImage: localChallenge.captchaImage,
-      sessionToken: localChallenge.sessionToken,
+  } catch (err: any) {
+    log.error('[captcha] Official KRA Captcha load error:', err.message);
+    void createSystemLog({
+      level: 'error',
+      service: 'KRA-Captcha',
+      message: `Failed to retrieve official CAPTCHA from KRA portal: ${err.message}`,
+      actor: userEmail,
+      ip,
+      details: { error: err.message }
     });
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Unable to load official CAPTCHA from KRA: ${err.message}. KRA iTax servers may be experiencing maintenance or connection resets.`,
+        upstreamUnavailable: true,
+      },
+      { status: 502 }
+    );
   }
 }
 
@@ -167,14 +144,17 @@ function initKraSession(proxyUrl: string): Promise<Record<string, string>> {
     const options = {
       hostname: 'itax.kra.go.ke',
       port: 443,
-      path: '/KRA-Portal/pinChecker.htm',
+      path: '/KRA-Portal/pinChecker.htm?actionCode=loadPage&viewType=static',
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       },
       timeout: 10000,
-      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true',
       agent
     } as any;
 
@@ -193,6 +173,9 @@ function initKraSession(proxyUrl: string): Promise<Record<string, string>> {
       resolve(cookieMap);
     });
 
+    req.on('timeout', () => {
+      req.destroy(new Error('KRA session initialization timed out (10s)'));
+    });
     req.on('error', reject);
     req.end();
   });
@@ -201,26 +184,48 @@ function initKraSession(proxyUrl: string): Promise<Record<string, string>> {
 function fetchCaptchaImage(cookieString: string, randNum: number, proxyUrl: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const agent = createProxyAgent(proxyUrl);
+    
+    // Primary path: captcahGenerate.htm (used on pinChecker.htm)
     const options = {
       hostname: 'itax.kra.go.ke',
       port: 443,
-      path: `/KRA-Portal/GenerateCaptchaServlet.do?sourcePage=LOGIN&rand=${randNum}`,
+      path: `/KRA-Portal/captcahGenerate.htm?rand=${randNum}`,
       method: 'GET',
       headers: {
         'Cookie': cookieString,
-        'Referer': 'https://itax.kra.go.ke/KRA-Portal/pinChecker.htm',
+        'Referer': 'https://itax.kra.go.ke/KRA-Portal/pinChecker.htm?actionCode=loadPage&viewType=static',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
       },
       timeout: 10000,
-      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true',
       agent
     } as any;
 
-    https.get(options, (res) => {
+    const req = https.get(options, (res) => {
+      if (res.statusCode && res.statusCode >= 400) {
+        // Secondary fallback path: GenerateCaptchaServlet.do
+        const fallbackOptions = {
+          ...options,
+          path: `/KRA-Portal/GenerateCaptchaServlet.do?sourcePage=LOGIN&rand=${randNum}`
+        };
+        const fallbackReq = https.get(fallbackOptions, (fbRes) => {
+          const chunks: Buffer[] = [];
+          fbRes.on('data', (chunk: Buffer) => chunks.push(chunk));
+          fbRes.on('end', () => resolve(Buffer.concat(chunks)));
+        });
+        fallbackReq.on('timeout', () => fallbackReq.destroy(new Error('KRA fallback CAPTCHA request timed out')));
+        fallbackReq.on('error', reject);
+        return;
+      }
       const chunks: Buffer[] = [];
       res.on('data', (chunk: Buffer) => chunks.push(chunk));
       res.on('end', () => resolve(Buffer.concat(chunks)));
-    }).on('error', reject);
+    });
+
+    req.on('timeout', () => {
+      req.destroy(new Error('KRA CAPTCHA fetch timed out (10s)'));
+    });
+    req.on('error', reject);
   });
 }

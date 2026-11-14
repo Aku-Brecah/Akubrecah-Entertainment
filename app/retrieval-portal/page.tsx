@@ -53,13 +53,13 @@ function FlagshipPortalContent() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface font-sans selection:bg-primary/20 selection:text-primary flex flex-col">
-      
+
       {/* ============================================================== */}
       {/* 1. ADAPTIVE RESPONSIVE GOVTECH TOP NAVIGATION BAR */}
       {/* ============================================================== */}
       <header className="sticky top-0 z-50 w-full bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant/80 shadow-2xs">
         <div className="w-full max-w-none px-4 sm:px-6 lg:px-10 xl:px-12 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
-          
+
           {/* Brand Mark & Identity */}
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-90 shrink-0">
             <Logo width={120} height={34} className="h-7 sm:h-8 w-auto transition-transform group-hover:scale-[1.02]" />
@@ -83,11 +83,10 @@ function FlagshipPortalContent() {
             <button
               type="button"
               onClick={() => handleModeChange("retrieval")}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all ${
-                mode === "retrieval"
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all ${mode === "retrieval"
                   ? "bg-primary text-white shadow-xs"
                   : "text-on-surface-variant hover:text-on-surface"
-              }`}
+                }`}
             >
               <FileCheck2 className="w-3.5 h-3.5 shrink-0" />
               <span><span className="hidden sm:inline">Certificate </span>Retrieval</span>
@@ -95,11 +94,10 @@ function FlagshipPortalContent() {
             <button
               type="button"
               onClick={() => handleModeChange("filing")}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all ${
-                mode === "filing"
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all ${mode === "filing"
                   ? "bg-primary text-white shadow-xs"
                   : "text-on-surface-variant hover:text-on-surface"
-              }`}
+                }`}
             >
               <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
               <span><span className="hidden sm:inline">Returns </span>Filing</span>
@@ -127,7 +125,7 @@ function FlagshipPortalContent() {
       {/* 2. FOCUSED HERO WORKSPACE (ZERO SCROLL ACROSS ALL DEVICES) */}
       {/* ============================================================== */}
       <main className="flex-1 w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-3 sm:py-5 space-y-4 sm:space-y-6">
-        
+
         {/* Focused Hero Header from Stitch Design */}
         <div className="text-center space-y-2 max-w-3xl mx-auto px-1 mb-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant text-xs font-semibold">
@@ -355,7 +353,7 @@ function FlagshipPortalContent() {
         {/* 3. CRAWLABLE STATUTORY GUIDE & TAXPAYER FAQ ACCORDION (SEO/GOOGLE) */}
         {/* ============================================================== */}
         <section aria-labelledby="statutory-guide-heading" className="space-y-6 pt-6 sm:pt-10 border-t border-outline-variant/60">
-          
+
           <div className="space-y-2 text-center max-w-4xl mx-auto">
             <span className="text-[11px] font-black text-primary uppercase tracking-widest">
               Statutory Knowledge Base & Verification Standard

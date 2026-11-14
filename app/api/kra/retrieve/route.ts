@@ -679,35 +679,16 @@ export async function POST(req: NextRequest) {
     let freshCookieString = "";
 
     // 1. Decode sessionToken if provided by client (from /api/kra/captcha)
-    let isLocalChallenge = false;
     if (sessionToken) {
-      if (sessionToken.startsWith('local_')) {
-        isLocalChallenge = true;
-        try {
-          const payload = JSON.parse(Buffer.from(sessionToken.replace('local_', ''), 'base64').toString('utf8'));
-          if (payload && payload.type === 'local_math') {
-            if (captchaAnswer && Number(String(captchaAnswer).trim()) !== Number(payload.answer)) {
-              return NextResponse.json({
-                success: false,
-                error: 'Incorrect arithmetic answer. Please check your answer and try again.',
-                captchaWrong: true,
-              }, { status: 400 });
-            }
-          }
-        } catch (err) {
-          log.warn('[retrieve] Failed to decode local sessionToken:', err);
-        }
-      } else {
-        try {
-          cookieString = Buffer.from(sessionToken, 'base64').toString('utf8');
-        } catch (err) {
-          log.error('[retrieve] Failed to decode sessionToken:', err);
-        }
+      try {
+        cookieString = Buffer.from(sessionToken, 'base64').toString('utf8');
+      } catch (err) {
+        log.error('[retrieve] Failed to decode sessionToken:', err);
       }
     }
 
-    // 2. If cookieString is still empty and not a local challenge, attempt initializing upstream session
-    if (!cookieString && !isLocalChallenge) {
+    // 2. If cookieString is still empty, attempt initializing upstream session
+    if (!cookieString) {
       try {
         const cookies = await initKraSession(proxyUrl);
         cookieString = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ');
@@ -807,12 +788,12 @@ export async function POST(req: NextRequest) {
     const effectivePin = fullPin || maskedPinHint || '';
 
     if (!effectivePin && !liveApiTaxpayer) {
-      log.warn(`[retrieve] No record found for ID ${cleanId || cleanDirectPin}`);
+      log.warn(`[retrieve] No record found or upstream offline for ID ${cleanId || cleanDirectPin}`);
       return NextResponse.json({
         success: false,
         error: cleanId
-          ? `No KRA record found for National ID ${cleanId}. Please verify your National ID number and try again.`
-          : 'Unable to retrieve taxpayer details. Please verify your KRA credentials and try again.',
+          ? `Unable to retrieve record for National ID ${cleanId}. If your ID is correct, the official KRA iTax server may be experiencing weekend maintenance or network timeouts. Please verify your credentials or try again shortly.`
+          : 'Unable to retrieve taxpayer details. KRA iTax server may be undergoing maintenance. Please verify your credentials and try again.',
       }, { status: 404 });
     }
 
