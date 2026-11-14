@@ -918,7 +918,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         className={cn(
           "w-full text-left space-y-5",
           variant === "inline"
-            ? "max-w-4xl mx-auto rounded-2xl bg-surface-container-lowest dark:bg-zinc-900/95 border border-outline-variant p-4 sm:p-6 shadow-sm my-2"
+            ? "rounded-2xl bg-surface-container-lowest dark:bg-zinc-900/95 border border-outline-variant p-4 sm:p-5 shadow-sm"
             : ""
         )}
       >
@@ -1170,7 +1170,12 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         </div>
 
                         {/* Well-fitted inline Phone Input + Submit Button */}
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                        <div
+                          className={cn(
+                            "flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5",
+                            variant === "inline" && "lg:flex-col lg:items-stretch"
+                          )}
+                        >
                           <div className="relative flex-1 min-w-0">
                             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                               <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -1219,7 +1224,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                             type="button"
                             disabled={isMpesaBusy}
                             onClick={() => handleMpesaDarajaPayment()}
-                            className={cn(primaryButtonClass, "sm:w-auto px-5 shrink-0")}
+                            className={cn(
+                              primaryButtonClass,
+                              "sm:w-auto px-5 shrink-0",
+                              variant === "inline" && "lg:w-full"
+                            )}
                           >
                             <span>Send KES {Math.round(Number(settledAmount))} Prompt</span>
                             <ArrowRight className="w-4 h-4 shrink-0" />
@@ -1555,7 +1564,12 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       <label htmlFor={manualInputId} className="block text-xs font-bold text-on-surface">
                         M-Pesa Confirmation Code or Full SMS
                       </label>
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                      <div
+                        className={cn(
+                          "flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5",
+                          variant === "inline" && "lg:flex-col lg:items-stretch"
+                        )}
+                      >
                         <div className="relative flex-1 min-w-0">
                           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                             <Receipt className="w-4 h-4 text-primary" />
@@ -1601,7 +1615,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           type="button"
                           disabled={isVerifyingManual}
                           onClick={() => void handleManualPaymentVerify()}
-                          className={cn(primaryButtonClass, "sm:w-auto px-5 shrink-0")}
+                          className={cn(
+                            primaryButtonClass,
+                            "sm:w-auto px-5 shrink-0",
+                            variant === "inline" && "lg:w-full"
+                          )}
                         >
                           {isVerifyingManual ? (
                             <>
@@ -1671,7 +1689,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       )}
 
       {isVerified && (
-        <div className="w-full max-w-4xl mx-auto mb-4">
+        <div className={cn("w-full mx-auto mb-4", currentStep === 4 ? "max-w-6xl" : "max-w-3xl")}>
           <Alert className="bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 rounded-2xl flex items-center gap-3 py-3 px-4 shadow-sm">
             <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
             <AlertDescription className="text-xs font-semibold">
@@ -1710,7 +1728,12 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
         >
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl shadow-sm border-2 border-zinc-200 dark:border-zinc-800 p-4 sm:p-6 md:p-7 relative overflow-hidden z-10 max-w-4xl mx-auto">
+          <div
+            className={cn(
+              "bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl shadow-sm border-2 border-zinc-200 dark:border-zinc-800 p-4 sm:p-6 md:p-7 relative overflow-hidden z-10 mx-auto",
+              currentStep === 4 ? "max-w-6xl" : "max-w-3xl"
+            )}
+          >
             <AnimatePresence mode="wait">
               {currentStep === 1 && (
                 <motion.div key="step1" variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
@@ -2125,7 +2148,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     const isRecordUnlocked = Boolean(verifiedDownloadId || isAdmin);
                     return (
                       <>
-                        <div className="w-full max-w-4xl mx-auto bg-gradient-to-r from-emerald-500/10 via-red-500/5 to-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left shadow-xs">
+                        <div className="w-full bg-gradient-to-r from-emerald-500/10 via-red-500/5 to-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left shadow-xs">
                           <div className="flex items-center gap-3">
                             <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
                               <CheckCircle2 className="w-5 h-5" />
@@ -2152,8 +2175,20 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           </div>
                         </div>
 
-                        {/* Taxpayer Preview Data Grid */}
-                        <div className="w-full max-w-4xl mx-auto bg-surface-variant/30 rounded-2xl p-4 sm:p-6 border border-outline-variant space-y-4 shadow-sm my-2">
+                        {/* Side-by-Side Workspace: Generated Taxpayer Details (Left) + Payment Panel (Right) */}
+                        <div
+                          className={cn(
+                            "w-full grid grid-cols-1 gap-5 items-start my-2",
+                            (!isRecordUnlocked || mpesaStatus === "success") && "lg:grid-cols-12"
+                          )}
+                        >
+                          {/* LEFT: Taxpayer Preview Data Grid */}
+                          <div
+                            className={cn(
+                              "w-full bg-surface-variant/30 rounded-2xl p-4 sm:p-6 border border-outline-variant space-y-4 shadow-sm",
+                              (!isRecordUnlocked || mpesaStatus === "success") ? "lg:col-span-7" : "max-w-4xl mx-auto"
+                            )}
+                          >
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
 
                             {/* 1. Taxpayer Legal Name (Unmasked) */}
@@ -2339,19 +2374,21 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                 : <>To protect citizen privacy under the Kenya Data Protection Act, contact details and identification numbers are partially masked during web preview. The full unmasked official record is embedded into your official PDF certificate upon payment of <strong>KES 20</strong>.</>}
                             </p>
                           </div>
+                          </div>
+
+                          {/* RIGHT: Payment & Checkout Panel */}
+                          {(!isRecordUnlocked || mpesaStatus === "success") && (
+                            <div className="w-full lg:col-span-5 lg:sticky lg:top-4">
+                              {renderMpesaCheckoutPanel("inline")}
+                            </div>
+                          )}
                         </div>
                       </>
                     );
                   })()}
 
-
-
-                  {/* ── CHECKOUT & MANUAL PAYMENT PANEL ── */}
-                  {(!isRecordUnlocked || mpesaStatus === "success") &&
-                    renderMpesaCheckoutPanel("inline")}
-
                   {/* Actions */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-4xl mx-auto pt-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full pt-2">
                     <button
                       className={cn(secondaryButtonClass, "w-full sm:w-auto justify-center")}
                       onClick={() => {
