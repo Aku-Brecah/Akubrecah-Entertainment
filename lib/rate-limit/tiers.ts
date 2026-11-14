@@ -18,10 +18,11 @@ export function getTierForRoute(pathname: string): RateTier {
     return { limit, windowMs, tierKey: 'health' };
   }
 
-  // Tier 2: M-Pesa Payment Verification & Status Polling (180 req/min so 1s STK polling never hits 429)
+  // Tier 2: M-Pesa Payment Verification, Status Polling & QR Generation (180 req/min so 1s STK polling never hits 429)
   if (
     pathname.startsWith('/api/mpesa/verify') ||
-    pathname.startsWith('/api/mpesa/status')
+    pathname.startsWith('/api/mpesa/status') ||
+    pathname.startsWith('/api/mpesa/qrcode')
   ) {
     const limit = Number(process.env.RATE_LIMIT_MPESA_POLL) || 180;
     return { limit, windowMs, tierKey: 'mpesa_poll' };

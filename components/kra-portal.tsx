@@ -25,7 +25,10 @@ import {
   Check,
   CheckCircle2,
   X,
-  ExternalLink
+  ExternalLink,
+  QrCode,
+  Copy,
+  Receipt
 } from 'lucide-react'
 
 import { Button } from "@/components/ui/button"
@@ -133,9 +136,22 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
   const [verifiedReceipt, setVerifiedReceipt] = useState<string | null>(null)
 
-  // Subscription & Safaricom Daraja M-Pesa Express state (Same-Page, Zero-Redirect)
+  // Subscription & M-Pesa Checkout State (Same-Page, Zero-Redirect)
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [paymentPhone, setPaymentPhone] = useState("")
+  const [paymentMethod, setPaymentMethod] = useState<"stk" | "manual">("stk")
+  const [manualMpesaCode, setManualMpesaCode] = useState("")
+  const [isVerifyingManual, setIsVerifyingManual] = useState(false)
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null)
+  const [qrMeta, setQrMeta] = useState<{
+    tillNumber: string
+    amount: number
+    reference: string
+    source?: string
+  } | null>(null)
+  const [qrStatus, setQrStatus] = useState<"idle" | "loading" | "ready" | "error">("idle")
+  const [qrPinKey, setQrPinKey] = useState<string>("")
+  const [copiedTill, setCopiedTill] = useState(false)
   const [pollingSecondsLeft, setPollingSecondsLeft] = useState(60)
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -184,7 +200,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
   // Auto-focus the payment phone input when Step 4 opens and awaits payment
   useEffect(() => {
-    if (currentStep !== 4 || isRecordUnlocked || mpesaStatus !== "ready") return
+    if (currentStep !== 4 || isRecordUnlocked || mpesaStatus !== "ready" || paymentMethod !== "stk") return
     const timer = setTimeout(() => {
       const targetId = showPaymentModal ? "modal-phone-input" : "same-page-phone-input"
       const el = document.getElementById(targetId)
@@ -193,7 +209,46 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       }
     }, 120)
     return () => clearTimeout(timer)
-  }, [currentStep, isRecordUnlocked, mpesaStatus, showPaymentModal])
+  }, [currentStep, isRecordUnlocked, mpesaStatus, showPaymentModal, paymentMethod])
+
+  const loadPaymentQr = async (force = false) => {
+    const activePin = (formData.rawPin || formData.pin || "").trim()
+    if (!force && qrStatus === "ready" && qrCodeUrl && qrPinKey === activePin) return
+
+    setQrStatus("loading")
+    try {
+      const res = await fetch('/api/mpesa/qrcode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: activePin || undefined }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success || !data.qrImageUrl) {
+        throw new Error(data.error || "Unable to generate payment QR code.")
+      }
+      setQrCodeUrl(String(data.qrImageUrl))
+      setQrMeta({
+        tillNumber: String(data.tillNumber || "9348469"),
+        amount: Number(data.amount || 20),
+        reference: String(data.reference || "KRA-CERT"),
+        source: data.source ? String(data.source) : undefined,
+      })
+      setQrPinKey(activePin)
+      setQrStatus("ready")
+    } catch {
+      setQrStatus("error")
+    }
+  }
+
+  // Generate/refresh custom M-Pesa QR code whenever checkout becomes visible
+  useEffect(() => {
+    if ((currentStep !== 4 && !showPaymentModal) || isRecordUnlocked) return
+    const activePin = (formData.rawPin || formData.pin || "").trim()
+    if (qrStatus === "idle" || (qrPinKey !== activePin && qrStatus !== "loading")) {
+      void loadPaymentQr()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, showPaymentModal, isRecordUnlocked, formData.rawPin, formData.pin])
 
   // Cleanup polling intervals on unmount
   useEffect(() => {
@@ -630,6 +685,78 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     setPollingSecondsLeft(60)
   }
 
+  // Switch cleanly to manual M-Pesa Till payment & receipt code verification
+  const switchToManualPayment = (variant?: "inline" | "modal") => {
+    clearPaymentTimers()
+    setMpesaStatus("ready")
+    setPaymentMethod("manual")
+    setPaymentError(null)
+    setPollingSecondsLeft(60)
+    setTimeout(() => {
+      const targetId =
+        variant === "modal" || showPaymentModal
+          ? "modal-manual-code-input"
+          : "same-page-manual-code-input"
+      document.getElementById(targetId)?.focus()
+    }, 90)
+  }
+
+  const handleCopyTill = async (tillNumber: string) => {
+    try {
+      await navigator.clipboard.writeText(tillNumber)
+      setCopiedTill(true)
+      toast.success(`Till Number ${tillNumber} copied`)
+      setTimeout(() => setCopiedTill(false), 2000)
+    } catch {
+      toast.error("Could not copy automatically. Enter Till 9348469 in M-Pesa.")
+    }
+  }
+
+  // Verify manually paid M-Pesa confirmation code or pasted SMS
+  const handleManualPaymentVerify = async () => {
+    const trimmedCode = manualMpesaCode.trim()
+    if (trimmedCode.length < 6) {
+      const msg = "Enter the 10-character M-Pesa code (e.g. UB12XYZ789) or paste your M-Pesa confirmation SMS."
+      setPaymentError(msg)
+      toast.error(msg)
+      return
+    }
+
+    setIsVerifyingManual(true)
+    setPaymentError(null)
+    const toastId = toast.loading("Verifying your M-Pesa receipt code...")
+
+    try {
+      const certPin = formData.rawPin || formData.pin
+      const res = await fetch('/api/mpesa/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mpesaCode: trimmedCode,
+          pin: certPin,
+          phone: (paymentPhone || formData.phoneNumber || "").trim() || undefined,
+        }),
+      })
+      const vData = await res.json()
+      toast.dismiss(toastId)
+
+      if (!res.ok || !vData.verified) {
+        const errMsg =
+          vData.error ||
+          "Could not verify that M-Pesa code. Confirm your 10-character receipt (e.g. UB12XYZ789) and try again."
+        setPaymentError(errMsg)
+        toast.error(errMsg)
+        return
+      }
+
+      await applyMpesaVerificationOutcome(vData, certPin)
+    } catch (err: any) {
+      toast.error(err.message || "Manual verification failed. Please retry.", { id: toastId })
+    } finally {
+      setIsVerifyingManual(false)
+    }
+  }
+
   // Fetches server-determined access: pay_per_download (strictly KES 20) or admin
   const checkAccess = async () => {
     if (!formData.pin && !formData.rawPin) {
@@ -665,6 +792,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       clearPaymentTimers()
       setMpesaStatus("ready")
       setPaymentError(null)
+      setPaymentMethod("stk")
+      setManualMpesaCode("")
 
       // If user is already on step 4 with phone input, focus or initiate directly
       const inlinePhoneInput = document.getElementById('same-page-phone-input')
@@ -816,62 +945,63 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     exit: { opacity: 0, x: -20 }
   }
 
-  // Ergonomic, high-contrast, auto-fitting input & button classes (WCAG AAA compliant, zero obscured fonts)
-  const inputClass = "w-full bg-white dark:bg-zinc-800 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-red-600 dark:focus:border-red-500 focus:ring-2 focus:ring-red-600/20 px-4 py-2.5 h-12 transition-all shadow-2xs"
+  // Ergonomic, high-contrast, auto-fitting input & button classes (WCAG AAA compliant)
+  const inputClass = "w-full bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-xl text-sm font-semibold text-zinc-900 dark:text-zinc-50 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:border-red-600 dark:focus:border-red-500 focus:ring-2 focus:ring-red-600/20 px-3.5 py-2 h-11 transition-all shadow-2xs"
   const labelClass = "block text-xs font-bold text-zinc-800 dark:text-zinc-200 mb-1.5 uppercase tracking-wider"
-  const primaryButtonClass = "inline-flex items-center justify-center gap-2 px-6 py-2.5 h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-sm active:scale-[0.98] transition-all shadow-md shadow-red-600/20 cursor-pointer whitespace-nowrap"
-  const secondaryButtonClass = "inline-flex items-center justify-center gap-2 px-5 py-2.5 h-12 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold text-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
+  const primaryButtonClass = "inline-flex items-center justify-center gap-2 px-5 py-2.5 h-11 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm active:scale-[0.98] transition-all shadow-sm shadow-red-600/20 cursor-pointer whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+  const secondaryButtonClass = "inline-flex items-center justify-center gap-2 px-4 py-2.5 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 font-semibold text-xs sm:text-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap"
 
   const renderMpesaCheckoutPanel = (variant: "inline" | "modal") => {
     const phoneInputId = variant === "inline" ? "same-page-phone-input" : "modal-phone-input"
+    const manualInputId = variant === "inline" ? "same-page-manual-code-input" : "modal-manual-code-input"
     const cleanPhonePreview = paymentPhone.replace(/[\s\-+()]/g, '')
     const hasPhoneInput = cleanPhonePreview.length > 0
     const isPhoneFormatValid =
       /^(?:254|0)(?:7\d{8}|1\d{8})$/.test(cleanPhonePreview) ||
       /^(?:7|1)\d{8}$/.test(cleanPhonePreview)
+    const activeTill = qrMeta?.tillNumber || "9348469"
+    const activeRef = qrMeta?.reference || "KRA-CERT"
+    const settledAmount = (accessInfo?.feeKes ?? qrMeta?.amount ?? 20).toFixed(2)
 
     return (
       <div
         className={cn(
-          "w-full text-left space-y-4",
+          "w-full text-left space-y-5",
           variant === "inline"
-            ? "max-w-2xl mx-auto rounded-2xl bg-surface-container-lowest dark:bg-zinc-900/95 border border-outline-variant p-4 sm:p-6 shadow-sm my-2"
+            ? "max-w-4xl mx-auto rounded-2xl bg-surface-container-lowest dark:bg-zinc-900/95 border border-outline-variant p-4 sm:p-6 shadow-sm my-2"
             : ""
         )}
       >
-        {/* Native Safaricom Daraja M-Pesa Express Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-outline-variant/60 pb-3.5">
-          <div className="flex items-start sm:items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-              <Smartphone className="w-5 h-5" />
+        {/* Clean Checkout Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-outline-variant/60 pb-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="font-bold text-sm sm:text-base text-on-surface tracking-tight">
-                  Safaricom M-Pesa Express
-                </h3>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25">
-                  Sole Active Gateway
-                </span>
-              </div>
-              <p className="text-[11px] text-on-surface-variant mt-0.5">
-                Lipa na M-Pesa Online · Buy Goods Till <span className="font-mono font-bold text-on-surface">9348469</span>
+            <div className="min-w-0">
+              <h3 className="font-extrabold text-sm sm:text-base text-on-surface tracking-tight">
+                {mpesaStatus === "success"
+                  ? "Payment Verified · Official Certificate Unlocked"
+                  : "Complete Payment to Unlock Official PDF"}
+              </h3>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                Instant STK Push, Custom M-Pesa QR Scan, or Manual Receipt Verification
               </p>
             </div>
           </div>
 
-          <div className="shrink-0 bg-primary/5 border border-primary/20 rounded-xl px-3.5 py-2 flex sm:block items-center justify-between text-right">
+          <div className="shrink-0 bg-primary/5 border border-primary/20 rounded-xl px-4 py-2 flex sm:block items-center justify-between text-right">
             <span className="text-[10px] uppercase font-bold tracking-wider text-primary block">
-              One-Time Fee
+              Download Fee
             </span>
             <span className="text-base sm:text-lg font-black text-primary font-mono tabular-nums">
-              KES 20.00
+              KES {settledAmount}
             </span>
           </div>
         </div>
 
-        {/* Order & Service Summary */}
-        <div className="rounded-xl bg-surface-container/70 dark:bg-zinc-800/50 border border-outline-variant/70 p-3 sm:p-3.5 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+        {/* Order & Service Summary Strip */}
+        <div className="rounded-xl bg-surface-container/60 dark:bg-zinc-800/50 border border-outline-variant/70 p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="min-w-0">
             <span className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant block">
               Taxpayer
@@ -900,255 +1030,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           </div>
         </div>
 
-        {/* STATE 1: READY TO PAY */}
-        {mpesaStatus === "ready" && (
-          <div className="space-y-4">
-            {/* Clear 3-Step M-Pesa STK Instructions */}
-            <div className="rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 p-3 text-[11px] text-emerald-900 dark:text-emerald-200 space-y-1.5">
-              <p className="font-bold uppercase tracking-wider text-[10px] text-emerald-700 dark:text-emerald-300">
-                How Instant M-Pesa Express Works
-              </p>
-              <ol className="space-y-1 list-decimal list-inside text-xs">
-                <li>Confirm your Safaricom M-Pesa mobile number below and request the prompt.</li>
-                <li>When the M-Pesa STK dialog pops up on your phone, enter your M-Pesa PIN for KES 20.00.</li>
-                <li>Wait a few seconds for Safaricom verification — your official PDF unlocks automatically.</li>
-              </ol>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label htmlFor={phoneInputId} className="block text-xs font-bold text-on-surface">
-                  Safaricom M-Pesa Phone Number
-                </label>
-                {hasPhoneInput && (
-                  <span
-                    className={cn(
-                      "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                      isPhoneFormatValid
-                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                        : "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-                    )}
-                  >
-                    {isPhoneFormatValid ? "Valid Safaricom format" : "Use 07XXXXXXXX or 01XXXXXXXX"}
-                  </span>
-                )}
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <input
-                  id={phoneInputId}
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  value={paymentPhone}
-                  onChange={(e) => {
-                    setPaymentPhone(e.target.value)
-                    setPaymentError(null)
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      handleMpesaDarajaPayment()
-                    }
-                  }}
-                  placeholder="Enter payment M-Pesa number (e.g. 0712345678)"
-                  className={cn(
-                    "w-full h-12 pl-10 py-2.5 rounded-xl border-2 border-outline-variant bg-surface dark:bg-zinc-800 text-on-surface text-sm font-mono font-semibold placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all",
-                    paymentPhone.length > 0 ? "pr-10" : "pr-4"
-                  )}
-                />
-                {paymentPhone.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPaymentPhone("")
-                      setPaymentError(null)
-                      document.getElementById(phoneInputId)?.focus()
-                    }}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface-variant hover:text-on-surface cursor-pointer"
-                    aria-label="Clear M-Pesa phone number"
-                    title="Clear phone number"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              <p className="text-[11px] text-on-surface-variant mt-1">
-                Enter the Safaricom M-Pesa phone number to receive the KES 20.00 STK Push prompt (<span className="font-mono">07XXXXXXXX</span>, <span className="font-mono">01XXXXXXXX</span>, or <span className="font-mono">+2547XXXXXXXX</span>).
-              </p>
-            </div>
-
-            {paymentError && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-700 dark:text-red-300 text-xs font-medium flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{paymentError}</span>
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
-              {variant === "modal" && (
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentModal(false)}
-                  className={cn(secondaryButtonClass, "w-full sm:w-auto sm:min-w-[120px] justify-center")}
-                >
-                  Cancel
-                </button>
-              )}
-              <button
-                type="button"
-                disabled={isMpesaBusy}
-                onClick={() => handleMpesaDarajaPayment()}
-                className={cn(
-                  primaryButtonClass,
-                  "w-full flex-1 h-12 text-xs sm:text-sm font-extrabold shadow-md shadow-primary/20 flex items-center justify-center gap-2"
-                )}
-              >
-                <Smartphone className="w-4 h-4 shrink-0" />
-                <span>Pay KES 20.00 via M-Pesa Express</span>
-                <ArrowRight className="w-4 h-4 shrink-0" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STATE 2: INITIATING PAYMENT */}
-        {mpesaStatus === "initiating" && (
-          <div className="py-6 px-4 rounded-2xl bg-surface-container/60 border border-outline-variant/60 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mx-auto">
-              <Loader2 className="w-6 h-6 animate-spin" />
-            </div>
-            <div>
-              <span className="inline-block text-[10px] font-black uppercase tracking-widest text-primary mb-1">
-                Step 1 of 3 · Contacting Safaricom Daraja
-              </span>
-              <h4 className="font-bold text-sm sm:text-base text-on-surface">
-                Initiating M-Pesa STK Push Request...
-              </h4>
-              <p className="text-xs text-on-surface-variant mt-1 max-w-md mx-auto">
-                Authenticating secure Daraja OAuth session and sending payment prompt to{" "}
-                <span className="font-mono font-bold text-on-surface">{paymentPhone}</span>.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* STATE 3 & 4: STK PUSH SENT / WAITING FOR CUSTOMER AUTHORIZATION */}
-        {(mpesaStatus === "stk_sent" || mpesaStatus === "waiting") && (
-          <div
-            className={cn(
-              "py-4 px-3 sm:px-4 rounded-2xl border text-center space-y-4",
-              mpesaStatus === "stk_sent"
-                ? "bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-500/30"
-                : "bg-surface-container/70 border-outline-variant"
-            )}
-          >
-            <div className="relative mx-auto w-14 h-14">
-              <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
-              <div
-                className={cn(
-                  "relative w-14 h-14 rounded-full flex items-center justify-center",
-                  mpesaStatus === "stk_sent"
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-                )}
-              >
-                <Smartphone className={cn("w-7 h-7", mpesaStatus === "waiting" && "animate-pulse")} />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              {mpesaStatus === "stk_sent" ? (
-                <span className="inline-block text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300 mb-1">
-                  Step 2 of 3 · STK Prompt Delivered · {pollingSecondsLeft}s
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-[11px] font-mono font-bold text-amber-700 dark:text-amber-300 tabular-nums">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Awaiting M-Pesa PIN · {pollingSecondsLeft}s</span>
-                </span>
-              )}
-
-              <h4 className="font-bold text-sm sm:text-base text-on-surface">
-                {mpesaStatus === "stk_sent"
-                  ? `M-Pesa Prompt Sent to ${paymentPhone}`
-                  : "Authorize KES 20.00 on Your Phone"}
-              </h4>
-
-              <p className="text-xs text-on-surface-variant max-w-md mx-auto leading-relaxed">
-                {mpesaStatus === "stk_sent" ? (
-                  <>
-                    Look at your phone screen now. An M-Pesa payment prompt for{" "}
-                    <span className="font-mono font-bold text-on-surface">KES 20.00</span> (Buy Goods Till{" "}
-                    <span className="font-mono font-bold text-on-surface">9348469</span>) is opening.
-                  </>
-                ) : (
-                  <>
-                    Enter your 4-digit M-Pesa PIN on{" "}
-                    <span className="font-mono font-bold text-on-surface">{paymentPhone}</span>. Payment is not complete until Safaricom confirms your transaction — your KRA PIN Certificate unlocks and downloads automatically.
-                  </>
-                )}
-              </p>
-
-              {activeCheckoutId && (
-                <p className="text-[10px] font-mono text-on-surface-variant pt-1 break-all">
-                  CheckoutRef: {activeCheckoutId}
-                  {merchantRequestId ? ` · MerchantRef: ${merchantRequestId}` : ""}
-                </p>
-              )}
-            </div>
-
-            {paymentError && (
-              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-200 text-xs font-medium max-w-md mx-auto">
-                {paymentError}
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-2.5 max-w-lg mx-auto pt-1">
-              <button
-                type="button"
-                onClick={handleCheckPaymentStatus}
-                className={cn(primaryButtonClass, "flex-1 h-11 text-xs font-bold justify-center")}
-              >
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>I Have Entered My PIN — Verify Now</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelOrResetPayment}
-                className={cn(secondaryButtonClass, "h-11 text-xs font-semibold justify-center")}
-              >
-                <span>Change Phone Number</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STATE 5: PAYMENT VERIFICATION IN PROGRESS */}
-        {mpesaStatus === "verifying" && (
-          <div className="py-6 px-4 rounded-2xl bg-surface-container/70 border border-primary/25 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary mx-auto">
-              <Loader2 className="w-6 h-6 animate-spin" />
-            </div>
-            <div>
-              <span className="inline-block text-[10px] font-black uppercase tracking-widest text-primary mb-1">
-                Step 3 of 3 · Live Reconciliation
-              </span>
-              <h4 className="font-bold text-sm sm:text-base text-on-surface">
-                Verifying Transaction with Safaricom Daraja...
-              </h4>
-              <p className="text-xs text-on-surface-variant mt-1 max-w-md mx-auto">
-                Checking M-Pesa callback confirmation and querying STK Push settlement status for{" "}
-                <span className="font-mono font-semibold text-on-surface">{activeCheckoutId}</span>.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* STATE 6: PAYMENT SUCCESSFUL */}
-        {mpesaStatus === "success" && (() => {
+        {mpesaStatus === "success" ? (() => {
           const isCheckoutRef = Boolean(verifiedReceipt?.startsWith("ws_CO_"))
           const primaryRefLabel = isCheckoutRef ? "Daraja Reference" : "M-Pesa Receipt"
           const primaryRefDisplay = isCheckoutRef
@@ -1161,7 +1043,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
           return (
             <div className="rounded-2xl bg-emerald-500/[0.06] dark:bg-emerald-950/30 border border-emerald-500/30 p-5 sm:p-6 space-y-5 shadow-xs">
-              {/* Top Verification Header */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3.5 text-center sm:text-left">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center mx-auto sm:mx-0 shrink-0 shadow-sm shadow-emerald-600/25">
                   <CheckCircle2 className="w-6 h-6" />
@@ -1169,18 +1050,17 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                 <div className="min-w-0 flex-1 space-y-1">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
                     <ShieldCheck className="w-3 h-3" />
-                    Safaricom Daraja · Verified
+                    Payment Verified
                   </span>
                   <h4 className="font-extrabold text-base sm:text-lg text-on-surface tracking-tight">
                     M-Pesa Payment Confirmed
                   </h4>
                   <p className="text-xs text-on-surface-variant leading-relaxed">
-                    Safaricom verified your payment and unlocked your complete KRA statutory record.
+                    Your payment is verified and your complete KRA statutory record is unmasked and ready.
                   </p>
                 </div>
               </div>
 
-              {/* 3-Column Settlement Summary Grid (min-w-0 prevents long IDs overflowing) */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
                 <div className="min-w-0 rounded-xl bg-surface-container-lowest dark:bg-zinc-900/90 border border-outline-variant/60 p-3.5">
                   <span className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant block mb-1">
@@ -1226,7 +1106,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                 </div>
               </div>
 
-              {/* Sole Primary Deliverable CTA */}
               <div className="space-y-2 pt-1">
                 <button
                   type="button"
@@ -1270,119 +1149,662 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
               )}
             </div>
           )
-        })()}
-
-        {/* STATE 7: PAYMENT CANCELLED */}
-        {mpesaStatus === "cancelled" && (
-          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
-            <div className="flex items-start gap-2.5">
-              <AlertCircle className="w-5 h-5 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-bold text-sm text-on-surface">
-                  M-Pesa Request Cancelled on Your Phone
-                </h4>
-                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                  {paymentError ||
-                    "You dismissed or cancelled the STK PIN prompt on your phone (ResultCode 1032). No funds were deducted from your M-Pesa account."}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
-              <button
-                type="button"
-                onClick={() => handleMpesaDarajaPayment()}
-                className={cn(primaryButtonClass, "flex-1 h-11 text-xs font-bold justify-center")}
-              >
-                <RotateCcw className="w-4 h-4 shrink-0" />
-                <span>Resend M-Pesa STK Prompt</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelOrResetPayment}
-                className={cn(secondaryButtonClass, "h-11 text-xs font-semibold justify-center")}
-              >
-                <span>Edit Phone Number</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STATE 8: PAYMENT TIMED OUT */}
-        {mpesaStatus === "timeout" && (
-          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
-            <div className="flex items-start gap-2.5">
-              <Clock className="w-5 h-5 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-bold text-sm text-on-surface">
-                  M-Pesa Authorization Timed Out
-                </h4>
-                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                  {paymentError ||
-                    "The M-Pesa prompt expired before confirmation was received. If you already entered your PIN and received an M-Pesa confirmation SMS, click Verify Now."}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 pt-1">
-              {activeCheckoutId && (
+        })() : (
+          /* RESPONSIVE 2-COLUMN CHECKOUT: LEFT = STK PUSH / MANUAL CODE | RIGHT = CUSTOM QR CODE */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+            {/* LEFT COLUMN: STK PUSH & MANUAL FALLBACK */}
+            <div className="lg:col-span-7 flex flex-col gap-4 min-w-0">
+              {/* Clean Segmented Payment Mode Switcher */}
+              <div className="grid grid-cols-2 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 gap-1">
                 <button
                   type="button"
-                  onClick={handleCheckPaymentStatus}
-                  className={cn(primaryButtonClass, "flex-1 h-11 text-xs font-bold justify-center")}
+                  onClick={() => {
+                    setPaymentMethod("stk")
+                    setPaymentError(null)
+                  }}
+                  className={cn(
+                    "h-10 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap",
+                    paymentMethod === "stk"
+                      ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-xs border border-zinc-200 dark:border-zinc-700"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                  )}
                 >
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>I Already Entered PIN — Verify Now</span>
+                  <Smartphone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Instant STK Prompt</span>
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={() => handleMpesaDarajaPayment()}
-                className={cn(secondaryButtonClass, "h-11 text-xs font-bold justify-center")}
-              >
-                <RotateCcw className="w-4 h-4 shrink-0" />
-                <span>Send New STK Prompt</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelOrResetPayment}
-                className={cn(secondaryButtonClass, "h-11 text-xs font-semibold justify-center")}
-              >
-                <span>Change Number</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STATE 9: PAYMENT FAILED */}
-        {mpesaStatus === "failed" && (
-          <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 space-y-3">
-            <div className="flex items-start gap-2.5">
-              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-bold text-sm text-red-700 dark:text-red-300">
-                  M-Pesa Payment Failed
-                </h4>
-                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                  {paymentError ||
-                    "The transaction was declined (for example, insufficient M-Pesa balance, wrong PIN, or invalid subscriber line)."}
-                </p>
+                <button
+                  type="button"
+                  onClick={() => switchToManualPayment(variant)}
+                  className={cn(
+                    "h-10 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap",
+                    paymentMethod === "manual"
+                      ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-xs border border-zinc-200 dark:border-zinc-700"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                  )}
+                >
+                  <Receipt className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span>Manual Payment</span>
+                </button>
               </div>
+
+              {paymentMethod === "stk" ? (
+                <div className="flex-1 flex flex-col justify-between gap-4 rounded-2xl border border-outline-variant/80 bg-surface-container/30 dark:bg-zinc-800/30 p-4 sm:p-5">
+                  {/* STATE 1: READY TO SEND STK PUSH */}
+                  {mpesaStatus === "ready" && (
+                    <div className="space-y-4">
+                      <div className="rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 p-3.5 text-xs text-emerald-900 dark:text-emerald-200 space-y-1.5">
+                        <p className="font-bold uppercase tracking-wider text-[10px] text-emerald-700 dark:text-emerald-300">
+                          Fastest Checkout · Direct Phone Prompt
+                        </p>
+                        <ol className="space-y-1 list-decimal list-inside text-[11px] leading-relaxed">
+                          <li>Enter your Safaricom M-Pesa number and click Send Prompt.</li>
+                          <li>Authorize the KES {settledAmount} PIN prompt on your handset.</li>
+                          <li>Your KRA PIN Certificate unlocks and downloads immediately.</li>
+                        </ol>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <label htmlFor={phoneInputId} className="block text-xs font-bold text-on-surface">
+                            Safaricom M-Pesa Phone Number
+                          </label>
+                          {hasPhoneInput && (
+                            <span
+                              className={cn(
+                                "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                                isPhoneFormatValid
+                                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                                  : "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+                              )}
+                            >
+                              {isPhoneFormatValid ? "Valid Kenyan number" : "Use 07XXXXXXXX or 01XXXXXXXX"}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Well-fitted inline Phone Input + Submit Button */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                          <div className="relative flex-1 min-w-0">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                              <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <input
+                              id={phoneInputId}
+                              type="tel"
+                              inputMode="tel"
+                              autoComplete="tel"
+                              value={paymentPhone}
+                              onChange={(e) => {
+                                setPaymentPhone(e.target.value)
+                                setPaymentError(null)
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault()
+                                  handleMpesaDarajaPayment()
+                                }
+                              }}
+                              placeholder="0712345678 or 0112345678"
+                              className={cn(
+                                inputClass,
+                                "pl-10 font-mono text-sm",
+                                paymentPhone.length > 0 ? "pr-9" : "pr-3.5"
+                              )}
+                            />
+                            {paymentPhone.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPaymentPhone("")
+                                  setPaymentError(null)
+                                  document.getElementById(phoneInputId)?.focus()
+                                }}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface-variant hover:text-on-surface cursor-pointer"
+                                aria-label="Clear M-Pesa phone number"
+                                title="Clear phone number"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={isMpesaBusy}
+                            onClick={() => handleMpesaDarajaPayment()}
+                            className={cn(primaryButtonClass, "sm:w-auto px-5 shrink-0")}
+                          >
+                            <span>Send KES {Math.round(Number(settledAmount))} Prompt</span>
+                            <ArrowRight className="w-4 h-4 shrink-0" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {paymentError && (
+                        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-700 dark:text-red-300 text-xs font-medium flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                          <span>{paymentError}</span>
+                        </div>
+                      )}
+
+                      <div className="pt-2 border-t border-outline-variant/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
+                        <span className="text-on-surface-variant">
+                          STK prompt not popping up on your phone?
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => switchToManualPayment(variant)}
+                          className="text-primary font-bold hover:underline inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                        >
+                          <span>Use Manual Payment</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {variant === "modal" && (
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setShowPaymentModal(false)}
+                            className={cn(secondaryButtonClass, "w-full justify-center")}
+                          >
+                            Cancel Checkout
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* STATE 2: INITIATING */}
+                  {mpesaStatus === "initiating" && (
+                    <div className="py-6 px-3 text-center space-y-3 my-auto">
+                      <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mx-auto">
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                      </div>
+                      <div>
+                        <span className="inline-block text-[10px] font-black uppercase tracking-widest text-primary mb-1">
+                          Step 1 of 3 · Contacting Safaricom
+                        </span>
+                        <h4 className="font-bold text-sm sm:text-base text-on-surface">
+                          Sending Payment Prompt...
+                        </h4>
+                        <p className="text-xs text-on-surface-variant mt-1 max-w-sm mx-auto">
+                          Dispatching KES {settledAmount} prompt to{" "}
+                          <span className="font-mono font-bold text-on-surface">{paymentPhone}</span>.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STATE 3 & 4: STK SENT / WAITING FOR PIN */}
+                  {(mpesaStatus === "stk_sent" || mpesaStatus === "waiting") && (
+                    <div className="space-y-4 text-center py-2 my-auto">
+                      <div className="relative mx-auto w-14 h-14">
+                        <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
+                        <div
+                          className={cn(
+                            "relative w-14 h-14 rounded-full flex items-center justify-center",
+                            mpesaStatus === "stk_sent"
+                              ? "bg-emerald-600 text-white shadow-sm"
+                              : "bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                          )}
+                        >
+                          <Smartphone className={cn("w-7 h-7", mpesaStatus === "waiting" && "animate-pulse")} />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {mpesaStatus === "stk_sent" ? (
+                          <span className="inline-block text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">
+                            Prompt Delivered · {pollingSecondsLeft}s
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-[11px] font-mono font-bold text-amber-700 dark:text-amber-300 tabular-nums">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>Waiting for M-Pesa PIN · {pollingSecondsLeft}s</span>
+                          </span>
+                        )}
+
+                        <h4 className="font-bold text-sm sm:text-base text-on-surface">
+                          {mpesaStatus === "stk_sent"
+                            ? `Check ${paymentPhone} Now`
+                            : `Authorize KES ${settledAmount} on Your Phone`}
+                        </h4>
+
+                        <p className="text-xs text-on-surface-variant max-w-md mx-auto leading-relaxed">
+                          Enter your M-Pesa PIN on{" "}
+                          <span className="font-mono font-bold text-on-surface">{paymentPhone}</span>. Your KRA PIN Certificate unlocks automatically the moment confirmation arrives.
+                        </p>
+
+                        {activeCheckoutId && (
+                          <p className="text-[10px] font-mono text-on-surface-variant pt-0.5 break-all">
+                            Ref: {activeCheckoutId}
+                          </p>
+                        )}
+                      </div>
+
+                      {paymentError && (
+                        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-200 text-xs font-medium">
+                          {paymentError}
+                        </div>
+                      )}
+
+                      <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={handleCheckPaymentStatus}
+                          className={cn(primaryButtonClass, "flex-1")}
+                        >
+                          <CheckCircle2 className="w-4 h-4 shrink-0" />
+                          <span>I Entered PIN — Verify Now</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancelOrResetPayment}
+                          className={secondaryButtonClass}
+                        >
+                          <span>Change Phone</span>
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => switchToManualPayment(variant)}
+                        className="text-xs font-bold text-primary hover:underline inline-flex items-center justify-center gap-1 cursor-pointer pt-1"
+                      >
+                        <span>STK prompt delayed? Switch to Manual Payment</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* STATE 5: VERIFYING */}
+                  {mpesaStatus === "verifying" && (
+                    <div className="py-6 px-3 text-center space-y-3 my-auto">
+                      <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/25 flex items-center justify-center text-primary mx-auto">
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                      </div>
+                      <div>
+                        <span className="inline-block text-[10px] font-black uppercase tracking-widest text-primary mb-1">
+                          Step 3 of 3 · Live Check
+                        </span>
+                        <h4 className="font-bold text-sm sm:text-base text-on-surface">
+                          Verifying Transaction Status...
+                        </h4>
+                        <p className="text-xs text-on-surface-variant mt-1 max-w-sm mx-auto">
+                          Confirming payment for checkout <span className="font-mono font-semibold text-on-surface">{activeCheckoutId}</span>.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STATE 7: CANCELLED */}
+                  {mpesaStatus === "cancelled" && (
+                    <div className="space-y-4 my-auto">
+                      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5">
+                        <AlertCircle className="w-5 h-5 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="font-bold text-sm text-on-surface">
+                            M-Pesa Request Cancelled on Phone
+                          </h4>
+                          <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                            {paymentError ||
+                              "You dismissed or cancelled the STK prompt on your phone. No funds were deducted."}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => handleMpesaDarajaPayment()}
+                          className={cn(primaryButtonClass, "flex-1")}
+                        >
+                          <RotateCcw className="w-4 h-4 shrink-0" />
+                          <span>Resend STK Prompt</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancelOrResetPayment}
+                          className={secondaryButtonClass}
+                        >
+                          <span>Edit Number</span>
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => switchToManualPayment(variant)}
+                        className={cn(secondaryButtonClass, "w-full border-primary/30 text-primary hover:bg-primary/5")}
+                      >
+                        <Receipt className="w-4 h-4 shrink-0" />
+                        <span>Pay Manually via Till Instead</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* STATE 8: TIMED OUT */}
+                  {mpesaStatus === "timeout" && (
+                    <div className="space-y-4 my-auto">
+                      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5">
+                        <Clock className="w-5 h-5 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="font-bold text-sm text-on-surface">
+                            STK Authorization Timed Out
+                          </h4>
+                          <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                            {paymentError ||
+                              "The prompt expired before confirmation. If you already paid or want to pay manually, use the options below."}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row flex-wrap gap-2.5">
+                        {activeCheckoutId && (
+                          <button
+                            type="button"
+                            onClick={handleCheckPaymentStatus}
+                            className={cn(primaryButtonClass, "flex-1")}
+                          >
+                            <CheckCircle2 className="w-4 h-4 shrink-0" />
+                            <span>Verify Now</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleMpesaDarajaPayment()}
+                          className={secondaryButtonClass}
+                        >
+                          <RotateCcw className="w-4 h-4 shrink-0" />
+                          <span>Retry STK</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => switchToManualPayment(variant)}
+                          className={cn(secondaryButtonClass, "flex-1 border-primary/30 text-primary hover:bg-primary/5")}
+                        >
+                          <Receipt className="w-4 h-4 shrink-0" />
+                          <span>Pay Manually</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* STATE 9: FAILED */}
+                  {mpesaStatus === "failed" && (
+                    <div className="space-y-4 my-auto">
+                      <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2.5">
+                        <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="font-bold text-sm text-red-700 dark:text-red-300">
+                            STK Prompt Could Not Complete
+                          </h4>
+                          <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                            {paymentError ||
+                              "The STK push could not be completed. You can retry or complete your payment manually using the Till number."}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => handleMpesaDarajaPayment()}
+                          className={cn(primaryButtonClass, "flex-1")}
+                        >
+                          <RotateCcw className="w-4 h-4 shrink-0" />
+                          <span>Retry STK Prompt</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancelOrResetPayment}
+                          className={secondaryButtonClass}
+                        >
+                          <span>Edit Number</span>
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => switchToManualPayment(variant)}
+                        className={cn(secondaryButtonClass, "w-full border-primary/30 text-primary hover:bg-primary/5")}
+                      >
+                        <Receipt className="w-4 h-4 shrink-0" />
+                        <span>Use Manual Payment Instead (Recommended)</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* MANUAL PAYMENT FALLBACK PANEL */
+                <div className="flex-1 flex flex-col justify-between gap-4 rounded-2xl border border-outline-variant/80 bg-surface-container/30 dark:bg-zinc-800/30 p-4 sm:p-5">
+                  <div className="space-y-4">
+                    <div className="rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 p-3.5 space-y-2.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                          Manual M-Pesa Buy Goods Instructions
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => void handleCopyTill(activeTill)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-900 border border-amber-300 dark:border-amber-700 text-[11px] font-mono font-bold text-on-surface hover:bg-amber-100/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                        >
+                          {copiedTill ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-600" />
+                              <span>Copied Till</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3 text-primary" />
+                              <span>Copy Till {activeTill}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <ol className="space-y-1 list-decimal list-inside text-xs text-amber-950 dark:text-amber-100 leading-relaxed">
+                        <li>Open SIM Toolkit or M-Pesa App → <strong>Lipa na M-Pesa</strong> → <strong>Buy Goods</strong>.</li>
+                        <li>Enter Till Number <strong className="font-mono">{activeTill}</strong> and Amount <strong className="font-mono">KES {Math.round(Number(settledAmount))}</strong> (or scan the QR code on the right).</li>
+                        <li>After receiving the M-Pesa SMS, enter the 10-character <strong>Transaction Code</strong> below.</li>
+                      </ol>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor={manualInputId} className="block text-xs font-bold text-on-surface">
+                        M-Pesa Confirmation Code or Full SMS
+                      </label>
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                        <div className="relative flex-1 min-w-0">
+                          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <Receipt className="w-4 h-4 text-primary" />
+                          </div>
+                          <input
+                            id={manualInputId}
+                            type="text"
+                            value={manualMpesaCode}
+                            onChange={(e) => {
+                              setManualMpesaCode(e.target.value)
+                              setPaymentError(null)
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                void handleManualPaymentVerify()
+                              }
+                            }}
+                            placeholder="e.g. UB12XYZ789 or paste SMS"
+                            className={cn(
+                              inputClass,
+                              "pl-10 font-mono uppercase tracking-wide",
+                              manualMpesaCode.length > 0 ? "pr-9" : "pr-3.5"
+                            )}
+                          />
+                          {manualMpesaCode.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setManualMpesaCode("")
+                                setPaymentError(null)
+                                document.getElementById(manualInputId)?.focus()
+                              }}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface-variant hover:text-on-surface cursor-pointer"
+                              aria-label="Clear M-Pesa receipt code"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={isVerifyingManual}
+                          onClick={() => void handleManualPaymentVerify()}
+                          className={cn(primaryButtonClass, "sm:w-auto px-5 shrink-0")}
+                        >
+                          {isVerifyingManual ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                              <span>Verifying...</span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="w-4 h-4 shrink-0" />
+                              <span>Verify &amp; Unlock</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-on-surface-variant">
+                        Example code: <span className="font-mono font-semibold text-on-surface">UB12XYZ789</span> — pasting the entire confirmation SMS also works automatically.
+                      </p>
+                    </div>
+
+                    {paymentError && (
+                      <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-700 dark:text-red-300 text-xs font-medium flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <span>{paymentError}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-2 border-t border-outline-variant/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
+                    <span className="text-on-surface-variant">
+                      Prefer an automatic PIN prompt on your phone?
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPaymentMethod("stk")
+                        setPaymentError(null)
+                      }}
+                      className="text-primary font-bold hover:underline inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                    >
+                      <span>Switch to STK Prompt</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
-              <button
-                type="button"
-                onClick={() => handleMpesaDarajaPayment()}
-                className={cn(primaryButtonClass, "flex-1 h-11 text-xs font-bold justify-center")}
-              >
-                <RotateCcw className="w-4 h-4 shrink-0" />
-                <span>Retry M-Pesa Payment</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelOrResetPayment}
-                className={cn(secondaryButtonClass, "h-11 text-xs font-semibold justify-center")}
-              >
-                <span>Change Phone Number</span>
-              </button>
+
+            {/* RIGHT COLUMN: CUSTOM QR PAYMENT CARD ON THE SIDE */}
+            <div className="lg:col-span-5 flex flex-col">
+              <div className="flex-1 rounded-2xl bg-surface-container/60 dark:bg-zinc-800/50 border border-outline-variant p-4 sm:p-5 flex flex-col items-center justify-between text-center gap-4">
+                <div className="w-full flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-left">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-600/15 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                      <QrCode className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-extrabold text-on-surface">
+                        Scan M-Pesa QR Code
+                      </h4>
+                      <p className="text-[10px] text-on-surface-variant">
+                        Pay KES {settledAmount} via M-Pesa App
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void loadPaymentQr(true)}
+                    disabled={qrStatus === "loading"}
+                    className="p-2 rounded-lg border border-outline-variant bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer disabled:opacity-50"
+                    title="Refresh payment QR code"
+                    aria-label="Refresh payment QR code"
+                  >
+                    <RefreshCw className={cn("w-3.5 h-3.5", qrStatus === "loading" && "animate-spin")} />
+                  </button>
+                </div>
+
+                {/* Styled QR Frame with Scan Corner Brackets */}
+                <div className="relative p-3.5 rounded-2xl bg-white border border-zinc-200 shadow-xs inline-flex items-center justify-center">
+                  <span className="absolute top-1.5 left-1.5 w-3.5 h-3.5 border-t-2 border-l-2 border-emerald-600 rounded-tl-md pointer-events-none" />
+                  <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 border-t-2 border-r-2 border-emerald-600 rounded-tr-md pointer-events-none" />
+                  <span className="absolute bottom-1.5 left-1.5 w-3.5 h-3.5 border-b-2 border-l-2 border-emerald-600 rounded-bl-md pointer-events-none" />
+                  <span className="absolute bottom-1.5 right-1.5 w-3.5 h-3.5 border-b-2 border-r-2 border-emerald-600 rounded-br-md pointer-events-none" />
+
+                  {qrStatus === "loading" ? (
+                    <div className="w-40 h-40 sm:w-44 sm:h-44 flex flex-col items-center justify-center gap-2 text-zinc-500">
+                      <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+                      <span className="text-[11px] font-semibold">Generating QR...</span>
+                    </div>
+                  ) : qrCodeUrl ? (
+                    <img
+                      src={qrCodeUrl}
+                      alt={`M-Pesa Buy Goods QR Code for KES ${settledAmount}`}
+                      className="w-40 h-40 sm:w-44 sm:h-44 object-contain"
+                    />
+                  ) : (
+                    <div className="w-40 h-40 sm:w-44 sm:h-44 flex flex-col items-center justify-center gap-2 text-zinc-500 px-2">
+                      <AlertCircle className="w-6 h-6 text-amber-600" />
+                      <span className="text-[11px] font-medium">QR unavailable</span>
+                      <button
+                        type="button"
+                        onClick={() => void loadPaymentQr(true)}
+                        className="text-xs font-bold text-primary hover:underline cursor-pointer"
+                      >
+                        Retry QR
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Populated QR Metadata Rows */}
+                <div className="w-full rounded-xl bg-surface-container-lowest dark:bg-zinc-900/90 border border-outline-variant/70 p-3 space-y-1.5 text-[11px] text-left">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-on-surface-variant">Pay Method</span>
+                    <span className="font-bold text-on-surface">M-Pesa Buy Goods</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-on-surface-variant">Till Number</span>
+                    <button
+                      type="button"
+                      onClick={() => void handleCopyTill(activeTill)}
+                      className="font-mono font-bold text-on-surface inline-flex items-center gap-1 hover:text-primary cursor-pointer"
+                      title="Copy Till Number"
+                    >
+                      <span>{activeTill}</span>
+                      {copiedTill ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-on-surface-variant">Amount</span>
+                    <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300">
+                      KES {settledAmount}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-on-surface-variant">Reference</span>
+                    <span className="font-mono font-semibold text-on-surface truncate max-w-[140px]" title={activeRef}>
+                      {activeRef}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => switchToManualPayment(variant)}
+                  className={cn(secondaryButtonClass, "w-full h-10 text-xs justify-center")}
+                >
+                  <span>Paid via QR? Verify M-Pesa Code</span>
+                  <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1402,13 +1824,13 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             Retrieve Tax Compliance Certificate
           </h2>
           <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-md leading-relaxed">
-            Instant verification by National ID or PIN · KES 20 download fee or Unlimited Cyber Plan
+            Instant verification by National ID or PIN · KES 20 download fee
           </p>
         </div>
       )}
 
       {isVerified && (
-        <div className="w-full max-w-2xl mx-auto mb-4">
+        <div className="w-full max-w-4xl mx-auto mb-4">
           <Alert className="bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 rounded-2xl flex items-center gap-3 py-3 px-4 shadow-sm">
             <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
             <AlertDescription className="text-xs font-semibold">
@@ -1447,7 +1869,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
         >
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl shadow-sm border-2 border-zinc-200 dark:border-zinc-800 p-4 sm:p-6 md:p-7 relative overflow-hidden z-10 max-w-3xl mx-auto">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl shadow-sm border-2 border-zinc-200 dark:border-zinc-800 p-4 sm:p-6 md:p-7 relative overflow-hidden z-10 max-w-4xl mx-auto">
             <AnimatePresence mode="wait">
               {currentStep === 1 && (
                 <motion.div key="step1" variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
@@ -1505,7 +1927,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       </div>
 
                       {/* Lookup Type Segmented Switcher */}
-                      <div className="flex p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl sm:rounded-2xl mb-4 border border-zinc-200 dark:border-zinc-700 max-w-sm mx-auto shadow-2xs">
+                      <div className="flex p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl sm:rounded-2xl mb-4 border border-zinc-200 dark:border-zinc-700 max-w-md mx-auto shadow-2xs">
                         <button
                           type="button"
                           className={cn(
@@ -1542,7 +1964,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         </button>
                       </div>
 
-                      <form className="space-y-4 max-w-sm mx-auto" onSubmit={(e) => { e.preventDefault(); handleIdSearch(); }}>
+                      <form className="space-y-4 max-w-md mx-auto" onSubmit={(e) => { e.preventDefault(); handleIdSearch(); }}>
                         {activeTab === "id" ? (
                           <div>
                             <label className={labelClass}>National ID Number</label>
@@ -1862,7 +2284,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     const isRecordUnlocked = Boolean(verifiedDownloadId || isAdmin);
                     return (
                       <>
-                        <div className="w-full max-w-2xl mx-auto bg-gradient-to-r from-emerald-500/10 via-red-500/5 to-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left shadow-xs">
+                        <div className="w-full max-w-4xl mx-auto bg-gradient-to-r from-emerald-500/10 via-red-500/5 to-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left shadow-xs">
                           <div className="flex items-center gap-3">
                             <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
                               <CheckCircle2 className="w-5 h-5" />
@@ -1890,7 +2312,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         </div>
 
                         {/* Taxpayer Preview Data Grid */}
-                        <div className="w-full max-w-2xl mx-auto bg-surface-variant/30 rounded-2xl p-4 sm:p-6 border border-outline-variant space-y-4 shadow-sm my-2">
+                        <div className="w-full max-w-4xl mx-auto bg-surface-variant/30 rounded-2xl p-4 sm:p-6 border border-outline-variant space-y-4 shadow-sm my-2">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
 
                             {/* 1. Taxpayer Legal Name (Unmasked) */}
@@ -2083,12 +2505,12 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
 
 
-                  {/* ── SAFARICOM DARAJA M-PESA EXPRESS CHECKOUT & STATUS ── */}
+                  {/* ── CHECKOUT, MANUAL PAYMENT & CUSTOM QR PANEL ── */}
                   {(!isRecordUnlocked || mpesaStatus === "success") &&
                     renderMpesaCheckoutPanel("inline")}
 
                   {/* Actions */}
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-2xl mx-auto pt-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-4xl mx-auto pt-2">
                     <button
                       className={cn(secondaryButtonClass, "w-full sm:w-auto justify-center")}
                       onClick={() => {
@@ -2123,7 +2545,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       {/* ── Official KRA Payment & Checkout Gate Modal ── */}
       {showPaymentModal && accessInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md px-3 sm:px-4 py-4 sm:py-6 overflow-y-auto">
-          <div className="bg-surface border border-outline-variant/80 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden relative my-auto">
+          <div className="bg-surface border border-outline-variant/80 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden relative my-auto">
             {/* Top KRA Red decorative brand strip */}
             <div className="h-1.5 w-full bg-gradient-to-r from-primary-container via-primary to-primary-container" />
 
@@ -2139,7 +2561,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       {mpesaStatus === 'success' ? 'Certificate Ready' : 'Document Retrieval Checkout'}
                     </h3>
                     <p className="text-xs text-on-surface-variant flex items-center gap-1.5 mt-0.5">
-                      Akubrecah Technologies · Safaricom Daraja M-Pesa Express
+                      Akubrecah Technologies · Instant Payment &amp; Verification
                     </p>
                   </div>
                 </div>

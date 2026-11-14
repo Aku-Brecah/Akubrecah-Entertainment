@@ -16,13 +16,23 @@ const mocks = vi.hoisted(() => {
     prismaMock: {
       mpesaTransaction: {
         findFirst: vi.fn(async ({ where }: any) => {
+          const matchesClause = (tx: any, clause: any): boolean => {
+            if (!clause) return true;
+            if (clause.phone && tx.phone !== clause.phone) return false;
+            if (clause.status) {
+              if (typeof clause.status === 'string' && tx.status !== clause.status) return false;
+              if (Array.isArray(clause.status?.in) && !clause.status.in.includes(tx.status)) return false;
+            }
+            if (clause.amount && tx.amount !== clause.amount) return false;
+            if (clause.pin && tx.pin !== clause.pin) return false;
+            if (clause.reference && tx.reference !== clause.reference) return false;
+            if (clause.checkoutRequestId && tx.checkoutRequestId !== clause.checkoutRequestId) return false;
+            if (clause.mpesaReceiptNumber && tx.mpesaReceiptNumber !== clause.mpesaReceiptNumber) return false;
+            if (Array.isArray(clause.OR) && !clause.OR.some((sub: any) => matchesClause(tx, sub))) return false;
+            return true;
+          };
           for (const tx of mpesaTransactions.values()) {
-            if (where?.phone && tx.phone !== where.phone) continue;
-            if (where?.status && tx.status !== where.status) continue;
-            if (where?.amount && tx.amount !== where.amount) continue;
-            if (where?.pin && tx.pin !== where.pin) continue;
-            if (where?.reference && tx.reference !== where.reference) continue;
-            return tx;
+            if (matchesClause(tx, where)) return tx;
           }
           return null;
         }),
@@ -50,7 +60,10 @@ const mocks = vi.hoisted(() => {
         updateMany: vi.fn(async ({ where, data }: any) => {
           let count = 0;
           for (const [key, tx] of mpesaTransactions.entries()) {
-            if (!where?.checkoutRequestId || tx.checkoutRequestId === where.checkoutRequestId) {
+            const matchesCheckout = !where?.checkoutRequestId || tx.checkoutRequestId === where.checkoutRequestId;
+            const matchesReceipt = !where?.mpesaReceiptNumber || tx.mpesaReceiptNumber === where.mpesaReceiptNumber;
+            const matchesStatusNot = !where?.status?.not || tx.status !== where.status.not;
+            if (matchesCheckout && matchesReceipt && matchesStatusNot) {
               mpesaTransactions.set(key, { ...tx, ...data, updatedAt: new Date() });
               count++;
             }
@@ -60,9 +73,16 @@ const mocks = vi.hoisted(() => {
       },
       certificateDownload: {
         findFirst: vi.fn(async ({ where }: any) => {
+          const matchesDl = (dl: any, clause: any): boolean => {
+            if (!clause) return true;
+            if (clause.checkoutId && dl.checkoutId !== clause.checkoutId) return false;
+            if (clause.mpesaReceipt && dl.mpesaReceipt !== clause.mpesaReceipt) return false;
+            if (clause.kraPin && dl.kraPin !== clause.kraPin) return false;
+            if (Array.isArray(clause.OR) && !clause.OR.some((sub: any) => matchesDl(dl, sub))) return false;
+            return true;
+          };
           for (const dl of certificateDownloads.values()) {
-            if (where?.checkoutId && dl.checkoutId !== where.checkoutId) continue;
-            return dl;
+            if (matchesDl(dl, where)) return dl;
           }
           return null;
         }),
@@ -711,6 +731,117 @@ describe('Safaricom Daraja M-Pesa Express Integration', () => {
       expect(queryData.success).toBe(true);
       expect(queryData.result.status).toBe('success');
       expect(queryData.result.verified).toBe(true);
+    });
+  });
+
+  describe('Manual M-Pesa fallback & Custom QR payment endpoint', () => {
+    it('extractMpesaReceiptCode parses raw codes, extracts from full SMS, and rejects placeholders', async () => {
+      const { extractMpesaReceiptCode } = await import('@/lib/mpesa-verification');
+
+      expect(extractMpesaReceiptCode('ub12xyz789')).toBe('UB12XYZ789');
+      expect(
+        extractMpesaReceiptCode(
+          'TJ94AB1234 Confirmed. Ksh20.00 paid to AKUBRECAH TECHNOLOGIES on 14/11/26 at 12:30 PM.'
+        )
+      ).toBe('TJ94AB1234');
+
+      expect(extractMpesaReceiptCode('ABCDEFGHIJ')).toBeNull();
+      expect(extractMpesaReceiptCode('AB12')).toBeNull();
+      expect(extractMpesaReceiptCode('TEST123456')).toBeNull();
+    });
+
+    it('POST /api/mpesa/verify verifies manual M-Pesa receipts, enforces KES 20 minimum, and blocks cross-PIN reuse', async () => {
+      const { POST } = await import('@/app/api/mpesa/verify/route');
+
+      // 1. Valid manual SMS confirmation unlocks certificate
+      const validRes = await POST(
+        new NextRequest('https://kra.akubrecah.com/api/mpesa/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mpesaCode: 'TK81MN2345 Confirmed. Ksh20.00 paid to AKUBRECAH TECHNOLOGIES.',
+            pin: 'A012345678Z',
+            phone: '0712345678',
+          }),
+        })
+      );
+      const validData = await validRes.json();
+      expect(validRes.status).toBe(200);
+      expect(validData.verified).toBe(true);
+      expect(validData.downloadId).toBeTruthy();
+
+      // 2. Cross-PIN reuse of the same verified receipt returns 403
+      const reuseRes = await POST(
+        new NextRequest('https://kra.akubrecah.com/api/mpesa/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mpesaCode: 'TK81MN2345',
+            pin: 'A099999999Z',
+            phone: '0712345678',
+          }),
+        })
+      );
+      const reuseData = await reuseRes.json();
+      expect(reuseRes.status).toBe(403);
+      expect(reuseData.verified).toBe(false);
+
+      // 3. Underpaid SMS (< KES 20) is rejected with 400
+      const underpaidRes = await POST(
+        new NextRequest('https://kra.akubrecah.com/api/mpesa/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mpesaCode: 'TL92PQ6789 Confirmed. Ksh5.00 paid to AKUBRECAH TECHNOLOGIES.',
+            pin: 'A012345678Z',
+          }),
+        })
+      );
+      const underpaidData = await underpaidRes.json();
+      expect(underpaidRes.status).toBe(400);
+      expect(underpaidData.verified).toBe(false);
+
+      // 4. Placeholder / invalid code is rejected with 400
+      const invalidRes = await POST(
+        new NextRequest('https://kra.akubrecah.com/api/mpesa/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mpesaCode: 'TEST123456',
+            pin: 'A012345678Z',
+          }),
+        })
+      );
+      const invalidData = await invalidRes.json();
+      expect(invalidRes.status).toBe(400);
+      expect(invalidData.verified).toBe(false);
+    });
+
+    it('POST /api/mpesa/qrcode returns custom QR PNG data URI with till 9348469, KES 20, and CERT reference', async () => {
+      process.env.MPESA_TILL_NUMBER = '9348469';
+      process.env.DARAJA_TRANSACTION_TYPE = 'CustomerBuyGoodsOnline';
+
+      global.fetch = vi.fn(async () => new Response('Daraja QR timeout', { status: 503 })) as any;
+
+      const { POST } = await import('@/app/api/mpesa/qrcode/route');
+      const res = await POST(
+        new NextRequest('https://kra.akubrecah.com/api/mpesa/qrcode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pin: 'A012345678Z',
+          }),
+        })
+      );
+      const data = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.source).toBe('custom');
+      expect(data.qrImageUrl).toMatch(/^data:image\/png;base64,/);
+      expect(data.tillNumber).toBe('9348469');
+      expect(data.amount).toBe(20);
+      expect(data.reference).toBe('CERT-A012345678Z');
     });
   });
 });

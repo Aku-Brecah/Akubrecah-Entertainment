@@ -15,12 +15,14 @@ import {
   HelpCircle,
   ArrowRight,
   CheckCircle2,
+  Smartphone,
+  QrCode,
+  Receipt,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useUser, UserButton } from "@clerk/nextjs"
 import { KRAPortal } from "@/components/kra-portal"
 import { KRAFilingPortal } from "@/components/kra-filing-portal"
-import { CyberSubscriptionCard } from "@/components/cyber-subscription-card"
 import { GooglePreferredSourceButton } from "@/components/google-preferred-source-button"
 import { Logo } from "@/components/logo"
 import Link from "next/link"
@@ -133,7 +135,7 @@ function FlagshipPortalContent() {
       {/* ============================================================== */}
       {/* 2. FOCUSED HERO WORKSPACE (ZERO SCROLL ACROSS ALL DEVICES) */}
       {/* ============================================================== */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-6">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-6 sm:space-y-8">
         
         {/* Compact, Focused Title Banner */}
         <div className="text-center space-y-1.5 sm:space-y-2 max-w-2xl mx-auto px-1">
@@ -239,10 +241,81 @@ function FlagshipPortalContent() {
           </div>
         </div>
 
-        {/* CYBER CAFE UNLIMITED MONTHLY PLAN (COMPACT VARIANT) */}
-        <div className="w-full">
-          <CyberSubscriptionCard compact={true} />
-        </div>
+        {/* PAYMENT & DELIVERY OPTIONS SHOWCASE (REPLACES CYBER PLAN) */}
+        <section aria-labelledby="payment-options-heading" className="w-full space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 px-1">
+            <div>
+              <span className="text-[11px] font-black text-primary uppercase tracking-widest block">
+                Flexible Checkout · KES 20.00 Per Certificate
+              </span>
+              <h2 id="payment-options-heading" className="text-base sm:text-lg font-black text-on-surface tracking-tight">
+                Three Ways to Pay &amp; Unlock Instantly
+              </h2>
+            </div>
+            <span className="text-[11px] font-medium text-on-surface-variant">
+              Instant confirmation via STK Push, Custom QR Code, or Manual Till verification
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-soft flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <Smartphone className="w-4.5 h-4.5" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/12 text-emerald-700 dark:text-emerald-300">
+                  Option 1 · Fastest
+                </span>
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-on-surface">
+                  Instant M-Pesa STK Prompt
+                </h3>
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Enter your M-Pesa phone number to receive a direct KES 20.00 PIN prompt on your handset and unlock your PDF automatically within seconds.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-soft flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <QrCode className="w-4.5 h-4.5" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                  Option 2 · Scan to Pay
+                </span>
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-on-surface">
+                  Scan Custom M-Pesa QR Code
+                </h3>
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  A unique custom QR code for KES 20.00 is generated beside checkout. Scan from your M-Pesa App&apos;s QR scanner without typing Till digits.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-soft flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/12 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                  <Receipt className="w-4.5 h-4.5" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/12 text-amber-700 dark:text-amber-300">
+                  Option 3 · Fallback
+                </span>
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-on-surface">
+                  Manual Till Fallback &amp; Code Verification
+                </h3>
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Did the STK prompt delay? Switch to Manual Payment, pay KES 20.00 via Lipa na M-Pesa Buy Goods Till, and paste your SMS or 10-character code.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ============================================================== */}
         {/* 3. CRAWLABLE STATUTORY GUIDE & TAXPAYER FAQ ACCORDION (SEO/GOOGLE) */}

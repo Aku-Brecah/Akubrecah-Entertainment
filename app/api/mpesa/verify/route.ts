@@ -2,16 +2,18 @@ import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { mpesaVerifySchema, firstIssueMessage } from '@/lib/validation/schemas';
-import { verifyAndFulfillMpesaCheckout } from '@/lib/mpesa-verification';
+import {
+  verifyAndFulfillMpesaCheckout,
+  verifyManualMpesaReceipt,
+} from '@/lib/mpesa-verification';
 
 export const maxDuration = 20;
 
 /**
  * POST /api/mpesa/verify
  *
- * Authoritative verification endpoint for Safaricom Daraja M-Pesa Express.
- * Checks durable PostgreSQL records (`certificate_downloads`, `mpesa_transactions`)
- * and reconciles via Daraja STK Push Query when callback delivery is pending.
+ * Authoritative verification endpoint for Safaricom Daraja M-Pesa Express
+ * and Manual Till fallback receipt verification.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -32,12 +34,39 @@ export async function POST(req: NextRequest) {
       // Guest portal requester
     }
 
-    const result = await verifyAndFulfillMpesaCheckout({
-      checkoutRequestId: parsed.data.checkoutRequestId,
-      rawPinInput: parsed.data.pin,
-      clerkId,
-      forceQuery: Boolean(parsed.data.force),
-    });
+    const { checkoutRequestId, mpesaCode, pin, phone, force } = parsed.data;
+
+    let result;
+    if (mpesaCode && checkoutRequestId) {
+      const stkResult = await verifyAndFulfillMpesaCheckout({
+        checkoutRequestId,
+        rawPinInput: pin,
+        clerkId,
+        forceQuery: Boolean(force),
+      });
+      result = stkResult.verified
+        ? stkResult
+        : await verifyManualMpesaReceipt({
+            mpesaCodeInput: mpesaCode,
+            rawPinInput: pin,
+            phone,
+            clerkId,
+          });
+    } else if (mpesaCode) {
+      result = await verifyManualMpesaReceipt({
+        mpesaCodeInput: mpesaCode,
+        rawPinInput: pin,
+        phone,
+        clerkId,
+      });
+    } else {
+      result = await verifyAndFulfillMpesaCheckout({
+        checkoutRequestId: checkoutRequestId!,
+        rawPinInput: pin,
+        clerkId,
+        forceQuery: Boolean(force),
+      });
+    }
 
     if (result.httpStatus && result.httpStatus >= 400) {
       return NextResponse.json(result, { status: result.httpStatus });

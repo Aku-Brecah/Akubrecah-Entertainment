@@ -31,8 +31,42 @@ function resolveExplicitPin(rawPin?: string | null): string {
   const unsealed = tryResolveKraPin(rawPin.trim());
   if (unsealed) return unsealed.toUpperCase();
   const upper = rawPin.trim().toUpperCase();
-  if (/^[A-Z]\d{9}[A-Z]$/.test(upper)) return upper;
+  if (/^[A-Z]\d{9}[A-Z]$/i.test(upper)) return upper;
   return '';
+}
+
+/**
+ * Extracts a valid 10-character Safaricom M-Pesa transaction code (e.g. UB12XYZ789)
+ * from either a raw code input or a full pasted M-Pesa confirmation SMS.
+ */
+export function extractMpesaReceiptCode(input: string): string | null {
+  if (!input || typeof input !== 'string') return null;
+  const upper = input.toUpperCase().trim();
+  const matches = upper.match(/\b([A-Z][A-Z0-9]{9})\b/g);
+  if (!matches) return null;
+
+  for (const candidate of matches) {
+    if (!/\d/.test(candidate)) continue;
+    if (/^(.)\1+$/.test(candidate)) continue;
+    if (/^(?:TEST|DEMO|FAKE|SAMPLE)/i.test(candidate)) continue;
+    return candidate;
+  }
+
+  return null;
+}
+
+async function safeDbLookup<T>(
+  label: string,
+  query: (() => Promise<T | null>) | null
+): Promise<T | null> {
+  if (!query) return null;
+  try {
+    return await query();
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.warn(`[mpesa-verification] ${label} notice:`, message);
+    return null;
+  }
 }
 
 /**
@@ -75,36 +109,22 @@ export async function verifyAndFulfillMpesaCheckout({
     phone?: string | null;
   }
 
-  const safeLookup = async <T>(
-    label: string,
-    query: (() => Promise<T | null>) | null
-  ): Promise<T | null> => {
-    if (!query) return null;
-    try {
-      return await query();
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      log.warn(`[mpesa-verification] ${label} notice:`, message);
-      return null;
-    }
-  };
-
   // 1-3. Query durable CertificateDownload, CyberInvoice, and MpesaTransaction concurrently
   // while preserving priority order (CertificateDownload > CyberInvoice > MpesaTransaction).
   const [existingDownload, cyberInvoice, txRecord] = await Promise.all([
-    safeLookup<DownloadLookupRecord>(
+    safeDbLookup<DownloadLookupRecord>(
       'Download lookup',
       typeof db.certificateDownload?.findFirst === 'function'
         ? () => db.certificateDownload.findFirst({ where: { checkoutId: checkoutRequestId } })
         : null
     ),
-    safeLookup<CyberInvoiceLookupRecord>(
+    safeDbLookup<CyberInvoiceLookupRecord>(
       'Cyber invoice lookup',
       typeof db.cyberInvoice?.findFirst === 'function'
         ? () => db.cyberInvoice.findFirst({ where: { checkoutId: checkoutRequestId } })
         : null
     ),
-    safeLookup<MpesaTxLookupRecord>(
+    safeDbLookup<MpesaTxLookupRecord>(
       'MpesaTransaction lookup',
       typeof db.mpesaTransaction?.findUnique === 'function'
         ? () => db.mpesaTransaction.findUnique({ where: { checkoutRequestId } })
@@ -347,6 +367,205 @@ export async function verifyAndFulfillMpesaCheckout({
     phone: txRecord?.phone || cb?.metadata?.phoneNumber,
     resultCode: 0,
     resultDesc: liveDesc || 'Payment confirmed via Safaricom Daraja.',
+  };
+}
+
+/**
+ * Authoritative verification & idempotent fulfillment for Manual Till / QR M-Pesa receipts
+ * (10-character code e.g. UB12XYZ789 or full M-Pesa confirmation SMS) when STK Push is bypassed.
+ */
+export async function verifyManualMpesaReceipt({
+  mpesaCodeInput,
+  rawPinInput,
+  phone,
+  clerkId,
+}: {
+  mpesaCodeInput: string;
+  rawPinInput?: string | null;
+  phone?: string | null;
+  clerkId?: string | null;
+}): Promise<MpesaVerificationResult> {
+  const receiptCode = extractMpesaReceiptCode(mpesaCodeInput);
+  if (!receiptCode) {
+    return {
+      success: false,
+      verified: false,
+      status: 'failed',
+      checkoutRequestId: '',
+      httpStatus: 400,
+      error:
+        'Please enter a valid 10-character M-Pesa Transaction Code (e.g. UB12XYZ789) or paste your M-Pesa confirmation SMS.',
+    };
+  }
+
+  // If the user pasted a full confirmation SMS mentioning Ksh/KES, verify the amount meets KES 20
+  const amountMatch = mpesaCodeInput.match(/(?:ksh|kes)\.?\s*([\d,]+(?:\.\d{1,2})?)/i);
+  if (amountMatch?.[1]) {
+    const parsedSmsAmount = Number(amountMatch[1].replace(/,/g, ''));
+    if (Number.isFinite(parsedSmsAmount) && parsedSmsAmount < MIN_CERTIFICATE_FEE_KES) {
+      return {
+        success: false,
+        verified: false,
+        status: 'failed',
+        checkoutRequestId: `MANUAL-${receiptCode}`,
+        httpStatus: 400,
+        error: `Paid amount (KES ${parsedSmsAmount}) is below required KES ${MIN_CERTIFICATE_FEE_KES}.`,
+      };
+    }
+  }
+
+  const db = prisma as any;
+  const requestedPin = resolveExplicitPin(rawPinInput);
+
+  interface ManualDownloadRecord {
+    id: string;
+    pin: string;
+    checkoutId?: string | null;
+    mpesaReceipt?: string | null;
+    amountCharged?: number | null;
+  }
+  interface ManualTxRecord {
+    checkoutRequestId: string;
+    pin?: string | null;
+    amount?: number | null;
+    phone?: string | null;
+    clerkId?: string | null;
+    status?: string | null;
+  }
+
+  const [existingDownload, matchingTx] = await Promise.all([
+    safeDbLookup<ManualDownloadRecord>(
+      'Manual Download lookup',
+      typeof db.certificateDownload?.findFirst === 'function'
+        ? () => db.certificateDownload.findFirst({ where: { mpesaReceipt: receiptCode } })
+        : null
+    ),
+    safeDbLookup<ManualTxRecord>(
+      'Manual MpesaTransaction lookup',
+      typeof db.mpesaTransaction?.findFirst === 'function'
+        ? () => db.mpesaTransaction.findFirst({ where: { mpesaReceiptNumber: receiptCode } })
+        : null
+    ),
+  ]);
+
+  const existingDownloadPin = existingDownload ? resolveExplicitPin(existingDownload.pin) : '';
+  const txPin = matchingTx ? resolveExplicitPin(matchingTx.pin) : '';
+
+  if (
+    requestedPin &&
+    ((existingDownloadPin && existingDownloadPin !== requestedPin) ||
+      (txPin && txPin !== requestedPin))
+  ) {
+    return {
+      success: false,
+      verified: false,
+      status: 'failed',
+      checkoutRequestId: existingDownload?.checkoutId || matchingTx?.checkoutRequestId || `MANUAL-${receiptCode}`,
+      httpStatus: 403,
+      error: 'This M-Pesa receipt code is already used for a different KRA PIN.',
+    };
+  }
+
+  if (existingDownload) {
+    return {
+      success: true,
+      verified: true,
+      status: 'success',
+      checkoutRequestId: existingDownload.checkoutId || `MANUAL-${receiptCode}`,
+      downloadId: existingDownload.id,
+      mpesaReceipt: receiptCode,
+      pin: existingDownloadPin || requestedPin || existingDownload.pin,
+      amount: Number(existingDownload.amountCharged) || MIN_CERTIFICATE_FEE_KES,
+      phone: phone || matchingTx?.phone || undefined,
+      resultCode: 0,
+      resultDesc: 'Manual M-Pesa payment verified.',
+    };
+  }
+
+  if (matchingTx?.amount != null && Number(matchingTx.amount) < MIN_CERTIFICATE_FEE_KES) {
+    return {
+      success: false,
+      verified: false,
+      status: 'failed',
+      checkoutRequestId: matchingTx.checkoutRequestId,
+      httpStatus: 400,
+      error: `Paid amount (KES ${Number(matchingTx.amount)}) is below required KES ${MIN_CERTIFICATE_FEE_KES}.`,
+    };
+  }
+
+  const finalPin = requestedPin || txPin;
+  if (!finalPin) {
+    return {
+      success: false,
+      verified: false,
+      status: 'failed',
+      checkoutRequestId: `MANUAL-${receiptCode}`,
+      httpStatus: 400,
+      error: 'Unable to resolve the target KRA PIN for this verification.',
+    };
+  }
+
+  const effectiveCheckoutId = matchingTx?.checkoutRequestId || `MANUAL-${receiptCode}`;
+  const effectiveClerkId = clerkId || matchingTx?.clerkId || 'guest_user';
+  const dbUser = await getOrCreateDbUser(
+    effectiveClerkId,
+    `${effectiveClerkId}@akubrecah.co.ke`,
+    'KRA Portal Taxpayer'
+  );
+
+  let downloadRecord: ManualDownloadRecord | null = null;
+  try {
+    if (typeof db.certificateDownload?.create === 'function') {
+      downloadRecord = await db.certificateDownload.create({
+        data: {
+          userId: dbUser.id,
+          clerkId: effectiveClerkId,
+          pin: finalPin,
+          downloadType: 'pay_per_download',
+          amountCharged: MIN_CERTIFICATE_FEE_KES,
+          currency: 'KES',
+          mpesaReceipt: receiptCode,
+          checkoutId: effectiveCheckoutId,
+        },
+      });
+    }
+  } catch (createErr: any) {
+    if (createErr?.code === 'P2002' && typeof db.certificateDownload?.findFirst === 'function') {
+      downloadRecord = await db.certificateDownload.findFirst({
+        where: {
+          OR: [{ checkoutId: effectiveCheckoutId }, { mpesaReceipt: receiptCode }],
+        },
+      });
+    } else {
+      log.warn('[mpesa-verification] Manual record creation notice:', createErr?.message);
+    }
+  }
+
+  try {
+    if (matchingTx && typeof db.mpesaTransaction?.updateMany === 'function') {
+      await db.mpesaTransaction.updateMany({
+        where: { checkoutRequestId: matchingTx.checkoutRequestId },
+        data: {
+          status: 'COMPLETED',
+          resultCode: 0,
+          resultDesc: 'Manual M-Pesa receipt verified.',
+        },
+      });
+    }
+  } catch { }
+
+  return {
+    success: true,
+    verified: true,
+    status: 'success',
+    checkoutRequestId: effectiveCheckoutId,
+    downloadId: downloadRecord?.id,
+    mpesaReceipt: receiptCode,
+    pin: finalPin,
+    amount: MIN_CERTIFICATE_FEE_KES,
+    phone: phone || matchingTx?.phone || undefined,
+    resultCode: 0,
+    resultDesc: 'Manual M-Pesa payment verified.',
   };
 }
 

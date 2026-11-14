@@ -36,15 +36,22 @@ export const mpesaStkPushSchema = z.object({
 });
 
 /** POST /api/mpesa/verify */
-export const mpesaVerifySchema = z.object({
-  checkoutRequestId: z
-    .string()
-    .min(8)
-    .max(120)
-    .regex(/^[A-Za-z0-9_-]+$/, 'checkoutRequestId contains invalid characters'),
-  pin: pinField.optional(),
-  force: z.boolean().optional(),
-});
+export const mpesaVerifySchema = z
+  .object({
+    checkoutRequestId: z
+      .string()
+      .min(8)
+      .max(120)
+      .regex(/^[A-Za-z0-9_-]+$/, 'checkoutRequestId contains invalid characters')
+      .optional(),
+    mpesaCode: z.string().min(6).max(600).optional(),
+    phone: z.string().max(24).optional(),
+    pin: pinField.optional(),
+    force: z.boolean().optional(),
+  })
+  .refine((data) => Boolean(data.checkoutRequestId || data.mpesaCode), {
+    message: 'Either checkoutRequestId or mpesaCode is required',
+  });
 
 /** POST /api/certificate/record-download */
 export const recordDownloadSchema = z.object({

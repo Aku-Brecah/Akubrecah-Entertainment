@@ -16,7 +16,6 @@ import { currentUser } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import prisma, { createSystemLog } from "@/lib/prisma";
 import ProfileWarningPopup from "@/components/profile-warning-popup";
-import { CyberSubscriptionCard } from "@/components/cyber-subscription-card";
 
 export default async function TaxpayerDashboard() {
   const user = await currentUser();
@@ -255,9 +254,6 @@ export default async function TaxpayerDashboard() {
           </Card>
         )}
       </div>
-
-      {/* Cyber Cafe Monthly Unlimited Subscription */}
-      <CyberSubscriptionCard />
 
       {/* Account Details & Compliance Profile Card */}
       <Card className="bg-surface-container-lowest border-outline-variant shadow-soft rounded-2xl">
