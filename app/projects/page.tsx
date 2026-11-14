@@ -62,10 +62,11 @@ export default async function ProjectsPage() {
               Verified Production Architectures
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-on-surface tracking-tight leading-tight">
-              Systems Built for <span className="text-primary">Scale & Rigor.</span>
+              Selected Work:<br />
+              <span className="text-primary">Resilient Engineering at Sovereign Scale.</span>
             </h1>
             <p className="text-base sm:text-lg text-on-surface-variant max-w-4xl leading-relaxed">
-              Explore our mission-critical web applications, statutory compliance portals, and enterprise engineering architectures designed for resilience.
+              Explore our mission-critical web applications, statutory compliance portals, and enterprise engineering architectures designed for resilience across East Africa.
             </p>
           </div>
         </div>
@@ -77,18 +78,22 @@ export default async function ProjectsPage() {
           curatedProjects={curatedProjects}
         />
 
-        {/* Bottom CTA Banner */}
-        <div className="p-8 sm:p-12 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        {/* Bottom CTA Banner (Obsidian Sovereign Theme) */}
+        <div className="p-8 sm:p-12 rounded-3xl bg-[#111315] text-white border border-stone-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-xl">
-            <h3 className="text-2xl font-black text-on-surface tracking-tight">
-              Have an upcoming product or integration brief?
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-stone-700 bg-stone-900/80 mb-1">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span className="text-xs font-semibold text-stone-300 uppercase tracking-wider">Direct Engineering Consultation</span>
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              Have a mission-critical system to architect or scale?
             </h3>
-            <p className="text-sm text-on-surface-variant leading-relaxed">
+            <p className="text-sm text-stone-300 leading-relaxed">
               We engineer custom SaaS, GovTech portals, and M-Pesa fintech pipelines with guaranteed deliverables and sub-second performance.
             </p>
           </div>
           <Link href="/contact" className="shrink-0">
-            <Button size="lg" className="rounded-2xl px-6 bg-primary text-white font-bold hover:bg-primary/90 shadow-sm flex items-center gap-2">
+            <Button size="lg" className="rounded-xl px-6 bg-primary text-white font-bold hover:bg-primary/90 shadow-sm flex items-center gap-2">
               Book Architecture Review <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>

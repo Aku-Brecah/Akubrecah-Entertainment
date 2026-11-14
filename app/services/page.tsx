@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Metadata } from "next";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Shield, Zap, Lock, Scale, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ServiceSchema, BreadcrumbSchema, FaqSchema } from "@/components/seo/site-schema";
 
@@ -176,14 +176,48 @@ export default function ServicesPage() {
             <span className="text-on-surface font-semibold">Engineering Capabilities</span>
           </nav>
           <div className="max-w-5xl space-y-3">
-            <span className="text-xs font-black text-primary uppercase tracking-widest">Capabilities & Services</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs tracking-wider uppercase font-semibold">
+              <Terminal className="h-3.5 w-3.5" />
+              GovTech &amp; High-Concurrency Engineering
+            </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-on-surface tracking-tight leading-tight">
-              Software Engineering<br />
+              Engineering Services<br />
               <span className="text-primary">Built for Production Scale.</span>
             </h1>
             <p className="text-base sm:text-lg text-on-surface-variant max-w-4xl leading-relaxed">
-              We design, build, and deploy production-grade digital products. From high-throughput financial infrastructure to mission-critical mobile ecosystems.
+              Mission-critical software, sovereign compliance gateways, and resilient fintech architectures engineered for zero downtime across East Africa.
             </p>
+          </div>
+
+          {/* Quick Metrics / Verification Band */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-outline-variant/60">
+            <div className="flex items-center space-x-3.5 p-4 rounded-2xl bg-surface-container-low border border-outline-variant">
+              <div className="w-10 h-10 rounded-xl bg-surface-container-lowest border border-outline-variant flex items-center justify-center text-primary shadow-xs">
+                <Zap className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-xl font-black text-on-surface">&lt;120ms</div>
+                <div className="text-xs text-on-surface-variant">Document Handshake Latency</div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3.5 p-4 rounded-2xl bg-surface-container-low border border-outline-variant">
+              <div className="w-10 h-10 rounded-xl bg-surface-container-lowest border border-outline-variant flex items-center justify-center text-primary shadow-xs">
+                <Shield className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-xl font-black text-on-surface">99.98%</div>
+                <div className="text-xs text-on-surface-variant">Gateway Availability SLA</div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3.5 p-4 rounded-2xl bg-surface-container-low border border-outline-variant">
+              <div className="w-10 h-10 rounded-xl bg-surface-container-lowest border border-outline-variant flex items-center justify-center text-primary shadow-xs">
+                <Scale className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-xl font-black text-on-surface">100%</div>
+                <div className="text-xs text-on-surface-variant">Data Protection Act Aligned</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -266,17 +300,32 @@ export default function ServicesPage() {
           </div>
         </div>
 
-        {/* Bottom CTA Banner */}
-        <div className="p-10 sm:p-14 rounded-3xl bg-primary text-white text-center space-y-5">
-          <h2 className="text-3xl font-black">Not Sure Which Capability Fits Your Needs?</h2>
-          <p className="text-white/80 text-sm max-w-lg mx-auto">
-            Book a 30-minute architecture discovery session. Our principal engineers will review your objectives and outline a concrete technical roadmap.
-          </p>
-          <Link href="/contact">
-            <Button size="lg" className="h-12 px-8 rounded-xl bg-white text-primary font-bold text-sm flex items-center gap-2 mx-auto group">
-              Book Discovery Session <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
+        {/* Bottom CTA Banner (Obsidian Sovereign Theme) */}
+        <div className="p-8 sm:p-12 lg:p-14 rounded-3xl bg-[#111315] text-white border border-stone-800 space-y-6 shadow-xl">
+          <div className="space-y-4 max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-stone-700 bg-stone-900/80">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span className="text-xs font-semibold text-stone-300 uppercase tracking-wider">Direct Engineering Consultation</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+              Ready to engineer resilient sovereign software?
+            </h2>
+            <p className="text-stone-300 text-sm sm:text-base leading-relaxed">
+              Consult directly with our principal systems engineers in Nairobi. We audit architecture, harden security postures, and build for uncompromised reliability.
+            </p>
+            <div className="flex flex-wrap gap-4 pt-2">
+              <Link href="/contact">
+                <Button size="lg" className="h-12 px-6 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 flex items-center gap-2">
+                  Schedule Architecture Review <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="/projects">
+                <Button size="lg" variant="outline" className="h-12 px-6 rounded-xl border-stone-700 bg-transparent text-white font-bold text-sm hover:bg-white/10">
+                  View Production Case Studies
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
 
       </div>

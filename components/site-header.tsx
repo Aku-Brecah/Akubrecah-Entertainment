@@ -44,7 +44,7 @@ interface NavItem {
 const kraNavData: NavItem[] = [
   {
     label: "Retrieval",
-    href: "/",
+    href: "/retrieval-portal",
     groups: null,
   },
   {

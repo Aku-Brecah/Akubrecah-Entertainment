@@ -69,10 +69,10 @@ export default async function ArticlesPage() {
               Engineering Field Notes & Product Specs
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-on-surface tracking-tight leading-tight">
-              Architectural Insights & <span className="text-primary">Deep Dives.</span>
+              Engineering Articles &amp; <span className="text-primary">KRA Guides.</span>
             </h1>
             <p className="text-base sm:text-lg text-on-surface-variant max-w-4xl leading-relaxed">
-              Pragmatic engineering tutorials, real-time mobility state machines, AI audio processing pipelines, and statutory automation write-ups from products built by Akubrecah.
+              Field-tested architectural patterns, Kenya Revenue Authority (KRA) regulatory workflows, Safaricom Daraja M-Pesa integrations, and high-concurrency systems design.
             </p>
           </div>
         </div>

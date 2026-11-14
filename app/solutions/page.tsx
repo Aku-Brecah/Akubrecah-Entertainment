@@ -164,11 +164,11 @@ export default function SolutionsPage() {
           <div className="max-w-5xl space-y-3">
             <span className="text-xs font-black text-primary uppercase tracking-widest">Industry Specializations</span>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-on-surface tracking-tight leading-tight">
-              Software Solutions<br />
-              <span className="text-primary">for Complex Domains.</span>
+              Industry Solutions:<br />
+              <span className="text-primary">Sovereign &amp; Enterprise Infrastructure.</span>
             </h1>
             <p className="text-base sm:text-lg text-on-surface-variant max-w-4xl leading-relaxed">
-              We combine deep sector knowledge with engineering rigor to deliver software that solves mission-critical business challenges — from fintech payment rails to government automation portals.
+              Tailored architectures for state compliance gateways, instant Daraja financial settlements, IoT fleet telematics, and automated video intelligence across East Africa.
             </p>
           </div>
           <div className="pt-2">
@@ -275,17 +275,32 @@ export default function SolutionsPage() {
           </div>
         </div>
 
-        {/* Bottom CTA Banner */}
-        <div className="p-10 sm:p-14 rounded-3xl bg-primary text-white text-center space-y-5">
-          <h2 className="text-3xl font-black">Ready to Build a Tailored Solution?</h2>
-          <p className="text-white/80 text-sm max-w-lg mx-auto">
-            Share your system requirements with our senior team. We will review your architecture and provide an actionable proposal within 24 hours.
-          </p>
-          <Link href="/contact">
-            <Button size="lg" className="h-12 px-8 rounded-xl bg-white text-primary font-bold text-sm flex items-center gap-2 mx-auto group">
-              Start Project Brief <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
+        {/* Bottom CTA Banner (Obsidian Sovereign Theme) */}
+        <div className="p-8 sm:p-12 lg:p-14 rounded-3xl bg-[#111315] text-white border border-stone-800 space-y-6 shadow-xl">
+          <div className="space-y-4 max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-stone-700 bg-stone-900/80">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span className="text-xs font-semibold text-stone-300 uppercase tracking-wider">Direct Engineering Consultation</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+              Deploy Sovereign Infrastructure with Akubrecah
+            </h2>
+            <p className="text-stone-300 text-sm sm:text-base leading-relaxed">
+              Consult directly with our principal systems engineers in Nairobi. We architect resilient systems engineered for zero tolerance of failure.
+            </p>
+            <div className="flex flex-wrap gap-4 pt-2">
+              <Link href="/contact">
+                <Button size="lg" className="h-12 px-6 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 flex items-center gap-2">
+                  Start Project Brief <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="/services">
+                <Button size="lg" variant="outline" className="h-12 px-6 rounded-xl border-stone-700 bg-transparent text-white font-bold text-sm hover:bg-white/10">
+                  Explore Capabilities
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
 
       </div>
