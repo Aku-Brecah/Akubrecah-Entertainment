@@ -10,6 +10,7 @@
 
 ## 2. Statutory GovTech Gateway: KRA Certificate Retrieval & Returns
 - URL: https://akubrecah.com/retrieval-portal
+- Guide: https://akubrecah.com/articles/kra-pin-retrieval-online-using-id-number-itax-login-guide (Complete guide to KRA PIN retrieval online using National ID number, KRA iTax portal login, KRA PIN forgot password recovery, and instant KRA PIN certificate download).
 - Purpose: Provides automated, compliant retrieval of official Kenya Revenue Authority (KRA) Taxpayer PIN certificates and instant filing of nil income tax returns.
 - Security: End-to-end TLS 1.3 encryption, automatic deletion of temporary taxpayer credentials, zero persistent retention of sensitive identity tokens.
 - Supported Formats: High-resolution PDF document delivery via instant browser download, WhatsApp dispatch, and encrypted email attachment.

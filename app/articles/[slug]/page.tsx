@@ -24,10 +24,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const title = article.seoTitle || article.title;
   const description = article.seoDescription || article.excerpt;
+  const publishedIso = new Date(article.publishedAt).toISOString();
 
   return {
     title: `${title} | Akubrecah Engineering`,
     description,
+    keywords: Array.isArray(article.tags) ? article.tags : undefined,
     alternates: {
       canonical: `https://akubrecah.com/articles/${slug}`,
     },
@@ -36,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: `https://akubrecah.com/articles/${slug}`,
       type: 'article',
-      publishedTime: article.publishedAt.toISOString(),
+      publishedTime: publishedIso,
       tags: article.tags,
       images: article.featuredImage ? [article.featuredImage] : ['https://akubrecah.com/og-image.jpg'],
     },
@@ -51,13 +53,15 @@ export default async function ArticleDetailPage({ params }: Props) {
     notFound();
   }
 
+  const publishedIso = new Date(article.publishedAt).toISOString();
+
   return (
     <article className="min-h-screen bg-background text-on-background">
       <ArticleSchema
         title={article.title}
         description={article.excerpt}
         url={`https://akubrecah.com/articles/${slug}`}
-        publishedAt={article.publishedAt.toISOString()}
+        publishedAt={publishedIso}
         authorName="Akubrecah Engineering"
         imageUrl={article.featuredImage}
       />
@@ -174,12 +178,26 @@ export default async function ArticleDetailPage({ params }: Props) {
               Full-stack software engineering & systems architecture studio specializing in high-load web platforms, real-time mobility dispatch, and statutory compliance automation across Kenya.
             </p>
           </div>
-          <Link
-            href="/contact"
-            className="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors shrink-0 shadow-xs"
-          >
-            Work With Us
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-2.5 shrink-0 w-full sm:w-auto">
+            <Link
+              href="/retrieval-portal"
+              className="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors text-center shadow-xs"
+            >
+              KRA PIN Retrieval Portal
+            </Link>
+            <Link
+              href="/services"
+              className="px-5 py-2.5 rounded-xl bg-surface-container border border-outline-variant text-on-surface text-xs font-bold hover:border-primary/40 hover:text-primary transition-colors text-center"
+            >
+              GovTech Services
+            </Link>
+            <Link
+              href="/contact"
+              className="px-5 py-2.5 rounded-xl bg-surface-container border border-outline-variant text-on-surface text-xs font-bold hover:border-primary/40 hover:text-primary transition-colors text-center"
+            >
+              Work With Us
+            </Link>
+          </div>
         </div>
       </div>
     </article>

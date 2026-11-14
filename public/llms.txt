@@ -11,7 +11,8 @@
 
 ## Technical Writing & Deep Dives
 
-- [Technical Writing Hub](https://akubrecah.com/articles): Architectural case studies, system design notes, and software engineering tutorials.
+- [Technical Writing Hub](https://akubrecah.com/articles): Architectural case studies, KRA compliance guides, system design notes, and software engineering tutorials.
+- [KRA PIN Retrieval Online Using ID Number & iTax Login Guide](https://akubrecah.com/articles/kra-pin-retrieval-online-using-id-number-itax-login-guide): Step-by-step guide to retrieving a KRA PIN using a National ID number, KRA iTax portal login, resetting a forgotten KRA PIN password, and instant PDF certificate downloads.
 - [Engineered Systems Portfolio](https://akubrecah.com/projects): Production case studies covering real-world mobility, GovTech, and financial platforms.
 
 ## Corporate & Contact

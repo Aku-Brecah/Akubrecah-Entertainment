@@ -8,7 +8,18 @@ function getFallbackArticles(): any[] {
     const filePath = path.join(process.cwd(), 'data', 'articles-fallback.json');
     if (fs.existsSync(filePath)) {
       const data = fs.readFileSync(filePath, 'utf-8');
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) {
+        return parsed.map((article) => {
+          const publishedAt = article.publishedAt ? new Date(article.publishedAt) : new Date();
+          const updatedAt = article.updatedAt ? new Date(article.updatedAt) : publishedAt;
+          return {
+            ...article,
+            publishedAt,
+            updatedAt,
+          };
+        });
+      }
     }
   } catch (err) {
     log.warn('[Fallback Articles Error]:', err);
@@ -176,12 +187,16 @@ export async function getPublishedArticles() {
           merged.push(fb);
         }
       }
-      return merged;
+      return merged.sort(
+        (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      );
     }
   } catch (error) {
     log.warn('[getPublishedArticles DB Notice - Using Fallback]:', (error as any)?.message);
   }
-  return fallbackList;
+  return fallbackList.sort(
+    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+  );
 }
 
 export async function getArticleBySlug(slug: string) {

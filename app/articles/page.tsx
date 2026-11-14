@@ -7,14 +7,23 @@ import { BreadcrumbSchema } from '@/components/seo/site-schema';
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: 'Engineering Articles & Technical Tutorials',
-  description: 'Deep dives on software architecture, mobility platforms, AI audio pipelines, and statutory compliance automation by Akubrecah Technologies in Nairobi, Kenya.',
+  title: 'Engineering Articles, KRA Guides & Technical Tutorials',
+  description: 'Step-by-step guides on KRA PIN retrieval online using National ID, KRA iTax portal login, software architecture, mobility platforms, and GovTech compliance automation by Akubrecah Technologies.',
+  keywords: [
+    'retrieve kra pin',
+    'KRA PIN Retrieval using ID number',
+    'KRA PIN Retrieval online',
+    'KRA iTax portal Login',
+    'KRA PIN Certificate download',
+    'KRA PIN forgot password',
+    'Software Architecture Kenya',
+  ],
   alternates: {
     canonical: 'https://akubrecah.com/articles',
   },
   openGraph: {
-    title: 'Engineering Articles & Technical Tutorials | Akubrecah Technologies',
-    description: 'Deep dives on software architecture, distributed systems, and statutory compliance automation.',
+    title: 'Engineering Articles, KRA Guides & Technical Tutorials | Akubrecah Technologies',
+    description: 'Guides on KRA PIN retrieval using ID number, iTax portal login, distributed systems, and statutory compliance automation.',
     url: 'https://akubrecah.com/articles',
     type: 'website',
     images: [
@@ -22,14 +31,14 @@ export const metadata: Metadata = {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'Akubrecah Engineering Articles',
+        alt: 'Akubrecah Engineering Articles & KRA Guides',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Engineering Articles & Technical Tutorials | Akubrecah',
-    description: 'Deep dives on software architecture, distributed systems, and statutory compliance automation.',
+    title: 'Engineering Articles, KRA Guides & Technical Tutorials | Akubrecah',
+    description: 'Guides on KRA PIN retrieval online, KRA iTax portal login, and statutory compliance automation.',
     images: ['/og-image.jpg'],
   },
 };

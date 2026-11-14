@@ -196,4 +196,47 @@ describe('Search Engine Optimization (SEO) & Indexing Suite', () => {
       expect(uniqueTitles.size).toBe(titles.length);
     });
   });
+
+  describe('KRA PIN Retrieval & iTax Guide Article Verification', () => {
+    it('indexes the KRA PIN retrieval guide first and targets all People Also Search For queries', async () => {
+      const prismaModule = await import('@/lib/prisma');
+      const findManySpy = vi.spyOn(prismaModule.default.article, 'findMany').mockResolvedValue([]);
+      const findUniqueSpy = vi.spyOn(prismaModule.default.article, 'findUnique').mockResolvedValue(null);
+
+      try {
+        const cms = await vi.importActual<typeof import('@/lib/cms')>('@/lib/cms');
+        const articles = await cms.getPublishedArticles();
+        expect(articles.length).toBeGreaterThan(0);
+        expect(articles[0].slug).toBe('kra-pin-retrieval-online-using-id-number-itax-login-guide');
+
+        const article = await cms.getArticleBySlug('kra-pin-retrieval-online-using-id-number-itax-login-guide');
+        expect(article).not.toBeNull();
+        expect(article.isPublished).toBe(true);
+        expect(article.publishedAt).toBeInstanceOf(Date);
+        expect(article.content).toContain('/retrieval-portal');
+        expect(article.content).toContain('KES 20');
+
+        const targetKeywords = [
+          'retrieve kra pin',
+          'KRA portal',
+          'KRA PIN Retrieval using ID number',
+          'KRA PIN login',
+          'KRA PIN forgot password',
+          'KRA PIN Certificate download',
+          'KRA iTax portal Login',
+          'iTax - KRA PIN',
+          'KRA PIN Retrieval online',
+        ];
+
+        const normalizedContent = `${article.title}\n${article.excerpt}\n${article.content}`.toLowerCase();
+        for (const keyword of targetKeywords) {
+          expect(article.tags).toContain(keyword);
+          expect(normalizedContent).toContain(keyword.toLowerCase());
+        }
+      } finally {
+        findManySpy.mockRestore();
+        findUniqueSpy.mockRestore();
+      }
+    });
+  });
 });

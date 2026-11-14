@@ -417,6 +417,14 @@ function FlagshipPortalContent() {
               <span className="font-semibold">Explore Engineering Case Studies & Developer Articles:</span>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/articles/kra-pin-retrieval-online-using-id-number-itax-login-guide"
+                className="text-primary font-bold hover:underline flex items-center gap-1"
+              >
+                <span>KRA PIN & iTax Login Guide</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+              <span className="text-outline-muted">·</span>
               <Link href="/articles" className="text-primary font-bold hover:underline flex items-center gap-1">
                 <span>Technical Articles</span>
                 <ArrowRight className="w-3 h-3" />
@@ -463,7 +471,7 @@ function FlagshipPortalContent() {
               rel="noopener noreferrer"
               className="hover:text-primary transition-colors underline-offset-4 hover:underline"
             >
-              Official iTax Portal ↗
+              Official iTax Portal
             </a>
           </div>
         </div>
