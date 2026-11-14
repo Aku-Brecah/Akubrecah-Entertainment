@@ -3,20 +3,33 @@ import { PrismaClient } from "@prisma/client";
 
 const prismaClientSingleton = () => {
   return new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    log:
+      process.env.PRISMA_LOG_QUERIES === "true"
+        ? ["query", "error", "warn"]
+        : process.env.NODE_ENV === "development"
+          ? ["error", "warn"]
+          : ["error"],
   });
 };
 
 declare global {
   // eslint-disable-next-line no-var
   var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>;
+  // eslint-disable-next-line no-var
+  var prismaGlobalV2: undefined | ReturnType<typeof prismaClientSingleton>;
 }
 
-const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
+// Disconnect legacy singleton so HMR immediately switches to quiet logging
+if (globalThis.prismaGlobal) {
+  void globalThis.prismaGlobal.$disconnect?.().catch(() => {});
+  globalThis.prismaGlobal = undefined;
+}
+
+const prisma = globalThis.prismaGlobalV2 ?? prismaClientSingleton();
 
 export default prisma;
 
-if (process.env.NODE_ENV !== "production") globalThis.prismaGlobal = prisma;
+if (process.env.NODE_ENV !== "production") globalThis.prismaGlobalV2 = prisma;
 
 // Reusable helper to write audit logs to database
 export async function createSystemLog(data: {

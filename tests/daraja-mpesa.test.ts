@@ -133,6 +133,11 @@ describe('Safaricom Daraja M-Pesa Express Integration', () => {
     process.env.DARAJA_CONSUMER_KEY = 'live_consumer_key_test';
     process.env.DARAJA_CONSUMER_SECRET = 'live_consumer_secret_test';
     process.env.DARAJA_SHORTCODE = '9914132';
+    delete process.env.DARAJA_TILL_NUMBER;
+    delete process.env.DARAJA_PARTYB;
+    delete process.env.MPESA_TILL_NUMBER;
+    delete process.env.MPESA_PARTYB;
+    process.env.DARAJA_TRANSACTION_TYPE = 'CustomerPayBillOnline';
     process.env.DARAJA_PASSKEY = 'live_passkey_test';
     process.env.DARAJA_CALLBACK_URL = 'https://kra.akubrecah.com/api/mpesa/callback';
     process.env.DARAJA_CALLBACK_TOKEN = 'test_daraja_callback_secret_token';
@@ -174,8 +179,8 @@ describe('Safaricom Daraja M-Pesa Express Integration', () => {
   });
 
   describe('Daraja ResultCode mapping', () => {
-    it('maps Daraja result codes to explicit UI and database states', async () => {
-      const { mapDarajaResultCodeToStatus } = await import('@/lib/whatsapp/mpesa-dispatch');
+    it('maps Daraja result codes to explicit UI and database states and formats 2029/2002 diagnostics', async () => {
+      const { mapDarajaResultCodeToStatus, formatDarajaResultDesc } = await import('@/lib/whatsapp/mpesa-dispatch');
 
       expect(mapDarajaResultCodeToStatus('0')).toEqual({ status: 'success', dbStatus: 'COMPLETED' });
       expect(mapDarajaResultCodeToStatus('1032')).toEqual({ status: 'cancelled', dbStatus: 'CANCELLED' });
@@ -183,6 +188,54 @@ describe('Safaricom Daraja M-Pesa Express Integration', () => {
       expect(mapDarajaResultCodeToStatus('1019')).toEqual({ status: 'timeout', dbStatus: 'TIMED_OUT' });
       expect(mapDarajaResultCodeToStatus('1')).toEqual({ status: 'failed', dbStatus: 'FAILED' });
       expect(mapDarajaResultCodeToStatus('2001')).toEqual({ status: 'failed', dbStatus: 'FAILED' });
+      expect(mapDarajaResultCodeToStatus('2029')).toEqual({ status: 'failed', dbStatus: 'FAILED' });
+      expect(mapDarajaResultCodeToStatus('2002')).toEqual({ status: 'failed', dbStatus: 'FAILED' });
+
+      expect(formatDarajaResultDesc('2029')).toContain('Buy Goods Store Number');
+      expect(formatDarajaResultDesc('2002')).toContain('Buy Goods Till Number');
+      expect(formatDarajaResultDesc('1', 'Insufficient balance')).toBe('Insufficient balance');
+    });
+  });
+
+  describe('Buy Goods Store vs Till (PartyB) resolution', () => {
+    it('automatically uses CustomerBuyGoodsOnline with PartyB set to DARAJA_TILL_NUMBER when configured', async () => {
+      delete process.env.DARAJA_TRANSACTION_TYPE;
+      delete process.env.MPESA_TRANSACTION_TYPE;
+      process.env.DARAJA_TILL_NUMBER = '4123456';
+
+      const fetchCalls: Array<{ url: string; body?: any }> = [];
+      global.fetch = vi.fn(async (input: any, init?: RequestInit) => {
+        const url = String(input);
+        const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+        fetchCalls.push({ url, body });
+
+        if (url.includes('/oauth/v1/generate')) {
+          return new Response(JSON.stringify({ access_token: 'tok_till', expires_in: '3599' }), { status: 200 });
+        }
+        return new Response(
+          JSON.stringify({
+            MerchantRequestID: 'mr_till_1',
+            CheckoutRequestID: 'ws_CO_TILL_1',
+            ResponseCode: '0',
+            CustomerMessage: 'Success. Request accepted for processing',
+          }),
+          { status: 200 }
+        );
+      }) as any;
+
+      const { dispatchMpesaStkPush } = await import('@/lib/whatsapp/mpesa-dispatch');
+      const res = await dispatchMpesaStkPush({
+        phone: '0712345678',
+        amount: 20,
+        reference: 'CERT-A012345678Z',
+        pin: 'A012345678Z',
+      });
+
+      expect(res.success).toBe(true);
+      const stkCall = fetchCalls.find((c) => c.url.includes('/mpesa/stkpush/v1/processrequest'));
+      expect(stkCall?.body.BusinessShortCode).toBe(9914132);
+      expect(stkCall?.body.PartyB).toBe(4123456);
+      expect(stkCall?.body.TransactionType).toBe('CustomerBuyGoodsOnline');
     });
   });
 
@@ -573,4 +626,92 @@ describe('Safaricom Daraja M-Pesa Express Integration', () => {
       expect(cancData.downloadId).toBeUndefined();
     });
   });
+
+  describe('GET & POST /api/admin/daraja', () => {
+    it('rejects unauthenticated callers with HTTP 403 and returns Daraja endpoints for admins', async () => {
+      process.env.ADMIN_BOT_PIN = 'test_admin_bot_pin_secure';
+      process.env.DARAJA_TILL_NUMBER = '9348469';
+      delete process.env.DARAJA_TRANSACTION_TYPE;
+      delete process.env.MPESA_TRANSACTION_TYPE;
+
+      const { GET } = await import('@/app/api/admin/daraja/route');
+
+      const unauthRes = await GET(new NextRequest('https://kra.akubrecah.com/api/admin/daraja'));
+      expect(unauthRes.status).toBe(403);
+
+      const authRes = await GET(
+        new NextRequest('https://kra.akubrecah.com/api/admin/daraja', {
+          headers: { 'x-admin-pin': 'test_admin_bot_pin_secure' },
+        })
+      );
+      const data = await authRes.json();
+
+      expect(authRes.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.config.shortCode).toBe('9914132');
+      expect(data.config.partyB).toBe('9348469');
+      expect(data.config.transactionType).toBe('CustomerBuyGoodsOnline');
+      expect(data.endpoints.some((e: any) => e.path === '/api/mpesa/stkpush')).toBe(true);
+      expect(data.endpoints.some((e: any) => e.path.includes('/mpesa/stkpushquery/v1/query'))).toBe(true);
+    });
+
+    it('runs live OAuth check and STK Query diagnostics when authenticated as admin', async () => {
+      process.env.ADMIN_BOT_PIN = 'test_admin_bot_pin_secure';
+      global.fetch = vi.fn(async (input: any) => {
+        const url = String(input);
+        if (url.includes('/oauth/v1/generate')) {
+          return new Response(
+            JSON.stringify({ access_token: 'admintesttoken1234567890', expires_in: '3599' }),
+            { status: 200 }
+          );
+        }
+        if (url.includes('/mpesa/stkpushquery/v1/query')) {
+          return new Response(
+            JSON.stringify({
+              ResponseCode: '0',
+              ResultCode: '0',
+              ResultDesc: 'The service request is processed successfully.',
+              CheckoutRequestID: 'ws_CO_ADMIN_TEST_1',
+            }),
+            { status: 200 }
+          );
+        }
+        throw new Error(`Unexpected fetch URL: ${url}`);
+      }) as any;
+
+      const { POST } = await import('@/app/api/admin/daraja/route');
+
+      const oauthRes = await POST(
+        new NextRequest('https://kra.akubrecah.com/api/admin/daraja', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-pin': 'test_admin_bot_pin_secure',
+          },
+          body: JSON.stringify({ action: 'oauth' }),
+        })
+      );
+      const oauthData = await oauthRes.json();
+      expect(oauthRes.status).toBe(200);
+      expect(oauthData.success).toBe(true);
+      expect(oauthData.tokenPreview).toBe('admintes...7890');
+
+      const queryRes = await POST(
+        new NextRequest('https://kra.akubrecah.com/api/admin/daraja', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-pin': 'test_admin_bot_pin_secure',
+          },
+          body: JSON.stringify({ action: 'query', checkoutRequestId: 'ws_CO_ADMIN_TEST_1' }),
+        })
+      );
+      const queryData = await queryRes.json();
+      expect(queryRes.status).toBe(200);
+      expect(queryData.success).toBe(true);
+      expect(queryData.result.status).toBe('success');
+      expect(queryData.result.verified).toBe(true);
+    });
+  });
 });
+

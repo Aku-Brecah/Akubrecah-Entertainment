@@ -52,77 +52,102 @@ export async function verifyAndFulfillMpesaCheckout({
   const db = prisma as any;
   const requestedPin = resolveExplicitPin(rawPinInput);
 
-  // 1. Check durable CertificateDownload first (already fulfilled by callback or earlier verify)
-  try {
-    if (typeof db.certificateDownload?.findFirst === 'function') {
-      const existingDownload = await db.certificateDownload.findFirst({
-        where: { checkoutId: checkoutRequestId },
-      });
-
-      if (existingDownload) {
-        const recordPin = resolveExplicitPin(existingDownload.pin);
-        if (requestedPin && recordPin && requestedPin !== recordPin) {
-          return {
-            success: false,
-            verified: false,
-            status: 'failed',
-            checkoutRequestId,
-            httpStatus: 403,
-            error: 'This payment is bound to a different KRA PIN.',
-          };
-        }
-
-        return {
-          success: true,
-          verified: true,
-          status: 'success',
-          checkoutRequestId,
-          downloadId: existingDownload.id,
-          mpesaReceipt: existingDownload.mpesaReceipt || checkoutRequestId,
-          pin: recordPin || existingDownload.pin,
-          amount: Number(existingDownload.amountCharged) || MIN_CERTIFICATE_FEE_KES,
-          resultCode: 0,
-          resultDesc: 'Payment verified successfully.',
-        };
-      }
-    }
-  } catch (err: any) {
-    log.warn('[mpesa-verification] Download lookup notice:', err?.message);
+  interface DownloadLookupRecord {
+    id: string;
+    pin: string;
+    mpesaReceipt?: string | null;
+    amountCharged?: number | null;
+  }
+  interface CyberInvoiceLookupRecord {
+    mpesaReceipt?: string | null;
+    amount?: number | null;
+  }
+  interface MpesaTxLookupRecord {
+    status: string;
+    resultCode?: number | null;
+    resultDesc?: string | null;
+    mpesaReceiptNumber?: string | null;
+    amount?: number | null;
+    pin?: string | null;
+    clerkId?: string | null;
+    phone?: string | null;
   }
 
-  // 2. Check durable CyberInvoice (for KES 500 Cyber Cafe Pass)
-  try {
-    if (typeof db.cyberInvoice?.findFirst === 'function') {
-      const cyberInvoice = await db.cyberInvoice.findFirst({
-        where: { checkoutId: checkoutRequestId },
-      });
-      if (cyberInvoice) {
-        return {
-          success: true,
-          verified: true,
-          status: 'success',
-          checkoutRequestId,
-          mpesaReceipt: cyberInvoice.mpesaReceipt || checkoutRequestId,
-          amount: Number(cyberInvoice.amount) || 500,
-          resultCode: 0,
-          resultDesc: 'Cyber Cafe subscription verified.',
-        };
-      }
+  const safeLookup = async <T>(
+    label: string,
+    query: (() => Promise<T | null>) | null
+  ): Promise<T | null> => {
+    if (!query) return null;
+    try {
+      return await query();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      log.warn(`[mpesa-verification] ${label} notice:`, message);
+      return null;
     }
-  } catch (err: any) {
-    log.warn('[mpesa-verification] Cyber invoice lookup notice:', err?.message);
+  };
+
+  // 1-3. Query durable CertificateDownload, CyberInvoice, and MpesaTransaction concurrently
+  // while preserving priority order (CertificateDownload > CyberInvoice > MpesaTransaction).
+  const [existingDownload, cyberInvoice, txRecord] = await Promise.all([
+    safeLookup<DownloadLookupRecord>(
+      'Download lookup',
+      typeof db.certificateDownload?.findFirst === 'function'
+        ? () => db.certificateDownload.findFirst({ where: { checkoutId: checkoutRequestId } })
+        : null
+    ),
+    safeLookup<CyberInvoiceLookupRecord>(
+      'Cyber invoice lookup',
+      typeof db.cyberInvoice?.findFirst === 'function'
+        ? () => db.cyberInvoice.findFirst({ where: { checkoutId: checkoutRequestId } })
+        : null
+    ),
+    safeLookup<MpesaTxLookupRecord>(
+      'MpesaTransaction lookup',
+      typeof db.mpesaTransaction?.findUnique === 'function'
+        ? () => db.mpesaTransaction.findUnique({ where: { checkoutRequestId } })
+        : null
+    ),
+  ]);
+
+  if (existingDownload) {
+    const recordPin = resolveExplicitPin(existingDownload.pin);
+    if (requestedPin && recordPin && requestedPin !== recordPin) {
+      return {
+        success: false,
+        verified: false,
+        status: 'failed',
+        checkoutRequestId,
+        httpStatus: 403,
+        error: 'This payment is bound to a different KRA PIN.',
+      };
+    }
+
+    return {
+      success: true,
+      verified: true,
+      status: 'success',
+      checkoutRequestId,
+      downloadId: existingDownload.id,
+      mpesaReceipt: existingDownload.mpesaReceipt || checkoutRequestId,
+      pin: recordPin || existingDownload.pin,
+      amount: Number(existingDownload.amountCharged) || MIN_CERTIFICATE_FEE_KES,
+      resultCode: 0,
+      resultDesc: 'Payment verified successfully.',
+    };
   }
 
-  // 3. Check durable MpesaTransaction record in PostgreSQL
-  let txRecord: any = null;
-  try {
-    if (typeof db.mpesaTransaction?.findUnique === 'function') {
-      txRecord = await db.mpesaTransaction.findUnique({
-        where: { checkoutRequestId },
-      });
-    }
-  } catch (err: any) {
-    log.warn('[mpesa-verification] MpesaTransaction lookup notice:', err?.message);
+  if (cyberInvoice) {
+    return {
+      success: true,
+      verified: true,
+      status: 'success',
+      checkoutRequestId,
+      mpesaReceipt: cyberInvoice.mpesaReceipt || checkoutRequestId,
+      amount: Number(cyberInvoice.amount) || 500,
+      resultCode: 0,
+      resultDesc: 'Cyber Cafe subscription verified.',
+    };
   }
 
   if (txRecord) {
@@ -306,7 +331,7 @@ export async function verifyAndFulfillMpesaCheckout({
         },
       });
     }
-  } catch {}
+  } catch { }
 
   return {
     success: true,
@@ -322,3 +347,4 @@ export async function verifyAndFulfillMpesaCheckout({
     resultDesc: liveDesc || 'Payment confirmed via Safaricom Daraja.',
   };
 }
+

@@ -27,6 +27,7 @@ describe('National ID and PIN masked retrieval behavior', () => {
       county: 'West Pokot',
       email: 'powel@example.com',
       phoneNumber: '0712345678',
+      certificate_url: 'https://itax.kra.go.ke/KRA-Portal/dotDownloadCertificate.htm?pin=A001234567Z',
     };
 
     const masked = maskTaxpayerData(rawTaxpayer, false, false);
@@ -36,10 +37,11 @@ describe('National ID and PIN masked retrieval behavior', () => {
     expect(masked.idNumber).toBe('11530093');
     expect(masked.fullName).toBe('POWEL DAYCK');
 
-    // Sensitive contact details are masked
+    // Sensitive contact details and certificate URL carrying plaintext PIN are masked/stripped
     expect(masked.email).toBe('p***l@example.com');
     expect(masked.phoneNumber).toBe('••••••••••');
     expect(masked.pin).toBe('A00*****67Z');
+    expect(masked.certificate_url).toBe('');
     expect(masked.isSubscribed).toBe(false);
   });
 

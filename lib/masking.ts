@@ -114,6 +114,7 @@ export function maskTaxpayerData<T extends TaxpayerData>(
     pin: maskPin(data.pin),
     phoneNumber: maskPhone(data.phoneNumber),
     email: maskEmail(data.email),
+    ...(data.certificate_url !== undefined ? { certificate_url: '' } : {}),
     station: data.station || '', // Fully visible
     idNumber: data.idNumber || '', // Fully visible
     name,

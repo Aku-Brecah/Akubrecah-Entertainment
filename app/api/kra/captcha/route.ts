@@ -11,7 +11,7 @@ export const maxDuration = 30;
 
 function createProxyAgent(proxyUrl: string): any {
   if (!proxyUrl) return undefined;
-  
+
   return new https.Agent({
     createConnection: (opts: any, callback: any) => {
       const proxyParsed = url.parse(proxyUrl);
@@ -20,7 +20,7 @@ function createProxyAgent(proxyUrl: string): any {
 
       const socket = net.connect(proxyPort, proxyHost, () => {
         let connectReq = `CONNECT ${opts.host}:${opts.port} HTTP/1.1\r\n` +
-                         `Host: ${opts.host}:${opts.port}\r\n`;
+          `Host: ${opts.host}:${opts.port}\r\n`;
         if (proxyParsed.auth) {
           const base64Auth = Buffer.from(proxyParsed.auth).toString('base64');
           connectReq += `Proxy-Authorization: Basic ${base64Auth}\r\n`;
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
         const client = await clerkClient();
         const user = await client.users.getUser(clerkId);
         userEmail = user.primaryEmailAddress?.emailAddress || clerkId;
-      } catch {}
+      } catch { }
     }
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
 
@@ -95,8 +95,8 @@ export async function GET(req: NextRequest) {
       captchaImage = `data:image/png;base64,${captchaBuffer.toString('base64')}`;
       success = true;
 
-      // Log success
-      await createSystemLog({
+      // Log success (non-blocking)
+      void createSystemLog({
         level: 'info',
         service: 'KRA-Captcha',
         message: 'KRA Captcha challenge generated and loaded successfully',
@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
       });
     } catch (err: any) {
       log.error('[captcha] Connection to KRA failed:', err.message);
-      await createSystemLog({
+      void createSystemLog({
         level: 'error',
         service: 'KRA-Captcha',
         message: `Failed to retrieve CAPTCHA from KRA portal: ${err.message}`,
@@ -119,11 +119,21 @@ export async function GET(req: NextRequest) {
       }, { status: 502 });
     }
 
-    return NextResponse.json({
-      success: true,
-      captchaImage,
-      sessionToken,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        captchaImage,
+        sessionToken,
+      },
+      process.env.NODE_ENV !== 'production'
+        ? {
+            headers: {
+              'Clear-Site-Data': '"cache"',
+              'Cache-Control': 'no-store',
+            },
+          }
+        : undefined
+    );
   } catch (error: any) {
     log.error('[captcha] Critical Error:', error.message);
     return NextResponse.json({ success: false, error: 'Failed to load CAPTCHA. Please try again.' }, { status: 500 });

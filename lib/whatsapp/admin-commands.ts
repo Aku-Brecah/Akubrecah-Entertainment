@@ -468,7 +468,7 @@ export async function handleAdminBotCommand({
         },
         orderBy: { updated_at: 'desc' },
       });
-    } catch {}
+    } catch { }
 
     if (payment.found && payment.reference) {
       const rawPin = payment.pin || conv?.metadata?.pin || 'KRA_CERT';
@@ -499,7 +499,7 @@ export async function handleAdminBotCommand({
           await db.ai_conversations.update({
             where: { id: conv.id },
             data: { metadata: meta },
-          }).catch(() => {});
+          }).catch(() => { });
         }
       } catch (delErr: any) {
         log.error('[Admin !recheck] Delivery error:', delErr.message);
@@ -535,7 +535,7 @@ export async function handleAdminBotCommand({
             orderBy: { createdAt: 'desc' },
           });
         }
-      } catch {}
+      } catch { }
 
       return (
         `⏳ *PAYMENT NOT VERIFIED FOR \`${query}\`*\n` +
@@ -573,7 +573,7 @@ export async function handleAdminBotCommand({
         },
         orderBy: { updated_at: 'desc' },
       });
-    } catch {}
+    } catch { }
 
     const isPinArg = /^[A-Z]\d{9}[A-Z]$/i.test(target);
     const pin = conv?.metadata?.pin || (isPinArg ? target.toUpperCase() : null);
@@ -606,7 +606,7 @@ export async function handleAdminBotCommand({
         await db.ai_conversations.update({
           where: { id: conv.id },
           data: { metadata: meta },
-        }).catch(() => {});
+        }).catch(() => { });
       }
 
       return (

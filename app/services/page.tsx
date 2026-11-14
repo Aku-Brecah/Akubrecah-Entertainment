@@ -193,9 +193,9 @@ export default function ServicesPage() {
         {/* Services Showcase */}
         {services.map((service) => {
           return (
-            <div 
-              key={service.id} 
-              id={service.id} 
+            <div
+              key={service.id}
+              id={service.id}
               className="p-8 sm:p-12 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-8"
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

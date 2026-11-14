@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     }
 
     const registry = getCallbackRegistry();
-    const { mapDarajaResultCodeToStatus } = await import('@/lib/whatsapp/mpesa-dispatch');
+    const { mapDarajaResultCodeToStatus, formatDarajaResultDesc } = await import('@/lib/whatsapp/mpesa-dispatch');
 
     // Parse callback metadata first so amount tampering can be validated
     // before anything is marked as paid.
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
             resultDesc: `Underpaid amount KES ${amount}`,
           },
         });
-      } catch {}
+      } catch { }
       return NextResponse.json({ success: true, message: 'Underpaid callback rejected' });
     }
 
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
             resultDesc: 'Payment not verifiable: no amount in callback metadata',
           },
         });
-      } catch {}
+      } catch { }
       return NextResponse.json(
         { success: false, error: 'Payment callback failed verification' },
         { status: 400 }
@@ -354,7 +354,7 @@ export async function POST(req: NextRequest) {
               await db.certificateDownload?.update({
                 where: { id: existingDownload.id },
                 data: { mpesaReceipt },
-              }).catch(() => {});
+              }).catch(() => { });
             }
             log.info(`[M-Pesa Callback] Duplicate/already-issued callback for ${CheckoutRequestID} — ack only`);
             return NextResponse.json({ success: true, duplicate: true, message: 'Already processed' });
@@ -461,14 +461,16 @@ export async function POST(req: NextRequest) {
         log.error('[M-Pesa Callback DB Handler Error]:', dbErr.message);
       }
     } else {
-      const { status: mappedStatus, dbStatus } = mapDarajaResultCodeToStatus(String(ResultCode ?? '1'));
-      log.warn(`[M-Pesa Callback] Payment Not Completed! Code: ${ResultCode} (${mappedStatus}), Desc: ${ResultDesc}`);
+      const codeStr = String(ResultCode ?? '1');
+      const { status: mappedStatus, dbStatus } = mapDarajaResultCodeToStatus(codeStr);
+      const formattedDesc = formatDarajaResultDesc(codeStr, ResultDesc || 'Transaction not completed');
+      log.warn(`[M-Pesa Callback] Payment Not Completed! Code: ${ResultCode} (${mappedStatus}), Desc: ${formattedDesc}`);
 
       registry[CheckoutRequestID] = {
         status: mappedStatus === 'pending' ? 'failed' : mappedStatus,
         resultCode: ResultCode,
         ResultCode: ResultCode,
-        resultDesc: ResultDesc || 'Transaction not completed',
+        resultDesc: formattedDesc,
         timestamp: Date.now()
       };
 
@@ -480,7 +482,7 @@ export async function POST(req: NextRequest) {
           data: {
             status: dbStatus === 'PENDING' ? 'FAILED' : dbStatus,
             resultCode: Number.isFinite(Number(ResultCode)) ? Number(ResultCode) : null,
-            resultDesc: ResultDesc || 'Transaction not completed',
+            resultDesc: formattedDesc,
           },
         });
       } catch (txErr: any) {
@@ -515,7 +517,7 @@ export async function POST(req: NextRequest) {
         } catch (err: any) {
           log.warn('[M-Pesa Callback Fail Notify Notice]:', err.message);
         }
-      })().catch(() => {});
+      })().catch(() => { });
     }
 
     // Optional: Prune older callbacks from memory to prevent leaks (keeps last 500 records)

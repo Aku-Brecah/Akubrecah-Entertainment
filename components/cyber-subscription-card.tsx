@@ -155,8 +155,8 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
       setMpesaStatus("cancelled");
       setStatusError(
         data?.error ||
-          data?.resultDesc ||
-          "You cancelled the M-Pesa prompt on your phone (ResultCode 1032). No funds were deducted."
+        data?.resultDesc ||
+        "You cancelled the M-Pesa prompt on your phone (ResultCode 1032). No funds were deducted."
       );
       setPollingCheckoutId(null);
       return true;
@@ -165,8 +165,8 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
       setMpesaStatus("timeout");
       setStatusError(
         data?.error ||
-          data?.resultDesc ||
-          "The M-Pesa authorization request timed out on your handset."
+        data?.resultDesc ||
+        "The M-Pesa authorization request timed out on your handset."
       );
       setPollingCheckoutId(null);
       return true;
@@ -175,8 +175,8 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
       setMpesaStatus("failed");
       setStatusError(
         data?.error ||
-          data?.resultDesc ||
-          "M-Pesa payment could not be completed. Confirm your balance and phone number."
+        data?.resultDesc ||
+        "M-Pesa payment could not be completed. Confirm your balance and phone number."
       );
       setPollingCheckoutId(null);
       return true;

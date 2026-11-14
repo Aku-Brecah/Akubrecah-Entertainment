@@ -19,7 +19,7 @@ export const maxDuration = 60;
 
 function createProxyAgent(proxyUrl: string): any {
   if (!proxyUrl) return undefined;
-  
+
   return new https.Agent({
     createConnection: (opts: any, callback: any) => {
       const proxyParsed = url.parse(proxyUrl);
@@ -28,7 +28,7 @@ function createProxyAgent(proxyUrl: string): any {
 
       const socket = net.connect(proxyPort, proxyHost, () => {
         let connectReq = `CONNECT ${opts.host}:${opts.port} HTTP/1.1\r\n` +
-                         `Host: ${opts.host}:${opts.port}\r\n`;
+          `Host: ${opts.host}:${opts.port}\r\n`;
         if (proxyParsed.auth) {
           const base64Auth = Buffer.from(proxyParsed.auth).toString('base64');
           connectReq += `Proxy-Authorization: Basic ${base64Auth}\r\n`;
@@ -150,7 +150,7 @@ function httpsPost(path: string, body: string, cookieString: string, contentType
 
 async function lookupPinByIdNumber(idNumber: string, cookieString: string, proxyUrl?: string): Promise<{ pin: string | null; maskedPin: string | null }> {
   const sid = `${randHex(12)}/${randHex(12)}`;
-  const wn  = `W${Date.now()}`;
+  const wn = `W${Date.now()}`;
 
   const body = [
     'callCount=1', `windowName=${wn}`,
@@ -220,17 +220,17 @@ function parsePinCheckerHtml(html: string): PinCheckerResult {
   };
 
   const hasTaxpayerDetails = html.toLowerCase().includes('taxpayer name') ||
-                             html.toLowerCase().includes('tax payer name') ||
-                             html.toLowerCase().includes('pin details') ||
-                             html.toLowerCase().includes('taxpayer details');
+    html.toLowerCase().includes('tax payer name') ||
+    html.toLowerCase().includes('pin details') ||
+    html.toLowerCase().includes('taxpayer details');
   const hasCaptchaForm = html.includes('captcahText') ||
-                         html.includes('Security Stamp') ||
-                         html.includes('ajaxCaptchaLoad') ||
-                         html.includes('Wrong result');
+    html.includes('Security Stamp') ||
+    html.includes('ajaxCaptchaLoad') ||
+    html.includes('Wrong result');
 
   const isNotFound = html.includes('System is not able to process your request') ||
-                     html.includes('No Record Found') ||
-                     html.includes('Invalid PIN Number');
+    html.includes('No Record Found') ||
+    html.includes('Invalid PIN Number');
 
   if (isNotFound) {
     return result;
@@ -321,8 +321,8 @@ function parsePinCheckerHtml(html: string): PinCheckerResult {
 
   // Find primary active obligation date
   if (result.obligations && result.obligations.length > 0) {
-    const activeObl = result.obligations.find(o => 
-      o.status.toLowerCase() === 'registered' || 
+    const activeObl = result.obligations.find(o =>
+      o.status.toLowerCase() === 'registered' ||
       o.status.toLowerCase() === 'active'
     ) || result.obligations[0];
     if (activeObl && activeObl.effectiveFrom) {
@@ -388,7 +388,7 @@ async function fetchManufacturerDetails(pin: string, cookieString?: string, prox
       proxyUrl,
       true
     );
-    
+
     if (!raw || raw.trim().length === 0) return null;
     const parsedData = JSON.parse(raw);
     if (parsedData && !parsedData.isError) {
@@ -408,17 +408,17 @@ async function fetchManufacturerDetails(pin: string, cookieString?: string, prox
       const middleName = cleanField(basic.middleName);
       const lastName = cleanField(basic.lastName);
       const directFullName = cleanField(
-        [firstName, middleName, lastName].filter(Boolean).join(' ') 
-        || basic.manufacturerName 
-        || business.businessName 
+        [firstName, middleName, lastName].filter(Boolean).join(' ')
+        || basic.manufacturerName
+        || business.businessName
         || ''
       );
       const directIdNumber = cleanField(
-        basic.manufacturerBrNo 
-        || basic.nationalId 
-        || basic.identityDocNo 
-        || basic.idNo 
-        || basic.idNumber 
+        basic.manufacturerBrNo
+        || basic.nationalId
+        || basic.identityDocNo
+        || basic.idNo
+        || basic.idNumber
         || ''
       );
 
@@ -457,7 +457,7 @@ async function fetchManufacturerDetails(pin: string, cookieString?: string, prox
           Object.assign(mergedData, val);
         }
       });
-      
+
       const get = (...keys: string[]) => {
         for (const k of keys) {
           const val = mergedData[k];
@@ -618,13 +618,15 @@ export async function POST(req: NextRequest) {
         const email = user.primaryEmailAddress?.emailAddress?.toLowerCase();
         const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || '').toLowerCase();
         const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
-        if (email === configAdminEmail || email === configPublicAdminEmail || user.publicMetadata?.role === "Super Admin" || user.publicMetadata?.role === "Admin") {
+        if (
+          (configAdminEmail && email === configAdminEmail) ||
+          (configPublicAdminEmail && email === configPublicAdminEmail) ||
+          user.publicMetadata?.role === "Super Admin" ||
+          user.publicMetadata?.role === "Admin"
+        ) {
           isAdmin = true;
         }
-      } catch {}
-    } else if (process.env.NODE_ENV === "development") {
-      // In development, allow admin bypass without Clerk auth
-      isAdmin = true;
+      } catch { }
     }
 
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
@@ -700,7 +702,7 @@ export async function POST(req: NextRequest) {
     try {
       const freshCookies = await initKraSession(proxyUrl);
       freshCookieString = Object.entries(freshCookies).map(([k, v]) => `${k}=${v}`).join('; ');
-    } catch {}
+    } catch { }
 
     let maskedPinHint: string | null = null;
     if (!fullPin && idNumber) {
@@ -734,7 +736,7 @@ export async function POST(req: NextRequest) {
           log.info('[retrieve] Using cookieString for pinChecker:', cookieString);
           // SECURITY: never log full PINs — postData contains the plaintext PIN.
           log.info('[retrieve] Posting to pinChecker with postData:', postData.replace(/vo\.pinNo=[^&]+/, 'vo.pinNo=***'));
-          
+
           const [pcHtml, manResult] = await Promise.all([
             httpsPost('/KRA-Portal/pinChecker.htm', postData, cookieString, 'application/x-www-form-urlencoded', proxyUrl).catch((e: any) => {
               log.warn('[retrieve] pinChecker httpsPost error:', e.message);
@@ -797,9 +799,10 @@ export async function POST(req: NextRequest) {
 
     const registeredDate = first(pc?.registeredDate, pc?.obligationDate, api?.registrationDate, '');
 
-    // Verify user subscription status early so pre-payment checks respect caller entitlement
+    // Verify user subscription status while keeping pre-payment PII/PIN strictly
+    // masked for all non-admin callers until payment verification completes.
     const { isSubscribed } = await getUserSubscriptionStatus(clerkId);
-    const callerKnowsPin = Boolean(resolvedSearchPin) || isSubscribed || isAdmin;
+    const callerKnowsPin = isAdmin;
 
     // If fullPin is known and authentic, and name or registration date is missing, and no CAPTCHA answer provided
     if (fullPin && looksLikeKraPin(fullPin) && (!name || !registeredDate) && (!captchaAnswer || !captchaAnswer.trim())) {
@@ -818,59 +821,57 @@ export async function POST(req: NextRequest) {
       name = first(man?.name, api?.taxpayerName, pc?.name, 'REGISTERED TAXPAYER');
     }
 
-    const county         = first(man?.county, pc?.county, api?.county, '');
+    const county = first(man?.county, pc?.county, api?.county, '');
     const normalizedCounty = county ? county.toLowerCase().replace(/\bcounty\b/g, '').replace(/[-\s]+/g, ' ').trim() : '';
-    const defaultTown    = normalizedCounty ? (COUNTY_TOWN_MAP[normalizedCounty] || county) : '';
-    const town           = first(man?.town, pc?.town, api?.town, defaultTown);
-    const district       = first(man?.district, pc?.district, api?.district, '');
+    const defaultTown = normalizedCounty ? (COUNTY_TOWN_MAP[normalizedCounty] || county) : '';
+    const town = first(man?.town, pc?.town, api?.town, defaultTown);
+    const district = first(man?.district, pc?.district, api?.district, '');
 
     // Station: Prefer authentic station from pinChecker.htm (e.g. KITALE -> Kitale TSO), then API, then county matrix
-    const rawStation     = first(pc?.station, api?.station, '');
-    const station        = rawStation ? formatKraStation(rawStation) : (county ? getKraStationForCounty(county) : '');
+    const rawStation = first(pc?.station, api?.station, '');
+    const station = rawStation ? formatKraStation(rawStation) : (county ? getKraStationForCounty(county) : '');
 
     // Tax Area: sanitize to prevent cross-county leakage (e.g. Endebbes in West Pokot)
-    const rawTaxArea     = first(man?.taxArea, pc?.taxArea, api?.taxArea, '');
-    const taxArea        = sanitizeTaxArea(rawTaxArea, county, town);
-    
-    const building       = first(man?.building, pc?.building, api?.building, '');
-    const street         = first(man?.street, pc?.street, api?.street, '');
-    const poBox          = first(man?.poBox, pc?.poBox, api?.poBox, '');
-    const postalCode     = first(man?.postalCode, pc?.postalCode, api?.postalCode, '');
+    const rawTaxArea = first(man?.taxArea, pc?.taxArea, api?.taxArea, '');
+    const taxArea = sanitizeTaxArea(rawTaxArea, county, town);
+
+    const building = first(man?.building, pc?.building, api?.building, '');
+    const street = first(man?.street, pc?.street, api?.street, '');
+    const poBox = first(man?.poBox, pc?.poBox, api?.poBox, '');
+    const postalCode = first(man?.postalCode, pc?.postalCode, api?.postalCode, '');
     const authenticatedEmail = (userEmail && userEmail.includes('@') && !userEmail.includes('guest@') && !userEmail.startsWith('user_')) ? userEmail : '';
-    const email          = first(man?.email, pc?.email, api?.email, authenticatedEmail, '');
-    const phoneNumber    = first(man?.phoneNumber, pc?.phoneNumber, api?.phoneNumber, '');
+    const email = first(man?.email, pc?.email, api?.email, authenticatedEmail, '');
+    const phoneNumber = first(man?.phoneNumber, pc?.phoneNumber, api?.phoneNumber, '');
 
     // Zero-storage policy: Do not persist taxpayer lookup details into database cache.
     // Live taxpayer results are processed ephemerally in-memory for the active session.
 
     const fullTaxpayerRecord = {
-      pin:           effectivePin,
-      idNumber:      cleanId || liveApiTaxpayer?.idNumber || man?.idNumber || '',
-      name:          name || 'REGISTERED TAXPAYER',
-      email:         email || '',
-      status:        'Active',
-      certificate_url: effectivePin ? `https://itax.kra.go.ke/KRA-Portal/dotDownloadCertificate.htm?pin=${effectivePin}` : '',
-      building:      building || '',
-      street:        street || '',
-      town:          town || '',
-      county:        county || '',
-      district:      district || '',
-      taxArea:       taxArea || '',
-      station:       station || '',
-      poBox:         poBox || '',
-      postalCode:    postalCode || '',
-      phoneNumber:   phoneNumber || '',
+      pin: effectivePin,
+      idNumber: cleanId || liveApiTaxpayer?.idNumber || man?.idNumber || '',
+      name: name || 'REGISTERED TAXPAYER',
+      email: email || '',
+      status: 'Active',
+      certificate_url: isAdmin && effectivePin ? `https://itax.kra.go.ke/KRA-Portal/dotDownloadCertificate.htm?pin=${effectivePin}` : '',
+      building: building || '',
+      street: street || '',
+      town: town || '',
+      county: county || '',
+      district: district || '',
+      taxArea: taxArea || '',
+      station: station || '',
+      poBox: poBox || '',
+      postalCode: postalCode || '',
+      phoneNumber: phoneNumber || '',
       registeredDate: registeredDate || '',
     };
 
-    // Apply strict server-side masking if user is not subscribed
-    const clientTaxpayerData = maskTaxpayerData(fullTaxpayerRecord, isSubscribed, isAdmin);
+    // Apply strict server-side masking for all non-admin callers prior to confirmed payment
+    const clientTaxpayerData = maskTaxpayerData(fullTaxpayerRecord, false, isAdmin);
 
-    // Entitlement guard: a plaintext PIN may only leave the server when the
-    // caller already knows it (typed a real full PIN — NOT a masked display
-    // hint) or is subscribed/admin. Otherwise send an opaque sealed blob the
-    // client passes through to the payment endpoints (resolved server-side there).
-    const clientRawPin = callerKnowsPin
+    // Entitlement guard: a plaintext PIN may only leave the server for admins
+    // pre-payment. All other callers receive a sealed blob for payment flows.
+    const clientRawPin = isAdmin
       ? effectivePin
       : (fullPin && looksLikeKraPin(fullPin) ? sealKraPin(fullPin) : effectivePin);
 
@@ -878,12 +879,13 @@ export async function POST(req: NextRequest) {
       success: true,
       data: clientTaxpayerData,
       rawPin: clientRawPin,
+      sealedPin: !isAdmin && fullPin && looksLikeKraPin(fullPin) ? clientRawPin : undefined,
       rawId: cleanId || clientTaxpayerData.idNumber || '',
       isSubscribed,
     };
 
-    log.info('[retrieve] Final masked result:', JSON.stringify(result.data));
-    await createSystemLog({
+    log.info('[retrieve] Final masked result:', maskPin(fullTaxpayerRecord.pin));
+    void createSystemLog({
       level: 'info',
       service: 'KRA-Retrieve',
       message: `Taxpayer retrieval completed (${isSubscribed ? 'Subscribed' : 'Standard'})`,

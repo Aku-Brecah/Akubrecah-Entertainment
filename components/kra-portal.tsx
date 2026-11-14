@@ -2,15 +2,15 @@
 
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
-import { 
-  Search, 
-  CheckCircle, 
-  AlertCircle, 
-  Loader2, 
-  Download, 
-  ShieldCheck, 
-  Fingerprint, 
-  User, 
+import {
+  Search,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  Download,
+  ShieldCheck,
+  Fingerprint,
+  User,
   MapPin,
   ArrowRight,
   RefreshCw,
@@ -25,8 +25,6 @@ import {
   Check,
   CheckCircle2,
   X,
-  FileText,
-  Mail,
   ExternalLink
 } from 'lucide-react'
 
@@ -35,19 +33,19 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { motion, AnimatePresence } from "framer-motion"
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select"
-import { 
-  COUNTIES, 
-  GET_POSTAL_CODES, 
-  GET_SUB_COUNTIES, 
-  GET_STATIONS, 
-  GET_LOCALITIES 
+import {
+  COUNTIES,
+  GET_POSTAL_CODES,
+  GET_SUB_COUNTIES,
+  GET_STATIONS,
+  GET_LOCALITIES
 } from "@/lib/kenya-data"
 import { cn } from "@/lib/utils"
 import { toast } from "react-hot-toast"
@@ -69,18 +67,20 @@ export type MpesaFlowState =
 export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { isLoaded: authLoaded, isSignedIn, user } = useUser()
 
-  // Derive admin status client-side from Clerk metadata
+  // Derive admin status client-side from Clerk metadata (requires signed-in session and non-empty admin email)
   const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase() || ''
   const userRole = user?.publicMetadata?.role as string | undefined
   const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase()
-  const isAdmin = (
-    userEmail === configPublicAdminEmail ||
-    userRole === 'Super Admin' ||
-    userRole === 'Admin'
+  const isAdmin = Boolean(
+    isSignedIn && (
+      (configPublicAdminEmail && userEmail === configPublicAdminEmail) ||
+      userRole === 'Super Admin' ||
+      userRole === 'Admin'
+    )
   )
   const [currentStep, setCurrentStep] = useState(1)
   const [idSearchStatus, setIdSearchStatus] = useState<"idle" | "searching" | "found" | "error">("idle")
-  
+
   // Tab state for Step 1
   const [activeTab, setActiveTab] = useState<"id" | "pin">("id")
   // Engine selection: Live API vs DWR Web Remoting vs Auto
@@ -131,7 +131,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [verifiedDownloadId, setVerifiedDownloadId] = useState<string | null>(null)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
-  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false)
   const [verifiedReceipt, setVerifiedReceipt] = useState<string | null>(null)
 
   // Subscription & Safaricom Daraja M-Pesa Express state (Same-Page, Zero-Redirect)
@@ -187,7 +186,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       try {
         sessionStorage.removeItem("kra_active_form_data");
         localStorage.removeItem("kra_active_form_data");
-      } catch {}
+      } catch { }
     }
   }, [])
 
@@ -200,7 +199,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         updated.fullName = ''
       } else if (field === 'pin') {
         updated.idNumber = ''
-        updated.rawPin = ''
+        updated.rawPin = value
         updated.fullName = ''
       }
       return updated
@@ -245,12 +244,13 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     trackEvent({ activityType: activeTab === "id" ? "search_id" : "search_pin" })
 
     try {
+      const pinPayload = activeTab === "pin" ? (formData.rawPin || formData.pin).trim() : ""
       const response = await fetch('/api/kra/retrieve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           idNumber: activeTab === "id" ? formData.idNumber.trim() : "",
-          pin: activeTab === "pin" ? formData.pin.trim().toUpperCase() : "",
+          pin: pinPayload ? (pinPayload.startsWith("kraseal1:") ? pinPayload : pinPayload.toUpperCase()) : "",
           captchaAnswer: captchaAnswer.trim(),
           sessionToken,
           engineMode,
@@ -261,8 +261,12 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
       // If server specifically requires CAPTCHA answer
       if (result.captchaRequired || result.captchaWrong || response.status === 422) {
-        if (result.pin) {
-          setFormData(prev => ({ ...prev, pin: result.pin }))
+        if (result.pin || result.rawPin) {
+          setFormData(prev => ({
+            ...prev,
+            pin: isAdmin ? (result.pin || prev.pin) : maskPin(result.pin || prev.pin),
+            rawPin: result.rawPin || prev.rawPin,
+          }))
         }
         toast(result.error || "Security verification required. Please solve the arithmetic question.")
         setError(result.error || "Please enter the verification answer from the image.")
@@ -284,7 +288,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           const updatedData = {
             ...prev,
             fullName: result.data?.name || result.data?.fullName || '',
-            pin: result.data?.pin || (activeTab === "pin" ? prev.pin : ''),
+            pin: isAdmin ? (result.data?.pin || prev.pin) : maskPin(result.data?.pin || prev.pin),
             rawPin: effectiveRawPin || result.data?.pin || '',
             idNumber: effectiveIdNumber,
             email: result.data?.email || prev.email || userEmail || '',
@@ -302,27 +306,27 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           }
           return updatedData
         })
-      setIdSearchStatus("found")
-      setIsVerified(true)
-      setCaptchaStatus("idle")
-      setCaptchaImage(null)
-      setCaptchaAnswer("")
-      setCurrentStep(4)
-      trackEvent({ activityType: "view_masked" })
-      toast.success("KRA Taxpayer Details Found!")
-    } else {
-      setIdSearchStatus("idle")
-      setError(result.error || "Details not found. Please check your credentials.")
-      if (result.maskedPin) {
-        setActiveTab("pin")
+        setIdSearchStatus("found")
+        setIsVerified(true)
+        setCaptchaStatus("idle")
+        setCaptchaImage(null)
+        setCaptchaAnswer("")
+        setCurrentStep(4)
+        trackEvent({ activityType: "view_masked" })
+        toast.success("KRA Taxpayer Details Found!")
+      } else {
+        setIdSearchStatus("idle")
+        setError(result.error || "Details not found. Please check your credentials.")
+        if (result.maskedPin) {
+          setActiveTab("pin")
+        }
+        toast.error(result.error || "Retrieval Failed")
       }
-      toast.error(result.error || "Retrieval Failed")
+    } catch {
+      setIdSearchStatus("idle")
+      setError("Connection failed. Please try again.")
     }
-  } catch {
-    setIdSearchStatus("idle")
-    setError("Connection failed. Please try again.")
   }
-}
 
   // Refreshes unmasked taxpayer details from authorized backend endpoint
   const refreshVerifiedData = async (downloadId?: string, targetPin?: string) => {
@@ -397,8 +401,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       setMpesaStatus("cancelled")
       setPaymentError(
         vData.error ||
-          vData.resultDesc ||
-          "You cancelled the M-Pesa STK prompt on your phone. No amount was deducted."
+        vData.resultDesc ||
+        "You cancelled the M-Pesa STK prompt on your phone. No amount was deducted."
       )
       return true
     }
@@ -408,8 +412,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       setMpesaStatus("timeout")
       setPaymentError(
         vData.error ||
-          vData.resultDesc ||
-          "The M-Pesa authorization request timed out before PIN entry."
+        vData.resultDesc ||
+        "The M-Pesa authorization request timed out before PIN entry."
       )
       return true
     }
@@ -419,8 +423,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       setMpesaStatus("failed")
       setPaymentError(
         vData.error ||
-          vData.resultDesc ||
-          "M-Pesa payment failed. Confirm your balance and phone number, then retry."
+        vData.resultDesc ||
+        "M-Pesa payment failed. Confirm your balance and phone number, then retry."
       )
       return true
     }
@@ -510,8 +514,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         }
       }, 1000)
 
-      // Poll Daraja verification endpoint every 3 seconds until terminal state
+      // Poll Daraja verification endpoint every 3 seconds without overlapping in-flight requests
+      let pollInFlight = false
       pollIntervalRef.current = setInterval(async () => {
+        if (pollInFlight) return
+        pollInFlight = true
         try {
           const vRes = await fetch('/api/mpesa/verify', {
             method: 'POST',
@@ -522,6 +529,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           await applyMpesaVerificationOutcome(vData, certPin, { silentPending: true })
         } catch {
           // Keep polling quietly on transient network hiccups
+        } finally {
+          pollInFlight = false
         }
       }, 3000)
     } catch (err: any) {
@@ -681,7 +690,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `KRA_Certificate_${certPin || 'OFFICIAL'}.pdf`
+      const safeFilePin =
+        certPin && !certPin.startsWith("kraseal1:") && !certPin.includes("*")
+          ? certPin
+          : 'OFFICIAL'
+      a.download = `KRA_Certificate_${safeFilePin}.pdf`
       document.body.appendChild(a)
       a.click()
       setTimeout(() => {
@@ -697,55 +710,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       setIsDownloadingPdf(false)
     }
   }
-
-  // Generates and downloads the official ETR fiscal tax invoice matching the on-screen preview
-  const handleDownloadReceipt = async () => {
-    setIsDownloadingReceipt(true)
-    const toastId = toast.loading("Generating your official fiscal ETR receipt...")
-    try {
-      const activeForm = { ...formData }
-      const certPin = activeForm.rawPin || activeForm.pin
-      const res = await fetch('/api/generate-receipt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          downloadId: verifiedDownloadId,
-          mpesaReceipt: verifiedReceipt || 'REC-' + (certPin ? certPin.slice(0, 4) : '2026') + '-ETR',
-          pin: certPin,
-          name: activeForm.fullName,
-          amount: accessInfo?.feeKes || 20,
-          phone: activeForm.phoneNumber,
-        }),
-      })
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        throw new Error(errorData.error || "Failed to generate receipt PDF")
-      }
-
-      const blob = await res.blob()
-      if (blob.size < 100) {
-        throw new Error("Received an invalid or empty receipt file.")
-      }
-
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `ETR_Receipt_${verifiedReceipt || 'OFFICIAL'}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      setTimeout(() => {
-        a.remove()
-        window.URL.revokeObjectURL(url)
-      }, 1500)
-      toast.success("Official ETR receipt downloaded!", { id: toastId })
-    } catch (err: any) {
-      toast.error(err.message || "Failed to download receipt", { id: toastId })
-    } finally {
-      setIsDownloadingReceipt(false)
-    }
-  }
-
 
   // Subscription download — no payment, just record and download
   const handleSubscriptionDownload = async () => {
@@ -845,7 +809,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                 </span>
               </div>
               <p className="text-[11px] text-on-surface-variant mt-0.5">
-                Lipa na M-Pesa Online STK Push · Paybill <span className="font-mono font-bold text-on-surface">9914132</span>
+                Lipa na M-Pesa Online · Buy Goods Till <span className="font-mono font-bold text-on-surface">9348469</span>
               </p>
             </div>
           </div>
@@ -875,7 +839,9 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
               KRA PIN
             </span>
             <p className="font-mono font-bold text-primary">
-              {formData.pin || "Protected"}
+              {isRecordUnlocked
+                ? ((formData.rawPin && !formData.rawPin.startsWith("kraseal1:")) ? formData.rawPin : formData.pin)
+                : (maskPin(formData.pin) || "A01*****78Z")}
             </p>
           </div>
           <div>
@@ -883,7 +849,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
               Deliverable
             </span>
             <p className="font-semibold text-on-surface">
-              PIN Certificate + ETR Receipt
+              KRA PIN Certificate (PDF)
             </p>
           </div>
         </div>
@@ -943,34 +909,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                 Supported Kenyan M-Pesa formats: <span className="font-mono">07XXXXXXXX</span>, <span className="font-mono">01XXXXXXXX</span>, or <span className="font-mono">+2547XXXXXXXX</span>.
               </p>
             </div>
-
-            {variant === "inline" && (
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label htmlFor="same-page-email-input" className="block text-xs font-bold text-on-surface">
-                    Certificate Delivery Email Address
-                  </label>
-                  <span className="text-[10px] text-on-surface-variant font-medium">
-                    {formData.email || userEmail ? "Embedded on PDF" : "Optional"}
-                  </span>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <Mail className="w-4 h-4 text-on-surface-variant" />
-                  </div>
-                  <input
-                    id="same-page-email-input"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => {
-                      handleInputChange('email', e.target.value.toLowerCase().trim())
-                    }}
-                    placeholder={userEmail || "taxpayer@example.com"}
-                    className="w-full h-11 pl-10 pr-4 py-2 rounded-xl border border-outline-variant bg-surface dark:bg-zinc-800 text-on-surface text-sm font-mono placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all"
-                  />
-                </div>
-              </div>
-            )}
 
             {paymentError && (
               <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-700 dark:text-red-300 text-xs font-medium flex items-start gap-2">
@@ -1045,8 +983,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
               </h4>
               <p className="text-xs text-on-surface-variant mt-1 max-w-md mx-auto leading-relaxed">
                 Look at your phone screen now. An M-Pesa payment prompt for{" "}
-                <span className="font-mono font-bold text-on-surface">KES 20.00</span> (Paybill{" "}
-                <span className="font-mono font-bold text-on-surface">9914132</span>) is opening.
+                <span className="font-mono font-bold text-on-surface">KES 20.00</span> (Buy Goods Till{" "}
+                <span className="font-mono font-bold text-on-surface">9348469</span>) is opening.
               </p>
               {activeCheckoutId && (
                 <p className="text-[10px] font-mono text-on-surface-variant mt-2">
@@ -1135,91 +1073,129 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         )}
 
         {/* STATE 6: PAYMENT SUCCESSFUL */}
-        {mpesaStatus === "success" && (
-          <div className="py-4 px-3 sm:px-5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-500/35 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-sm">
-              <CheckCircle2 className="w-7 h-7" />
-            </div>
-            <div>
-              <h4 className="font-bold text-base sm:text-lg text-on-surface">
-                M-Pesa Payment Confirmed
-              </h4>
-              <p className="text-xs text-on-surface-variant mt-1 max-w-md mx-auto">
-                Safaricom verified your payment and unlocked your complete KRA statutory record.
-              </p>
-            </div>
+        {mpesaStatus === "success" && (() => {
+          const isCheckoutRef = Boolean(verifiedReceipt?.startsWith("ws_CO_"))
+          const primaryRefLabel = isCheckoutRef ? "Daraja Reference" : "M-Pesa Receipt"
+          const primaryRefDisplay = isCheckoutRef
+            ? `CO-${verifiedReceipt!.slice(-10)}`
+            : (verifiedReceipt || "CONFIRMED")
+          const settledFee = (accessInfo?.feeKes ?? 20).toFixed(2)
+          const unlockedPinText = isRecordUnlocked
+            ? ((formData.rawPin && !formData.rawPin.startsWith("kraseal1:")) ? formData.rawPin : formData.pin)
+            : (maskPin(formData.pin) || "OFFICIAL")
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 rounded-xl bg-surface-container-lowest dark:bg-zinc-900 border border-emerald-500/25 p-3 text-left text-xs max-w-lg mx-auto">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-on-surface-variant block">
-                  M-Pesa Receipt
-                </span>
-                <span className="font-mono font-black text-emerald-700 dark:text-emerald-300">
-                  {verifiedReceipt || "CONFIRMED"}
-                </span>
+          return (
+            <div className="rounded-2xl bg-emerald-500/[0.06] dark:bg-emerald-950/30 border border-emerald-500/30 p-5 sm:p-6 space-y-5 shadow-xs">
+              {/* Top Verification Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3.5 text-center sm:text-left">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center mx-auto sm:mx-0 shrink-0 shadow-sm shadow-emerald-600/25">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                    <ShieldCheck className="w-3 h-3" />
+                    Safaricom Daraja · Verified
+                  </span>
+                  <h4 className="font-extrabold text-base sm:text-lg text-on-surface tracking-tight">
+                    M-Pesa Payment Confirmed
+                  </h4>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">
+                    Safaricom verified your payment and unlocked your complete KRA statutory record.
+                  </p>
+                </div>
               </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-on-surface-variant block">
-                  Amount Settled
-                </span>
-                <span className="font-mono font-bold text-on-surface tabular-nums">
-                  KES 20.00
-                </span>
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-on-surface-variant block">
-                  Taxpayer PIN
-                </span>
-                <span className="font-mono font-bold text-primary">
-                  {formData.pin || "OFFICIAL"}
-                </span>
-              </div>
-            </div>
 
-            <div className="flex flex-col sm:flex-row gap-2.5 max-w-lg mx-auto pt-1">
-              <button
-                type="button"
-                disabled={isDownloadingPdf}
-                onClick={() => executeDownload()}
-                className={cn(primaryButtonClass, "flex-1 h-11 text-xs font-bold justify-center")}
-              >
-                {isDownloadingPdf ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Generating Certificate PDF...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4 shrink-0" />
-                    <span>Download Certificate (PDF)</span>
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                disabled={isDownloadingReceipt}
-                onClick={handleDownloadReceipt}
-                className={cn(secondaryButtonClass, "h-11 text-xs font-semibold justify-center")}
-              >
-                <FileText className="w-4 h-4 shrink-0" />
-                <span>Download ETR Receipt (PDF)</span>
-              </button>
-            </div>
+              {/* 3-Column Settlement Summary Grid (min-w-0 prevents long IDs overflowing) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+                <div className="min-w-0 rounded-xl bg-surface-container-lowest dark:bg-zinc-900/90 border border-outline-variant/60 p-3.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant block mb-1">
+                    {primaryRefLabel}
+                  </span>
+                  <p
+                    className="text-sm font-mono font-black text-emerald-700 dark:text-emerald-300 truncate"
+                    title={verifiedReceipt || "CONFIRMED"}
+                  >
+                    {primaryRefDisplay}
+                  </p>
+                  {isCheckoutRef && verifiedReceipt && (
+                    <p
+                      className="text-[10px] font-mono text-on-surface-variant/80 truncate mt-0.5"
+                      title={verifiedReceipt}
+                    >
+                      {verifiedReceipt}
+                    </p>
+                  )}
+                </div>
 
-            {variant === "modal" && (
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPaymentModal(false)
-                  setCurrentStep(4)
-                }}
-                className="text-xs font-semibold text-on-surface-variant hover:text-on-surface underline pt-1 cursor-pointer"
-              >
-                Return to Unlocked Record
-              </button>
-            )}
-          </div>
-        )}
+                <div className="min-w-0 rounded-xl bg-surface-container-lowest dark:bg-zinc-900/90 border border-outline-variant/60 p-3.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant block mb-1">
+                    Amount Settled
+                  </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-mono font-black text-on-surface tabular-nums truncate">
+                      KES {settledFee}
+                    </p>
+                    <span className="shrink-0 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+                      PAID
+                    </span>
+                  </div>
+                </div>
+
+                <div className="min-w-0 rounded-xl bg-surface-container-lowest dark:bg-zinc-900/90 border border-outline-variant/60 p-3.5">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant block mb-1">
+                    Taxpayer PIN
+                  </span>
+                  <p className="text-sm font-mono font-black text-primary tracking-wider truncate" title={unlockedPinText}>
+                    {unlockedPinText}
+                  </p>
+                </div>
+              </div>
+
+              {/* Sole Primary Deliverable CTA */}
+              <div className="space-y-2 pt-1">
+                <button
+                  type="button"
+                  disabled={isDownloadingPdf}
+                  onClick={() => executeDownload()}
+                  className={cn(
+                    primaryButtonClass,
+                    "w-full h-12 text-sm font-bold justify-center shadow-lg shadow-primary/25"
+                  )}
+                >
+                  {isDownloadingPdf ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                      <span>Generating KRA PIN Certificate (PDF)...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 shrink-0" />
+                      <span>Download KRA PIN Certificate (PDF)</span>
+                    </>
+                  )}
+                </button>
+                <p className="text-[11px] text-center text-on-surface-variant">
+                  Official KRA PIN Certificate (PDF) · Ready for instant download
+                </p>
+              </div>
+
+              {variant === "modal" && (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPaymentModal(false)
+                      setCurrentStep(4)
+                    }}
+                    className="text-xs font-semibold text-on-surface-variant hover:text-on-surface underline pt-1 cursor-pointer"
+                  >
+                    Return to Unlocked Record
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* STATE 7: PAYMENT CANCELLED */}
         {mpesaStatus === "cancelled" && (
@@ -1380,7 +1356,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           </span>
         </div>
         <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden relative border border-zinc-200 dark:border-zinc-700">
-          <motion.div 
+          <motion.div
             className="h-full bg-gradient-to-r from-red-600 via-rose-500 to-red-600 rounded-full shadow-xs"
             initial={{ width: "25%" }}
             animate={{ width: `${(currentStep / 4) * 100}%` }}
@@ -1390,7 +1366,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       </div>
 
       <AnimatePresence mode="wait">
-        <motion.div 
+        <motion.div
           key="portal-content"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1400,7 +1376,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             <AnimatePresence mode="wait">
               {currentStep === 1 && (
                 <motion.div key="step1" variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
-                  
+
                   {idSearchStatus === "searching" ? (
                     <div className="py-8 px-4 flex flex-col items-center justify-center text-center space-y-6">
                       {/* High-Tech Statutory Radar Scanner HUD */}
@@ -1441,7 +1417,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     </div>
                   ) : (
                     <motion.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
-                      
+
                       {/* Third-Party Service Disclaimer Banner */}
                       <div className="max-w-md mx-auto p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-[11px] leading-relaxed text-center">
                         <span className="font-bold">Third-Party Cyber Facilitation:</span> Akubrecah Technologies is an independent digital service provider and is not affiliated with the Kenya Revenue Authority (KRA). Free official services are available at{" "}
@@ -1455,148 +1431,148 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
                       {/* Lookup Type Segmented Switcher */}
                       <div className="flex p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl sm:rounded-2xl mb-4 border border-zinc-200 dark:border-zinc-700 max-w-sm mx-auto shadow-2xs">
-                          <button 
-                            type="button"
-                            className={cn(
-                              "flex-1 py-2 sm:py-2.5 text-xs rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap", 
-                              activeTab === "id" 
-                                ? "bg-red-600 text-white font-extrabold shadow-xs" 
-                                : "text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white font-bold"
-                            )}
-                            onClick={() => {
-                              setActiveTab("id");
-                              setFormData(prev => ({ ...prev, pin: '', rawPin: '', fullName: '' }));
-                              setError(null);
-                            }}
-                          >
-                              <BadgeIcon className="w-3.5 h-3.5 shrink-0" />
-                              <span>National ID<span className="hidden sm:inline"> Number</span></span>
-                          </button>
-                          <button 
-                            type="button"
-                            className={cn(
-                              "flex-1 py-2 sm:py-2.5 text-xs rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap", 
-                              activeTab === "pin" 
-                                ? "bg-red-600 text-white font-extrabold shadow-xs" 
-                                : "text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white font-bold"
-                            )}
-                            onClick={() => {
-                              setActiveTab("pin");
-                              setFormData(prev => ({ ...prev, idNumber: '', rawPin: '', fullName: '' }));
-                              setError(null);
-                            }}
-                          >
-                              <MapPinIcon className="w-3.5 h-3.5 shrink-0" />
-                              <span>KRA PIN</span>
-                          </button>
+                        <button
+                          type="button"
+                          className={cn(
+                            "flex-1 py-2 sm:py-2.5 text-xs rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap",
+                            activeTab === "id"
+                              ? "bg-red-600 text-white font-extrabold shadow-xs"
+                              : "text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white font-bold"
+                          )}
+                          onClick={() => {
+                            setActiveTab("id");
+                            setFormData(prev => ({ ...prev, pin: '', rawPin: '', fullName: '' }));
+                            setError(null);
+                          }}
+                        >
+                          <BadgeIcon className="w-3.5 h-3.5 shrink-0" />
+                          <span>National ID<span className="hidden sm:inline"> Number</span></span>
+                        </button>
+                        <button
+                          type="button"
+                          className={cn(
+                            "flex-1 py-2 sm:py-2.5 text-xs rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap",
+                            activeTab === "pin"
+                              ? "bg-red-600 text-white font-extrabold shadow-xs"
+                              : "text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white font-bold"
+                          )}
+                          onClick={() => {
+                            setActiveTab("pin");
+                            setFormData(prev => ({ ...prev, idNumber: '', rawPin: '', fullName: '' }));
+                            setError(null);
+                          }}
+                        >
+                          <MapPinIcon className="w-3.5 h-3.5 shrink-0" />
+                          <span>KRA PIN</span>
+                        </button>
                       </div>
 
                       <form className="space-y-4 max-w-sm mx-auto" onSubmit={(e) => { e.preventDefault(); handleIdSearch(); }}>
-                          {activeTab === "id" ? (
-                            <div>
-                                <label className={labelClass}>National ID Number</label>
-                                <div className="relative">
-                                    <BadgeIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-red-600 w-5 h-5" />
-                                    <input 
-                                      className={cn(inputClass, "pl-11 text-base tracking-wider font-extrabold")}
-                                      placeholder="e.g. 12345678" 
-                                      type="text" 
-                                      value={formData.idNumber}
-                                      onChange={(e) => handleInputChange('idNumber', e.target.value.toUpperCase())}
-                                      autoFocus
-                                    />
-                                </div>
+                        {activeTab === "id" ? (
+                          <div>
+                            <label className={labelClass}>National ID Number</label>
+                            <div className="relative">
+                              <BadgeIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-red-600 w-5 h-5" />
+                              <input
+                                className={cn(inputClass, "pl-11 text-base tracking-wider font-extrabold")}
+                                placeholder="e.g. 12345678"
+                                type="text"
+                                value={formData.idNumber}
+                                onChange={(e) => handleInputChange('idNumber', e.target.value.toUpperCase())}
+                                autoFocus
+                              />
                             </div>
-                          ) : (
-                            <div>
-                                <label className={labelClass}>KRA PIN</label>
-                                <div className="relative">
-                                    <MapPinIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-red-600 w-5 h-5" />
-                                    <input 
-                                      className={cn(inputClass, "pl-11 uppercase text-base tracking-wider font-extrabold")}
-                                      placeholder="e.g. A012345678Z" 
-                                      type="text" 
-                                      value={formData.pin}
-                                      onChange={(e) => handleInputChange('pin', e.target.value.toUpperCase())}
-                                      autoFocus
-                                    />
-                                </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <label className={labelClass}>KRA PIN</label>
+                            <div className="relative">
+                              <MapPinIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-red-600 w-5 h-5" />
+                              <input
+                                className={cn(inputClass, "pl-11 uppercase text-base tracking-wider font-extrabold")}
+                                placeholder="e.g. A012345678Z"
+                                type="text"
+                                value={formData.pin}
+                                onChange={(e) => handleInputChange('pin', e.target.value.toUpperCase())}
+                                autoFocus
+                              />
                             </div>
-                          )}
-
-                          {/* CAPTCHA section — shown after first click */}
-                          <AnimatePresence>
-                            {captchaStatus === "loading" && (
-                              <motion.div key="captcha-loading" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="flex flex-col items-center gap-2 py-2">
-                                <Loader2 className="w-5 h-5 animate-spin text-red-600" />
-                                <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Loading security stamp...</span>
-                              </motion.div>
-                            )}
-                            {captchaStatus === "ready" && captchaImage && (
-                              <motion.div key="captcha-ready" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="flex flex-col items-center gap-3 bg-zinc-50 dark:bg-zinc-800/80 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
-                                <label className={labelClass}>Solve Arithmetic Question</label>
-                                <div className="relative">
-                                  <img src={captchaImage} alt="KRA CAPTCHA" className="rounded-xl border-2 border-zinc-300 dark:border-zinc-600 h-14 mx-auto object-contain bg-white shadow-xs p-1" />
-                                  <button
-                                    type="button"
-                                    onClick={loadCaptcha}
-                                    className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-center transition-all border border-zinc-300 dark:border-zinc-600 shadow-xs"
-                                    title="Refresh CAPTCHA"
-                                  >
-                                    <RefreshCw className="w-3.5 h-3.5 text-red-600" />
-                                  </button>
-                                </div>
-                                <input 
-                                  value={captchaAnswer}
-                                  onChange={(e) => setCaptchaAnswer(e.target.value)}
-                                  placeholder="Enter answer"
-                                  className={cn(inputClass, "text-center max-w-[170px] text-base font-extrabold")}
-                                  autoFocus
-                                />
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-
-                          {error && (
-                            <Alert variant="destructive" className="bg-error-container border-error text-error rounded-lg">
-                              <AlertCircle className="h-4 w-4" />
-                              <AlertDescription className="text-xs font-medium mt-1">{error}</AlertDescription>
-                            </Alert>
-                          )}
-                          
-                          {/* Consent checkbox — legally required */}
-                          <div className="flex items-start gap-2.5 text-left py-2 bg-zinc-50 dark:bg-zinc-800/40 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700">
-                            <input
-                              type="checkbox"
-                              id="kra-consent"
-                              checked={hasConsented}
-                              onChange={(e) => setHasConsented(e.target.checked)}
-                              className="mt-0.5 w-4 h-4 accent-red-600 rounded border-zinc-300 cursor-pointer"
-                            />
-                            <label htmlFor="kra-consent" className="text-xs font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer leading-snug">
-                              I confirm I am the rightful owner or authorized agent for these credentials and I accept the{" "}
-                              <a href="/legal/terms" target="_blank" className="text-red-600 dark:text-red-400 font-bold hover:underline">Terms of Service</a>.
-                            </label>
                           </div>
-                          
-                          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-                              <button 
-                                className={cn(primaryButtonClass, "w-full sm:w-auto min-w-[200px] disabled:opacity-50")}
-                                type="button"
-                                onClick={handleIdSearch}
-                                disabled={!hasConsented || captchaStatus === "loading"}
-                              >
-                                  <Search className="w-4 h-4" />
-                                  {captchaStatus === "ready" ? "Verify Security Code" : "Retrieve Certificate"}
-                              </button>
-                              <button 
-                                className="w-full sm:w-auto h-12 px-4 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-bold text-xs rounded-xl transition-all inline-flex justify-center items-center gap-1.5 cursor-pointer"
-                                type="button"
-                                onClick={() => setCurrentStep(2)}
-                              >
-                                Manual Entry
-                              </button>
-                          </div>
+                        )}
+
+                        {/* CAPTCHA section — shown after first click */}
+                        <AnimatePresence>
+                          {captchaStatus === "loading" && (
+                            <motion.div key="captcha-loading" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="flex flex-col items-center gap-2 py-2">
+                              <Loader2 className="w-5 h-5 animate-spin text-red-600" />
+                              <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">Loading security stamp...</span>
+                            </motion.div>
+                          )}
+                          {captchaStatus === "ready" && captchaImage && (
+                            <motion.div key="captcha-ready" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="flex flex-col items-center gap-3 bg-zinc-50 dark:bg-zinc-800/80 rounded-2xl p-4 border border-zinc-200 dark:border-zinc-700">
+                              <label className={labelClass}>Solve Arithmetic Question</label>
+                              <div className="relative">
+                                <img src={captchaImage} alt="KRA CAPTCHA" className="rounded-xl border-2 border-zinc-300 dark:border-zinc-600 h-14 mx-auto object-contain bg-white shadow-xs p-1" />
+                                <button
+                                  type="button"
+                                  onClick={loadCaptcha}
+                                  className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-center transition-all border border-zinc-300 dark:border-zinc-600 shadow-xs"
+                                  title="Refresh CAPTCHA"
+                                >
+                                  <RefreshCw className="w-3.5 h-3.5 text-red-600" />
+                                </button>
+                              </div>
+                              <input
+                                value={captchaAnswer}
+                                onChange={(e) => setCaptchaAnswer(e.target.value)}
+                                placeholder="Enter answer"
+                                className={cn(inputClass, "text-center max-w-[170px] text-base font-extrabold")}
+                                autoFocus
+                              />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
+                        {error && (
+                          <Alert variant="destructive" className="bg-error-container border-error text-error rounded-lg">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription className="text-xs font-medium mt-1">{error}</AlertDescription>
+                          </Alert>
+                        )}
+
+                        {/* Consent checkbox — legally required */}
+                        <div className="flex items-start gap-2.5 text-left py-2 bg-zinc-50 dark:bg-zinc-800/40 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700">
+                          <input
+                            type="checkbox"
+                            id="kra-consent"
+                            checked={hasConsented}
+                            onChange={(e) => setHasConsented(e.target.checked)}
+                            className="mt-0.5 w-4 h-4 accent-red-600 rounded border-zinc-300 cursor-pointer"
+                          />
+                          <label htmlFor="kra-consent" className="text-xs font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer leading-snug">
+                            I confirm I am the rightful owner or authorized agent for these credentials and I accept the{" "}
+                            <a href="/legal/terms" target="_blank" className="text-red-600 dark:text-red-400 font-bold hover:underline">Terms of Service</a>.
+                          </label>
+                        </div>
+
+                        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                          <button
+                            className={cn(primaryButtonClass, "w-full sm:w-auto min-w-[200px] disabled:opacity-50")}
+                            type="button"
+                            onClick={handleIdSearch}
+                            disabled={!hasConsented || captchaStatus === "loading"}
+                          >
+                            <Search className="w-4 h-4" />
+                            {captchaStatus === "ready" ? "Verify Security Code" : "Retrieve Certificate"}
+                          </button>
+                          <button
+                            className="w-full sm:w-auto h-12 px-4 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-bold text-xs rounded-xl transition-all inline-flex justify-center items-center gap-1.5 cursor-pointer"
+                            type="button"
+                            onClick={() => setCurrentStep(2)}
+                          >
+                            Manual Entry
+                          </button>
+                        </div>
                       </form>
                     </motion.div>
                   )}
@@ -1616,49 +1592,54 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
                     <div>
                       <label className={labelClass}>KRA PIN</label>
-                      <input 
-                        value={formData.pin} 
-                        onChange={(e) => handleInputChange('pin', e.target.value.toUpperCase())} 
-                        placeholder="e.g. A012345678Z" 
-                        className={inputClass} 
+                      <input
+                        value={
+                          isRecordUnlocked
+                            ? ((formData.rawPin && !formData.rawPin.startsWith("kraseal1:")) ? formData.rawPin : formData.pin)
+                            : maskPin(formData.pin)
+                        }
+                        readOnly={!isRecordUnlocked && Boolean(formData.rawPin?.startsWith("kraseal1:"))}
+                        onChange={(e) => handleInputChange('pin', e.target.value.toUpperCase())}
+                        placeholder="e.g. A012345678Z"
+                        className={inputClass}
                       />
                     </div>
                     <div>
                       <label className={labelClass}>Full Legal Name</label>
-                      <input 
-                        value={formData.fullName} 
-                        onChange={(e) => handleInputChange('fullName', e.target.value.toUpperCase())} 
-                        placeholder="e.g. JOHN DOE" 
-                        className={inputClass} 
+                      <input
+                        value={formData.fullName}
+                        onChange={(e) => handleInputChange('fullName', e.target.value.toUpperCase())}
+                        placeholder="e.g. JOHN DOE"
+                        className={inputClass}
                       />
                     </div>
                     <div>
                       <label className={labelClass}>Email Address</label>
-                      <input 
-                        value={formData.email} 
-                        onChange={(e) => handleInputChange('email', e.target.value.toLowerCase())} 
-                        placeholder="email@example.com" 
+                      <input
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value.toLowerCase())}
+                        placeholder="email@example.com"
                         type="email"
-                        className={inputClass} 
+                        className={inputClass}
                       />
                     </div>
                     <div>
                       <label className={labelClass}>Mobile Phone Number</label>
-                      <input 
-                        value={formData.phoneNumber} 
-                        onChange={(e) => handleInputChange('phoneNumber', e.target.value)} 
-                        placeholder="e.g. 0712345678" 
+                      <input
+                        value={formData.phoneNumber}
+                        onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                        placeholder="e.g. 0712345678"
                         type="tel"
-                        className={inputClass} 
+                        className={inputClass}
                       />
                     </div>
                     <div className="md:col-span-2">
                       <label className={labelClass}>Exact Registration Date</label>
-                      <input 
-                        value={formData.registeredDate} 
-                        onChange={(e) => handleInputChange('registeredDate', e.target.value)} 
-                        placeholder="DD/MM/YYYY" 
-                        className={inputClass} 
+                      <input
+                        value={formData.registeredDate}
+                        onChange={(e) => handleInputChange('registeredDate', e.target.value)}
+                        placeholder="DD/MM/YYYY"
+                        className={inputClass}
                       />
                     </div>
                   </div>
@@ -1698,11 +1679,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     </div>
                     <div>
                       <label className={labelClass}>City / Town</label>
-                      <input 
-                        value={formData.town} 
-                        onChange={(e) => handleInputChange('town', e.target.value)} 
-                        placeholder="e.g. Nairobi" 
-                        className={inputClass} 
+                      <input
+                        value={formData.town}
+                        onChange={(e) => handleInputChange('town', e.target.value)}
+                        placeholder="e.g. Nairobi"
+                        className={inputClass}
                       />
                     </div>
                     <div>
@@ -1740,29 +1721,29 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     </div>
                     <div>
                       <label className={labelClass}>Building Name</label>
-                      <input 
-                        value={formData.building} 
-                        onChange={(e) => handleInputChange('building', e.target.value)} 
-                        placeholder="e.g. Commercial Plaza" 
-                        className={inputClass} 
+                      <input
+                        value={formData.building}
+                        onChange={(e) => handleInputChange('building', e.target.value)}
+                        placeholder="e.g. Commercial Plaza"
+                        className={inputClass}
                       />
                     </div>
                     <div>
                       <label className={labelClass}>Street / Road</label>
-                      <input 
-                        value={formData.street} 
-                        onChange={(e) => handleInputChange('street', e.target.value)} 
-                        placeholder="e.g. Harambee Avenue" 
-                        className={inputClass} 
+                      <input
+                        value={formData.street}
+                        onChange={(e) => handleInputChange('street', e.target.value)}
+                        placeholder="e.g. Harambee Avenue"
+                        className={inputClass}
                       />
                     </div>
                     <div>
                       <label className={labelClass}>P.O. Box</label>
-                      <input 
-                        value={formData.poBox} 
-                        onChange={(e) => handleInputChange('poBox', e.target.value)} 
-                        placeholder="e.g. P.O. Box 40001" 
-                        className={inputClass} 
+                      <input
+                        value={formData.poBox}
+                        onChange={(e) => handleInputChange('poBox', e.target.value)}
+                        placeholder="e.g. P.O. Box 40001"
+                        className={inputClass}
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -1803,7 +1784,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
                   {/* Official Verification Success Badge & KES 20 Notice */}
                   {(() => {
-                    const isRecordUnlocked = Boolean(verifiedDownloadId || isAdmin || isSubscribed);
+                    const isRecordUnlocked = Boolean(verifiedDownloadId || isAdmin);
                     return (
                       <>
                         <div className="w-full max-w-2xl mx-auto bg-gradient-to-r from-emerald-500/10 via-red-500/5 to-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left shadow-xs">
@@ -1819,8 +1800,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                 </span>
                               </p>
                               <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5 leading-relaxed font-medium">
-                                {isRecordUnlocked 
-                                  ? "Payment verified. Your certificate is compiled and full taxpayer details are unmasked below." 
+                                {isRecordUnlocked
+                                  ? "Payment verified. Your certificate is compiled and full taxpayer details are unmasked below."
                                   : <>Taxpayer record matched directly with government registries. Confidential fields remain masked until you pay strictly <strong>KES 20 (20 bob)</strong> to unmask and download your official tamper-proof PDF.</>}
                               </p>
                             </div>
@@ -1835,192 +1816,192 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
                         {/* Taxpayer Preview Data Grid */}
                         <div className="w-full max-w-2xl mx-auto bg-surface-variant/30 rounded-2xl p-4 sm:p-6 border border-outline-variant space-y-4 shadow-sm my-2">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                              
-                              {/* 1. Taxpayer Legal Name (Unmasked) */}
-                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                  <span>Taxpayer Legal Name</span>
-                                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[9px] bg-emerald-500/10 px-1.5 py-0.5 rounded">Verified Citizen</span>
-                                </div>
-                                <p className="text-xs sm:text-sm font-bold text-on-surface uppercase truncate">
-                                  {formData.fullName || "REGISTERED TAXPAYER"}
-                                </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+
+                            {/* 1. Taxpayer Legal Name (Unmasked) */}
+                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                <span>Taxpayer Legal Name</span>
+                                <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[9px] bg-emerald-500/10 px-1.5 py-0.5 rounded">Verified Citizen</span>
                               </div>
-
-                              {/* 2. National ID (Unmasked - Fully Visible) */}
-                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                  <span>National ID Number</span>
-                                  <span className="text-primary font-semibold text-[9px] bg-primary/10 px-1.5 py-0.5 rounded">Official ID</span>
-                                </div>
-                                <p className="text-xs sm:text-sm font-mono font-bold text-on-surface">
-                                  {formData.idNumber || "On File"}
-                                </p>
-                              </div>
-
-                              {/* 3. KRA PIN (Masked until paid) */}
-                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                  <span>KRA PIN</span>
-                                  <span className={cn(
-                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                  )}>
-                                    {isRecordUnlocked ? "Verified & Paid" : "Protected PIN"}
-                                  </span>
-                                </div>
-                                <p className="text-xs sm:text-sm font-mono font-black text-primary tracking-wider">
-                                  {isRecordUnlocked 
-                                    ? (formData.rawPin || formData.pin) 
-                                    : (maskPin(formData.pin || formData.rawPin) || "A01*****78Z")}
-                                </p>
-                              </div>
-
-                              {/* 4. Tax Station (Masked until paid) */}
-                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                  <span>Tax Station</span>
-                                  <span className={cn(
-                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                  )}>
-                                    {isRecordUnlocked ? "Station Match" : "Protected Station"}
-                                  </span>
-                                </div>
-                                <p className="text-xs sm:text-sm font-bold text-on-surface truncate">
-                                  {isRecordUnlocked ? (
-                                    formData.station || "Kitale TSO"
-                                  ) : (
-                                    <span className="blur-xs select-none font-mono text-on-surface-variant flex items-center gap-1.5">
-                                      <Lock className="w-3.5 h-3.5 text-primary inline shrink-0" />
-                                      •••••••••• (Protected)
-                                    </span>
-                                  )}
-                                </p>
-                              </div>
-
-                              {/* 5. Email Address (Masked until paid) */}
-                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                  <span>Email Address</span>
-                                  <span className={cn(
-                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-surface-variant text-on-surface-variant"
-                                  )}>
-                                    {isRecordUnlocked ? "Unmasked" : "Partial Mask"}
-                                  </span>
-                                </div>
-                                <p className="text-xs sm:text-sm font-mono text-on-surface truncate">
-                                  {isRecordUnlocked 
-                                    ? (formData.email || userEmail || "Official Email on File") 
-                                    : ((formData.email || userEmail) 
-                                        ? maskEmail(formData.email || userEmail) 
-                                        : "••••••••@••••• (Confidential on KRA Registry)")}
-                                </p>
-                              </div>
-
-                              {/* 6. Phone Number (Completely Masked until paid) */}
-                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                  <span>Mobile Phone</span>
-                                  <span className={cn(
-                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400"
-                                  )}>
-                                    {isRecordUnlocked ? "Unmasked" : "Protected Phone"}
-                                  </span>
-                                </div>
-                                <p className="text-xs sm:text-sm font-mono font-bold text-on-surface tracking-wider">
-                                  {isRecordUnlocked && formData.phoneNumber && !formData.phoneNumber.includes('•')
-                                    ? formData.phoneNumber 
-                                    : "••••••••••"}
-                                </p>
-                              </div>
-
-                              {/* 7. Region & City (Location - Masked until paid) */}
-                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                  <span>Location</span>
-                                  <span className={cn(
-                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                  )}>
-                                    {isRecordUnlocked ? "Verified Location" : "Protected Location"}
-                                  </span>
-                                </div>
-                                <p className="text-xs sm:text-sm font-medium text-on-surface truncate">
-                                  {isRecordUnlocked ? (
-                                    formData.county ? `${formData.county} · ${formData.town || formData.county}` : (formData.town || "Nairobi")
-                                  ) : (
-                                    <span className="blur-xs select-none font-mono text-on-surface-variant flex items-center gap-1.5">
-                                      <Lock className="w-3.5 h-3.5 text-primary inline shrink-0" />
-                                      •••••••••••• (Protected)
-                                    </span>
-                                  )}
-                                </p>
-                              </div>
-
-                              {/* 8. Registration Date (Date Issued - Masked until paid) */}
-                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
-                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                  <span>Date Issued</span>
-                                  <span className={cn(
-                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                                  )}>
-                                    {isRecordUnlocked ? "Statutory Match" : "Protected Date"}
-                                  </span>
-                                </div>
-                                <p className="text-xs sm:text-sm font-medium text-on-surface">
-                                  {isRecordUnlocked ? (
-                                    formData.registeredDate || "On Official File"
-                                  ) : (
-                                    <span className="blur-xs select-none font-mono text-on-surface-variant flex items-center gap-1.5">
-                                      <Lock className="w-3.5 h-3.5 text-primary inline shrink-0" />
-                                      ••/••/•••• (Protected)
-                                    </span>
-                                  )}
-                                </p>
-                              </div>
-
-                              {/* 9. Physical Building & Street Address (Protected until paid) */}
-                              <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80 sm:col-span-2">
-                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
-                                  <span>Physical Address & Postal Records</span>
-                                  <span className={cn(
-                                    "font-semibold text-[9px] px-1.5 py-0.5 rounded",
-                                    isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-surface-variant text-on-surface-variant"
-                                  )}>
-                                    {isRecordUnlocked ? "Unmasked" : "KDPA Protected"}
-                                  </span>
-                                </div>
-                                <p className="text-xs font-mono text-on-surface flex items-center gap-1.5">
-                                  {isRecordUnlocked ? (
-                                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                                      {[formData.building, formData.street, formData.poBox ? `P.O. Box ${formData.poBox}` : '', formData.postalCode].filter(Boolean).join(', ') || "Official Address Records on File"}
-                                    </span>
-                                  ) : (
-                                    <>
-                                      <Lock className="w-3.5 h-3.5 text-primary" />
-                                      <span className="text-on-surface-variant">•••••••••••• (Secured — Pay KES 20 to unmask and download certificate)</span>
-                                    </>
-                                  )}
-                                </p>
-                              </div>
-
-                            </div>
-
-                            {/* Privacy Assurance Banner */}
-                            <div className="rounded-xl bg-surface-container p-3 border border-outline-variant/60 flex items-start gap-2.5 text-[11px] text-on-surface-variant">
-                              <Lock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                              <p className="leading-relaxed">
-                                {isRecordUnlocked 
-                                  ? "Payment verified. Your complete, unmasked statutory record is shown and included in your downloaded certificate."
-                                  : <>To protect citizen privacy under the Kenya Data Protection Act, contact details and identification numbers are partially masked during web preview. The full unmasked official record is embedded into your official PDF certificate upon payment of <strong>KES 20</strong>.</>}
+                              <p className="text-xs sm:text-sm font-bold text-on-surface uppercase truncate">
+                                {formData.fullName || "REGISTERED TAXPAYER"}
                               </p>
                             </div>
+
+                            {/* 2. National ID (Unmasked - Fully Visible) */}
+                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                <span>National ID Number</span>
+                                <span className="text-primary font-semibold text-[9px] bg-primary/10 px-1.5 py-0.5 rounded">Official ID</span>
+                              </div>
+                              <p className="text-xs sm:text-sm font-mono font-bold text-on-surface">
+                                {formData.idNumber || "On File"}
+                              </p>
+                            </div>
+
+                            {/* 3. KRA PIN (Masked until paid) */}
+                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                <span>KRA PIN</span>
+                                <span className={cn(
+                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                )}>
+                                  {isRecordUnlocked ? "Verified & Paid" : "Protected PIN"}
+                                </span>
+                              </div>
+                              <p className="text-xs sm:text-sm font-mono font-black text-primary tracking-wider">
+                                {isRecordUnlocked
+                                  ? ((formData.rawPin && !formData.rawPin.startsWith("kraseal1:")) ? formData.rawPin : formData.pin)
+                                  : (maskPin(formData.pin) || "A01*****78Z")}
+                              </p>
+                            </div>
+
+                            {/* 4. Tax Station (Masked until paid) */}
+                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                <span>Tax Station</span>
+                                <span className={cn(
+                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                )}>
+                                  {isRecordUnlocked ? "Station Match" : "Protected Station"}
+                                </span>
+                              </div>
+                              <p className="text-xs sm:text-sm font-bold text-on-surface truncate">
+                                {isRecordUnlocked ? (
+                                  formData.station || "Kitale TSO"
+                                ) : (
+                                  <span className="blur-xs select-none font-mono text-on-surface-variant flex items-center gap-1.5">
+                                    <Lock className="w-3.5 h-3.5 text-primary inline shrink-0" />
+                                    •••••••••• (Protected)
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+
+                            {/* 5. Email Address (Masked until paid) */}
+                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                <span>Email Address</span>
+                                <span className={cn(
+                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-surface-variant text-on-surface-variant"
+                                )}>
+                                  {isRecordUnlocked ? "Unmasked" : "Partial Mask"}
+                                </span>
+                              </div>
+                              <p className="text-xs sm:text-sm font-mono text-on-surface truncate">
+                                {isRecordUnlocked
+                                  ? (formData.email || userEmail || "Official Email on File")
+                                  : ((formData.email || userEmail)
+                                    ? maskEmail(formData.email || userEmail)
+                                    : "••••••••@••••• (Confidential on KRA Registry)")}
+                              </p>
+                            </div>
+
+                            {/* 6. Phone Number (Completely Masked until paid) */}
+                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                <span>Mobile Phone</span>
+                                <span className={cn(
+                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-red-500/10 text-red-600 dark:text-red-400"
+                                )}>
+                                  {isRecordUnlocked ? "Unmasked" : "Protected Phone"}
+                                </span>
+                              </div>
+                              <p className="text-xs sm:text-sm font-mono font-bold text-on-surface tracking-wider">
+                                {isRecordUnlocked && formData.phoneNumber && !formData.phoneNumber.includes('•')
+                                  ? formData.phoneNumber
+                                  : "••••••••••"}
+                              </p>
+                            </div>
+
+                            {/* 7. Region & City (Location - Masked until paid) */}
+                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                <span>Location</span>
+                                <span className={cn(
+                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                )}>
+                                  {isRecordUnlocked ? "Verified Location" : "Protected Location"}
+                                </span>
+                              </div>
+                              <p className="text-xs sm:text-sm font-medium text-on-surface truncate">
+                                {isRecordUnlocked ? (
+                                  formData.county ? `${formData.county} · ${formData.town || formData.county}` : (formData.town || "Nairobi")
+                                ) : (
+                                  <span className="blur-xs select-none font-mono text-on-surface-variant flex items-center gap-1.5">
+                                    <Lock className="w-3.5 h-3.5 text-primary inline shrink-0" />
+                                    •••••••••••• (Protected)
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+
+                            {/* 8. Registration Date (Date Issued - Masked until paid) */}
+                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80">
+                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                <span>Date Issued</span>
+                                <span className={cn(
+                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                )}>
+                                  {isRecordUnlocked ? "Statutory Match" : "Protected Date"}
+                                </span>
+                              </div>
+                              <p className="text-xs sm:text-sm font-medium text-on-surface">
+                                {isRecordUnlocked ? (
+                                  formData.registeredDate || "On Official File"
+                                ) : (
+                                  <span className="blur-xs select-none font-mono text-on-surface-variant flex items-center gap-1.5">
+                                    <Lock className="w-3.5 h-3.5 text-primary inline shrink-0" />
+                                    ••/••/•••• (Protected)
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+
+                            {/* 9. Physical Building & Street Address (Protected until paid) */}
+                            <div className="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/80 sm:col-span-2">
+                              <div className="flex items-center justify-between text-[10px] uppercase font-bold text-on-surface-variant mb-1">
+                                <span>Physical Address & Postal Records</span>
+                                <span className={cn(
+                                  "font-semibold text-[9px] px-1.5 py-0.5 rounded",
+                                  isRecordUnlocked ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-surface-variant text-on-surface-variant"
+                                )}>
+                                  {isRecordUnlocked ? "Unmasked" : "KDPA Protected"}
+                                </span>
+                              </div>
+                              <p className="text-xs font-mono text-on-surface flex items-center gap-1.5">
+                                {isRecordUnlocked ? (
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                                    {[formData.building, formData.street, formData.poBox ? `P.O. Box ${formData.poBox}` : '', formData.postalCode].filter(Boolean).join(', ') || "Official Address Records on File"}
+                                  </span>
+                                ) : (
+                                  <>
+                                    <Lock className="w-3.5 h-3.5 text-primary" />
+                                    <span className="text-on-surface-variant">•••••••••••• (Secured — Pay KES 20 to unmask and download certificate)</span>
+                                  </>
+                                )}
+                              </p>
+                            </div>
+
                           </div>
+
+                          {/* Privacy Assurance Banner */}
+                          <div className="rounded-xl bg-surface-container p-3 border border-outline-variant/60 flex items-start gap-2.5 text-[11px] text-on-surface-variant">
+                            <Lock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                            <p className="leading-relaxed">
+                              {isRecordUnlocked
+                                ? "Payment verified. Your complete, unmasked statutory record is shown and included in your downloaded certificate."
+                                : <>To protect citizen privacy under the Kenya Data Protection Act, contact details and identification numbers are partially masked during web preview. The full unmasked official record is embedded into your official PDF certificate upon payment of <strong>KES 20</strong>.</>}
+                            </p>
+                          </div>
+                        </div>
                       </>
                     );
                   })()}
@@ -2037,28 +2018,23 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       className={cn(secondaryButtonClass, "w-full sm:w-auto justify-center")}
                       onClick={() => {
                         clearPaymentTimers()
-                        setCurrentStep(1)
-                        setIdSearchStatus("idle")
-                        setIsVerified(false)
-                        setVerifiedDownloadId(null)
-                        setVerifiedReceipt(null)
-                        setActiveCheckoutId(null)
-                        setMerchantRequestId(null)
-                        setMpesaStatus("ready")
-                        setPaymentError(null)
-                        setFormData(prev => ({ ...prev, idNumber: "", pin: "", rawPin: "" }))
+                        try {
+                          sessionStorage.removeItem("kra_active_form_data")
+                          localStorage.removeItem("kra_active_form_data")
+                        } catch { }
+                        window.location.reload()
                       }}
                     >
                       <RefreshCw className="w-4 h-4 shrink-0" /> New Search
                     </button>
-                    {isRecordUnlocked && (
-                      <button 
-                        className={cn(primaryButtonClass, "w-full sm:w-auto justify-center shadow-lg shadow-primary/25 h-12 px-6 sm:px-8 text-xs sm:text-sm font-bold flex items-center gap-2")} 
+                    {isRecordUnlocked && mpesaStatus !== "success" && (
+                      <button
+                        className={cn(primaryButtonClass, "w-full sm:w-auto justify-center shadow-lg shadow-primary/25 h-12 px-6 sm:px-8 text-xs sm:text-sm font-bold flex items-center gap-2")}
                         onClick={() => executeDownload()}
                         disabled={isDownloadingPdf}
                       >
-                        <Download className="w-4 h-4 shrink-0" /> 
-                        <span>{isDownloadingPdf ? "Compiling PDF..." : "Download Certificate (PDF)"}</span>
+                        <Download className="w-4 h-4 shrink-0" />
+                        <span>{isDownloadingPdf ? "Compiling PDF..." : "Download KRA PIN Certificate (PDF)"}</span>
                       </button>
                     )}
                   </div>

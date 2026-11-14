@@ -187,9 +187,9 @@ export default function SolutionsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {solutions.map((sol) => {
             return (
-              <div 
-                key={sol.id} 
-                id={sol.id} 
+              <div
+                key={sol.id}
+                id={sol.id}
                 className="p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft hover:border-primary/40 transition-all duration-300 space-y-6 flex flex-col justify-between"
               >
                 <div className="space-y-6">

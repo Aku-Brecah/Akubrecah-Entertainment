@@ -49,6 +49,7 @@ export function Logo({
         width={width}
         height={height}
         priority
+        style={{ width: "auto", height: "auto" }}
         className="object-contain dark:hidden"
       />
       {/* Dark mode logo */}
@@ -58,6 +59,7 @@ export function Logo({
         width={width}
         height={height}
         priority
+        style={{ width: "auto", height: "auto" }}
         className="object-contain hidden dark:block"
       />
     </div>

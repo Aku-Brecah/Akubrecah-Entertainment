@@ -347,8 +347,8 @@ export async function handleWhatsAppChat(params: {
         const rawPin = payment.pin || queryPin || dlRecord?.pin || metadata.pin;
         const resolvedPin = rawPin
           ? (/^[A-Z]\d{9}[A-Z]/i.test(rawPin)
-              ? rawPin.match(/^[A-Z]\d{9}[A-Z]/i)![0].toUpperCase()
-              : rawPin.split('-')[0].trim().toUpperCase())
+            ? rawPin.match(/^[A-Z]\d{9}[A-Z]/i)![0].toUpperCase()
+            : rawPin.split('-')[0].trim().toUpperCase())
           : null;
         const resolvedFee = payment.amountKes || 20;
 

@@ -498,7 +498,7 @@ describe('Admin command center & access isolation (lib/whatsapp/admin-commands.t
       incomingText: '.admin',
       userPhone: '254700000001', // random unauthorized number
       metadata: {},
-      saveConversationState: async () => {},
+      saveConversationState: async () => { },
       db: {},
     });
 
@@ -522,7 +522,7 @@ describe('Admin command center & access isolation (lib/whatsapp/admin-commands.t
       incomingText: `.admin ${masterPin}`,
       userPhone: '254791497858',
       metadata: {},
-      saveConversationState: async () => {},
+      saveConversationState: async () => { },
       db: {},
     });
 

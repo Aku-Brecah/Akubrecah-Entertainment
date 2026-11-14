@@ -50,17 +50,37 @@ const nextConfig = {
     ],
   },
   async headers() {
+    const isProd = process.env.NODE_ENV === 'production';
     return [
-      {
-        // Immutable cache for static Next.js assets
-        source: '/_next/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
+      ...(isProd
+        ? [
+            {
+              // Immutable cache for static Next.js assets in production only
+              source: '/_next/static/:path*',
+              headers: [
+                {
+                  key: 'Cache-Control',
+                  value: 'public, max-age=31536000, immutable',
+                },
+              ],
+            },
+          ]
+        : [
+            {
+              // Evict any poisoned dev HTTP cache on localhost reload
+              source: '/retrieval-portal',
+              headers: [
+                {
+                  key: 'Clear-Site-Data',
+                  value: '"cache"',
+                },
+                {
+                  key: 'Cache-Control',
+                  value: 'no-store, must-revalidate',
+                },
+              ],
+            },
+          ]),
       {
         // Long-lived cache for brand image assets & icons
         source: '/(akubrecah-logo.*|logo-circle.*|favicon.*|icon.*|og-image.*|apple-icon.*)',

@@ -59,13 +59,6 @@ export async function POST(req: NextRequest) {
       const { userId } = await auth();
       if (userId) {
         userClerkId = userId;
-        const { isAdminUser } = await import('@/lib/subscription');
-        if (await isAdminUser(userId)) {
-          return NextResponse.json(
-            { success: false, error: 'Admin accounts have full access and do not require payment.' },
-            { status: 403 }
-          );
-        }
         const client = await clerkClient();
         const clerkUser = await client.users.getUser(userId);
         userEmail = clerkUser.primaryEmailAddress?.emailAddress || userEmail;

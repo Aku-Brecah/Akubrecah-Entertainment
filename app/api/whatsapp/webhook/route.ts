@@ -356,7 +356,7 @@ export async function POST(req: NextRequest) {
                         },
                       },
                     })
-                    .catch(() => {});
+                    .catch(() => { });
                 }
 
                 if (activation.success && activation.invoice && activation.cafe) {
@@ -398,7 +398,7 @@ export async function POST(req: NextRequest) {
                       },
                     },
                   })
-                  .catch(() => {});
+                  .catch(() => { });
               }
 
               await fulfillWhatsAppCertificateDelivery({

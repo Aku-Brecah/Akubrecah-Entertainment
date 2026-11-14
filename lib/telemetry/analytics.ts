@@ -7,15 +7,15 @@ import { sanitizeTelemetryPayload } from './sanitizer';
 
 export interface TelemetryEvent {
   eventName:
-    | 'page_view'
-    | 'search_pin'
-    | 'view_masked_details'
-    | 'click_stk_mpesa'
-    | 'download_certificate'
-    | 'cyber_subscription_checkout'
-    | 'cyber_invoice_download'
-    | 'tax_filing_initiated'
-    | string;
+  | 'page_view'
+  | 'search_pin'
+  | 'view_masked_details'
+  | 'click_stk_mpesa'
+  | 'download_certificate'
+  | 'cyber_subscription_checkout'
+  | 'cyber_invoice_download'
+  | 'tax_filing_initiated'
+  | string;
   category?: 'conversion' | 'navigation' | 'retrieval' | 'billing' | 'system';
   pin?: string;
   metadata?: Record<string, any>;

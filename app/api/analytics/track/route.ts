@@ -47,52 +47,58 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'deviceInfo too large' }, { status: 400 });
     }
 
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
-               req.headers.get('x-real-ip') || 
-               '127.0.0.1';
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      req.headers.get('x-real-ip') ||
+      '127.0.0.1';
     const userAgent = req.headers.get('user-agent') || '';
 
     const db = prisma as any;
 
-    // Check if sessions table is accessible
+    // Check if sessions table is accessible; persist asynchronously so telemetry never blocks HTTP callers
     if (typeof db.sessions?.upsert === 'function') {
-      await db.sessions.upsert({
-        where: { id: sessionId },
-        update: {
-          last_activity: new Date(),
-          pin: null,
-          user_agent: userAgent,
-          is_mobile: Boolean(isMobile),
-          device_info: deviceInfo,
-        },
-        create: {
-          id: sessionId,
-          pin: null,
-          status: 'prospect',
-          is_mobile: Boolean(isMobile),
-          ip_address: ip,
-          user_agent: userAgent,
-          device_info: deviceInfo,
-          last_activity: new Date(),
-        },
-      });
+      void (async () => {
+        try {
+          await db.sessions.upsert({
+            where: { id: sessionId },
+            update: {
+              last_activity: new Date(),
+              pin: null,
+              user_agent: userAgent,
+              is_mobile: Boolean(isMobile),
+              device_info: deviceInfo,
+            },
+            create: {
+              id: sessionId,
+              pin: null,
+              status: 'prospect',
+              is_mobile: Boolean(isMobile),
+              ip_address: ip,
+              user_agent: userAgent,
+              device_info: deviceInfo,
+              last_activity: new Date(),
+            },
+          });
 
-      if (typeof db.session_activities?.create === 'function') {
-        const sanitizedMetadata = { ...(metadata || {}) };
-        delete (sanitizedMetadata as any).pin;
-        delete (sanitizedMetadata as any).idNumber;
-        delete (sanitizedMetadata as any).id_number;
+          if (typeof db.session_activities?.create === 'function') {
+            const sanitizedMetadata = { ...(metadata || {}) };
+            delete (sanitizedMetadata as any).pin;
+            delete (sanitizedMetadata as any).idNumber;
+            delete (sanitizedMetadata as any).id_number;
 
-        await db.session_activities.create({
-          data: {
-            id: 'act_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now(),
-            session_id: sessionId,
-            activity_type: String(activityType).substring(0, 50),
-            description: description ? String(description).substring(0, 255) : null,
-            metadata: sanitizedMetadata,
-          },
-        });
-      }
+            await db.session_activities.create({
+              data: {
+                id: 'act_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now(),
+                session_id: sessionId,
+                activity_type: String(activityType).substring(0, 50),
+                description: description ? String(description).substring(0, 255) : null,
+                metadata: sanitizedMetadata,
+              },
+            });
+          }
+        } catch {
+          // Non-blocking background telemetry
+        }
+      })().catch(() => { });
     }
 
     return NextResponse.json({ success: true });

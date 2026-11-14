@@ -12,12 +12,12 @@ import {
 
 export interface TrackingPayload {
   activityType:
-    | 'page_view'
-    | 'search_pin'
-    | 'view_masked'
-    | 'click_stk_mpesa'
-    | 'download_certificate'
-    | string;
+  | 'page_view'
+  | 'search_pin'
+  | 'view_masked'
+  | 'click_stk_mpesa'
+  | 'download_certificate'
+  | string;
   description?: string;
   pin?: string;
   metadata?: Record<string, any>;

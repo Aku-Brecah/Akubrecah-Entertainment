@@ -3,13 +3,22 @@
 import * as React from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
 
-// Suppress false-positive React 19 script-tag warning for next-themes FOUC injection in development
+// Suppress expected localhost dev warnings (next-themes FOUC script tag & Clerk production domain check)
 if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
   const originalConsoleError = console.error
   console.error = (...args: unknown[]) => {
+    const firstArg =
+      typeof args[0] === "string"
+        ? args[0]
+        : args[0] instanceof Error
+          ? args[0].message
+          : String(args[0] ?? "")
+    const isLocalhost =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1"
     if (
-      typeof args[0] === "string" &&
-      args[0].includes("Encountered a script tag while rendering React component")
+      firstArg.includes("Encountered a script tag while rendering React component") ||
+      (isLocalhost && firstArg.includes("Clerk: Production Keys are only allowed for domain"))
     ) {
       return
     }

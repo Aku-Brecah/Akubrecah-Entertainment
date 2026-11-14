@@ -15,7 +15,7 @@ try {
   if (typeof net.setDefaultAutoSelectFamily === 'function') {
     net.setDefaultAutoSelectFamily(false);
   }
-} catch {}
+} catch { }
 
 interface DarajaTokenCacheEntry {
   token: string;
@@ -45,17 +45,18 @@ async function darajaFetchWithRetry(url: string, init: RequestInit): Promise<Res
   return res;
 }
 
-async function getDarajaAccessToken(
+export async function getDarajaAccessToken(
   baseUrl: string,
   consumerKey: string,
-  consumerSecret: string
+  consumerSecret: string,
+  forceRefresh = false
 ): Promise<string | null> {
   const g = global as any;
   g.darajaOAuthCache = g.darajaOAuthCache || ({} as Record<string, DarajaTokenCacheEntry>);
   const cacheKey = `${baseUrl}:${consumerKey}`;
   const cached: DarajaTokenCacheEntry | undefined = g.darajaOAuthCache[cacheKey];
 
-  if (cached && cached.token && Date.now() < cached.expiresAt) {
+  if (!forceRefresh && cached && cached.token && Date.now() < cached.expiresAt) {
     return cached.token;
   }
 
@@ -98,12 +99,29 @@ export function getDarajaConfig() {
     process.env.DARAJA_CONSUMER_SECRET || process.env.MPESA_CONSUMER_SECRET || '';
   const shortCode =
     process.env.DARAJA_SHORTCODE || process.env.MPESA_SHORTCODE || '';
+  const partyB = (
+    process.env.DARAJA_PARTYB ||
+    process.env.DARAJA_TILL_NUMBER ||
+    process.env.MPESA_PARTYB ||
+    process.env.MPESA_TILL_NUMBER ||
+    shortCode
+  ).trim();
+  const rawTxType = (
+    process.env.DARAJA_TRANSACTION_TYPE ||
+    process.env.MPESA_TRANSACTION_TYPE ||
+    ''
+  ).trim();
+  const transactionType =
+    rawTxType ||
+    (partyB && partyB !== shortCode
+      ? 'CustomerBuyGoodsOnline'
+      : 'CustomerPayBillOnline');
   const passKey =
     process.env.DARAJA_PASSKEY || process.env.MPESA_PASSKEY || '';
   const callbackUrl =
     process.env.DARAJA_CALLBACK_URL ||
     process.env.MPESA_CALLBACK_URL ||
-    'https://akubrecah.com/api/mpesa/callback';
+    'https://kra.akubrecah.com/api/mpesa/callback';
   const callbackToken =
     process.env.DARAJA_CALLBACK_TOKEN || process.env.MPESA_CALLBACK_TOKEN || '';
   const env = (
@@ -114,13 +132,13 @@ export function getDarajaConfig() {
 
   const hasDaraja = Boolean(
     consumerKey &&
-      consumerSecret &&
-      shortCode &&
-      passKey &&
-      !consumerKey.includes('your-') &&
-      !consumerSecret.includes('your-') &&
-      !shortCode.includes('your-') &&
-      !passKey.includes('your-')
+    consumerSecret &&
+    shortCode &&
+    passKey &&
+    !consumerKey.includes('your-') &&
+    !consumerSecret.includes('your-') &&
+    !shortCode.includes('your-') &&
+    !passKey.includes('your-')
   );
 
   // Official Safaricom Daraja production endpoint (direct live API only)
@@ -133,6 +151,8 @@ export function getDarajaConfig() {
     consumerKey,
     consumerSecret,
     shortCode,
+    partyB,
+    transactionType,
     passKey,
     callbackUrl,
     callbackToken,
@@ -223,6 +243,8 @@ export async function dispatchMpesaStkPush({
       consumerKey,
       consumerSecret,
       shortCode,
+      partyB,
+      transactionType,
       passKey,
       callbackUrl: configuredCallbackUrl,
       callbackToken,
@@ -282,7 +304,7 @@ export async function dispatchMpesaStkPush({
       log.warn('[M-Pesa STK] Duplicate guard lookup notice:', dupErr?.message);
     }
 
-    const rawCallbackUrl = callbackUrl || configuredCallbackUrl || 'https://akubrecah.com/api/mpesa/callback';
+    const rawCallbackUrl = callbackUrl || configuredCallbackUrl || 'https://kra.akubrecah.com/api/mpesa/callback';
     const finalCallbackUrl =
       callbackToken && !rawCallbackUrl.includes('token=')
         ? `${rawCallbackUrl}${rawCallbackUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(callbackToken)}`
@@ -309,10 +331,10 @@ export async function dispatchMpesaStkPush({
       BusinessShortCode: parseInt(shortCode, 10),
       Password: password,
       Timestamp: timestamp,
-      TransactionType: process.env.MPESA_TRANSACTION_TYPE || 'CustomerPayBillOnline',
+      TransactionType: transactionType,
       Amount: numericAmount,
       PartyA: parseInt(normalizedPhone, 10),
-      PartyB: parseInt(shortCode, 10),
+      PartyB: parseInt(partyB || shortCode, 10),
       PhoneNumber: parseInt(normalizedPhone, 10),
       CallBackURL: finalCallbackUrl,
       AccountReference: cleanAccountRef,
@@ -321,6 +343,7 @@ export async function dispatchMpesaStkPush({
 
     log.info('[M-Pesa STK] Dispatching live Daraja STK Push:', {
       BusinessShortCode: stkPayload.BusinessShortCode,
+      PartyB: stkPayload.PartyB,
       TransactionType: stkPayload.TransactionType,
       Amount: stkPayload.Amount,
       PhoneNumberMasked: `***${normalizedPhone.slice(-3)}`,
@@ -475,11 +498,25 @@ export function mapDarajaResultCodeToStatus(codeStr: string): {
   return { status: 'pending', dbStatus: 'PENDING' };
 }
 
+export function formatDarajaResultDesc(codeStr: string, rawDesc?: string): string {
+  const code = String(codeStr || '').trim();
+  if (code === '2029') {
+    return 'Safaricom Daraja error 2029 (Unresolved Reason Type): ShortCode 9914132 is a Buy Goods Store Number, not a Paybill. Set DARAJA_TRANSACTION_TYPE=CustomerBuyGoodsOnline and DARAJA_TILL_NUMBER=<your_till_number> in .env.';
+  }
+  if (code === '2002') {
+    return 'Safaricom Daraja error 2002 (Store/Till Mismatch): BusinessShortCode (9914132) is the Store Number, so PartyB must be your Buy Goods Till Number. Set DARAJA_TILL_NUMBER=<your_till_number> in .env.';
+  }
+  return rawDesc || 'Payment was not completed.';
+}
+
 /**
  * Query Safaricom Daraja STK Push status (/mpesa/stkpushquery/v1/query) as a
  * live reconciliation fallback when the async callback has not arrived yet.
  */
-export async function queryMpesaStkPushStatus(checkoutRequestId: string): Promise<{
+export async function queryMpesaStkPushStatus(
+  checkoutRequestId: string,
+  opts?: { force?: boolean }
+): Promise<{
   status: DarajaQueryStatus;
   resultCode?: number;
   resultDesc?: string;
@@ -504,7 +541,7 @@ export async function queryMpesaStkPushStatus(checkoutRequestId: string): Promis
   // Rate-protect per checkoutRequestId (minimum 3s between active Daraja queries)
   g.darajaQueryLastAt = g.darajaQueryLastAt || ({} as Record<string, number>);
   const lastQueriedAt = g.darajaQueryLastAt[checkoutRequestId] || 0;
-  if (Date.now() - lastQueriedAt < 3000) {
+  if (!opts?.force && Date.now() - lastQueriedAt < 3000) {
     return { status: 'pending' };
   }
   g.darajaQueryLastAt[checkoutRequestId] = Date.now();
@@ -540,7 +577,10 @@ export async function queryMpesaStkPushStatus(checkoutRequestId: string): Promis
     const data = await queryRes.json().catch(() => ({}));
     if (!queryRes.ok) {
       // 500.001.1001 ("The transaction is being processed") is normal while user has prompt open
-      return { status: 'pending' };
+      return {
+        status: 'pending',
+        resultDesc: data?.errorMessage || data?.ResultDesc || 'The transaction is being processed by Safaricom.',
+      };
     }
 
     const rawCode =
@@ -591,17 +631,18 @@ export async function queryMpesaStkPushStatus(checkoutRequestId: string): Promis
             },
           });
         }
-      } catch {}
+      } catch { }
 
       return { status: 'success', resultCode: 0, resultDesc, mpesaReceipt: receiptFromQuery };
     }
 
     if (status !== 'pending') {
+      const formattedDesc = formatDarajaResultDesc(rawCode, resultDesc);
       g.mpesaCallbacks[checkoutRequestId] = {
         status,
         resultCode: numericCode,
         ResultCode: numericCode,
-        resultDesc: resultDesc || 'Payment was not completed.',
+        resultDesc: formattedDesc,
         timestamp: Date.now(),
       };
 
@@ -612,13 +653,13 @@ export async function queryMpesaStkPushStatus(checkoutRequestId: string): Promis
             data: {
               status: dbStatus,
               resultCode: Number.isFinite(numericCode) ? numericCode : null,
-              resultDesc: resultDesc || 'Payment was not completed.',
+              resultDesc: formattedDesc,
             },
           });
         }
-      } catch {}
+      } catch { }
 
-      return { status, resultCode: numericCode, resultDesc };
+      return { status, resultCode: numericCode, resultDesc: formattedDesc };
     }
 
     return { status: 'pending', resultDesc };
@@ -661,12 +702,12 @@ export async function findRecentSuccessfulMpesaPayment(opts: {
           createdAt: { gte: since },
           ...(reference
             ? {
-                OR: [
-                  { checkoutRequestId: reference },
-                  { mpesaReceiptNumber: reference },
-                  { reference: { contains: reference } },
-                ],
-              }
+              OR: [
+                { checkoutRequestId: reference },
+                { mpesaReceiptNumber: reference },
+                { reference: { contains: reference } },
+              ],
+            }
             : {}),
         },
         orderBy: { createdAt: 'desc' },
