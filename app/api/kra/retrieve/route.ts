@@ -679,16 +679,35 @@ export async function POST(req: NextRequest) {
     let freshCookieString = "";
 
     // 1. Decode sessionToken if provided by client (from /api/kra/captcha)
+    let isLocalChallenge = false;
     if (sessionToken) {
-      try {
-        cookieString = Buffer.from(sessionToken, 'base64').toString('utf8');
-      } catch (err) {
-        log.error('[retrieve] Failed to decode sessionToken:', err);
+      if (sessionToken.startsWith('local_')) {
+        isLocalChallenge = true;
+        try {
+          const payload = JSON.parse(Buffer.from(sessionToken.replace('local_', ''), 'base64').toString('utf8'));
+          if (payload && payload.type === 'local_math') {
+            if (captchaAnswer && Number(String(captchaAnswer).trim()) !== Number(payload.answer)) {
+              return NextResponse.json({
+                success: false,
+                error: 'Incorrect arithmetic answer. Please check your answer and try again.',
+                captchaWrong: true,
+              }, { status: 400 });
+            }
+          }
+        } catch (err) {
+          log.warn('[retrieve] Failed to decode local sessionToken:', err);
+        }
+      } else {
+        try {
+          cookieString = Buffer.from(sessionToken, 'base64').toString('utf8');
+        } catch (err) {
+          log.error('[retrieve] Failed to decode sessionToken:', err);
+        }
       }
     }
 
-    // 2. If cookieString is still empty, initialize a fresh session
-    if (!cookieString) {
+    // 2. If cookieString is still empty and not a local challenge, attempt initializing upstream session
+    if (!cookieString && !isLocalChallenge) {
       try {
         const cookies = await initKraSession(proxyUrl);
         cookieString = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ');

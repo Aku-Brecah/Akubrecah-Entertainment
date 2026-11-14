@@ -9,14 +9,12 @@ import {
   ShieldCheck,
   Sparkles,
   ChevronDown,
-  ChevronUp,
   FileText,
   HelpCircle,
   ArrowRight,
   CheckCircle2,
   Smartphone,
   Receipt,
-  Scale,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useUser, UserButton } from "@clerk/nextjs"
@@ -37,7 +35,6 @@ function FlagshipPortalContent() {
   const [mode, setMode] = useState<ServiceMode>(
     requestedView === "filing" ? "filing" : "retrieval"
   )
-  const [showHowItWorks, setShowHowItWorks] = useState(false)
 
   useEffect(() => {
     if (requestedView === "filing") {
@@ -238,80 +235,64 @@ function FlagshipPortalContent() {
               </div>
             </div>
           </div>
+        </section>
 
-          {/* Compliance Guarantee Banner */}
-          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-surface-container-low border border-outline-variant/80 text-xs shadow-2xs">
-            <div className="flex items-center gap-3 text-left">
-              <div className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-primary shrink-0 border border-outline-variant/60">
-                <Scale className="w-4.5 h-4.5" />
-              </div>
+        {/* HOW IT WORKS SECTION */}
+        <section aria-labelledby="how-it-works-heading" className="w-full pt-1 sm:pt-2">
+          <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft flex flex-col space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-outline-variant/60 pb-3">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">
-                  Compliance Guarantee
+                <span className="text-[10px] font-bold text-primary uppercase tracking-widest block">
+                  Simple 3-Step Process
                 </span>
-                <p className="text-xs font-semibold text-on-surface">
-                  Valid for Banking, NTSA Licensing, Passport, HELB &amp; Tender submissions across Kenya.
+                <h2 id="how-it-works-heading" className="text-sm sm:text-base font-black text-on-surface tracking-tight">
+                  How Fast KRA Retrieval Works
+                </h2>
+              </div>
+              <span className="text-[11px] font-bold text-primary px-3 py-1 rounded-full bg-primary/10 self-start sm:self-auto">
+                Instant Online Process · KES 20
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/70 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-black text-primary px-2 py-0.5 rounded-md bg-primary/10 text-xs">
+                    01
+                  </span>
+                  <span className="text-xs font-bold text-on-surface">Enter ID or PIN</span>
+                </div>
+                <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                  Reverse National ID lookup means you don&apos;t even need your PIN or iTax password to retrieve your certificate.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/70 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-black text-primary px-2 py-0.5 rounded-md bg-primary/10 text-xs">
+                    02
+                  </span>
+                  <span className="text-xs font-bold text-on-surface">Automated Registry Lookup</span>
+                </div>
+                <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                  Instant handshake queries the statutory registry to confirm official names, tax station, and registration date.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/70 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-black text-primary px-2 py-0.5 rounded-md bg-primary/10 text-xs">
+                    03
+                  </span>
+                  <span className="text-xs font-bold text-on-surface">KES 20 M-Pesa Download</span>
+                </div>
+                <p className="text-[11px] text-on-surface-variant leading-relaxed">
+                  Pay the standard KES 20 download fee via M-Pesa to download your cryptographically signed, tamper-proof PDF.
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="px-3 py-1 rounded-lg bg-surface-container text-on-surface-variant text-[10px] font-bold uppercase tracking-widest border border-outline-variant">
-                256-Bit SSL Handshake
-              </span>
-            </div>
           </div>
         </section>
-
-        {/* HOW IT WORKS UTILITY CARD */}
-        <div className="w-full pt-1 sm:pt-2">
-          <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft flex flex-col justify-between space-y-3">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-on-surface uppercase tracking-wider">
-                  How It Works
-                </span>
-                <span className="text-[10px] font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10">
-                  Instant Process
-                </span>
-              </div>
-              <p className="text-[11px] text-on-surface-variant leading-snug">
-                1. Enter National ID or PIN · 2. Automated Registry Lookup · 3. Download Cryptographically Signed PDF for only KES 20.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowHowItWorks(!showHowItWorks)}
-              className="text-xs font-bold text-primary hover:underline flex items-center gap-1 self-start min-h-[36px] cursor-pointer"
-            >
-              <span>{showHowItWorks ? "Hide Details" : "View Step-by-Step"}</span>
-              {showHowItWorks ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            </button>
-
-            <AnimatePresence>
-              {showHowItWorks && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-2 pt-2 border-t border-outline-variant/60"
-                >
-                  <div className="flex items-start gap-2 text-xs">
-                    <span className="font-mono font-black text-primary px-1.5 py-0.5 rounded bg-primary/10 text-[10px]">01</span>
-                    <span className="text-on-surface-variant text-[11px]">Reverse National ID lookup means you don&apos;t even need your PIN or iTax password.</span>
-                  </div>
-                  <div className="flex items-start gap-2 text-xs">
-                    <span className="font-mono font-black text-primary px-1.5 py-0.5 rounded bg-primary/10 text-[10px]">02</span>
-                    <span className="text-on-surface-variant text-[11px]">Instant handshake queries the statutory registry to confirm official names, station, and date.</span>
-                  </div>
-                  <div className="flex items-start gap-2 text-xs">
-                    <span className="font-mono font-black text-primary px-1.5 py-0.5 rounded bg-primary/10 text-[10px]">03</span>
-                    <span className="text-on-surface-variant text-[11px]">Pay the standard KES 20 download fee via M-Pesa to download your tamper-proof certificate.</span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
 
         {/* PAYMENT & DELIVERY OPTIONS SHOWCASE (REPLACES CYBER PLAN) */}
         <section aria-labelledby="payment-options-heading" className="w-full space-y-4">
