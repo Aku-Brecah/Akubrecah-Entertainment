@@ -106,10 +106,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarWidth, setSidebarWidth] = useState(256);
   const [isResizing, setIsResizing] = useState(false);
 
-  const [hasMagicAuth, setHasMagicAuth] = useState(false);
-  const [pinInput, setPinInput] = useState("");
-  const [pinError, setPinError] = useState("");
-  const [isVerifyingPin, setIsVerifyingPin] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [unreadInquiriesCount, setUnreadInquiriesCount] = useState<number>(0);
@@ -158,13 +154,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       document.cookie = "admin_magic_client=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
       document.cookie = "admin_magic_auth=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
     }
-    setHasMagicAuth(false);
     try {
       await signOut();
     } catch {
       // Ignored if not signed in via Clerk
     }
-    router.push("/admin");
+    router.push("/sign-in?redirect_url=/admin");
     router.refresh();
     setIsSigningOut(false);
   };
@@ -258,80 +253,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
   }, [isResizing]);
 
-  // Auth checking optimization: Resolve immediately if user is already verified via Clerk or Cookie
-  useEffect(() => {
-    // 1. Client cookie
-    if (
-      typeof document !== "undefined" &&
-      (document.cookie.includes("admin_magic_client=1") || document.cookie.includes("admin_magic_auth="))
-    ) {
-      setHasMagicAuth(true);
-      setCheckingAuth(false);
-      return;
-    }
+  // Enforce Admin Email Authorization
+  const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
+  const userRole = (user?.publicMetadata?.role as string) || "";
+  const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
 
-    // 2. Clerk account Super Admin bypass
-    const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
-    const userRole = user?.publicMetadata?.role as string;
-    const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
-
-    if (
+  const isSuperAdmin = Boolean(
+    userEmail &&
+    (
       userEmail === configPublicAdminEmail ||
       userRole === "Super Admin" ||
       userRole === "Admin"
-    ) {
-      setHasMagicAuth(true);
+    )
+  );
+
+  useEffect(() => {
+    if (isLoaded) {
       setCheckingAuth(false);
-      return;
     }
-
-    // 3. Query session endpoint with timeout protection
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2500);
-
-    fetch("/api/admin/magic-login?check=1", { signal: controller.signal })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.authenticated) {
-          setHasMagicAuth(true);
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        clearTimeout(timeout);
-        setCheckingAuth(false);
-      });
-  }, [user, isLoaded]);
-
-  const handlePinUnlock = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pinInput.trim()) {
-      setPinError("Please enter your admin PIN.");
-      return;
-    }
-
-    setIsVerifyingPin(true);
-    setPinError("");
-
-    try {
-      const res = await fetch("/api/admin/magic-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin: pinInput.trim() }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setHasMagicAuth(true);
-      } else {
-        setPinError(data.error || "Incorrect PIN. Check the admin credentials in your environment.");
-      }
-    } catch {
-      setPinError("Network error. Please try again.");
-    } finally {
-      setIsVerifyingPin(false);
-    }
-  };
+  }, [isLoaded, user]);
 
   // Render seamless skeleton shell during initial check (NO distorted text ligatures, NO layout jump)
   if (!isLoaded || checkingAuth) {
@@ -377,84 +317,78 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // Enforce Admin Authorization
-  const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
-  const userRole = user?.publicMetadata?.role as string;
-  const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
-
-  const isSuperAdmin =
-    hasMagicAuth ||
-    userEmail === configPublicAdminEmail ||
-    userRole === "Super Admin" ||
-    userRole === "Admin";
-
-  // Master Admin Passcode Gate (if unauthenticated)
-  if (!isSuperAdmin && !hasMagicAuth) {
+  // Gate 1: Not signed in at all — Require Admin Email Sign In
+  if (!user) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-surface-container-lowest p-4 relative overflow-hidden font-sans">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/10 rounded-full blur-[130px] pointer-events-none" />
 
-        <div className="w-full max-w-md bg-surface border border-outline-variant p-6 sm:p-8 rounded-3xl shadow-2xl relative z-10 space-y-6">
-          <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto text-primary mb-3">
-              <Shield className="w-8 h-8" />
-            </div>
+        <div className="w-full max-w-md bg-surface border border-outline-variant p-6 sm:p-8 rounded-3xl shadow-2xl relative z-10 space-y-6 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto text-primary mb-2">
+            <Shield className="w-8 h-8" />
+          </div>
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+              Executive Access
+            </span>
             <h1 className="text-2xl font-black text-on-surface tracking-tight">Admin Command Center</h1>
             <p className="text-xs text-on-surface-variant max-w-xs mx-auto leading-relaxed">
-              Official KRA Portal Administration. Enter your master PIN to unlock executive access.
+              Restricted executive area. Sign in with your registered administrator email to access the command center.
             </p>
           </div>
 
-          <form onSubmit={handlePinUnlock} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-                Master Admin Passcode
-              </label>
-              <input
-                type="password"
-                inputMode="numeric"
-                maxLength={8}
-                value={pinInput}
-                onChange={(e) => {
-                  setPinInput(e.target.value);
-                  setPinError("");
-                }}
-                placeholder="Enter admin PIN"
-                autoFocus
-                className="w-full h-12 px-4 rounded-xl bg-surface-container text-center font-mono text-lg font-black tracking-widest text-on-surface placeholder:text-muted-foreground border-2 border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary shadow-xs"
-              />
-              {pinError && (
-                <p className="text-xs font-bold text-red-600 dark:text-red-400 mt-2 text-center">{pinError}</p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={isVerifyingPin}
-              className="w-full h-12 rounded-xl bg-primary text-white font-bold text-sm shadow-md hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {isVerifyingPin ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Verifying Passcode...</span>
-                </>
-              ) : (
-                <>
-                  <KeyRound className="w-4 h-4" />
-                  <span>Unlock Admin Dashboard</span>
-                </>
-              )}
-            </button>
-          </form>
-
-          <div className="pt-4 border-t border-outline-variant/60 text-center space-y-2">
+          <div className="space-y-3 pt-2">
             <Link
               href="/sign-in?redirect_url=/admin"
-              className="text-xs font-bold text-primary hover:underline block"
+              className="w-full h-12 rounded-xl bg-primary text-white font-bold text-sm shadow-md hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
             >
-              Or Sign In with Clerk Super Admin Account →
+              <Mail className="w-4 h-4" />
+              <span>Sign In with Admin Email</span>
             </Link>
-            <Link href="/" className="text-[11px] text-on-surface-variant hover:text-on-surface block">
+          </div>
+
+          <div className="pt-4 border-t border-outline-variant/60">
+            <Link href="/" className="text-xs text-on-surface-variant hover:text-on-surface font-medium">
+              ← Return to Public Portal
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Gate 2: Signed in, but NOT an authorized administrator
+  if (!isSuperAdmin) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-surface-container-lowest p-4 relative overflow-hidden font-sans">
+        <div className="w-full max-w-md bg-surface border border-outline-variant p-6 sm:p-8 rounded-3xl shadow-2xl relative z-10 space-y-6 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto text-red-600 mb-2">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-red-600 bg-red-500/10 px-2.5 py-0.5 rounded-full border border-red-500/20">
+              Access Denied
+            </span>
+            <h1 className="text-2xl font-black text-on-surface tracking-tight">Unauthorized Account</h1>
+            <p className="text-xs text-on-surface-variant max-w-xs mx-auto leading-relaxed">
+              Signed in as <strong className="text-on-surface">{userEmail || "user"}</strong>. This account is not provisioned with administrative privileges. Please sign in using an authorized administrator email.
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <button
+              type="button"
+              onClick={handleSignOut}
+              disabled={isSigningOut}
+              className="w-full h-12 rounded-xl bg-primary text-white font-bold text-sm shadow-md hover:bg-primary/90 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>{isSigningOut ? "Signing Out..." : "Sign Out & Switch Account"}</span>
+            </button>
+          </div>
+
+          <div className="pt-4 border-t border-outline-variant/60">
+            <Link href="/" className="text-xs text-on-surface-variant hover:text-on-surface font-medium">
               ← Return to Public Portal
             </Link>
           </div>

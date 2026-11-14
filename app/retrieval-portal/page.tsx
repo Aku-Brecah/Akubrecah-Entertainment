@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Smartphone,
   Receipt,
+  Scale,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useUser, UserButton } from "@clerk/nextjs"
@@ -130,14 +131,14 @@ function FlagshipPortalContent() {
       {/* ============================================================== */}
       <main className="flex-1 w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-3 sm:py-5 space-y-4 sm:space-y-6">
         
-        {/* Compact, Focused Title Banner */}
-        <div className="text-center space-y-1.5 sm:space-y-2 max-w-4xl mx-auto px-1">
-          <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-primary/10 text-primary text-[10px] sm:text-xs font-bold uppercase tracking-wider border border-primary/20">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Cyber Facilitation Desk</span>
+        {/* Focused Hero Header from Stitch Design */}
+        <div className="text-center space-y-2 max-w-3xl mx-auto px-1 mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant text-xs font-semibold">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span>Official Cyber Facilitation Service</span>
           </div>
 
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-on-surface tracking-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight">
             {mode === "retrieval" ? (
               <>
                 Fast KRA <span className="text-primary">Certificate Retrieval</span>
@@ -149,7 +150,7 @@ function FlagshipPortalContent() {
             )}
           </h1>
 
-          <p className="text-[11px] sm:text-xs md:text-sm text-on-surface-variant max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-sm text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
             {mode === "retrieval"
               ? "Enter your National ID or KRA PIN below to generate and download your verified compliance document in seconds."
               : "Interactive Demo Preview: Test our automated returns preparation workflow. Direct statutory transmission to the KRA gateway is coming soon."}
@@ -182,6 +183,84 @@ function FlagshipPortalContent() {
             )}
           </AnimatePresence>
         </div>
+
+        {/* Trust Badges & System Features Grid from Stitch Design */}
+        <section aria-label="System Features" className="w-full max-w-4xl mx-auto space-y-4 pt-1 sm:pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Feature 1 */}
+            <div className="bg-surface-container-lowest border border-outline-variant/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center text-on-surface mb-3 border border-outline-variant/60">
+                  <FileText className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="text-sm font-bold text-on-surface">Instant PDF delivery</h3>
+                <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
+                  Instant generation and automated download to your device with verifiable KRA QR code.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-outline-variant/50 flex items-center gap-1.5 text-[11px] font-semibold text-primary">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Ready in seconds</span>
+              </div>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="bg-surface-container-lowest border border-outline-variant/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center text-on-surface mb-3 border border-outline-variant/60">
+                  <Smartphone className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="text-sm font-bold text-on-surface">M-Pesa KES 20 payment</h3>
+                <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
+                  Instant automated Safaricom Daraja STK Push micro-billing with digital receipt and manual fallback.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-outline-variant/50 flex items-center gap-1.5 text-[11px] font-semibold text-primary">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Micro-billing active</span>
+              </div>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="bg-surface-container-lowest border border-outline-variant/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center text-on-surface mb-3 border border-outline-variant/60">
+                  <ShieldCheck className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="text-sm font-bold text-on-surface">Zero document storage</h3>
+                <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
+                  In-memory ephemeral RAM streaming. Your generated PDF is never cached or stored on server disk.
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-outline-variant/50 flex items-center gap-1.5 text-[11px] font-semibold text-primary">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>KDPA 2019 Compliant</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Compliance Guarantee Banner */}
+          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-surface-container-low border border-outline-variant/80 text-xs shadow-2xs">
+            <div className="flex items-center gap-3 text-left">
+              <div className="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-primary shrink-0 border border-outline-variant/60">
+                <Scale className="w-4.5 h-4.5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">
+                  Compliance Guarantee
+                </span>
+                <p className="text-xs font-semibold text-on-surface">
+                  Valid for Banking, NTSA Licensing, Passport, HELB &amp; Tender submissions across Kenya.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="px-3 py-1 rounded-lg bg-surface-container text-on-surface-variant text-[10px] font-bold uppercase tracking-widest border border-outline-variant">
+                256-Bit SSL Handshake
+              </span>
+            </div>
+          </div>
+        </section>
 
         {/* HOW IT WORKS UTILITY CARD */}
         <div className="w-full pt-1 sm:pt-2">

@@ -27,7 +27,8 @@ import {
   X,
   ExternalLink,
   Copy,
-  Receipt
+  Receipt,
+  Shield
 } from 'lucide-react'
 
 import { Button } from "@/components/ui/button"
@@ -1697,25 +1698,112 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         </div>
       )}
 
-      {/* Clean Step Progress Bar */}
-      <div className="w-full max-w-xl mx-auto mb-4 sm:mb-5 px-1 sm:px-3">
-        <div className="flex justify-between items-center text-[10px] sm:text-[11px] font-black tracking-wide mb-2">
-          <span className={cn(currentStep >= 1 ? "text-primary font-black" : "text-on-surface-variant/60")}>
-            1. <span className="hidden sm:inline">Identify</span><span className="sm:hidden">ID</span>
-          </span>
-          <span className={cn(currentStep >= 2 ? "text-primary font-black" : "text-on-surface-variant/60")}>2. Details</span>
-          <span className={cn(currentStep >= 3 ? "text-primary font-black" : "text-on-surface-variant/60")}>3. Address</span>
-          <span className={cn(currentStep >= 4 ? "text-primary font-black" : "text-on-surface-variant/60")}>
-            4. Download<span className="hidden sm:inline"> (KES 20)</span>
-          </span>
-        </div>
-        <div className="h-2 w-full bg-surface-container-high rounded-full overflow-hidden relative border border-outline-variant">
+      {/* Step Process Tracker from Stitch Design (Institutional 4-node connected tracker) */}
+      <div className="w-full max-w-xl mx-auto mb-6 px-2">
+        <div className="relative flex items-center justify-between">
+          {/* Background Connecting Track */}
+          <div className="absolute left-6 right-6 top-4 -translate-y-1/2 h-0.5 bg-surface-container-highest -z-0" />
+          {/* Active Progress Fill */}
           <motion.div
-            className="h-full bg-primary rounded-full shadow-2xs"
-            initial={{ width: "25%" }}
-            animate={{ width: `${(currentStep / 4) * 100}%` }}
+            className="absolute left-6 top-4 -translate-y-1/2 h-0.5 bg-primary -z-0"
+            initial={{ width: "0%" }}
+            animate={{ width: `${((currentStep - 1) / 3) * 88}%` }}
             transition={{ type: "spring", stiffness: 200, damping: 20 }}
           />
+
+          {/* Step 1 */}
+          <div className="relative z-10 flex flex-col items-center">
+            <div
+              className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all",
+                currentStep === 1
+                  ? "bg-primary text-white ring-4 ring-primary/20 shadow-xs"
+                  : currentStep > 1
+                  ? "bg-primary text-white shadow-xs"
+                  : "bg-surface-container-lowest border-2 border-outline-variant text-on-surface-variant font-medium"
+              )}
+            >
+              1
+            </div>
+            <span
+              className={cn(
+                "mt-2 text-[11px] font-bold tracking-tight",
+                currentStep >= 1 ? "text-primary" : "text-on-surface-variant/70"
+              )}
+            >
+              1. Identify
+            </span>
+          </div>
+
+          {/* Step 2 */}
+          <div className="relative z-10 flex flex-col items-center">
+            <div
+              className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all",
+                currentStep === 2
+                  ? "bg-primary text-white ring-4 ring-primary/20 shadow-xs"
+                  : currentStep > 2
+                  ? "bg-primary text-white shadow-xs"
+                  : "bg-surface-container-lowest border-2 border-outline-variant text-on-surface-variant font-medium"
+              )}
+            >
+              2
+            </div>
+            <span
+              className={cn(
+                "mt-2 text-[11px] font-bold tracking-tight",
+                currentStep >= 2 ? "text-primary" : "text-on-surface-variant/70"
+              )}
+            >
+              2. Details
+            </span>
+          </div>
+
+          {/* Step 3 */}
+          <div className="relative z-10 flex flex-col items-center">
+            <div
+              className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all",
+                currentStep === 3
+                  ? "bg-primary text-white ring-4 ring-primary/20 shadow-xs"
+                  : currentStep > 3
+                  ? "bg-primary text-white shadow-xs"
+                  : "bg-surface-container-lowest border-2 border-outline-variant text-on-surface-variant font-medium"
+              )}
+            >
+              3
+            </div>
+            <span
+              className={cn(
+                "mt-2 text-[11px] font-bold tracking-tight",
+                currentStep >= 3 ? "text-primary" : "text-on-surface-variant/70"
+              )}
+            >
+              3. Address
+            </span>
+          </div>
+
+          {/* Step 4 */}
+          <div className="relative z-10 flex flex-col items-center">
+            <div
+              className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all",
+                currentStep === 4
+                  ? "bg-primary text-white ring-4 ring-primary/20 shadow-xs"
+                  : "bg-surface-container-lowest border-2 border-outline-variant text-on-surface-variant font-medium"
+              )}
+            >
+              4
+            </div>
+            <span
+              className={cn(
+                "mt-2 text-[11px] font-bold tracking-tight",
+                currentStep === 4 ? "text-primary" : "text-on-surface-variant/70"
+              )}
+            >
+              4. Download (KES 20)
+            </span>
+          </div>
         </div>
       </div>
 
@@ -1772,130 +1860,176 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                   ) : (
                     <motion.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
 
-                      {/* Third-Party Service Disclaimer Banner */}
-                      <div className="w-full max-w-xl mx-auto p-3 rounded-2xl bg-surface-container-low border border-outline-variant/80 text-on-surface-variant text-[11px] leading-relaxed text-center">
-                        <span className="font-bold text-on-surface">Third-Party Cyber Facilitation:</span> Akubrecah Technologies is an independent digital service provider and is not affiliated with the Kenya Revenue Authority (KRA). Free official services are available at{" "}
-                        <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline font-semibold text-on-surface hover:text-primary">
-                          itax.kra.go.ke
-                        </a>.{" "}
-                        <Link href="/legal/disclaimer" className="underline font-bold text-primary hover:text-primary/80 ml-1">
-                          View Full Disclaimer →
-                        </Link>
+                      {/* Third-Party Service Disclaimer Banner from Stitch */}
+                      <div className="w-full max-w-xl mx-auto p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/80 flex items-start gap-3 text-left">
+                        <Shield className="w-5 h-5 text-on-surface-variant shrink-0 mt-0.5" />
+                        <div className="text-xs text-on-surface-variant leading-relaxed">
+                          <span className="font-bold text-on-surface">Third-Party Cyber Facilitation:</span> Akubrecah Technologies is independent and not affiliated with KRA. Free official services are accessible at{" "}
+                          <a
+                            href="https://itax.kra.go.ke"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline font-semibold hover:text-primary/80"
+                          >
+                            itax.kra.go.ke
+                          </a>.{" "}
+                          <Link href="/legal/disclaimer" className="text-primary underline font-semibold hover:text-primary/80 ml-1">
+                            View Full Disclaimer →
+                          </Link>
+                        </div>
                       </div>
 
-                      {/* Lookup Type Segmented Switcher */}
-                      <div className="flex p-1 bg-surface-container rounded-xl sm:rounded-2xl mb-4 border border-outline-variant w-full max-w-xl mx-auto shadow-2xs">
-                        <button
-                          type="button"
-                          className={cn(
-                            "flex-1 py-2 sm:py-2.5 text-xs rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap",
-                            activeTab === "id"
-                              ? "bg-primary text-white font-extrabold shadow-xs"
-                              : "text-on-surface-variant hover:text-on-surface font-bold"
-                          )}
-                          onClick={() => {
-                            setActiveTab("id");
-                            setFormData(prev => ({ ...prev, pin: '', rawPin: '', fullName: '' }));
-                            setError(null);
-                          }}
-                        >
-                          <BadgeIcon className="w-3.5 h-3.5 shrink-0" />
-                          <span>National ID<span className="hidden sm:inline"> Number</span></span>
-                        </button>
-                        <button
-                          type="button"
-                          className={cn(
-                            "flex-1 py-2 sm:py-2.5 text-xs rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap",
-                            activeTab === "pin"
-                              ? "bg-primary text-white font-extrabold shadow-xs"
-                              : "text-on-surface-variant hover:text-on-surface font-bold"
-                          )}
-                          onClick={() => {
-                            setActiveTab("pin");
-                            setFormData(prev => ({ ...prev, idNumber: '', rawPin: '', fullName: '' }));
-                            setError(null);
-                          }}
-                        >
-                          <MapPinIcon className="w-3.5 h-3.5 shrink-0" />
-                          <span>KRA PIN</span>
-                        </button>
+                      {/* Segmented Mode Switcher from Stitch */}
+                      <div className="w-full max-w-xl mx-auto text-left">
+                        <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                          Search Identifier Mode
+                        </label>
+                        <div className="bg-surface-container-low p-1 rounded-xl border border-outline-variant flex gap-1">
+                          <button
+                            type="button"
+                            className={cn(
+                              "flex-1 py-2.5 px-4 rounded-lg font-semibold text-xs transition-all text-center cursor-pointer",
+                              activeTab === "id"
+                                ? "bg-primary text-white shadow-xs font-bold"
+                                : "text-on-surface-variant hover:text-on-surface font-medium"
+                            )}
+                            onClick={() => {
+                              setActiveTab("id");
+                              setFormData(prev => ({ ...prev, pin: '', rawPin: '', fullName: '' }));
+                              setError(null);
+                            }}
+                          >
+                            National ID Number
+                          </button>
+                          <button
+                            type="button"
+                            className={cn(
+                              "flex-1 py-2.5 px-4 rounded-lg font-semibold text-xs transition-all text-center cursor-pointer",
+                              activeTab === "pin"
+                                ? "bg-primary text-white shadow-xs font-bold"
+                                : "text-on-surface-variant hover:text-on-surface font-medium"
+                            )}
+                            onClick={() => {
+                              setActiveTab("pin");
+                              setFormData(prev => ({ ...prev, idNumber: '', rawPin: '', fullName: '' }));
+                              setError(null);
+                            }}
+                          >
+                            KRA PIN
+                          </button>
+                        </div>
                       </div>
 
                       <form className="space-y-4 w-full max-w-xl mx-auto" onSubmit={(e) => { e.preventDefault(); handleIdSearch(); }}>
                         {activeTab === "id" ? (
-                          <div>
-                            <label className={labelClass}>National ID Number</label>
+                          <div className="flex flex-col gap-1.5 text-left">
+                            <div className="flex justify-between items-center">
+                              <label className="text-xs font-bold text-on-surface tracking-wider uppercase">
+                                National ID Number
+                              </label>
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+                                Required Field
+                              </span>
+                            </div>
                             <div className="relative">
-                              <BadgeIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary w-5 h-5" />
                               <input
-                                className={cn(inputClass, "pl-11 text-base tracking-wider font-extrabold")}
+                                className={cn(inputClass, "pr-11 text-base tracking-wider font-extrabold")}
                                 placeholder="e.g. 12345678"
                                 type="text"
+                                maxLength={8}
                                 value={formData.idNumber}
                                 onChange={(e) => handleInputChange('idNumber', e.target.value.toUpperCase())}
                                 autoFocus
                               />
+                              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-on-surface-variant">
+                                <BadgeIcon className="w-5 h-5 text-primary" />
+                              </div>
                             </div>
+                            <p className="text-[11px] text-on-surface-variant">
+                              Ensure the 7 or 8-digit National Identity Card number is accurate.
+                            </p>
                           </div>
                         ) : (
-                          <div>
-                            <label className={labelClass}>KRA PIN</label>
+                          <div className="flex flex-col gap-1.5 text-left">
+                            <div className="flex justify-between items-center">
+                              <label className="text-xs font-bold text-on-surface tracking-wider uppercase">
+                                KRA PIN Identifier
+                              </label>
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">
+                                Required Field
+                              </span>
+                            </div>
                             <div className="relative">
-                              <MapPinIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary w-5 h-5" />
                               <input
-                                className={cn(inputClass, "pl-11 uppercase text-base tracking-wider font-extrabold")}
+                                className={cn(inputClass, "pr-11 uppercase text-base tracking-wider font-extrabold")}
                                 placeholder="e.g. A012345678Z"
                                 type="text"
+                                maxLength={11}
                                 value={formData.pin}
                                 onChange={(e) => handleInputChange('pin', e.target.value.toUpperCase())}
                                 autoFocus
                               />
+                              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-on-surface-variant">
+                                <MapPinIcon className="w-5 h-5 text-primary" />
+                              </div>
                             </div>
+                            <p className="text-[11px] text-on-surface-variant">
+                              Format: 11-character alphanumeric (e.g. A012345678Z or P051...).
+                            </p>
                           </div>
                         )}
 
-                        {/* CAPTCHA section — shown after first click */}
-                        <AnimatePresence>
-                          {captchaStatus === "loading" && (
-                            <motion.div key="captcha-loading" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="flex flex-col items-center gap-2 py-2">
-                              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                              <span className="text-xs font-semibold text-on-surface-variant">Loading security stamp...</span>
-                            </motion.div>
-                          )}
-                          {captchaStatus === "ready" && captchaImage && (
-                            <motion.div key="captcha-ready" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }} className="flex flex-col items-center gap-3 bg-surface-container-low rounded-2xl p-4 border border-outline-variant">
-                              <label className={labelClass}>Solve Arithmetic Question</label>
-                              <div className="relative">
-                                <img src={captchaImage} alt="KRA CAPTCHA" className="rounded-xl border border-outline-variant h-14 mx-auto object-contain bg-white shadow-xs p-1" />
-                                <button
-                                  type="button"
-                                  onClick={loadCaptcha}
-                                  className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-surface-container-lowest hover:bg-surface-container flex items-center justify-center transition-all border border-outline-variant shadow-xs"
-                                  title="Refresh CAPTCHA"
-                                >
-                                  <RefreshCw className="w-3.5 h-3.5 text-primary" />
-                                </button>
-                              </div>
+                        {/* Arithmetic Security Challenge (Captcha Box from Stitch) */}
+                        <div className="bg-surface-container-low border border-outline-variant/80 rounded-xl p-4 flex flex-col gap-2.5 text-left">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+                              <Lock className="w-4 h-4 text-primary" />
+                              Solve arithmetic question
+                            </span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md border border-outline-variant">
+                              Spam Protection
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-3">
+                            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-2 font-mono text-base font-bold text-on-surface tracking-wider flex items-center gap-3 select-none">
+                              {captchaImage ? (
+                                <img src={captchaImage} alt="KRA Security Stamp" className="h-9 object-contain" />
+                              ) : (
+                                <span className="text-xs text-on-surface-variant font-sans">
+                                  {captchaStatus === "loading" ? "Loading stamp..." : "Security Stamp"}
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                onClick={loadCaptcha}
+                                className="text-on-surface-variant hover:text-primary transition-colors p-1 cursor-pointer"
+                                title="Refresh Challenge"
+                              >
+                                <RefreshCw className={cn("w-4 h-4", captchaStatus === "loading" && "animate-spin text-primary")} />
+                              </button>
+                            </div>
+                            <div className="flex-1 min-w-[130px]">
                               <input
+                                type="number"
                                 value={captchaAnswer}
                                 onChange={(e) => setCaptchaAnswer(e.target.value)}
-                                placeholder="Enter answer"
-                                className={cn(inputClass, "text-center max-w-[170px] text-base font-extrabold")}
-                                autoFocus
+                                placeholder="Result"
+                                className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-2.5 text-base font-bold text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                               />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                            </div>
+                          </div>
+                        </div>
 
                         {error && (
-                          <Alert variant="destructive" className="bg-error-container border-error text-error rounded-lg">
+                          <Alert variant="destructive" className="bg-error-container border-error text-error rounded-xl">
                             <AlertCircle className="h-4 w-4" />
                             <AlertDescription className="text-xs font-medium mt-1">{error}</AlertDescription>
                           </Alert>
                         )}
 
-                        {/* Consent checkbox — legally required */}
-                        <div className="flex items-start gap-2.5 text-left py-2 bg-surface-container-low p-3 rounded-xl border border-outline-variant/80">
+                        {/* Terms & Consent Checkbox from Stitch */}
+                        <label className="flex items-start gap-3 cursor-pointer pt-1 group text-left">
                           <input
                             type="checkbox"
                             id="kra-consent"
@@ -1903,24 +2037,31 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                             onChange={(e) => setHasConsented(e.target.checked)}
                             className="mt-0.5 w-4 h-4 accent-primary rounded border-outline-variant cursor-pointer"
                           />
-                          <label htmlFor="kra-consent" className="text-xs font-medium text-on-surface-variant cursor-pointer leading-snug">
-                            I confirm I am the rightful owner or authorized agent for these credentials and I accept the{" "}
-                            <a href="/legal/terms" target="_blank" className="text-primary font-bold hover:underline">Terms of Service</a>.
-                          </label>
-                        </div>
+                          <span className="text-xs text-on-surface-variant leading-snug group-hover:text-on-surface transition-colors">
+                            I confirm I am the rightful owner or authorized agent and accept the{" "}
+                            <a href="/legal/terms" target="_blank" className="text-primary font-bold hover:underline">
+                              Terms of Service
+                            </a>{" "}
+                            &amp;{" "}
+                            <a href="/legal/privacy" target="_blank" className="text-primary font-bold hover:underline">
+                              Privacy Policy
+                            </a>.
+                          </span>
+                        </label>
 
-                        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                        {/* Action Buttons from Stitch */}
+                        <div className="flex flex-col gap-2 pt-2">
                           <button
-                            className={cn(primaryButtonClass, "w-full sm:w-auto min-w-[200px] disabled:opacity-50")}
+                            className={cn(primaryButtonClass, "w-full py-3.5 rounded-xl font-bold text-sm shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50")}
                             type="button"
                             onClick={handleIdSearch}
                             disabled={!hasConsented || captchaStatus === "loading"}
                           >
-                            <Search className="w-4 h-4" />
-                            {captchaStatus === "ready" ? "Verify Security Code" : "Retrieve Certificate"}
+                            <span>Verify Security Code</span>
+                            <ArrowRight className="w-4 h-4" />
                           </button>
                           <button
-                            className="w-full sm:w-auto h-11 px-4 text-on-surface-variant hover:text-on-surface font-bold text-xs rounded-xl transition-all inline-flex justify-center items-center gap-1.5 cursor-pointer"
+                            className="w-full text-on-surface-variant hover:text-on-surface font-semibold text-xs text-center py-1.5 transition-colors cursor-pointer"
                             type="button"
                             onClick={() => setCurrentStep(2)}
                           >

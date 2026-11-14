@@ -97,69 +97,14 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/admin/magic-login
- * Allows direct passcode unlock from the Admin UI using the master PIN
- * configured in ADMIN_BOT_PIN. Fails closed when unset.
+ * PIN login is strictly disabled. Admin access requires email authentication.
  */
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json().catch(() => ({}));
-    const pin = String(body.pin || '').trim();
-    const expectedPin = process.env.ADMIN_BOT_PIN || '';
-
-    if (!pin || !expectedPin || !safeCompare(pin, expectedPin)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid master admin passcode. Please check your PIN.' },
-        { status: 401 }
-      );
-    }
-
-    // SECURITY: no hardcoded fallback phone number in source. If the env var
-    // is not configured, fail closed instead of minting access for a number
-    // baked into the repository.
-    const adminPhone = (process.env.SUPER_ADMIN_PHONE || '').trim();
-    if (!adminPhone) {
-      return NextResponse.json(
-        { success: false, error: 'Server misconfiguration: SUPER_ADMIN_PHONE is not set.' },
-        { status: 500 }
-      );
-    }
-    const token = createAdminMagicToken(adminPhone);
-
-    const response = NextResponse.json({
-      success: true,
-      message: 'Super Admin access granted successfully.',
-      role: 'Super Admin',
-    });
-
-    const host = req.headers.get('host') || '';
-    const isProdDomain = host.includes('akubrecah.com');
-    const cookieDomain = process.env.NODE_ENV === 'production' && isProdDomain ? '.akubrecah.com' : undefined;
-
-    // Set HTTP-only secure cookie for API calls
-    response.cookies.set('admin_magic_auth', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 14400, // 4 hours — matches magic token TTL
-      domain: cookieDomain,
-    });
-
-    // Set client-accessible indicator cookie for client components
-    response.cookies.set('admin_magic_client', '1', {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 14400, // 4 hours — matches magic token TTL
-      domain: cookieDomain,
-    });
-
-    return response;
-  } catch (err: any) {
-    return NextResponse.json(
-      { success: false, error: err.message || 'Passcode verification failed.' },
-      { status: 500 }
-    );
-  }
+export async function POST() {
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'PIN login has been permanently disabled. Administrator authentication is restricted to authorized email credentials only.',
+    },
+    { status: 403 }
+  );
 }
