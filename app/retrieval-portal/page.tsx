@@ -7,7 +7,6 @@ import {
   FileCheck2,
   FileSpreadsheet,
   ShieldCheck,
-  Lock,
   Sparkles,
   ChevronDown,
   ChevronUp,
@@ -112,18 +111,8 @@ function FlagshipPortalContent() {
             </button>
           </div>
 
-          {/* Right Header Status & Profile */}
+          {/* Right Header Profile */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <div className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container border border-outline-variant text-[11px] font-semibold text-on-surface-variant">
-              <Lock className="w-3 h-3 text-primary" />
-              <span>Zero PDF Storage · Ephemeral Stream</span>
-            </div>
-
-            <div className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Gateway Live</span>
-            </div>
-
             <UserButton
               appearance={{
                 elements: {
