@@ -155,19 +155,19 @@ export default function SolutionsPage() {
 
       {/* Page Hero */}
       <div className="bg-surface-container-lowest border-b border-outline-variant">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 space-y-6">
+        <div className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-8 md:py-10 space-y-5">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
             <span>/</span>
             <span className="text-on-surface font-semibold">Industry Solutions</span>
           </nav>
-          <div className="max-w-3xl space-y-4">
+          <div className="max-w-5xl space-y-3">
             <span className="text-xs font-black text-primary uppercase tracking-widest">Industry Specializations</span>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-on-surface tracking-tight leading-tight">
               Software Solutions<br />
               <span className="text-primary">for Complex Domains.</span>
             </h1>
-            <p className="text-base sm:text-lg text-on-surface-variant max-w-2xl leading-relaxed">
+            <p className="text-base sm:text-lg text-on-surface-variant max-w-4xl leading-relaxed">
               We combine deep sector knowledge with engineering rigor to deliver software that solves mission-critical business challenges — from fintech payment rails to government automation portals.
             </p>
           </div>
@@ -181,7 +181,7 @@ export default function SolutionsPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 space-y-20">
+      <div className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-8 md:py-10 space-y-10">
 
         {/* Solutions Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

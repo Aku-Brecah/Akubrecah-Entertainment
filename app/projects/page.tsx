@@ -50,13 +50,13 @@ export default async function ProjectsPage() {
       {/* Hero Header */}
       <div className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 space-y-6 relative z-10">
+        <div className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-8 md:py-10 space-y-5 relative z-10">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
             <span>/</span>
             <span className="text-on-surface font-semibold">Engineered Systems</span>
           </nav>
-          <div className="max-w-3xl space-y-4">
+          <div className="max-w-5xl space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-xs font-black text-primary uppercase tracking-widest shadow-xs">
               <Sparkles className="w-3.5 h-3.5" />
               Verified Production Architectures
@@ -64,7 +64,7 @@ export default async function ProjectsPage() {
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-on-surface tracking-tight leading-tight">
               Systems Built for <span className="text-primary">Scale & Rigor.</span>
             </h1>
-            <p className="text-base sm:text-lg text-on-surface-variant max-w-2xl leading-relaxed">
+            <p className="text-base sm:text-lg text-on-surface-variant max-w-4xl leading-relaxed">
               Explore our mission-critical web applications, statutory compliance portals, and enterprise engineering architectures designed for resilience.
             </p>
           </div>
@@ -72,7 +72,7 @@ export default async function ProjectsPage() {
       </div>
 
       {/* Main Grid Explorer */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 space-y-16">
+      <div className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-8 md:py-10 space-y-10">
         <ProjectsExplorer
           curatedProjects={curatedProjects}
         />

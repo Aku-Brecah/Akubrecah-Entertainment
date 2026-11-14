@@ -81,7 +81,7 @@ export default function DashboardLayout({
           DEDICATED PORTAL HEADER (Distraction-Free)
           ========================================================= */}
       <header className="sticky top-0 z-40 h-16 bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant shadow-xs">
-        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+        <div className="w-full max-w-none mx-auto h-full px-3 sm:px-5 lg:px-6 flex items-center justify-between gap-4">
           
           {/* Brand + Portal Badge */}
           <div className="flex items-center gap-3 shrink-0">
@@ -256,8 +256,8 @@ export default function DashboardLayout({
       {/* =========================================================
           DEDICATED PORTAL FOOTER (Clean & Minimal)
           ========================================================= */}
-      <footer className="bg-surface-container-lowest border-t border-outline-variant py-6 px-4 sm:px-6 lg:px-8 text-xs text-on-surface-variant">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <footer className="bg-surface-container-lowest border-t border-outline-variant py-6 px-3 sm:px-5 lg:px-6 text-xs text-on-surface-variant">
+        <div className="w-full max-w-none mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
             <span className="font-bold text-on-surface">Akubrecah Technologies</span>
             <span className="hidden sm:inline text-outline-variant">•</span>
@@ -272,7 +272,7 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto mt-3 pt-3 border-t border-outline-variant/40 text-[10px] text-center text-on-surface-variant/80">
+        <div className="w-full max-w-none mx-auto mt-3 pt-3 border-t border-outline-variant/40 text-[10px] text-center text-on-surface-variant/80">
           Akubrecah Technologies operates independent software engineering solutions and automated compliance gateways. Government services are also accessible directly via official public portals such as{" "}
           <a
             href="https://itax.kra.go.ke"

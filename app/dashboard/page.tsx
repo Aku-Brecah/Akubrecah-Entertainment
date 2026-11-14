@@ -105,7 +105,7 @@ export default async function TaxpayerDashboard() {
     userRole === "Admin";
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 w-full font-sans">
+    <div className="px-3 sm:px-5 lg:px-6 py-5 sm:py-6 w-full max-w-none mx-auto space-y-6 font-sans">
       
       {/* Streamlined Welcome Header & Account Status */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2 border-b border-outline-variant/60">

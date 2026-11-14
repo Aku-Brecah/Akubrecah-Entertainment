@@ -203,7 +203,7 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6">
+    <div className="w-full max-w-none mx-auto space-y-5">
       {/* Top Header Navigation Strip */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-card text-card-foreground p-4 rounded-2xl border border-border shadow-xs">
         <Button

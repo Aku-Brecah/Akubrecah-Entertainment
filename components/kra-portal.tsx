@@ -1687,7 +1687,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       )}
 
       {isVerified && (
-        <div className={cn("w-full mx-auto mb-4", currentStep === 4 ? "max-w-7xl" : "max-w-3xl")}>
+        <div className="w-full mx-auto mb-3">
           <Alert className="bg-surface-container-low border-outline-variant/80 text-on-surface rounded-2xl flex items-center gap-3 py-3 px-4 shadow-2xs">
             <CheckCircle className="h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
             <AlertDescription className="text-xs font-semibold text-on-surface-variant">
@@ -1698,7 +1698,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       )}
 
       {/* Clean Step Progress Bar */}
-      <div className="w-full max-w-lg mx-auto mb-4 sm:mb-5 px-1 sm:px-3">
+      <div className="w-full mx-auto mb-3 sm:mb-4 px-1">
         <div className="flex justify-between items-center text-[10px] sm:text-[11px] font-black tracking-wide mb-2">
           <span className={cn(currentStep >= 1 ? "text-primary font-black" : "text-on-surface-variant/60")}>
             1. <span className="hidden sm:inline">Identify</span><span className="sm:hidden">ID</span>
@@ -1726,12 +1726,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
         >
-          <div
-            className={cn(
-              "bg-surface-container-lowest rounded-2xl sm:rounded-3xl shadow-soft border border-outline-variant p-4 sm:p-6 md:p-7 relative overflow-hidden z-10 mx-auto",
-              currentStep === 4 ? "max-w-7xl" : "max-w-3xl"
-            )}
-          >
+          <div className="w-full bg-surface-container-lowest rounded-2xl sm:rounded-3xl shadow-soft border border-outline-variant p-4 sm:p-5 md:p-6 relative overflow-hidden z-10 mx-auto">
             <AnimatePresence mode="wait">
               {currentStep === 1 && (
                 <motion.div key="step1" variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
@@ -1778,7 +1773,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     <motion.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
 
                       {/* Third-Party Service Disclaimer Banner */}
-                      <div className="max-w-md mx-auto p-3 rounded-2xl bg-surface-container-low border border-outline-variant/80 text-on-surface-variant text-[11px] leading-relaxed text-center">
+                      <div className="w-full p-3 rounded-2xl bg-surface-container-low border border-outline-variant/80 text-on-surface-variant text-[11px] leading-relaxed text-center">
                         <span className="font-bold text-on-surface">Third-Party Cyber Facilitation:</span> Akubrecah Technologies is an independent digital service provider and is not affiliated with the Kenya Revenue Authority (KRA). Free official services are available at{" "}
                         <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline font-semibold text-on-surface hover:text-primary">
                           itax.kra.go.ke
@@ -1789,7 +1784,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       </div>
 
                       {/* Lookup Type Segmented Switcher */}
-                      <div className="flex p-1 bg-surface-container rounded-xl sm:rounded-2xl mb-4 border border-outline-variant max-w-md mx-auto shadow-2xs">
+                      <div className="flex p-1 bg-surface-container rounded-xl sm:rounded-2xl mb-4 border border-outline-variant w-full shadow-2xs">
                         <button
                           type="button"
                           className={cn(
@@ -1826,7 +1821,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         </button>
                       </div>
 
-                      <form className="space-y-4 max-w-md mx-auto" onSubmit={(e) => { e.preventDefault(); handleIdSearch(); }}>
+                      <form className="space-y-4 w-full" onSubmit={(e) => { e.preventDefault(); handleIdSearch(); }}>
                         {activeTab === "id" ? (
                           <div>
                             <label className={labelClass}>National ID Number</label>
@@ -1948,7 +1943,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     <p className="font-body-sm text-body-sm text-on-surface-variant">Review and edit your certificate identity details.</p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                     <div>
                       <label className={labelClass}>KRA PIN</label>
                       <input
@@ -2003,7 +1998,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     </div>
                   </div>
 
-                  <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-3 pt-6 w-full max-w-md mx-auto">
+                  <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-3 pt-6 w-full">
                     <button className={cn(secondaryButtonClass, "w-full sm:w-auto sm:min-w-[100px]")} onClick={() => setCurrentStep(1)}>
                       Back
                     </button>
@@ -2024,7 +2019,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     <p className="font-body-sm text-body-sm text-on-surface-variant">Review and edit your certificate address information.</p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                     <div>
                       <label className={labelClass}>County</label>
                       <Select value={formData.county} onValueChange={(v) => { handleInputChange('county', v); handleInputChange('district', '') }}>
@@ -2118,7 +2113,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     </div>
                   </div>
 
-                  <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-3 pt-6 w-full max-w-md mx-auto">
+                  <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-3 pt-6 w-full">
                     <button className={cn(secondaryButtonClass, "w-full sm:w-auto sm:min-w-[100px]")} onClick={() => setCurrentStep(2)}>
                       Back
                     </button>
@@ -2184,7 +2179,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           <div
                             className={cn(
                               "w-full bg-surface-container-low/80 rounded-2xl p-4 sm:p-5 border border-outline-variant/80 space-y-4 shadow-2xs",
-                              (!isRecordUnlocked || mpesaStatus === "success") ? "lg:col-span-7" : "max-w-4xl mx-auto"
+                              (!isRecordUnlocked || mpesaStatus === "success") ? "lg:col-span-7" : "w-full"
                             )}
                           >
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">

@@ -500,7 +500,7 @@ export function SiteHeader() {
             : "bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant"
         } h-16`}
       >
-        <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 xl:gap-4 flex-nowrap min-w-0">
+        <div className="w-full max-w-none mx-auto h-full px-3 sm:px-5 lg:px-6 flex items-center justify-between gap-3 xl:gap-4 flex-nowrap min-w-0">
 
           {/* Brand */}
           {isKra ? (

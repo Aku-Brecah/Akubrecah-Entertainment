@@ -139,19 +139,19 @@ export default function ContactPage() {
 
       {/* Page Hero - Matching Products Design */}
       <div className="bg-surface-container-lowest border-b border-outline-variant">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 space-y-6">
+        <div className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-8 md:py-10 space-y-5">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
             <span>/</span>
             <span className="text-on-surface font-semibold">Contact & Engagement</span>
           </nav>
-          <div className="max-w-3xl space-y-4">
+          <div className="max-w-5xl space-y-3">
             <span className="text-xs font-black text-primary uppercase tracking-widest">Start a Project</span>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-on-surface tracking-tight leading-tight">
               Let&apos;s Build<br />
               <span className="text-primary">Something Exceptional.</span>
             </h1>
-            <p className="text-base sm:text-lg text-on-surface-variant max-w-2xl leading-relaxed">
+            <p className="text-base sm:text-lg text-on-surface-variant max-w-4xl leading-relaxed">
               Have an upcoming product launch, enterprise modernization need, or statutory integration? 
               Our principal engineers review every brief and reply within 24 hours with actionable technical guidance.
             </p>
@@ -159,7 +159,7 @@ export default function ContactPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 space-y-20">
+      <div className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-8 md:py-10 space-y-10">
 
         {/* Main Contact Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 items-start">

@@ -203,7 +203,7 @@ export default function ProfileClient({
     "w-full rounded-xl border border-outline-variant bg-surface px-4 py-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm";
 
   return (
-    <div className="p-8 max-w-6xl mx-auto w-full">
+    <div className="px-3 sm:px-5 lg:px-6 py-5 sm:py-6 w-full max-w-none mx-auto">
       {/* Profile Header */}
       <section className="bg-surface-container-lowest rounded-2xl p-8 mb-6 shadow-soft flex flex-col md:flex-row items-center md:items-start gap-8 relative overflow-hidden border border-outline-variant">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -mr-8 -mt-8" />

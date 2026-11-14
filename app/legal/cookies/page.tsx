@@ -12,7 +12,7 @@ export default function CookiePolicyPage() {
   const lastUpdated = "10 June 2026"
 
   return (
-    <div className="max-w-4xl mx-auto rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-10 shadow-xs space-y-8">
+    <div className="w-full mx-auto rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-8">
       {/* Header */}
       <div className="space-y-3 border-b border-border/60 pb-6">
         <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Legal Document</p>

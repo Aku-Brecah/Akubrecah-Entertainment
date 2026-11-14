@@ -60,7 +60,7 @@ function FlagshipPortalContent() {
       {/* 1. ADAPTIVE RESPONSIVE GOVTECH TOP NAVIGATION BAR */}
       {/* ============================================================== */}
       <header className="sticky top-0 z-50 w-full bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant/80 shadow-2xs">
-        <div className="w-full max-w-none px-4 sm:px-6 lg:px-10 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="w-full max-w-none px-3 sm:px-5 lg:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* Brand Mark & Identity */}
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-90 shrink-0">
@@ -128,10 +128,10 @@ function FlagshipPortalContent() {
       {/* ============================================================== */}
       {/* 2. FOCUSED HERO WORKSPACE (ZERO SCROLL ACROSS ALL DEVICES) */}
       {/* ============================================================== */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6 sm:space-y-8">
+      <main className="flex-1 w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-3 sm:py-5 space-y-4 sm:space-y-6">
         
         {/* Compact, Focused Title Banner */}
-        <div className="text-center space-y-1.5 sm:space-y-2 max-w-2xl mx-auto px-1">
+        <div className="text-center space-y-1.5 sm:space-y-2 max-w-4xl mx-auto px-1">
           <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-primary/10 text-primary text-[10px] sm:text-xs font-bold uppercase tracking-wider border border-primary/20">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Cyber Facilitation Desk</span>
@@ -149,7 +149,7 @@ function FlagshipPortalContent() {
             )}
           </h1>
 
-          <p className="text-[11px] sm:text-xs md:text-sm text-on-surface-variant max-w-xl mx-auto leading-relaxed">
+          <p className="text-[11px] sm:text-xs md:text-sm text-on-surface-variant max-w-3xl mx-auto leading-relaxed">
             {mode === "retrieval"
               ? "Enter your National ID or KRA PIN below to generate and download your verified compliance document in seconds."
               : "Interactive Demo Preview: Test our automated returns preparation workflow. Direct statutory transmission to the KRA gateway is coming soon."}
@@ -296,7 +296,7 @@ function FlagshipPortalContent() {
         {/* ============================================================== */}
         <section aria-labelledby="statutory-guide-heading" className="space-y-6 pt-6 sm:pt-10 border-t border-outline-variant/60">
           
-          <div className="space-y-2 text-center max-w-2xl mx-auto">
+          <div className="space-y-2 text-center max-w-4xl mx-auto">
             <span className="text-[11px] font-black text-primary uppercase tracking-widest">
               Statutory Knowledge Base & Verification Standard
             </span>
@@ -449,7 +449,7 @@ function FlagshipPortalContent() {
       {/* 3. MINIMAL GOVTECH FOOTER */}
       {/* ============================================================== */}
       <footer className="mt-auto border-t border-outline-variant/60 bg-surface-container-lowest/80 py-5 sm:py-6 text-xs text-on-surface-variant">
-        <div className="w-full max-w-none px-4 sm:px-6 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
+        <div className="w-full max-w-none px-3 sm:px-5 lg:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
           <p className="text-[11px] text-on-surface-variant">
             &copy; {new Date().getFullYear()} Akubrecah Technologies. Independent third-party cyber assistance provider. Not affiliated with the Kenya Revenue Authority (KRA).
           </p>

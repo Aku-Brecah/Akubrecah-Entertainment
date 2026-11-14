@@ -53,7 +53,7 @@ export default function EstimatorPage() {
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none" />
         <div className="absolute top-12 left-10 w-72 h-72 bg-[#00C2FF]/4 rounded-full filter blur-[100px] pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20 space-y-6 relative z-10">
+        <div className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-8 md:py-10 space-y-5 relative z-10">
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
             <Link href="/" className="hover:text-primary transition-colors">
               Home
@@ -62,7 +62,7 @@ export default function EstimatorPage() {
             <span className="text-on-surface font-semibold">Architecture Estimator</span>
           </nav>
 
-          <div className="max-w-3xl space-y-4">
+          <div className="max-w-5xl space-y-3">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary shadow-2xs">
               <Cpu className="w-3.5 h-3.5" />
               <span>Interactive Architecture Sandbox</span>
@@ -75,7 +75,7 @@ export default function EstimatorPage() {
               </span>
             </h1>
 
-            <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed max-w-2xl">
+            <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed max-w-4xl">
               Configure your service requirements, scale tier, payment gateways, and security compliance. 
               Get instant architectural blueprints, recommended technology stacks, and turnaround timelines.
             </p>
@@ -84,7 +84,7 @@ export default function EstimatorPage() {
       </section>
 
       {/* Main Sandbox Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 space-y-16">
+      <main className="w-full max-w-none mx-auto px-3 sm:px-5 lg:px-6 py-8 md:py-10 space-y-10">
         <ProjectEstimator />
 
         {/* Discovery & Consultation Banner */}
