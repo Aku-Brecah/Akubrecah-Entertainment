@@ -29,7 +29,7 @@ type ServiceMode = "retrieval" | "filing"
 function FlagshipPortalContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { user } = useUser()
+  const { isLoaded, isSignedIn, user } = useUser()
 
   const requestedView = searchParams.get("view")
   const [mode, setMode] = useState<ServiceMode>(
@@ -109,13 +109,28 @@ function FlagshipPortalContent() {
 
           {/* Right Header Profile */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <UserButton
-              appearance={{
-                elements: {
-                  userButtonAvatarBox: "w-7 h-7 sm:w-8 sm:h-8 border border-outline-variant rounded-full",
-                },
-              }}
-            />
+            {isLoaded && isSignedIn ? (
+              <UserButton
+                appearance={{
+                  elements: {
+                    userButtonAvatarBox: "w-7 h-7 sm:w-8 sm:h-8 border border-outline-variant rounded-full",
+                  },
+                }}
+              />
+            ) : (
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Link href="/sign-in?redirect_url=/retrieval-portal">
+                  <Button variant="ghost" size="sm" className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold text-on-surface hover:text-primary">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/sign-up?redirect_url=/retrieval-portal">
+                  <Button size="sm" className="h-8 px-3 sm:px-3.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 shadow-2xs">
+                    Register
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
 
         </div>

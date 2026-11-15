@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
 import {
   Search,
@@ -77,6 +78,7 @@ export type MpesaFlowState =
   | "timeout"
 
 export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {}) {
+  const router = useRouter()
   const { isLoaded: authLoaded, isSignedIn, user } = useUser()
 
   // Derive admin status client-side from Clerk metadata (requires signed-in session and non-empty admin email)
@@ -298,6 +300,14 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
   const handleIdSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
+
+    if (!isSignedIn) {
+      setError("Account sign in required: You must be logged in to search and retrieve KRA PIN certificates.")
+      toast.error("Please sign in to search taxpayer records.")
+      router.push("/sign-in?redirect_url=/retrieval-portal")
+      return
+    }
+
     if (!formData.idNumber && !formData.pin) {
       setError("Please enter your National ID number or KRA PIN.")
       return
@@ -327,6 +337,15 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       })
 
       const result = await response.json()
+
+      // Handle unauthenticated response from API
+      if (response.status === 401 || result.requiresAuth) {
+        setError(result.error || "You must be signed in to make a search.")
+        toast.error("Please sign in to search taxpayer records.")
+        setIdSearchStatus("idle")
+        router.push("/sign-in?redirect_url=/retrieval-portal")
+        return
+      }
 
       // If server specifically requires CAPTCHA answer
       if (result.captchaRequired || result.captchaWrong || response.status === 422) {
@@ -1906,6 +1925,29 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         </div>
                       </div>
 
+                      {/* Authentication Gate Notice: Search requires login */}
+                      {authLoaded && !isSignedIn && (
+                        <div className="w-full max-w-md mx-auto p-4 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left shadow-2xs">
+                          <div className="flex items-start gap-2.5">
+                            <Lock className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                            <div>
+                              <span className="text-xs font-bold text-on-surface block">
+                                Account Sign In Required
+                              </span>
+                              <span className="text-[11px] text-on-surface-variant leading-tight block mt-0.5">
+                                You must be signed in with a verified account to make a KRA search.
+                              </span>
+                            </div>
+                          </div>
+                          <Link href="/sign-in?redirect_url=/retrieval-portal" className="shrink-0 w-full sm:w-auto">
+                            <Button size="sm" className="w-full sm:w-auto h-8 px-3.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 flex items-center justify-center gap-1.5 shadow-2xs">
+                              <Lock className="w-3.5 h-3.5" />
+                              <span>Sign In</span>
+                            </Button>
+                          </Link>
+                        </div>
+                      )}
+
                       {/* Segmented Mode Switcher from Stitch */}
                       <div className="w-full max-w-md mx-auto text-left">
                         <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
@@ -1949,7 +1991,18 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         </div>
                       </div>
 
-                      <form className="space-y-4 w-full max-w-md mx-auto" onSubmit={(e) => { e.preventDefault(); handleIdSearch(); }}>
+                      <form
+                        className="space-y-4 w-full max-w-md mx-auto"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (!isSignedIn) {
+                            toast.error("Please sign in to search taxpayer records.");
+                            router.push("/sign-in?redirect_url=/retrieval-portal");
+                            return;
+                          }
+                          handleIdSearch();
+                        }}
+                      >
                         {activeTab === "id" ? (
                           <div className="flex flex-col gap-1.5 text-left">
                             <div className="flex justify-between items-center">
@@ -2080,19 +2133,44 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
                         {/* Action Buttons from Stitch */}
                         <div className="flex flex-col gap-2 pt-1">
-                          <button
-                            className={cn(primaryButtonClass, "w-full py-3.5 rounded-xl font-bold text-sm shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50")}
-                            type="button"
-                            onClick={handleIdSearch}
-                            disabled={!hasConsented || captchaStatus === "loading"}
-                          >
-                            <Search className="w-4 h-4" />
-                            <span>Verify Security Code</span>
-                          </button>
+                          {authLoaded && !isSignedIn ? (
+                            <Link href="/sign-in?redirect_url=/retrieval-portal" className="w-full">
+                              <button
+                                className={cn(
+                                  primaryButtonClass,
+                                  "w-full py-3.5 rounded-xl font-bold text-sm shadow-xs flex items-center justify-center gap-2 cursor-pointer bg-primary text-white hover:bg-primary/90"
+                                )}
+                                type="button"
+                              >
+                                <Lock className="w-4 h-4" />
+                                <span>Sign In to Make a Search</span>
+                              </button>
+                            </Link>
+                          ) : (
+                            <button
+                              className={cn(
+                                primaryButtonClass,
+                                "w-full py-3.5 rounded-xl font-bold text-sm shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                              )}
+                              type="button"
+                              onClick={handleIdSearch}
+                              disabled={!hasConsented || captchaStatus === "loading"}
+                            >
+                              <Search className="w-4 h-4" />
+                              <span>Verify Security Code</span>
+                            </button>
+                          )}
                           <button
                             className="w-full text-on-surface-variant hover:text-on-surface font-semibold text-xs text-center py-1 transition-colors cursor-pointer"
                             type="button"
-                            onClick={() => setCurrentStep(2)}
+                            onClick={() => {
+                              if (!isSignedIn) {
+                                toast.error("Please sign in to proceed.");
+                                router.push("/sign-in?redirect_url=/retrieval-portal");
+                                return;
+                              }
+                              setCurrentStep(2);
+                            }}
                           >
                             Manual Entry
                           </button>

@@ -655,6 +655,18 @@ export async function POST(req: NextRequest) {
       // In development or decoupled requests, allow authenticated or proxy bypass
     }
 
+    // Enforce authentication: KRA taxpayer record search requires an authenticated session
+    if (!clerkId && process.env.NODE_ENV !== 'test') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Authentication required: You must be logged in to search and retrieve KRA records.',
+          requiresAuth: true,
+        },
+        { status: 401 }
+      );
+    }
+
     // Check if user is super admin
     let isAdmin = false;
     if (clerkId) {

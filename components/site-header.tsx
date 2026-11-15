@@ -680,13 +680,28 @@ export function SiteHeader() {
                   </div>
                 )
               ) : (
-                <div className="w-full">
-                  <Link href="/contact" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                    <Button size="sm" className="w-full h-10 text-xs font-bold bg-primary text-white rounded-xl flex items-center justify-center gap-1.5">
-                      Start a Project <ArrowRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
-                </div>
+                isLoaded && isSignedIn ? (
+                  <div className="p-3 rounded-2xl bg-surface-container flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-on-surface">{user?.fullName || "Welcome back"}</p>
+                      <p className="text-[11px] text-on-surface-variant truncate max-w-[180px]">{user?.primaryEmailAddress?.emailAddress}</p>
+                    </div>
+                    <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                      <Button size="sm" className="h-8 px-3 rounded-xl text-xs bg-primary text-white font-bold">Console</Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link href="/sign-in" className="w-full" onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-xl">Sign In</Button>
+                    </Link>
+                    <Link href="/contact" className="w-full" onClick={() => setMobileMenuOpen(false)}>
+                      <Button size="sm" className="w-full h-10 text-xs font-bold bg-primary text-white rounded-xl flex items-center justify-center gap-1.5">
+                        Start a Project <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </Link>
+                  </div>
+                )
               )}
 
               {/* Hierarchical nav sections */}
