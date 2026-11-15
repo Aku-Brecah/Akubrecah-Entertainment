@@ -169,6 +169,12 @@ const navData: NavItem[] = [
     groups: null,
   },
   {
+    label: "Retrieval",
+    href: "/retrieval-portal",
+    badge: "KRA Live",
+    groups: null,
+  },
+  {
     label: "Articles",
     href: "/articles",
     groups: null,
@@ -500,7 +506,7 @@ export function SiteHeader() {
     userRole === "Super Admin" ||
     userRole === "Admin"
 
-  const currentNav = kraNavData
+  const currentNav = isKra ? kraNavData : navData
 
   return (
     <>
@@ -611,14 +617,15 @@ export function SiteHeader() {
                   />
                 </div>
               ) : (
-                <div className="hidden sm:flex items-center gap-3 flex-nowrap">
-                  <div className="hidden md:flex items-center gap-1.5 text-xs text-on-surface-variant font-medium">
-                    <Lock className="w-3.5 h-3.5 text-primary" />
-                    <span>Verified Node</span>
-                  </div>
+                <div className="hidden sm:flex items-center gap-2 flex-nowrap">
                   <Link href="/sign-in">
-                    <Button size="sm" className="h-9 px-4 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 shrink-0">
+                    <Button variant="ghost" size="sm" className="h-9 px-3 rounded-xl text-xs font-bold text-on-surface hover:text-primary shrink-0">
                       Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/contact">
+                    <Button size="sm" className="h-9 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/95 shadow-sm flex items-center gap-1.5 shrink-0">
+                      Start a Project <ArrowRight className="h-3.5 w-3.5" />
                     </Button>
                   </Link>
                 </div>
