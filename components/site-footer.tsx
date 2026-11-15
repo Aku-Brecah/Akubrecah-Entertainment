@@ -8,10 +8,12 @@ export function SiteFooter(): JSX.Element {
   const currentYear = new Date().getFullYear()
 
   const legalLinks = [
-    { label: "Privacy Policy", href: "/legal/privacy" },
     { label: "Terms of Service", href: "/legal/terms" },
-    { label: "Disclaimer", href: "/legal/disclaimer" },
-    { label: "Refund Policy", href: "/legal/refund" },
+    { label: "Privacy Policy", href: "/legal/privacy" },
+    { label: "Security Compliance", href: "/legal" },
+    { label: "Verify Certificate", href: "/retrieval-portal" },
+    { label: "KRA Portal", href: "https://itax.kra.go.ke" },
+    { label: "Support Desk", href: "/contact" },
   ]
 
   return (
@@ -148,7 +150,7 @@ export function SiteFooter(): JSX.Element {
         {/* Bottom Sub-bar */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-[11px] text-on-surface-variant/80">
-            &copy; {currentYear} Akubrecah Technologies. All rights reserved. Engineering excellence made in Nairobi.
+            &copy; {currentYear} Akubrecah Services. Secure KRA Tax Retrieval Portal. State compliance authorized.
           </p>
 
           <nav aria-label="Legal navigation" className="flex flex-wrap items-center gap-x-4 gap-y-1">

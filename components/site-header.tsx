@@ -16,6 +16,7 @@ import {
   Shield,
   ArrowRight,
   ChevronRight,
+  Lock,
 } from "lucide-react"
 
 /* ──────────────────────────────────────────────────────────────
@@ -298,10 +299,10 @@ function DesktopNavItem({
     return (
       <Link
         href={item.href}
-        className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+        className={`px-3 py-1.5 text-xs font-semibold transition-all flex items-center gap-1.5 ${
           isActive
-            ? "text-primary bg-primary/10 font-bold"
-            : "text-on-surface hover:text-primary hover:bg-surface-container"
+            ? "text-primary border-b-2 border-primary font-bold"
+            : "text-on-surface-variant hover:text-on-surface"
         }`}
       >
         <span>{item.label}</span>
@@ -499,7 +500,7 @@ export function SiteHeader() {
     userRole === "Super Admin" ||
     userRole === "Admin"
 
-  const currentNav = isKra ? kraNavData : navData
+  const currentNav = kraNavData
 
   return (
     <>
@@ -573,18 +574,16 @@ export function SiteHeader() {
                   />
                 </div>
               ) : isLoaded && !isSignedIn ? (
-                <div className="hidden sm:flex items-center gap-2 flex-nowrap">
+                <div className="hidden sm:flex items-center gap-3 flex-nowrap">
+                  <div className="hidden md:flex items-center gap-1.5 text-xs text-on-surface-variant font-medium">
+                    <Lock className="w-3.5 h-3.5 text-primary" />
+                    <span>Verified Node</span>
+                  </div>
                   <Link href="/sign-in">
-                    <Button size="sm" className="h-9 px-3.5 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary/90 shrink-0">
+                    <Button size="sm" className="h-9 px-4 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 shrink-0">
                       Sign In
                     </Button>
                   </Link>
-                  <a href="https://akubrecah.com" className="hidden xl:block">
-                    <Button variant="outline" size="sm" className="h-9 px-3 rounded-xl border-outline-variant text-xs font-semibold text-on-surface hover:text-primary flex items-center gap-1.5 shrink-0">
-                      <span>Agency Home</span>
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </a>
                 </div>
               ) : null
             ) : (
@@ -612,15 +611,14 @@ export function SiteHeader() {
                   />
                 </div>
               ) : (
-                <div className="hidden sm:flex items-center gap-2 flex-nowrap">
+                <div className="hidden sm:flex items-center gap-3 flex-nowrap">
+                  <div className="hidden md:flex items-center gap-1.5 text-xs text-on-surface-variant font-medium">
+                    <Lock className="w-3.5 h-3.5 text-primary" />
+                    <span>Verified Node</span>
+                  </div>
                   <Link href="/sign-in">
-                    <Button variant="ghost" size="sm" className="h-9 px-3 rounded-xl text-xs font-bold text-on-surface hover:text-primary shrink-0">
+                    <Button size="sm" className="h-9 px-4 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 shrink-0">
                       Sign In
-                    </Button>
-                  </Link>
-                  <Link href="/contact">
-                    <Button size="sm" className="h-9 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/95 shadow-sm flex items-center gap-1.5 shrink-0">
-                      Start a Project <ArrowRight className="h-3.5 w-3.5" />
                     </Button>
                   </Link>
                 </div>
