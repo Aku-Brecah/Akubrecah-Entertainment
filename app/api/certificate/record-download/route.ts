@@ -94,21 +94,36 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'checkoutId is required for pay_per_download' }, { status: 400 });
       }
 
-      // Prevent duplicate: check if this checkoutId was already used
+      // Prevent duplicate / verify redemption window if this checkoutId was already claimed
       const existing = await db.certificateDownload?.findFirst({
         where: { checkoutId },
       });
       if (existing) {
-        // SECURITY: a reused checkoutId may only unlock the same PIN that was
-        // originally recorded for it. Anything else is rejected.
-        if (existing.pin && existing.pin !== pin.toUpperCase()) {
+        const { claimOrVerifyRedemptionWindow } = await import('@/lib/mpesa-redemption');
+        const redemption = await claimOrVerifyRedemptionWindow({
+          checkoutId,
+          mpesaReceipt: existing.mpesaReceipt || checkoutId,
+          requestedPinInput: pin,
+          clerkId: userId || 'guest_user',
+          amount: Number(existing.amountCharged) || 20,
+        });
+
+        if (!redemption.allowed) {
           return NextResponse.json(
-            { success: false, error: 'This payment is bound to a different KRA PIN.' },
-            { status: 403 }
+            { success: false, error: redemption.error || 'Redemption window expired or unauthorized.' },
+            { status: redemption.httpStatus || 403 }
           );
         }
-        // Already downloaded — return the existing record id so the client can proceed
-        return NextResponse.json({ success: true, downloadId: existing.id, alreadyRecorded: true });
+
+        return NextResponse.json({
+          success: true,
+          downloadId: existing.id,
+          alreadyRecorded: true,
+          redemptionStatus: redemption.redemptionStatus,
+          expiresAt: redemption.expiresAt,
+          remainingSeconds: redemption.remainingSeconds,
+          downloadCount: redemption.downloadCount,
+        });
       }
 
       // Verify payment was actually successful in durable DB or callback registry
@@ -131,26 +146,37 @@ export async function POST(req: NextRequest) {
       const paidPin = String(txRecord?.pin || payment?.metadata?.pin || '').toUpperCase();
       if (paidPin && paidPin !== 'KRA_CERT' && paidPin !== pin.toUpperCase()) {
         return NextResponse.json(
-          { success: false, error: 'This payment is bound to a different KRA PIN.' },
+          { success: false, error: 'This M-Pesa transaction code has already been used for another KRA PIN. Please provide a valid payment transaction code.' },
           { status: 403 }
         );
       }
 
-      // Record the pay-per-download
-      const record = await db.certificateDownload?.create({
-        data: {
-          userId: dbUser.id,
-          clerkId: userId,
-          pin: pin.toUpperCase(),
-          downloadType: 'pay_per_download',
-          amountCharged: Number(txRecord?.amount || payment?.metadata?.amount || 20),
-          currency: 'KES',
-          mpesaReceipt: txRecord?.mpesaReceiptNumber || payment?.metadata?.mpesaReceiptNumber || null,
-          checkoutId,
-        },
+      // Authoritative redemption claim: binds PIN, starts 5-minute window
+      const { claimOrVerifyRedemptionWindow } = await import('@/lib/mpesa-redemption');
+      const redemption = await claimOrVerifyRedemptionWindow({
+        checkoutId,
+        mpesaReceipt: txRecord?.mpesaReceiptNumber || payment?.metadata?.mpesaReceiptNumber || null,
+        requestedPinInput: pin,
+        clerkId: userId || 'guest_user',
+        amount: Number(txRecord?.amount || payment?.metadata?.amount || 20),
+        dbUserId: dbUser.id,
       });
 
-      return NextResponse.json({ success: true, downloadId: record.id });
+      if (!redemption.allowed) {
+        return NextResponse.json(
+          { success: false, error: redemption.error || 'Redemption window expired or unauthorized.' },
+          { status: redemption.httpStatus || 403 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        downloadId: redemption.downloadId,
+        redemptionStatus: redemption.redemptionStatus,
+        expiresAt: redemption.expiresAt,
+        remainingSeconds: redemption.remainingSeconds,
+        downloadCount: redemption.downloadCount,
+      });
 
     } else {
       return NextResponse.json({ success: false, error: 'Invalid downloadType' }, { status: 400 });

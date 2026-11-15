@@ -48,32 +48,26 @@ export async function POST(req: NextRequest) {
     let isAuthorized = false;
     let verifiedPin = requestedPin;
 
-    // 1. Verify download record from database if downloadId is provided
+    // 1. Verify download record / 5-minute redemption window if downloadId is provided
     let downloadRecord: any = null;
     if (downloadId) {
-      downloadRecord = await db.certificateDownload?.findFirst({
-        where: { id: downloadId },
+      const { verifyCertificateDownloadEligibility } = await import('@/lib/mpesa-redemption');
+      const eligibility = await verifyCertificateDownloadEligibility({
+        downloadId,
+        requestedPinInput: requestedPin,
+        isServiceAuthorized: false,
+        isAdmin: false,
       });
 
-      if (downloadRecord) {
-        const recordPin = (downloadRecord.pin || '').toUpperCase().trim();
-        const recordPinResolved = tryResolveKraPin(recordPin) || recordPin;
-        const recordPinPlaceholder = !recordPin || recordPin === 'KRA_CERT';
-        if (!recordPinPlaceholder) {
-          // Enforce PIN lock: Payment for certificate A cannot unlock certificate B
-          if (requestedPin && recordPinResolved !== requestedPin) {
-            return NextResponse.json(
-              { success: false, error: 'Payment record does not match the requested certificate PIN.' },
-              { status: 403 }
-            );
-          }
-          verifiedPin = recordPinResolved;
-          isAuthorized = true;
-        }
-        // Placeholder records (no usable PIN) are NOT proof of a purchased
-        // certificate — do not mint verifiedPin from the request body; fall
-        // through to the admin/subscription authorization checks (fail closed).
+      if (!eligibility.allowed) {
+        return NextResponse.json(
+          { success: false, error: eligibility.error || 'Payment not verified or 5-minute download window expired.' },
+          { status: eligibility.httpStatus || 403 }
+        );
       }
+
+      verifiedPin = eligibility.cleanPin || requestedPin;
+      isAuthorized = true;
     }
 
     // 2. Fallback: Check if authenticated user has active subscription or admin access

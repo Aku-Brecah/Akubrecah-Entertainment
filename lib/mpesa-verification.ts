@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { log } from '@/lib/monitoring/logger';
 import { tryResolveKraPin } from '@/lib/masking';
 import { getOrCreateDbUser } from '@/lib/subscription';
+import { claimOrVerifyRedemptionWindow } from '@/lib/mpesa-redemption';
 import {
   queryMpesaStkPushStatus,
   mapDarajaResultCodeToStatus,
@@ -22,6 +23,11 @@ export interface MpesaVerificationResult {
   resultDesc?: string;
   httpStatus?: number;
   error?: string;
+  redemptionStatus?: string;
+  firstClaimedAt?: string;
+  expiresAt?: string;
+  remainingSeconds?: number;
+  downloadCount?: number;
 }
 
 const MIN_CERTIFICATE_FEE_KES = Number(process.env.MPESA_DOWNLOAD_FEE_KES || 20);
@@ -134,14 +140,26 @@ export async function verifyAndFulfillMpesaCheckout({
 
   if (existingDownload) {
     const recordPin = resolveExplicitPin(existingDownload.pin);
-    if (requestedPin && recordPin && requestedPin !== recordPin) {
+    const redemption = await claimOrVerifyRedemptionWindow({
+      mpesaReceipt: existingDownload.mpesaReceipt || checkoutRequestId,
+      checkoutId: checkoutRequestId,
+      requestedPinInput: requestedPin || recordPin,
+      clerkId,
+      amount: Number(existingDownload.amountCharged) || MIN_CERTIFICATE_FEE_KES,
+    });
+
+    if (!redemption.allowed) {
       return {
         success: false,
         verified: false,
         status: 'failed',
         checkoutRequestId,
-        httpStatus: 403,
-        error: 'This payment is bound to a different KRA PIN.',
+        httpStatus: redemption.httpStatus || 403,
+        error: redemption.error || 'Redemption window expired or unauthorized.',
+        redemptionStatus: redemption.redemptionStatus,
+        expiresAt: redemption.expiresAt,
+        remainingSeconds: redemption.remainingSeconds,
+        pin: redemption.pin || recordPin,
       };
     }
 
@@ -152,10 +170,15 @@ export async function verifyAndFulfillMpesaCheckout({
       checkoutRequestId,
       downloadId: existingDownload.id,
       mpesaReceipt: existingDownload.mpesaReceipt || checkoutRequestId,
-      pin: recordPin || existingDownload.pin,
+      pin: redemption.pin || recordPin || existingDownload.pin,
       amount: Number(existingDownload.amountCharged) || MIN_CERTIFICATE_FEE_KES,
       resultCode: 0,
       resultDesc: 'Payment verified successfully.',
+      redemptionStatus: redemption.redemptionStatus,
+      firstClaimedAt: redemption.firstClaimedAt,
+      expiresAt: redemption.expiresAt,
+      remainingSeconds: redemption.remainingSeconds,
+      downloadCount: redemption.downloadCount,
     };
   }
 
@@ -312,61 +335,48 @@ export async function verifyAndFulfillMpesaCheckout({
     'KRA Portal Taxpayer'
   );
 
-  let downloadRecord: any = null;
-  try {
-    if (typeof db.certificateDownload?.create === 'function') {
-      downloadRecord = await db.certificateDownload.create({
-        data: {
-          userId: dbUser.id,
-          clerkId: effectiveClerkId,
-          pin: finalPin,
-          downloadType: 'pay_per_download',
-          amountCharged: paidAmount,
-          currency: 'KES',
-          mpesaReceipt: finalReceipt,
-          checkoutId: checkoutRequestId,
-        },
-      });
-    }
-  } catch (createErr: any) {
-    // Handle concurrent callback vs. verify race condition idempotently (P2002 unique checkoutId)
-    if (createErr?.code === 'P2002' && typeof db.certificateDownload?.findFirst === 'function') {
-      downloadRecord = await db.certificateDownload.findFirst({
-        where: { checkoutId: checkoutRequestId },
-      });
-    } else {
-      log.warn('[mpesa-verification] Record creation notice:', createErr?.message);
-    }
-  }
+  const redemption = await claimOrVerifyRedemptionWindow({
+    mpesaReceipt: finalReceipt,
+    checkoutId: checkoutRequestId,
+    requestedPinInput: finalPin,
+    clerkId: effectiveClerkId,
+    amount: paidAmount,
+    phone: txRecord?.phone || cb?.metadata?.phoneNumber,
+    dbUserId: dbUser.id,
+  });
 
-  try {
-    if (typeof db.mpesaTransaction?.updateMany === 'function') {
-      await db.mpesaTransaction.updateMany({
-        where: { checkoutRequestId },
-        data: {
-          status: 'COMPLETED',
-          resultCode: 0,
-          resultDesc: liveDesc || 'The service request is processed successfully.',
-          ...(finalReceipt && finalReceipt !== checkoutRequestId
-            ? { mpesaReceiptNumber: finalReceipt }
-            : {}),
-        },
-      });
-    }
-  } catch { }
+  if (!redemption.allowed) {
+    return {
+      success: false,
+      verified: false,
+      status: 'failed',
+      checkoutRequestId,
+      httpStatus: redemption.httpStatus || 403,
+      error: redemption.error || 'Redemption window expired or unauthorized.',
+      redemptionStatus: redemption.redemptionStatus,
+      expiresAt: redemption.expiresAt,
+      remainingSeconds: redemption.remainingSeconds,
+      pin: redemption.pin || finalPin,
+    };
+  }
 
   return {
     success: true,
     verified: true,
     status: 'success',
     checkoutRequestId,
-    downloadId: downloadRecord?.id,
-    mpesaReceipt: finalReceipt,
-    pin: finalPin,
+    downloadId: redemption.downloadId,
+    mpesaReceipt: redemption.mpesaReceipt || finalReceipt,
+    pin: redemption.pin || finalPin,
     amount: paidAmount,
     phone: txRecord?.phone || cb?.metadata?.phoneNumber,
     resultCode: 0,
     resultDesc: liveDesc || 'Payment confirmed via Safaricom Daraja.',
+    redemptionStatus: redemption.redemptionStatus,
+    firstClaimedAt: redemption.firstClaimedAt,
+    expiresAt: redemption.expiresAt,
+    remainingSeconds: redemption.remainingSeconds,
+    downloadCount: redemption.downloadCount,
   };
 }
 
@@ -451,37 +461,6 @@ export async function verifyManualMpesaReceipt({
   const existingDownloadPin = existingDownload ? resolveExplicitPin(existingDownload.pin) : '';
   const txPin = matchingTx ? resolveExplicitPin(matchingTx.pin) : '';
 
-  if (
-    requestedPin &&
-    ((existingDownloadPin && existingDownloadPin !== requestedPin) ||
-      (txPin && txPin !== requestedPin))
-  ) {
-    return {
-      success: false,
-      verified: false,
-      status: 'failed',
-      checkoutRequestId: existingDownload?.checkoutId || matchingTx?.checkoutRequestId || `MANUAL-${receiptCode}`,
-      httpStatus: 403,
-      error: 'This M-Pesa receipt code is already used for a different KRA PIN.',
-    };
-  }
-
-  if (existingDownload) {
-    return {
-      success: true,
-      verified: true,
-      status: 'success',
-      checkoutRequestId: existingDownload.checkoutId || `MANUAL-${receiptCode}`,
-      downloadId: existingDownload.id,
-      mpesaReceipt: receiptCode,
-      pin: existingDownloadPin || requestedPin || existingDownload.pin,
-      amount: Number(existingDownload.amountCharged) || MIN_CERTIFICATE_FEE_KES,
-      phone: phone || matchingTx?.phone || undefined,
-      resultCode: 0,
-      resultDesc: 'Manual M-Pesa payment verified.',
-    };
-  }
-
   if (matchingTx?.amount != null && Number(matchingTx.amount) < MIN_CERTIFICATE_FEE_KES) {
     return {
       success: false,
@@ -493,7 +472,34 @@ export async function verifyManualMpesaReceipt({
     };
   }
 
-  const finalPin = requestedPin || txPin;
+  if (matchingTx && matchingTx.status && matchingTx.status !== 'COMPLETED') {
+    return {
+      success: false,
+      verified: false,
+      status: 'failed',
+      checkoutRequestId: matchingTx.checkoutRequestId,
+      httpStatus: 400,
+      error: 'M-Pesa payment verification failed: transaction was not completed.',
+    };
+  }
+
+  const hasSmsProof =
+    /(?:confirmed|received|paid)\b/i.test(mpesaCodeInput) &&
+    /(?:ksh|kes)\.?\s*[\d,]+/i.test(mpesaCodeInput);
+
+  if (!matchingTx && !existingDownload && !hasSmsProof) {
+    return {
+      success: false,
+      verified: false,
+      status: 'failed',
+      checkoutRequestId: `MANUAL-${receiptCode}`,
+      httpStatus: 400,
+      error:
+        'This M-Pesa transaction code was not found in verified payment records. Please confirm your payment or paste the full confirmation SMS.',
+    };
+  }
+
+  const finalPin = requestedPin || txPin || existingDownloadPin;
   if (!finalPin) {
     return {
       success: false,
@@ -505,7 +511,7 @@ export async function verifyManualMpesaReceipt({
     };
   }
 
-  const effectiveCheckoutId = matchingTx?.checkoutRequestId || `MANUAL-${receiptCode}`;
+  const effectiveCheckoutId = matchingTx?.checkoutRequestId || existingDownload?.checkoutId || `MANUAL-${receiptCode}`;
   const effectiveClerkId = clerkId || matchingTx?.clerkId || 'guest_user';
   const dbUser = await getOrCreateDbUser(
     effectiveClerkId,
@@ -513,59 +519,48 @@ export async function verifyManualMpesaReceipt({
     'KRA Portal Taxpayer'
   );
 
-  let downloadRecord: ManualDownloadRecord | null = null;
-  try {
-    if (typeof db.certificateDownload?.create === 'function') {
-      downloadRecord = await db.certificateDownload.create({
-        data: {
-          userId: dbUser.id,
-          clerkId: effectiveClerkId,
-          pin: finalPin,
-          downloadType: 'pay_per_download',
-          amountCharged: MIN_CERTIFICATE_FEE_KES,
-          currency: 'KES',
-          mpesaReceipt: receiptCode,
-          checkoutId: effectiveCheckoutId,
-        },
-      });
-    }
-  } catch (createErr: any) {
-    if (createErr?.code === 'P2002' && typeof db.certificateDownload?.findFirst === 'function') {
-      downloadRecord = await db.certificateDownload.findFirst({
-        where: {
-          OR: [{ checkoutId: effectiveCheckoutId }, { mpesaReceipt: receiptCode }],
-        },
-      });
-    } else {
-      log.warn('[mpesa-verification] Manual record creation notice:', createErr?.message);
-    }
-  }
+  const redemption = await claimOrVerifyRedemptionWindow({
+    mpesaReceipt: receiptCode,
+    checkoutId: effectiveCheckoutId,
+    requestedPinInput: finalPin,
+    clerkId: effectiveClerkId,
+    amount: Number(existingDownload?.amountCharged) || MIN_CERTIFICATE_FEE_KES,
+    phone: phone || matchingTx?.phone || undefined,
+    dbUserId: dbUser.id,
+  });
 
-  try {
-    if (matchingTx && typeof db.mpesaTransaction?.updateMany === 'function') {
-      await db.mpesaTransaction.updateMany({
-        where: { checkoutRequestId: matchingTx.checkoutRequestId },
-        data: {
-          status: 'COMPLETED',
-          resultCode: 0,
-          resultDesc: 'Manual M-Pesa receipt verified.',
-        },
-      });
-    }
-  } catch { }
+  if (!redemption.allowed) {
+    return {
+      success: false,
+      verified: false,
+      status: 'failed',
+      checkoutRequestId: effectiveCheckoutId,
+      httpStatus: redemption.httpStatus || 403,
+      error: redemption.error || 'Redemption window expired or unauthorized.',
+      redemptionStatus: redemption.redemptionStatus,
+      expiresAt: redemption.expiresAt,
+      remainingSeconds: redemption.remainingSeconds,
+      pin: redemption.pin || finalPin,
+    };
+  }
 
   return {
     success: true,
     verified: true,
     status: 'success',
     checkoutRequestId: effectiveCheckoutId,
-    downloadId: downloadRecord?.id,
+    downloadId: redemption.downloadId || existingDownload?.id,
     mpesaReceipt: receiptCode,
-    pin: finalPin,
-    amount: MIN_CERTIFICATE_FEE_KES,
+    pin: redemption.pin || finalPin,
+    amount: Number(existingDownload?.amountCharged) || MIN_CERTIFICATE_FEE_KES,
     phone: phone || matchingTx?.phone || undefined,
     resultCode: 0,
     resultDesc: 'Manual M-Pesa payment verified.',
+    redemptionStatus: redemption.redemptionStatus,
+    firstClaimedAt: redemption.firstClaimedAt,
+    expiresAt: redemption.expiresAt,
+    remainingSeconds: redemption.remainingSeconds,
+    downloadCount: redemption.downloadCount,
   };
 }
 

@@ -70,38 +70,59 @@ export async function POST(req: NextRequest) {
       (typeof body.serviceSecret === 'string' && acceptedServiceSecrets.some((s) => safeCompare(body.serviceSecret, s)))
     );
 
-    if (!downloadId && !isServiceAuthorized) {
-      const { isAdminUser } = await import('@/lib/subscription');
-      const isAdmin = userId ? await isAdminUser(userId) : false;
-      if (isAdmin) {
-        const effectiveClerkId = userId || 'admin_user';
-        const dbUser = await getOrCreateDbUser(effectiveClerkId, 'admin@akubrecah.co.ke', 'Administrator');
-        const adminDownloadRecord = await db.certificateDownload?.create({
-          data: {
-            userId: dbUser.id,
-            clerkId: effectiveClerkId,
-            pin: clientResolvedPin || String(pin || 'KRA_CERT').toUpperCase().trim(),
-            downloadType: 'admin',
-            amountCharged: 0,
-            currency: 'KES',
-          },
-        });
-        downloadId = adminDownloadRecord?.id;
-      } else {
+    const { verifyCertificateDownloadEligibility } = await import('@/lib/mpesa-redemption');
+    const { isAdminUser } = await import('@/lib/subscription');
+    const isAdmin = userId ? await isAdminUser(userId) : false;
+    const requestedPin = (clientResolvedPin || (pin || '')).toUpperCase().trim();
+
+    let eligibility: any = null;
+    if (!isServiceAuthorized) {
+      if (!downloadId) {
+        if (isAdmin) {
+          const effectiveClerkId = userId || 'admin_user';
+          const dbUser = await getOrCreateDbUser(effectiveClerkId, 'admin@akubrecah.co.ke', 'Administrator');
+          const adminDownloadRecord = await db.certificateDownload?.create({
+            data: {
+              userId: dbUser.id,
+              clerkId: effectiveClerkId,
+              pin: clientResolvedPin || String(pin || 'KRA_CERT').toUpperCase().trim(),
+              downloadType: 'admin',
+              amountCharged: 0,
+              currency: 'KES',
+            },
+          });
+          downloadId = adminDownloadRecord?.id;
+        } else {
+          return NextResponse.json(
+            { success: false, error: 'Download authorization required. Please complete the payment flow.' },
+            { status: 403 }
+          );
+        }
+      }
+
+      // Authoritative 5-minute redemption window check
+      eligibility = await verifyCertificateDownloadEligibility({
+        downloadId,
+        requestedPinInput: requestedPin,
+        isServiceAuthorized: false,
+        isAdmin,
+      });
+
+      if (!eligibility.allowed) {
         return NextResponse.json(
-          { success: false, error: 'Download authorization required. Please complete the payment flow.' },
-          { status: 403 }
+          { success: false, error: eligibility.error || 'Download window expired or unauthorized.' },
+          { status: eligibility.httpStatus || 403 }
         );
       }
     }
 
-    // Validate the download record exists
+    // Validate the download record exists in DB (or fallback)
     let downloadRecord = downloadId
       ? await db.certificateDownload?.findFirst({
           where: {
             id: downloadId,
           },
-        })
+        }).catch(() => null)
       : null;
 
     if (!downloadRecord && isServiceAuthorized) {
@@ -125,7 +146,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!downloadRecord && !isServiceAuthorized) {
+    if (!downloadRecord && !isServiceAuthorized && !eligibility?.allowed) {
       return NextResponse.json(
         { success: false, error: 'Invalid or unauthorized download. Please retry the payment flow.' },
         { status: 403 }
@@ -161,11 +182,11 @@ export async function POST(req: NextRequest) {
       dbUser = await getOrCreateDbUser(effectiveClerkId, 'guest@akubrecah.co.ke', 'Guest Taxpayer');
     } catch {}
 
-    // Prioritize clean unmasked PIN from download record, fallback to payload
-    let cleanPin = '';
-    if (downloadRecord?.pin && !downloadRecord.pin.includes('*') && downloadRecord.pin !== 'KRA_CERT') {
+    // Prioritize clean unmasked PIN from eligibility / download record, fallback to payload
+    let cleanPin = eligibility?.cleanPin || '';
+    if (!cleanPin && downloadRecord?.pin && !downloadRecord.pin.includes('*') && downloadRecord.pin !== 'KRA_CERT') {
       cleanPin = downloadRecord.pin.toUpperCase().trim();
-    } else if (clientResolvedPin) {
+    } else if (!cleanPin && clientResolvedPin) {
       cleanPin = clientResolvedPin;
     } else if (pin && !pin.includes('*')) {
       cleanPin = pin.toUpperCase().trim();

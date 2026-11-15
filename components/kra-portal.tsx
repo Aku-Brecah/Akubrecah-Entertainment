@@ -160,6 +160,20 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const stkTransitionRef = useRef<NodeJS.Timeout | null>(null)
   const initialPollTimerRef = useRef<NodeJS.Timeout | null>(null)
 
+  // 5-Minute Authoritative M-Pesa Redemption State
+  const [redemptionExpiresAt, setRedemptionExpiresAt] = useState<string | null>(null)
+  const [redemptionSecondsLeft, setRedemptionSecondsLeft] = useState<number | null>(null)
+  const [isRedemptionExpired, setIsRedemptionExpired] = useState(false)
+  const [transactionAssignedError, setTransactionAssignedError] = useState<string | null>(null)
+  const redemptionTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const formatTimer = (totalSeconds: number | null) => {
+    if (totalSeconds == null || totalSeconds < 0) return "00:00"
+    const mins = Math.floor(totalSeconds / 60)
+    const secs = totalSeconds % 60
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`
+  }
+
   const isMpesaBusy =
     mpesaStatus === "initiating" ||
     mpesaStatus === "stk_sent" ||
@@ -204,6 +218,88 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       clearTimeout(initialPollTimerRef.current)
       initialPollTimerRef.current = null
     }
+  }
+
+  // Restore active 5-minute redemption window from sessionStorage across page refreshes
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('mpesa_redemption_state')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.expiresAt) {
+          const expiryMs = new Date(parsed.expiresAt).getTime()
+          const nowMs = Date.now()
+          if (nowMs < expiryMs) {
+            setRedemptionExpiresAt(parsed.expiresAt)
+            setRedemptionSecondsLeft(Math.max(0, Math.floor((expiryMs - nowMs) / 1000)))
+            setIsRedemptionExpired(false)
+            if (parsed.downloadId) setVerifiedDownloadId(parsed.downloadId)
+            if (parsed.receipt) setVerifiedReceipt(parsed.receipt)
+          } else {
+            setRedemptionExpiresAt(parsed.expiresAt)
+            setRedemptionSecondsLeft(0)
+            setIsRedemptionExpired(true)
+            if (parsed.downloadId) setVerifiedDownloadId(parsed.downloadId)
+            if (parsed.receipt) setVerifiedReceipt(parsed.receipt)
+          }
+        }
+      }
+    } catch {}
+  }, [])
+
+  // Authoritative 5-minute synchronized countdown timer
+  useEffect(() => {
+    if (!redemptionExpiresAt) {
+      if (redemptionTimerRef.current) {
+        clearInterval(redemptionTimerRef.current)
+        redemptionTimerRef.current = null
+      }
+      return
+    }
+
+    const updateTimer = () => {
+      const expiryMs = new Date(redemptionExpiresAt).getTime()
+      const nowMs = Date.now()
+      const diffSecs = Math.max(0, Math.floor((expiryMs - nowMs) / 1000))
+      setRedemptionSecondsLeft(diffSecs)
+
+      if (diffSecs <= 0) {
+        setIsRedemptionExpired(true)
+        if (redemptionTimerRef.current) {
+          clearInterval(redemptionTimerRef.current)
+          redemptionTimerRef.current = null
+        }
+      } else {
+        setIsRedemptionExpired(false)
+      }
+    }
+
+    updateTimer()
+    redemptionTimerRef.current = setInterval(updateTimer, 1000)
+
+    return () => {
+      if (redemptionTimerRef.current) {
+        clearInterval(redemptionTimerRef.current)
+        redemptionTimerRef.current = null
+      }
+    }
+  }, [redemptionExpiresAt])
+
+  const handleResetForNewPayment = () => {
+    try {
+      sessionStorage.removeItem('mpesa_redemption_state')
+    } catch {}
+    setVerifiedDownloadId(null)
+    setVerifiedReceipt(null)
+    setRedemptionExpiresAt(null)
+    setRedemptionSecondsLeft(null)
+    setIsRedemptionExpired(false)
+    setMpesaStatus("ready")
+    setActiveCheckoutId(null)
+    setManualMpesaCode("")
+    setPaymentError(null)
+    setTransactionAssignedError(null)
+    setShowPaymentModal(true)
   }
 
   // Sync phone number from taxpayer profile only when it is a valid unmasked Kenyan number
@@ -475,7 +571,29 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       setVerifiedDownloadId(resolvedDlId)
       setMpesaStatus("success")
       setPaymentError(null)
+      setTransactionAssignedError(null)
       setCurrentStep(4)
+
+      if (vData.expiresAt) {
+        setRedemptionExpiresAt(vData.expiresAt)
+        const expiryMs = new Date(vData.expiresAt).getTime()
+        const diffSecs = Math.max(0, Math.floor((expiryMs - Date.now()) / 1000))
+        setRedemptionSecondsLeft(diffSecs)
+        setIsRedemptionExpired(diffSecs <= 0)
+        try {
+          sessionStorage.setItem(
+            'mpesa_redemption_state',
+            JSON.stringify({
+              receipt,
+              downloadId: resolvedDlId,
+              pin: vData.pin || certPin,
+              expiresAt: vData.expiresAt,
+              firstClaimedAt: vData.firstClaimedAt,
+            })
+          )
+        } catch {}
+      }
+
       toast.success(
         `M-Pesa payment confirmed${receipt ? ` (${receipt})` : ''}. Unlocking record & downloading certificate...`,
         { duration: 5000 }
@@ -484,6 +602,25 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         refreshVerifiedData(resolvedDlId, vData.pin || certPin),
         resolvedDlId ? executeDownload(resolvedDlId) : Promise.resolve(),
       ])
+      return true
+    }
+
+    if (vData?.reason === 'DIFFERENT_PIN' || (vData?.error && vData.error.includes('another KRA PIN'))) {
+      clearPaymentTimers()
+      setMpesaStatus("failed")
+      const assignedMsg = "This M-Pesa transaction code has already been used for another KRA PIN. Please provide a valid payment transaction code."
+      setTransactionAssignedError(assignedMsg)
+      setPaymentError(assignedMsg)
+      return true
+    }
+
+    if (vData?.reason === 'EXPIRED' || (vData?.error && vData.error.includes('expired'))) {
+      clearPaymentTimers()
+      setMpesaStatus("failed")
+      setIsRedemptionExpired(true)
+      setRedemptionSecondsLeft(0)
+      const expiredMsg = "Your 5-minute certificate download window has expired. This M-Pesa transaction code has already been used and cannot be reused. Please make a new payment to retrieve another certificate."
+      setPaymentError(expiredMsg)
       return true
     }
 
@@ -738,11 +875,22 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       toast.dismiss(toastId)
 
       if (!res.ok || !vData.verified) {
-        const errMsg =
-          vData.error ||
-          "Could not verify that M-Pesa code. Confirm your 10-character receipt (e.g. UB12XYZ789) and try again."
-        setPaymentError(errMsg)
-        toast.error(errMsg)
+        if (vData.reason === 'DIFFERENT_PIN' || (vData.error && vData.error.includes('another KRA PIN'))) {
+          const assignedMsg = "This M-Pesa transaction code has already been used for another KRA PIN. Please provide a valid payment transaction code."
+          setTransactionAssignedError(assignedMsg)
+          setPaymentError(assignedMsg)
+        } else if (vData.reason === 'EXPIRED' || (vData.error && vData.error.includes('expired'))) {
+          setIsRedemptionExpired(true)
+          setRedemptionSecondsLeft(0)
+          const expiredMsg = "Your 5-minute certificate download window has expired. This M-Pesa transaction code has already been used and cannot be reused. Please make a new payment to retrieve another certificate."
+          setPaymentError(expiredMsg)
+        } else {
+          const errMsg =
+            vData.error ||
+            "Could not verify that M-Pesa code. Confirm your 10-character receipt (e.g. UB12XYZ789) and try again."
+          setPaymentError(errMsg)
+          toast.error(errMsg)
+        }
         return
       }
 
@@ -812,6 +960,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
   // Called when user proceeds through the modal (active subscription OR after payment confirmed)
   const executeDownload = async (downloadId?: string) => {
+    if (isRedemptionExpired) {
+      toast.error("Your 5-minute certificate download window has expired. Please make a new payment.")
+      return
+    }
+
     const targetDownloadId = downloadId || verifiedDownloadId
     if (!targetDownloadId) {
       toast.error("Download token missing. Please complete the payment flow.")
@@ -851,6 +1004,10 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
+        if (response.status === 403 && (errorData.error?.includes('expired') || errorData.error?.includes('5-minute'))) {
+          setIsRedemptionExpired(true)
+          setRedemptionSecondsLeft(0)
+        }
         throw new Error(errorData.error || "Certificate generation failed")
       }
 
@@ -2459,29 +2616,81 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     /* Screen 5: Payment Success & Download Ready */
                     <div className="max-w-2xl mx-auto bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-soft overflow-hidden">
                       {/* Top Status Accent Banner */}
-                      <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-6 py-2.5 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                            PAYMENT CONFIRMED • KRA HANDSHAKE OK
-                          </span>
+                      {isRedemptionExpired ? (
+                        <div className="bg-red-500/10 border-b border-red-500/30 px-6 py-2.5 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-red-600" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-red-800 dark:text-red-300">
+                              DOWNLOAD WINDOW EXPIRED • TRANSACTION CONSUMED
+                            </span>
+                          </div>
+                          <span className="text-xs text-red-900 dark:text-red-200 font-mono font-bold">00:00</span>
                         </div>
-                        <span className="text-xs text-emerald-900 dark:text-emerald-200 font-bold">Auto-Cleared</span>
-                      </div>
+                      ) : (
+                        <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-6 py-2.5 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                              PAYMENT VERIFIED • 5-MINUTE WINDOW ACTIVE
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 font-mono text-xs text-emerald-900 dark:text-emerald-200 font-bold">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{formatTimer(redemptionSecondsLeft)}</span>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="p-6 md:p-8 space-y-6">
                         {/* Header & Icon Cluster */}
-                        <div className="text-center space-y-3">
-                          <div className="w-14 h-14 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center ring-8 ring-emerald-50 dark:ring-emerald-950 text-emerald-700 dark:text-emerald-300">
-                            <CheckCircle2 className="w-8 h-8 font-bold" />
+                        {isRedemptionExpired ? (
+                          <div className="text-center space-y-3">
+                            <div className="w-14 h-14 mx-auto rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center ring-8 ring-red-50 dark:ring-red-950 text-red-700 dark:text-red-300">
+                              <AlertCircle className="w-8 h-8 font-bold" />
+                            </div>
+                            <h2 className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
+                              Download Window Expired
+                            </h2>
+                            <p className="text-xs sm:text-sm text-red-700 dark:text-red-300 max-w-lg mx-auto leading-relaxed font-medium">
+                              Your 5-minute certificate download window has expired. This M-Pesa transaction code has already been used and cannot be reused. Please make a new payment to retrieve another certificate.
+                            </p>
                           </div>
-                          <h2 className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
-                            Payment confirmed {verifiedReceipt ? `- receipt ${verifiedReceipt}` : "- receipt UB12XYZ789"}
-                          </h2>
-                          <p className="text-xs sm:text-sm text-on-surface-variant max-w-lg mx-auto leading-relaxed">
-                            M-Pesa transaction verified successfully. Your official signed KRA Taxpayer Certificate is decrypted and ready for download.
-                          </p>
-                        </div>
+                        ) : (
+                          <div className="text-center space-y-3">
+                            <div className="w-14 h-14 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center ring-8 ring-emerald-50 dark:ring-emerald-950 text-emerald-700 dark:text-emerald-300">
+                              <CheckCircle2 className="w-8 h-8 font-bold" />
+                            </div>
+                            <h2 className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
+                              Payment Verified Successfully
+                            </h2>
+                            <p className="text-xs sm:text-sm text-on-surface-variant max-w-lg mx-auto leading-relaxed">
+                              Your payment has been verified. You have 5 minutes to download your KRA PIN certificate.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Visible Synchronized Countdown Timer Banner */}
+                        {!isRedemptionExpired && (
+                          <div className="bg-primary/10 border border-primary/25 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                                <Clock className="w-5 h-5 animate-pulse" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold text-on-surface">5-Minute Download Window Active</p>
+                                <p className="text-[11px] text-on-surface-variant">
+                                  Synchronized with backend server ledger ({verifiedReceipt ? `Receipt ${verifiedReceipt}` : 'Verified Payment'})
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 self-end sm:self-auto">
+                              <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Remaining:</span>
+                              <div className="px-3.5 py-1 bg-primary text-white font-mono font-black text-sm rounded-lg shadow-xs tracking-wider">
+                                {formatTimer(redemptionSecondsLeft)}
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Certificate Summary Box */}
                         <div className="bg-surface-container-low rounded-xl border border-outline-variant p-5 space-y-4">
@@ -2537,23 +2746,34 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
                         {/* Action Buttons */}
                         <div className="space-y-3">
-                          <button
-                            onClick={() => executeDownload()}
-                            disabled={isDownloadingPdf}
-                            className="w-full bg-primary hover:bg-[#9c1414] text-white h-12 px-6 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-50"
-                          >
-                            {isDownloadingPdf ? (
-                              <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>Compiling Certificate...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Download className="w-4 h-4" />
-                                <span>Download KRA PIN Certificate (PDF)</span>
-                              </>
-                            )}
-                          </button>
+                          {isRedemptionExpired ? (
+                            <button
+                              type="button"
+                              onClick={() => handleResetForNewPayment()}
+                              className="w-full bg-primary hover:bg-[#9c1414] text-white h-12 px-6 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer"
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                              <span>Make a New Payment to Retrieve Certificate</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => executeDownload()}
+                              disabled={isDownloadingPdf}
+                              className="w-full bg-primary hover:bg-[#9c1414] text-white h-12 px-6 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-50"
+                            >
+                              {isDownloadingPdf ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <span>Compiling Certificate...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="w-4 h-4" />
+                                  <span>Download KRA PIN Certificate (PDF)</span>
+                                </>
+                              )}
+                            </button>
+                          )}
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                             <a

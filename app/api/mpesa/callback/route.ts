@@ -380,6 +380,8 @@ export async function POST(req: NextRequest) {
         }
 
         let downloadRecord: any = null;
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + 300000);
         if (db.certificateDownload) {
           try {
             downloadRecord = await db.certificateDownload.create({
@@ -392,11 +394,31 @@ export async function POST(req: NextRequest) {
                 currency: 'KES',
                 mpesaReceipt: mpesaReceipt,
                 checkoutId: CheckoutRequestID,
+                redemptionStatus: 'ACTIVE',
+                firstClaimedAt: now,
+                expiresAt,
+                downloadCount: 0,
               },
             });
           } catch (dlErr: any) {
             log.warn('[M-Pesa Callback] Download record creation notice:', dlErr.message);
           }
+        }
+
+        // Register in authoritative redemption engine
+        try {
+          const { claimOrVerifyRedemptionWindow } = await import('@/lib/mpesa-redemption');
+          await claimOrVerifyRedemptionWindow({
+            mpesaReceipt,
+            checkoutId: CheckoutRequestID,
+            requestedPinInput: resolvedPin,
+            clerkId: effectiveClerkId,
+            amount: Number(amount || minCertFee),
+            phone: targetPhone,
+            dbUserId: dbUser?.id,
+          });
+        } catch (rErr: any) {
+          log.warn('[M-Pesa Callback] Redemption registration notice:', rErr.message);
         }
 
         const downloadId = downloadRecord?.id || 'dl_' + Date.now();
