@@ -83,9 +83,11 @@ export function ReviewSection() {
     fetchGoogleReviews()
   }, [])
 
-  // DESIGN.md Authentic Metric Governance: never fabricate a rating. When no
-  // verified reviews exist yet, no numeric rating or stars are rendered.
+  // Authentic Metric Governance: Hide section completely when no verified reviews exist yet
   const hasVerifiedReviews = (data?.totalReviews || data?.reviews?.length || 0) > 0
+  if (!hasVerifiedReviews) {
+    return null
+  }
   const rating = hasVerifiedReviews ? (data?.rating || 0) : null
   const totalCount = data?.totalReviews || (data?.reviews?.length || 0)
   const writeReviewUrl =

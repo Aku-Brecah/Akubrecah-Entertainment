@@ -17,7 +17,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getPublishedProjects, getPublishedArticles } from '@/lib/cms';
-import { ReviewSection } from '@/components/reviews/review-section';
 import { filterPublicTechnologies, cleanPublicLiveUrl } from '@/lib/tech-filter';
 
 export const revalidate = 3600;
@@ -445,9 +444,6 @@ export default async function Home() {
             </Link>
           </Button>
         </section>
-
-        {/* ============================= REVIEWS & SOCIAL PROOF ENGINE ============================= */}
-        <ReviewSection />
 
         {/* ============================= TECHNICAL NOTES / ARTICLES ============================= */}
         {articles.length > 0 && (
