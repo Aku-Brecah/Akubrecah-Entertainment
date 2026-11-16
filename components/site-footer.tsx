@@ -44,12 +44,12 @@ export function SiteFooter(): JSX.Element {
               </span>
             </div>
 
-            {/* Google Search Preferred Source Integration */}
+            {/* Find on Google & Maps */}
             <div className="pt-2">
               <span className="text-[11px] font-semibold text-on-surface block mb-1.5">
-                Discover in Google Search:
+                Verified on Google:
               </span>
-              <GooglePreferredSourceButton siteDomain="akubrecah.com" />
+              <GooglePreferredSourceButton />
             </div>
           </div>
 
