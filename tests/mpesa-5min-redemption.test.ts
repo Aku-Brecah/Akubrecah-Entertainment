@@ -8,7 +8,6 @@ import {
 } from '@/lib/mpesa-redemption';
 import {
   verifyManualMpesaReceipt,
-  verifyAndFulfillMpesaCheckout,
 } from '@/lib/mpesa-verification';
 
 // Mock Clerk auth

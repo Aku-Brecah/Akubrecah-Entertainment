@@ -51,6 +51,10 @@ export async function POST(req: NextRequest) {
     // 1. Verify download record / 5-minute redemption window if downloadId is provided
     let downloadRecord: any = null;
     if (downloadId) {
+      downloadRecord = await db.certificateDownload?.findFirst({
+        where: { id: downloadId },
+      }).catch(() => null);
+
       const { verifyCertificateDownloadEligibility } = await import('@/lib/mpesa-redemption');
       const eligibility = await verifyCertificateDownloadEligibility({
         downloadId,
