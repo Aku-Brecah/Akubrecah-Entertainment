@@ -21,6 +21,7 @@ const nextConfig = {
   outputFileTracingRoot: __dirname,
   compress: true,
   experimental: {
+    agentUpgrade: 'security',
     optimizePackageImports: [
       'lucide-react',
       '@clerk/nextjs',
