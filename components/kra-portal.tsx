@@ -975,13 +975,17 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
   // Called when user proceeds through the modal (active subscription OR after payment confirmed)
   const executeDownload = async (downloadId?: string) => {
-    if (isRedemptionExpired) {
+    if (isRedemptionExpired && !isAdmin) {
       toast.error("Your 5-minute certificate download window has expired. Please make a new payment.")
       return
     }
 
     const targetDownloadId = downloadId || verifiedDownloadId
-    if (!targetDownloadId) {
+    if (!targetDownloadId && !isAdmin) {
+      if (isSubscribed) {
+        await handleSubscriptionDownload()
+        return
+      }
       toast.error("Download token missing. Please complete the payment flow.")
       return
     }
@@ -1090,14 +1094,24 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       const recordRes = await fetch('/api/certificate/record-download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin: formData.pin, downloadType: 'subscription', subscriptionId: 'admin' }),
+        body: JSON.stringify({
+          pin: formData.rawPin || formData.pin,
+          downloadType: 'subscription',
+          subscriptionId: 'admin',
+        }),
       })
-      const recordData = await recordRes.json()
-      if (!recordData.success) throw new Error(recordData.error || 'Failed to authorize download')
+      const recordData = await recordRes.json().catch(() => ({}))
       toast.dismiss(loadingToast)
-      await executeDownload(recordData.downloadId)
-    } catch (err: any) {
-      toast.error(err.message || 'Download failed.', { id: loadingToast })
+      if (recordData.success && recordData.downloadId) {
+        setVerifiedDownloadId(recordData.downloadId)
+        await executeDownload(recordData.downloadId)
+      } else {
+        // Fallback: /api/generate-certificate verifies admin status server-side and creates the download record
+        await executeDownload()
+      }
+    } catch {
+      toast.dismiss(loadingToast)
+      await executeDownload()
     } finally {
       setIsDownloadingPdf(false)
     }

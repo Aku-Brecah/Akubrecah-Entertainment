@@ -79,19 +79,24 @@ export async function POST(req: NextRequest) {
     if (!isServiceAuthorized) {
       if (!downloadId) {
         if (isAdmin) {
-          const effectiveClerkId = userId || 'admin_user';
-          const dbUser = await getOrCreateDbUser(effectiveClerkId, 'admin@akubrecah.co.ke', 'Administrator');
-          const adminDownloadRecord = await db.certificateDownload?.create({
-            data: {
-              userId: dbUser.id,
-              clerkId: effectiveClerkId,
-              pin: clientResolvedPin || String(pin || 'KRA_CERT').toUpperCase().trim(),
-              downloadType: 'admin',
-              amountCharged: 0,
-              currency: 'KES',
-            },
-          });
-          downloadId = adminDownloadRecord?.id;
+          try {
+            const effectiveClerkId = userId || 'admin_user';
+            const dbUser = await getOrCreateDbUser(effectiveClerkId, 'admin@akubrecah.co.ke', 'Administrator');
+            const adminDownloadRecord = await db.certificateDownload?.create({
+              data: {
+                userId: dbUser.id,
+                clerkId: effectiveClerkId,
+                pin: clientResolvedPin || String(pin || 'KRA_CERT').toUpperCase().trim(),
+                downloadType: 'admin',
+                amountCharged: 0,
+                currency: 'KES',
+              },
+            });
+            downloadId = adminDownloadRecord?.id || `admin_${Date.now()}`;
+          } catch (adminDbErr: any) {
+            log.warn('[generate-certificate] Admin download audit record fallback:', adminDbErr?.message);
+            downloadId = `admin_${Date.now()}`;
+          }
         } else {
           return NextResponse.json(
             { success: false, error: 'Download authorization required. Please complete the payment flow.' },
@@ -161,7 +166,7 @@ export async function POST(req: NextRequest) {
     const payloadPin = (clientResolvedPin || (pin || '')).toUpperCase().trim();
     const recordPinPlaceholder = !recordPin || recordPin === 'KRA_CERT';
     if (!isServiceAuthorized) {
-      if (recordPinPlaceholder && downloadRecord?.downloadType !== 'admin') {
+      if (recordPinPlaceholder && downloadRecord?.downloadType !== 'admin' && !isAdmin) {
         return NextResponse.json(
           { success: false, error: 'This download token is not bound to a KRA PIN. Please initiate a new payment so the certificate is issued for your KRA PIN.' },
           { status: 403 }
