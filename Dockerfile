@@ -31,9 +31,8 @@ COPY package*.json ./
 COPY .npmrc* ./
 COPY prisma ./prisma/
 
-# Install full dependencies (including devDependencies required for Next.js and Prisma compilation)
-RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
-
+# Install dependencies strictly from lockfile (no silent fallback to unpinned npm install)
+RUN npm ci --legacy-peer-deps
 
 # Copy application source code
 COPY . .
@@ -44,9 +43,7 @@ RUN npx playwright install chromium --with-deps
 # Provide build-time values so next build / prisma generate succeeds
 ARG DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres?schema=public"
 ARG DIRECT_URL="postgresql://postgres:postgres@localhost:5432/postgres?schema=public"
-ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ"
-# Client components read the admin identity at build time (NEXT_PUBLIC_*) —
-# without it the admin UI gates fail closed on self-hosted builds.
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=""
 ARG NEXT_PUBLIC_SUPER_ADMIN_EMAIL=""
 ARG CLERK_SECRET_KEY="dummy_build_key"
 
@@ -59,6 +56,10 @@ ENV CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
 # Generate Prisma client and build Next.js production bundle
 RUN npx prisma generate
 RUN npm run build
+
+# Run as non-root user for container hardening
+RUN chown -R node:node /app
+USER node
 
 # Expose Next.js server port
 EXPOSE 3000

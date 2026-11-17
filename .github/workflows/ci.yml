@@ -53,8 +53,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres?schema=public' }}
           DIRECT_URL: ${{ secrets.DIRECT_URL || 'postgresql://postgres:postgres@localhost:5432/postgres?schema=public' }}
-          NEXT_PUBLIC_APP_URL: https://kra-certificate.vercel.app
-          NEXT_PUBLIC_SUPER_ADMIN_EMAIL: poweldayck@gmail.com
+          NEXT_PUBLIC_APP_URL: https://akubrecah.com
+          NEXT_PUBLIC_SUPER_ADMIN_EMAIL: ${{ secrets.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '' }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_placeholder_for_ci' }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_placeholder_for_ci' }}
         run: npm run build
@@ -84,38 +84,45 @@ jobs:
     needs: [quality-gate, security-scan]
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: github.event_name == 'pull_request' && env.VERCEL_TOKEN != ''
+    if: github.event_name == 'pull_request'
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID || 'team_vmAKoPs7Zz3mGe6LEUj5WiIs' }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID || 'prj_qP2jRgwrMsICqRlBPqMsvdkcRyRe' }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     steps:
       - name: 📥 Checkout repository
+        if: env.VERCEL_TOKEN != ''
         uses: actions/checkout@v4
 
       - name: ⚙️ Setup Node.js 20
+        if: env.VERCEL_TOKEN != ''
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
 
       - name: 📦 Install Vercel CLI
+        if: env.VERCEL_TOKEN != ''
         run: npm install --global vercel@latest
 
       - name: 📥 Pull Vercel Environment Information
+        if: env.VERCEL_TOKEN != ''
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: 🏗️ Build Project Artifacts
+        if: env.VERCEL_TOKEN != ''
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: 🚀 Deploy Preview to Vercel
+        if: env.VERCEL_TOKEN != ''
         id: deploy
         run: |
           PREVIEW_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
           echo "preview_url=$PREVIEW_URL" >> "$GITHUB_OUTPUT"
 
       - name: 💬 Comment Preview URL on Pull Request
+        if: env.VERCEL_TOKEN != '' && steps.deploy.outputs.preview_url != ''
         uses: actions/github-script@v7
         with:
           script: |
@@ -139,7 +146,8 @@ jobs:
         env:
           EVOLUTION_URL: ${{ secrets.EVOLUTION_API_URL }}
           EVOLUTION_KEY: ${{ secrets.EVOLUTION_API_KEY }}
-          ADMIN_PHONE: ${{ secrets.ADMIN_WHATSAPP_PHONE || '254791497858' }}
+          EVOLUTION_INSTANCE: ${{ secrets.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment' }}
+          ADMIN_PHONE: ${{ secrets.ADMIN_WHATSAPP_PHONE || '' }}
           WEBHOOK_URL: ${{ secrets.WHATSAPP_NOTIFICATION_WEBHOOK }}
           GATE_STATUS: ${{ needs.quality-gate.result }}
           SEC_STATUS: ${{ needs.security-scan.result }}
@@ -149,30 +157,28 @@ jobs:
             STATUS="FAILED ❌"
           fi
 
-          MESSAGE="🔔 *Akubrecah KRA CI Pipeline Alert*\n\n"
-          MESSAGE+="• Status: ${STATUS}\n"
-          MESSAGE+="• Event: ${{ github.event_name }}\n"
-          MESSAGE+="• Branch: ${{ github.ref_name }}\n"
-          MESSAGE+="• Commit: ${{ github.sha }}\n"
-          MESSAGE+="• Author: ${{ github.actor }}\n\n"
-          MESSAGE+="Run Link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          MESSAGE=$(printf "Akubrecah KRA CI Pipeline Alert\n\n• Status: %s\n• Event: %s\n• Branch: %s\n• Commit: %s\n• Author: %s\n\nRun Link: https://github.com/%s/actions/runs/%s" \
+            "$STATUS" "${{ github.event_name }}" "${{ github.ref_name }}" "${{ github.sha }}" "${{ github.actor }}" "${{ github.repository }}" "${{ github.run_id }}")
 
           # 1. Custom Webhook if configured
           if [ -n "$WEBHOOK_URL" ]; then
             echo "Sending notification to webhook..."
+            PAYLOAD=$(jq -n --arg text "$MESSAGE" --arg status "$STATUS" --arg repo "${{ github.repository }}" '{text:$text, status:$status, repo:$repo}')
             curl -s -X POST "$WEBHOOK_URL" \
               -H "Content-Type: application/json" \
-              -d "{\"text\":\"$MESSAGE\", \"status\":\"$STATUS\", \"repo\":\"${{ github.repository }}\"}" || true
+              -d "$PAYLOAD" || true
           fi
 
           # 2. Evolution API WhatsApp if configured
-          if [ -n "$EVOLUTION_URL" ] && [ -n "$EVOLUTION_KEY" ]; then
+          if [ -n "$EVOLUTION_URL" ] && [ -n "$EVOLUTION_KEY" ] && [ -n "$ADMIN_PHONE" ]; then
             echo "Sending WhatsApp notification via Evolution API..."
             CLEAN_PHONE=$(echo "$ADMIN_PHONE" | tr -cd '0-9')
-            curl -s -X POST "${EVOLUTION_URL}/message/sendText/akubrecah-kra" \
+            ENCODED_INST=$(jq -nr --arg s "$EVOLUTION_INSTANCE" '$s|@uri')
+            WA_PAYLOAD=$(jq -n --arg number "$CLEAN_PHONE" --arg text "$MESSAGE" '{number:$number, text:$text}')
+            curl -s -X POST "${EVOLUTION_URL}/message/sendText/${ENCODED_INST}" \
               -H "apikey: ${EVOLUTION_KEY}" \
               -H "Content-Type: application/json" \
-              -d "{\"number\":\"${CLEAN_PHONE}\",\"text\":\"${MESSAGE}\"}" || true
+              -d "$WA_PAYLOAD" || true
           fi
 
           echo "Notification step completed."

@@ -18,12 +18,19 @@ jobs:
 
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID || 'team_vmAKoPs7Zz3mGe6LEUj5WiIs' }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID || 'prj_qP2jRgwrMsICqRlBPqMsvdkcRyRe' }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔑 Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: ⚙️ Setup Node.js 20
         uses: actions/setup-node@v4
@@ -58,8 +65,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres?schema=public' }}
           DIRECT_URL: ${{ secrets.DIRECT_URL || 'postgresql://postgres:postgres@localhost:5432/postgres?schema=public' }}
-          NEXT_PUBLIC_APP_URL: https://kra-certificate.vercel.app
-          NEXT_PUBLIC_SUPER_ADMIN_EMAIL: poweldayck@gmail.com
+          NEXT_PUBLIC_APP_URL: https://akubrecah.com
+          NEXT_PUBLIC_SUPER_ADMIN_EMAIL: ${{ secrets.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '' }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_placeholder_for_ci' }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_placeholder_for_ci' }}
         run: npm run build
@@ -88,41 +95,39 @@ jobs:
         env:
           EVOLUTION_URL: ${{ secrets.EVOLUTION_API_URL }}
           EVOLUTION_KEY: ${{ secrets.EVOLUTION_API_KEY }}
-          ADMIN_PHONE: ${{ secrets.ADMIN_WHATSAPP_PHONE || '254791497858' }}
+          EVOLUTION_INSTANCE: ${{ secrets.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment' }}
+          ADMIN_PHONE: ${{ secrets.ADMIN_WHATSAPP_PHONE || '' }}
           WEBHOOK_URL: ${{ secrets.WHATSAPP_NOTIFICATION_WEBHOOK }}
           BUILD_STATUS: ${{ job.status }}
         run: |
-          STATUS="SUCCESS 🚀"
+          STATUS="SUCCESS"
           if [ "$BUILD_STATUS" != "success" ]; then
-            STATUS="FAILED ❌"
+            STATUS="FAILED"
           fi
 
-          COMMIT_MSG=$(git log -1 --pretty=%B | tr '\n' ' ' | head -c 80)
-          MESSAGE="🚀 *Akubrecah KRA Production Release Alert*\n\n"
-          MESSAGE+="• Status: ${STATUS}\n"
-          MESSAGE+="• Branch: main\n"
-          MESSAGE+="• Commit: ${{ github.sha }}\n"
-          MESSAGE+="• Note: ${COMMIT_MSG}\n"
-          MESSAGE+="• Author: ${{ github.actor }}\n"
-          MESSAGE+="• Live URL: https://kra-certificate.vercel.app\n\n"
-          MESSAGE+="Action Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          COMMIT_MSG=$(git log -1 --pretty=%s | head -c 80)
+          MESSAGE=$(printf "Akubrecah KRA Production Release Alert\n\n• Status: %s\n• Branch: main\n• Commit: %s\n• Note: %s\n• Author: %s\n• Live URL: https://akubrecah.com\n\nAction Run: https://github.com/%s/actions/runs/%s" \
+            "$STATUS" "${{ github.sha }}" "$COMMIT_MSG" "${{ github.actor }}" "${{ github.repository }}" "${{ github.run_id }}")
 
           # 1. Custom Webhook
           if [ -n "$WEBHOOK_URL" ]; then
             echo "Sending release notification to webhook..."
+            PAYLOAD=$(jq -n --arg text "$MESSAGE" --arg status "$STATUS" --arg repo "${{ github.repository }}" '{text:$text, status:$status, repo:$repo}')
             curl -s -X POST "$WEBHOOK_URL" \
               -H "Content-Type: application/json" \
-              -d "{\"text\":\"$MESSAGE\", \"status\":\"$STATUS\", \"repo\":\"${{ github.repository }}\"}" || true
+              -d "$PAYLOAD" || true
           fi
 
           # 2. WhatsApp Notification via Evolution API
-          if [ -n "$EVOLUTION_URL" ] && [ -n "$EVOLUTION_KEY" ]; then
+          if [ -n "$EVOLUTION_URL" ] && [ -n "$EVOLUTION_KEY" ] && [ -n "$ADMIN_PHONE" ]; then
             echo "Sending WhatsApp notification via Evolution API..."
             CLEAN_PHONE=$(echo "$ADMIN_PHONE" | tr -cd '0-9')
-            curl -s -X POST "${EVOLUTION_URL}/message/sendText/akubrecah-kra" \
+            ENCODED_INST=$(jq -nr --arg s "$EVOLUTION_INSTANCE" '$s|@uri')
+            WA_PAYLOAD=$(jq -n --arg number "$CLEAN_PHONE" --arg text "$MESSAGE" '{number:$number, text:$text}')
+            curl -s -X POST "${EVOLUTION_URL}/message/sendText/${ENCODED_INST}" \
               -H "apikey: ${EVOLUTION_KEY}" \
               -H "Content-Type: application/json" \
-              -d "{\"number\":\"${CLEAN_PHONE}\",\"text\":\"${MESSAGE}\"}" || true
+              -d "$WA_PAYLOAD" || true
           fi
 
           echo "Deployment alert dispatched."

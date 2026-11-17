@@ -5,25 +5,29 @@ services:
     build:
       context: .
       args:
-        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ}
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
+        NEXT_PUBLIC_SUPER_ADMIN_EMAIL: ${NEXT_PUBLIC_SUPER_ADMIN_EMAIL:-}
     env_file:
       - path: .env
         required: false
     ports:
-      - "${APP_PORT:-3005}:3000"
+      - "127.0.0.1:${APP_PORT:-3005}:3000"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL:-}
       - DIRECT_URL=${DIRECT_URL:-}
-      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ}
+      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
       - CLERK_SECRET_KEY=${CLERK_SECRET_KEY:-}
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-}
+      - NEXT_PUBLIC_SUPER_ADMIN_EMAIL=${NEXT_PUBLIC_SUPER_ADMIN_EMAIL:-}
+      - ADMIN_BOT_PIN=${ADMIN_BOT_PIN:-}
+      - N8N_DISPATCH_SECRET=${N8N_DISPATCH_SECRET:-}
+      - INTERNAL_PROXY_SECRET=${INTERNAL_PROXY_SECRET:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - EVOLUTION_API_URL=http://evolution:8080
       - EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
+      - EVOLUTION_WEBHOOK_SECRET=${EVOLUTION_WEBHOOK_SECRET:?Set EVOLUTION_WEBHOOK_SECRET in .env}
       - EVOLUTION_INSTANCE_NAME=${EVOLUTION_INSTANCE_NAME:-Akubrecah Entertainment}
       - MPESA_DOWNLOAD_FEE_KES=${MPESA_DOWNLOAD_FEE_KES:-20}
       - MPESA_SUBSCRIPTION_AMOUNT_KES=${MPESA_SUBSCRIPTION_AMOUNT_KES:-500}
@@ -68,6 +72,11 @@ services:
       - redis-data:/data
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   # Evolution API for WhatsApp
   evolution:
@@ -77,17 +86,17 @@ services:
       - path: .env
         required: false
     ports:
-      - "${EVOLUTION_PORT:-8085}:8080"
+      - "127.0.0.1:${EVOLUTION_PORT:-8085}:8080"
     expose:
       - "8080"
     environment:
       - SERVER_URL=${SERVER_URL:-https://wa.akubrecah.com}
       - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
-      - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
+      - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=false
       - DEL_INSTANCE=true
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://evolution:evolution_secret_password@evolution_postgres:5432/evolution?schema=public
+      - DATABASE_CONNECTION_URI=postgresql://evolution:${EVOLUTION_DB_PASSWORD:?Set EVOLUTION_DB_PASSWORD in .env}@evolution_postgres:5432/evolution?schema=public
       - DATABASE_SAVE_DATA_INSTANCE=true
       - DATABASE_SAVE_DATA_NEW_MESSAGE=true
       - DATABASE_SAVE_MESSAGE_UPDATE=true
@@ -100,7 +109,7 @@ services:
       - CONFIG_SESSION_PHONE_CLIENT=Chrome
       - CONFIG_SESSION_PHONE_NAME=Akubrecah
       - CONFIG_SESSION_PHONE_VERSION=2.3000.1020885143
-      - WEBHOOK_GLOBAL_URL=http://akubrecah-app:3000/api/whatsapp/webhook?token=${EVOLUTION_API_KEY}
+      - WEBHOOK_GLOBAL_URL=http://akubrecah-app:3000/api/whatsapp/webhook?token=${EVOLUTION_WEBHOOK_SECRET:?Set EVOLUTION_WEBHOOK_SECRET in .env}
       - WEBHOOK_GLOBAL_ENABLED=true
       - WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=false
       - WEBHOOK_EVENTS_APPLICATION_STARTUP=false
@@ -125,8 +134,10 @@ services:
     volumes:
       - evolution-data:/evolution/instances
     depends_on:
-      - evolution_postgres
-      - redis
+      evolution_postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
   # Dedicated Postgres for Evolution WhatsApp instance state
@@ -136,10 +147,15 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: evolution
-      POSTGRES_PASSWORD: evolution_secret_password
+      POSTGRES_PASSWORD: ${EVOLUTION_DB_PASSWORD:?Set EVOLUTION_DB_PASSWORD in .env}
       POSTGRES_DB: evolution
     volumes:
       - evolution-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evolution -d evolution"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
 volumes:
   redis-data:
