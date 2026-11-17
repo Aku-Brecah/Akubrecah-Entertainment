@@ -714,7 +714,8 @@ describe('Safaricom Daraja M-Pesa Express Integration', () => {
       const oauthData = await oauthRes.json();
       expect(oauthRes.status).toBe(200);
       expect(oauthData.success).toBe(true);
-      expect(oauthData.tokenPreview).toBe('admintes...7890');
+      expect(oauthData.tokenVerified).toBe(true);
+      expect(oauthData.tokenPreview).toBeUndefined();
 
       const queryRes = await POST(
         new NextRequest('https://kra.akubrecah.com/api/admin/daraja', {
@@ -750,10 +751,38 @@ describe('Safaricom Daraja M-Pesa Express Integration', () => {
       expect(extractMpesaReceiptCode('TEST123456')).toBeNull();
     });
 
-    it('POST /api/mpesa/verify verifies manual M-Pesa receipts, enforces KES 20 minimum, and blocks cross-PIN reuse', async () => {
+    it('POST /api/mpesa/verify verifies DB-confirmed manual M-Pesa receipts, blocks forged SMS text, enforces KES 20 minimum, and blocks cross-PIN reuse', async () => {
       const { POST } = await import('@/app/api/mpesa/verify/route');
 
-      // 1. Valid manual SMS confirmation unlocks certificate
+      // 0. Forged unverified SMS text without a verified DB transaction MUST be rejected (400)
+      const forgedRes = await POST(
+        new NextRequest('https://kra.akubrecah.com/api/mpesa/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mpesaCode: 'TZ99XX1111 Confirmed. Ksh20.00 paid to AKUBRECAH TECHNOLOGIES.',
+            pin: 'A012345678Z',
+            phone: '0712345678',
+          }),
+        })
+      );
+      const forgedData = await forgedRes.json();
+      expect(forgedRes.status).toBe(400);
+      expect(forgedData.verified).toBe(false);
+
+      // Seed an authoritative Daraja-settled transaction for receipt TK81MN2345
+      mocks.mpesaTransactions.set('ws_CO_MANUAL_VERIFIED_1', {
+        id: 'mtx_manual_1',
+        checkoutRequestId: 'ws_CO_MANUAL_VERIFIED_1',
+        mpesaReceiptNumber: 'TK81MN2345',
+        pin: 'A012345678Z',
+        phone: '254712345678',
+        amount: 20,
+        status: 'COMPLETED',
+        clerkId: 'user_test_1',
+      });
+
+      // 1. Valid DB-verified manual SMS confirmation unlocks certificate
       const validRes = await POST(
         new NextRequest('https://kra.akubrecah.com/api/mpesa/verify', {
           method: 'POST',
