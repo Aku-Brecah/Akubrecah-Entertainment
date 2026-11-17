@@ -93,10 +93,6 @@ export default function BrandBookPage() {
   return (
     <div className="relative w-full bg-background text-on-background font-sans overflow-x-hidden min-h-screen">
 
-      {/* Background glow — deep red, no purple */}
-      <div className="absolute top-0 inset-x-0 h-[600px] bg-[radial-gradient(ellipse_at_30%_0%,rgba(186,26,26,0.12)_0%,transparent_70%)] pointer-events-none z-0" />
-      <div className="absolute top-40 right-[10%] w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none z-0" />
-
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-24 space-y-20">
 
         {/* Navigation Breadcrumb */}
@@ -117,7 +113,7 @@ export default function BrandBookPage() {
 
           <h1 className="text-4xl sm:text-6xl font-black text-on-surface tracking-tight leading-[1.08]">
             Corporate Modernism.<br />
-            <span className="text-primary bg-gradient-to-br from-primary to-red-700 bg-clip-text text-transparent">
+            <span className="text-primary">
               Systemic Precision.
             </span>
           </h1>
@@ -129,14 +125,14 @@ export default function BrandBookPage() {
 
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <Button asChild size="lg" className="h-12 px-6 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary/90 shadow-md shadow-primary/20">
-              <Link href="/retrieval-portal">
+              <a href="https://kra.akubrecah.com" target="_blank" rel="noopener noreferrer">
                 Explore Live Portal <ArrowRight className="w-4 h-4 ml-1.5" />
-              </Link>
+              </a>
             </Button>
             <Button asChild variant="outline" size="lg" className="h-12 px-6 rounded-xl border-outline-variant font-bold text-xs hover:bg-surface-container">
-              <Link href="/contact">
+              <a href="https://akubrecah.com/contact" target="_blank" rel="noopener noreferrer">
                 Work with Our Brand & Tech Studio
-              </Link>
+              </a>
             </Button>
           </div>
         </section>
@@ -346,6 +342,7 @@ export default function BrandBookPage() {
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <input
                 type="text"
+                aria-label="Sample preview text"
                 value={customText}
                 onChange={(e) => setCustomText(e.target.value)}
                 placeholder="Type sample text..."
@@ -358,6 +355,7 @@ export default function BrandBookPage() {
                 </span>
                 <input
                   type="range"
+                  aria-label="Preview font size"
                   min="16"
                   max="64"
                   value={fontSize}
@@ -366,6 +364,7 @@ export default function BrandBookPage() {
                 />
 
                 <select
+                  aria-label="Preview font weight"
                   value={fontWeight}
                   onChange={(e) => setFontWeight(Number(e.target.value))}
                   className="h-11 px-2.5 rounded-xl bg-surface dark:bg-slate-900 border border-outline-variant text-xs font-bold text-on-surface focus:outline-none"
@@ -396,7 +395,6 @@ export default function BrandBookPage() {
 
         {/* ===================== SECTION 5: BRAND VOICE & VALUES ===================== */}
         <section className="p-8 sm:p-12 rounded-3xl bg-slate-950 text-white border border-slate-800 shadow-xl space-y-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full filter blur-[80px] pointer-events-none" />
 
           <div className="relative z-10 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
             <ShieldCheck className="w-4 h-4" />

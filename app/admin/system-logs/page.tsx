@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 interface LogEntry {
   id: string;
@@ -13,27 +13,6 @@ interface LogEntry {
   details: Record<string, any>;
 }
 
-const STATIC_LOGS: LogEntry[] = [
-  { id: "LOG-01", timestamp: "2026-06-25T13:40:12Z", level: "info", service: "AuthService", message: "User clerk_9921 authenticated successfully via standard password flow.", actor: "demo.admin@akubrecah.co.ke", ip: "102.135.40.89", details: { method: "ClerkSSO", status: "Success", sessionLifetime: "24h" } },
-  { id: "LOG-02", timestamp: "2026-06-25T13:41:05Z", level: "info", service: "PaymentAPI", message: "M-Pesa STK Push callback received for checkout ID stk_884129A.", actor: "SafaricomWebhook", ip: "196.201.214.200", details: { status: "Paid", amount: 150, phoneNumber: "254712***456", transactionId: "TGF8192KSL" } },
-  { id: "LOG-03", timestamp: "2026-06-25T13:41:18Z", level: "error", service: "KRAPortal", message: "Filing failure: KRA portal returned connection timeout response during NIL return post.", actor: "SystemQueue", ip: "41.89.20.10", details: { attempt: 3, errorCode: "ETIMEDOUT", targetUrl: "https://itax.kra.go.ke/iTax/NilReturnSubmit.do" } },
-  { id: "LOG-04", timestamp: "2026-06-25T13:42:01Z", level: "warning", service: "UserSession", message: "Multiple sessions detected: User logged in from new IP address within 5 minutes.", actor: "cybercafe_east@net.ke", ip: "197.248.88.99", details: { previousIp: "197.248.12.10", activeSessions: 2 } },
-  { id: "LOG-05", timestamp: "2026-06-25T13:43:55Z", level: "info", service: "Retrieval", message: "KRA Certificate successfully compiled to PDF format and delivered.", actor: "registered_user", ip: "102.135.2.14", details: { durationMs: 1420, fileSizeKb: 412, pinCode: "A0012***9Z" } },
-  { id: "LOG-06", timestamp: "2026-06-25T13:44:10Z", level: "error", service: "MpesaService", message: "STK Push request rejected: Safaricom API returned invalid credentials signature.", actor: "SystemConfig", ip: "localhost", details: { error: "Authentication Failure", rawResponse: "UNAUTHORIZED_ACCESS" } },
-];
-
-const ACTORS = ["system_daemon", "tax_auditor_02", "demo.admin@akubrecah.co.ke", "mpesa_callback_worker", "kra_retrieval_agent"];
-const SERVICES = ["AuthService", "PaymentAPI", "KRAPortal", "Retrieval", "MpesaService", "DatabasePool"];
-const MESSAGES = [
-  "Database connection pool size reached 80% capacity.",
-  "M-Pesa STK push initiated for amount KES 150.",
-  "User session timed out after 30 minutes of inactivity.",
-  "Invalid KRA PIN pattern entered during lookup validation.",
-  "Admin configuration setting 'Maintenance Mode' changed from FALSE to TRUE.",
-  "Successfully generated PDF tax clearance certificate.",
-  "Failed to connect to KRA iTax node. Initiating automatic retry.",
-];
-
 export default function SystemLogsPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,15 +22,6 @@ export default function SystemLogsPage() {
   const [isPaused, setIsPaused] = useState(false);
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  
-  const terminalEndRef = useRef<HTMLDivElement>(null);
-
-  // Auto scroll terminal to bottom when new logs arrive (if terminal is active)
-  useEffect(() => {
-    if (!isPaused && terminalEndRef.current) {
-      terminalEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [logs, isPaused]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -98,7 +68,8 @@ export default function SystemLogsPage() {
 
   const clearLogs = () => {
     setLogs([]);
-    showToast("Terminal screen cleared.");
+    setIsPaused(true);
+    showToast("Terminal screen cleared and live polling paused. Click Resume Live to refresh.");
   };
 
   const exportLogs = () => {
@@ -106,13 +77,17 @@ export default function SystemLogsPage() {
       showToast("No logs available to export.");
       return;
     }
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(logs, null, 2));
+    const blob = new Blob([JSON.stringify(logs, null, 2)], { type: "application/json;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
     const downloadAnchor = document.createElement("a");
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `kra_portal_logs_${new Date().toISOString().slice(0,10)}.json`);
+    downloadAnchor.setAttribute("href", url);
+    downloadAnchor.setAttribute("download", `kra_portal_logs_${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
-    downloadAnchor.remove();
+    setTimeout(() => {
+      downloadAnchor.remove();
+      window.URL.revokeObjectURL(url);
+    }, 1000);
     showToast("Exported logs database successfully.");
   };
 
@@ -132,9 +107,14 @@ export default function SystemLogsPage() {
           <h1 className="text-3xl font-bold text-on-surface">System Logs</h1>
           <p className="text-on-surface-variant text-sm mt-1">Real-time terminal audit trail and debugging console.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setIsPaused(!isPaused)}
+            type="button"
+            onClick={() => {
+              const next = !isPaused;
+              setIsPaused(next);
+              if (!next) fetchLogs(true);
+            }}
             className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl border transition-all ${isPaused ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-400 border-amber-300" : "bg-surface-container border-outline-variant hover:bg-surface-container-high text-on-surface"}`}
           >
             <span className="material-symbols-outlined text-[18px]">
@@ -143,6 +123,7 @@ export default function SystemLogsPage() {
             {isPaused ? "Resume Live" : "Pause Live"}
           </button>
           <button
+            type="button"
             onClick={clearLogs}
             className="flex items-center gap-1.5 px-4 py-2 bg-surface-container border border-outline-variant hover:bg-surface-container-high text-xs font-bold text-on-surface rounded-xl transition-all"
           >
@@ -150,6 +131,7 @@ export default function SystemLogsPage() {
             Clear Logs
           </button>
           <button
+            type="button"
             onClick={exportLogs}
             className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white hover:bg-primary/90 text-xs font-bold rounded-xl shadow-soft transition-all"
           >
@@ -162,7 +144,7 @@ export default function SystemLogsPage() {
       {/* Logger Console Interface */}
       <div className="flex flex-col xl:flex-row gap-6 items-start">
         {/* Main Terminal Window */}
-        <div className="flex-grow flex-1 min-w-[300px] md:min-w-[600px] flex flex-col bg-slate-950 dark:bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="flex-grow flex-1 min-w-0 w-full flex flex-col bg-slate-950 dark:bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
           {/* Terminal Title Bar */}
           <div className="bg-slate-900 dark:bg-zinc-900 border-b border-zinc-800 px-5 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -269,7 +251,6 @@ export default function SystemLogsPage() {
                 );
               })
             )}
-            <div ref={terminalEndRef} />
           </div>
         </div>
 
@@ -292,7 +273,7 @@ export default function SystemLogsPage() {
               </div>
               <div className="border-t border-outline-variant pt-2.5 mt-1 flex justify-between items-center text-xs font-bold text-on-surface">
                 <span>Total Buffer size</span>
-                <span>{logs.length} / 50</span>
+                <span>{logs.length} / 100</span>
               </div>
             </div>
           </div>
@@ -300,10 +281,10 @@ export default function SystemLogsPage() {
           <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-5 text-xs text-on-surface-variant leading-relaxed">
             <h4 className="font-bold text-on-surface mb-2 uppercase tracking-wider text-[10px]">Debugging Instructions</h4>
             <p className="mb-2">
-              Select any event entry in the console box to view the detailed JSON payload configuration containing active connection parameters, process tokens, and gateway diagnostics.
+              Select any event entry in the console box to view the detailed JSON payload containing gateway diagnostics and audit context.
             </p>
             <p>
-              Use the **Export DB** button to backup configuration logs to your local hard drive for audit archiving.
+              Use the <strong className="text-on-surface">Export DB</strong> button to download the current audit trail to your device for archiving.
             </p>
           </div>
         </div>
@@ -320,7 +301,9 @@ export default function SystemLogsPage() {
                 Log Event Details: {selectedLog.id}
               </h2>
               <button
+                type="button"
                 onClick={() => setSelectedLog(null)}
+                aria-label="Close log inspector"
                 className="p-1 rounded hover:bg-zinc-800 transition-colors text-zinc-500 hover:text-zinc-200"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>

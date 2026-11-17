@@ -8,7 +8,7 @@ import {
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState({
-    siteName: "Akubrecah Technologies",
+    siteName: "Akubrecah Entertainment",
     tagline: "Software Engineering & Digital Products That Scale",
     contactEmail: "engineering@akubrecah.com",
     contactPhone: "+254 791 497 858",
@@ -16,7 +16,7 @@ export default function AdminSettingsPage() {
     heroHeadline: "Engineering Digital Products That Scale",
     heroSubtitle: "Full-cycle software engineering — from concept to production. Web platforms, native mobile apps, cloud infrastructure, and mission-critical automated systems.",
     whatsappBotNumber: "254791497858",
-    githubUrl: "https://github.com/Aku-brecah",
+    githubUrl: "https://github.com/Akubrecah",
     linkedinUrl: "https://linkedin.com/company/akubrecah",
     kraRetrievalPrice: "20",
     engineeringAvailability: "Open for New Projects",
@@ -31,13 +31,22 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     fetch("/api/admin/settings")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success && data.settings) {
+      .then(async (r) => {
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data.success) {
+          throw new Error(data.error || "Failed to load saved website settings.");
+        }
+        if (data.settings) {
           setSettings((prev) => ({ ...prev, ...data.settings }));
         }
       })
-      .catch((err) => console.error("Failed to load settings:", err))
+      .catch((err) => {
+        console.error("Failed to load settings:", err);
+        setStatusMessage({
+          type: "error",
+          text: err?.message || "Failed to load saved settings from database. Values shown are defaults.",
+        });
+      })
       .finally(() => setLoading(false));
   }, []);
 

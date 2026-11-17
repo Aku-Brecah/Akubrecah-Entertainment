@@ -39,28 +39,37 @@ function AdminProjectsContent() {
   const [activeTab, setActiveTab] = useState<"projects" | "github">(initialTab);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [editingProject, setEditingProject] = useState<Partial<Project> | null>(null);
+  const [techInput, setTechInput] = useState("");
+  const [publicBaseUrl, setPublicBaseUrl] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const fetchProjects = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await fetch("/api/admin/projects");
       const data = await res.json();
-      if (data.success) {
-        setProjects(data.projects);
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to load projects.");
       }
-    } catch (err) {
+      setProjects(data.projects || []);
+    } catch (err: any) {
       console.error("Failed to load projects:", err);
+      setLoadError(err?.message || "Failed to load projects.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hostname.toLowerCase().startsWith("admin.")) {
+      setPublicBaseUrl("https://akubrecah.com");
+    }
     fetchProjects();
   }, []);
 
@@ -83,12 +92,14 @@ function AdminProjectsContent() {
       isPublished: true,
       displayOrder: 0,
     });
+    setTechInput("Next.js, TypeScript, Tailwind CSS");
     setErrorMessage("");
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (p: Project) => {
     setEditingProject({ ...p });
+    setTechInput((p.technologies || []).join(", "));
     setErrorMessage("");
     setIsModalOpen(true);
   };
@@ -115,8 +126,14 @@ function AdminProjectsContent() {
         liveUrl = "https://kra.akubrecah.com";
       }
 
+      const parsedTechnologies = techInput
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
       const payload = {
         ...editingProject,
+        technologies: parsedTechnologies,
         liveUrl,
       };
 
@@ -145,13 +162,15 @@ function AdminProjectsContent() {
     if (!confirm(`Are you sure you want to permanently delete "${title}"?`)) return;
 
     try {
-      const res = await fetch(`/api/admin/projects?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/projects?id=${encodeURIComponent(id)}`, { method: "DELETE" });
       const data = await res.json();
-      if (data.success) {
-        setProjects((prev) => prev.filter((p) => p.id !== id));
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to delete project.");
       }
-    } catch (err) {
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+    } catch (err: any) {
       console.error("Failed to delete project:", err);
+      setLoadError(err?.message || "Failed to delete project.");
     }
   };
 
@@ -164,11 +183,13 @@ function AdminProjectsContent() {
         body: JSON.stringify({ id: p.id, isPublished: nextState }),
       });
       const data = await res.json();
-      if (data.success) {
-        setProjects((prev) => prev.map((item) => (item.id === p.id ? { ...item, isPublished: nextState } : item)));
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to update publish status.");
       }
-    } catch (err) {
+      setProjects((prev) => prev.map((item) => (item.id === p.id ? { ...item, isPublished: nextState } : item)));
+    } catch (err: any) {
       console.error("Failed to toggle publish:", err);
+      setLoadError(err?.message || "Failed to update publish status.");
     }
   };
 
@@ -181,11 +202,13 @@ function AdminProjectsContent() {
         body: JSON.stringify({ id: p.id, isFeatured: nextState }),
       });
       const data = await res.json();
-      if (data.success) {
-        setProjects((prev) => prev.map((item) => (item.id === p.id ? { ...item, isFeatured: nextState } : item)));
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to update featured status.");
       }
-    } catch (err) {
+      setProjects((prev) => prev.map((item) => (item.id === p.id ? { ...item, isFeatured: nextState } : item)));
+    } catch (err: any) {
       console.error("Failed to toggle featured:", err);
+      setLoadError(err?.message || "Failed to update featured status.");
     }
   };
 
@@ -266,6 +289,15 @@ function AdminProjectsContent() {
             />
           </div>
 
+      {loadError && (
+        <div role="alert" className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 text-xs font-semibold flex items-center justify-between gap-3">
+          <span>{loadError}</span>
+          <button type="button" onClick={fetchProjects} className="px-3 py-1 rounded-lg bg-red-600 text-white font-bold">
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Projects List */}
       {loading ? (
         <div className="p-12 text-center text-xs text-on-surface-variant bg-surface-container rounded-3xl border border-outline-variant">
@@ -339,13 +371,14 @@ function AdminProjectsContent() {
 
               <div className="pt-4 border-t border-outline-variant/60 flex items-center justify-between flex-wrap gap-2 text-xs">
                 <div className="flex items-center gap-3">
-                  <Link
-                    href={`/projects/${p.slug}`}
+                  <a
+                    href={`${publicBaseUrl}/projects/${p.slug}`}
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-primary font-bold hover:underline"
                   >
                     <Eye className="w-3.5 h-3.5" /> View Live
-                  </Link>
+                  </a>
                   {p.liveUrl && (
                     <a
                       href={p.liveUrl}
@@ -517,11 +550,8 @@ function AdminProjectsContent() {
                 </div>
                 <input
                   type="text"
-                  value={editingProject.technologies ? editingProject.technologies.join(", ") : ""}
-                  onChange={(e) => {
-                    const arr = e.target.value.split(",").map((t) => t.trim()).filter(Boolean);
-                    setEditingProject((prev) => ({ ...prev, technologies: arr }));
-                  }}
+                  value={techInput}
+                  onChange={(e) => setTechInput(e.target.value)}
                   placeholder="e.g. GovTech Automation, Fiscal PDF Engine, High-Concurrency API"
                   className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-outline-variant text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                 />

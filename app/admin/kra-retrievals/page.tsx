@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   BadgeCheck,
   Search,
@@ -58,6 +58,7 @@ export default function KraRetrievalsAdminPage() {
 
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeTab, setActiveTab] = useState<"downloads" | "logs" | "live-test">("downloads");
 
   // Live Gateway Query Test State
@@ -65,6 +66,7 @@ export default function KraRetrievalsAdminPage() {
   const [testMode, setTestMode] = useState<"id" | "pin">("id");
   const [testLoading, setTestLoading] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
+  const [testHttpStatus, setTestHttpStatus] = useState<number | null>(null);
 
   const fetchData = async (query = searchQuery) => {
     setLoading(true);
@@ -86,6 +88,9 @@ export default function KraRetrievalsAdminPage() {
 
   useEffect(() => {
     fetchData();
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
   }, []);
 
   const handleLiveQuery = async (e: React.FormEvent) => {
@@ -96,6 +101,7 @@ export default function KraRetrievalsAdminPage() {
     }
     setTestLoading(true);
     setTestResult(null);
+    setTestHttpStatus(null);
 
     try {
       const endpoint = testMode === "pin" ? "/api/kra/live-verify/pin" : "/api/kra/live-verify/id";
@@ -107,13 +113,14 @@ export default function KraRetrievalsAdminPage() {
         body: JSON.stringify(body),
       });
 
-      const json = await res.json();
+      setTestHttpStatus(res.status);
+      const json = await res.json().catch(() => ({ success: false, error: `HTTP ${res.status}` }));
       setTestResult(json);
-      if (json.success) {
+      if (res.ok && json.success) {
         toast.success("Live taxpayer record resolved!");
         fetchData(); // refresh cache
       } else {
-        toast.error(json.error || "Taxpayer not found on live registry");
+        toast.error(json.error || `Gateway returned HTTP ${res.status}`);
       }
     } catch (e: any) {
       toast.error("Gateway test failed: " + e.message);
@@ -128,6 +135,12 @@ export default function KraRetrievalsAdminPage() {
       return;
     }
 
+    const csvEscape = (val: unknown) => {
+      const raw = String(val ?? "");
+      const safe = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
+
     const headers = [
       "Order ID",
       "KRA PIN",
@@ -140,24 +153,32 @@ export default function KraRetrievalsAdminPage() {
     ];
 
     const rows = data.downloads.map((d) => [
-      `"${d.id}"`,
-      `"${d.pin}"`,
-      `"${d.amountCharged || 20}"`,
-      `"${d.mpesaReceipt || d.checkoutId || 'Direct/Admin'}"`,
-      `"${d.downloadType}"`,
-      `"${(d.users?.email || d.clerkId || 'Guest').replace(/"/g, '""')}"`,
-      `"Ephemeral - Zero PDF Storage"`,
-      `"${new Date(d.createdAt).toLocaleString()}"`
+      d.id,
+      d.pin,
+      Number(d.amountCharged ?? 0).toFixed(2),
+      d.mpesaReceipt || d.checkoutId || "Direct/Admin",
+      d.downloadType,
+      d.users?.email || d.clerkId || "Guest",
+      "Ephemeral - Zero PDF Storage",
+      new Date(d.createdAt).toISOString(),
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const csvBody = [
+      headers.map(csvEscape).join(","),
+      ...rows.map((r) => r.map(csvEscape).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvBody], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute("download", `KRA_Order_Audit_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
-    link.remove();
+    setTimeout(() => {
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    }, 1000);
     toast.success("CSV export downloaded successfully!");
   };
 
@@ -289,14 +310,18 @@ export default function KraRetrievalsAdminPage() {
         </div>
 
         {/* Global Live Filter */}
-        <div className="relative min-w-[260px]">
+        <div className="relative min-w-0 sm:min-w-[260px]">
           <Search className="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => {
-              setSearchQuery(e.target.value);
-              fetchData(e.target.value);
+              const val = e.target.value;
+              setSearchQuery(val);
+              if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+              searchDebounceRef.current = setTimeout(() => {
+                fetchData(val);
+              }, 300);
             }}
             placeholder="Search PIN, receipt, checkout ID..."
             className="w-full h-10 pl-9 pr-3 rounded-xl bg-surface-container text-xs text-on-surface placeholder:text-muted-foreground border border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs"
@@ -360,7 +385,7 @@ export default function KraRetrievalsAdminPage() {
                           </span>
                         </td>
                         <td className="py-3 px-4 font-black text-emerald-600 dark:text-emerald-400">
-                          KES {d.amountCharged || 20}
+                          KES {Number(d.amountCharged ?? 0).toLocaleString()}
                         </td>
                         <td className="py-3 px-4 font-mono font-semibold text-on-surface">
                           {d.mpesaReceipt || d.checkoutId || <span className="text-on-surface-variant italic">Direct/Admin</span>}
@@ -485,7 +510,7 @@ export default function KraRetrievalsAdminPage() {
               </label>
             </div>
 
-            <div className="flex gap-2.5">
+            <div className="flex flex-col sm:flex-row gap-2.5">
               <input
                 type="text"
                 value={testIdentifier}
@@ -496,7 +521,7 @@ export default function KraRetrievalsAdminPage() {
               <button
                 type="submit"
                 disabled={testLoading}
-                className="h-12 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
+                className="h-12 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
               >
                 {testLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                 <span>Execute Query</span>
@@ -507,7 +532,7 @@ export default function KraRetrievalsAdminPage() {
           {testResult && (
             <div className="mt-6 rounded-2xl bg-neutral-950 p-5 border border-neutral-800 font-mono text-xs text-emerald-400 overflow-x-auto">
               <div className="flex items-center justify-between pb-3 border-b border-neutral-800 text-neutral-400 text-[11px]">
-                <span>Gateway Raw Response Status: {testResult.success ? "200 OK" : "404 Not Found"}</span>
+                <span>Gateway Raw Response Status: HTTP {testHttpStatus ?? (testResult.success ? 200 : 500)}</span>
                 <span>Time: {new Date().toLocaleTimeString()}</span>
               </div>
               <pre className="pt-3">{JSON.stringify(testResult, null, 2)}</pre>

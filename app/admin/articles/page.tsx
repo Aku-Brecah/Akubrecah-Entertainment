@@ -24,28 +24,37 @@ interface Article {
 export default function AdminArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [editingArticle, setEditingArticle] = useState<Partial<Article> | null>(null);
+  const [tagsInput, setTagsInput] = useState("");
+  const [publicBaseUrl, setPublicBaseUrl] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const fetchArticles = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await fetch("/api/admin/articles");
       const data = await res.json();
-      if (data.success) {
-        setArticles(data.articles);
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to load articles.");
       }
-    } catch (err) {
+      setArticles(data.articles || []);
+    } catch (err: any) {
       console.error("Failed to load articles:", err);
+      setLoadError(err?.message || "Failed to load articles.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hostname.toLowerCase().startsWith("admin.")) {
+      setPublicBaseUrl("https://akubrecah.com");
+    }
     fetchArticles();
   }, []);
 
@@ -60,12 +69,14 @@ export default function AdminArticlesPage() {
       readingTimeMinutes: 5,
       isPublished: true,
     });
+    setTagsInput("Next.js, Engineering");
     setErrorMessage("");
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (a: Article) => {
     setEditingArticle({ ...a });
+    setTagsInput((a.tags || []).join(", "));
     setErrorMessage("");
     setIsModalOpen(true);
   };
@@ -86,11 +97,15 @@ export default function AdminArticlesPage() {
       const isUpdating = Boolean(editingArticle.id);
       const url = "/api/admin/articles";
       const method = isUpdating ? "PUT" : "POST";
+      const parsedTags = tagsInput
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
 
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editingArticle),
+        body: JSON.stringify({ ...editingArticle, tags: parsedTags }),
       });
 
       const data = await res.json();
@@ -112,13 +127,15 @@ export default function AdminArticlesPage() {
     if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
 
     try {
-      const res = await fetch(`/api/admin/articles?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/articles?id=${encodeURIComponent(id)}`, { method: "DELETE" });
       const data = await res.json();
-      if (data.success) {
-        setArticles((prev) => prev.filter((a) => a.id !== id));
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to delete article.");
       }
-    } catch (err) {
+      setArticles((prev) => prev.filter((a) => a.id !== id));
+    } catch (err: any) {
       console.error("Failed to delete article:", err);
+      setLoadError(err?.message || "Failed to delete article.");
     }
   };
 
@@ -131,11 +148,13 @@ export default function AdminArticlesPage() {
         body: JSON.stringify({ id: a.id, isPublished: nextState }),
       });
       const data = await res.json();
-      if (data.success) {
-        setArticles((prev) => prev.map((item) => (item.id === a.id ? { ...item, isPublished: nextState } : item)));
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to update publish status.");
       }
-    } catch (err) {
+      setArticles((prev) => prev.map((item) => (item.id === a.id ? { ...item, isPublished: nextState } : item)));
+    } catch (err: any) {
       console.error("Failed to toggle publish:", err);
+      setLoadError(err?.message || "Failed to update publish status.");
     }
   };
 
@@ -178,6 +197,15 @@ export default function AdminArticlesPage() {
           className="w-full h-10 pl-10 pr-4 rounded-xl bg-surface-container border border-outline-variant text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
+
+      {loadError && (
+        <div role="alert" className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-400 text-xs font-semibold flex items-center justify-between gap-3">
+          <span>{loadError}</span>
+          <button type="button" onClick={fetchArticles} className="px-3 py-1 rounded-lg bg-red-600 text-white font-bold">
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Articles Feed */}
       {loading ? (
@@ -234,13 +262,14 @@ export default function AdminArticlesPage() {
               </div>
 
               <div className="flex items-center gap-2 shrink-0 self-end sm:self-center border-t sm:border-t-0 border-outline-variant/60 pt-3 sm:pt-0 w-full sm:w-auto justify-end">
-                <Link
-                  href={`/articles/${a.slug}`}
+                <a
+                  href={`${publicBaseUrl}/articles/${a.slug}`}
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="px-3 py-1.5 rounded-xl border border-outline-variant hover:border-primary text-xs font-bold text-on-surface hover:text-primary transition-colors inline-flex items-center gap-1.5"
                 >
                   <Eye className="w-3.5 h-3.5" /> Read
-                </Link>
+                </a>
                 <button
                   onClick={() => handleOpenEdit(a)}
                   className="p-2 rounded-xl bg-surface-container-high hover:bg-primary hover:text-white transition-colors text-on-surface"
@@ -333,11 +362,8 @@ export default function AdminArticlesPage() {
                   <label className="font-bold text-on-surface">Tags (Comma separated)</label>
                   <input
                     type="text"
-                    value={editingArticle.tags ? editingArticle.tags.join(", ") : ""}
-                    onChange={(e) => {
-                      const arr = e.target.value.split(",").map((t) => t.trim()).filter(Boolean);
-                      setEditingArticle((prev) => ({ ...prev, tags: arr }));
-                    }}
+                    value={tagsInput}
+                    onChange={(e) => setTagsInput(e.target.value)}
                     placeholder="Next.js, Daraja, Payments"
                     className="w-full h-10 px-3 rounded-xl bg-surface-container-low border border-outline-variant text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                   />
