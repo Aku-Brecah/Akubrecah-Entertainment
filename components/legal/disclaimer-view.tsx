@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import {
   AlertTriangle,
   Shield,
@@ -127,9 +127,6 @@ export function DisclaimerView() {
         transition={{ duration: 0.5 }}
         className="relative overflow-hidden rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-10 shadow-xs"
       >
-        {/* Subtle Ambient Red Glow */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-
         <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
             {/* Regulatory Badge Group */}
@@ -160,7 +157,7 @@ export function DisclaimerView() {
             <div className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-muted-foreground font-medium">
               <span className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-primary" />
-                Last Revised: <strong>October 2026</strong>
+                Last Revised: <strong>10 June 2026</strong>
               </span>
               <span className="hidden sm:inline text-border">•</span>
               <span>Document Version: <strong>2.4.0 (Statutory)</strong></span>
@@ -425,7 +422,7 @@ export function DisclaimerView() {
         </aside>
 
         {/* DETAILED DISCLAIMER ARTICLES (8 Cols) */}
-        <main className="lg:col-span-8 space-y-6">
+        <div className="lg:col-span-8 space-y-6">
 
           {/* SECTION 1: INDEPENDENCE FROM KRA */}
           <article
@@ -614,16 +611,16 @@ export function DisclaimerView() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div className="p-4 rounded-2xl bg-surface-container dark:bg-slate-800 border border-border space-y-1.5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Single Retrieval</span>
-                  <p className="text-lg font-black text-foreground">KES 50 – 100</p>
+                  <p className="text-lg font-black text-foreground">KES 20</p>
                   <p className="text-[11px] text-muted-foreground">
-                    One-time automated retrieval with instant PDF download and optional WhatsApp delivery.
+                    One-time automated retrieval via Safaricom Daraja M-Pesa with instant PDF download (or WhatsApp delivery when ordered on WhatsApp).
                   </p>
                 </div>
                 <div className="p-4 rounded-2xl bg-surface-container dark:bg-slate-800 border border-border space-y-1.5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Cyber Cafe Plan</span>
                   <p className="text-lg font-black text-foreground">KES 500 / month</p>
                   <p className="text-[11px] text-muted-foreground">
-                    Unlimited retrievals for registered cyber cafe businesses, bulk processing, and instant receipts.
+                    Monthly pass for cyber cafe operators covering up to 50 retrievals per day with automated invoice records.
                   </p>
                 </div>
               </div>
@@ -847,7 +844,7 @@ export function DisclaimerView() {
             </div>
           </div>
 
-        </main>
+        </div>
       </div>
     </div>
   )

@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { BreadcrumbSchema } from "@/components/seo/site-schema";
 
 export const metadata: Metadata = {
-  title: "About Akubrecah Technologies | Software Engineering & Innovation",
+  title: "About Akubrecah",
   description:
-    "Learn about Akubrecah Technologies — full-cycle software engineering and digital innovation firm headquartered in Nairobi, Kenya. Powering enterprise platforms, cloud systems, and government statutory automation.",
+    "Learn about Akubrecah Entertainment — full-cycle software engineering and digital innovation firm headquartered in Nairobi, Kenya. Powering enterprise platforms, cloud systems, and government statutory automation.",
   alternates: {
     canonical: "https://akubrecah.com/about",
   },
@@ -85,12 +85,12 @@ const inHouseProducts = [
     desc: "Automated retrieval and cryptographic verification of compliance documents via National ID and PIN.",
   },
   {
-    title: "Automated Tax Returns Filing",
-    tag: "Coming Soon",
-    stat: "Guided Submission",
-    speed: "Standard iTax Formats",
-    href: "/dashboard/filing",
-    desc: "Streamlined statutory compliance assistant guiding Kenyan businesses through iTax nil returns efficiently — launching soon.",
+    title: "Kenya P9 Tax Calculator & Filing Guide",
+    tag: "Free Tool",
+    stat: "2024 Statutory Bands",
+    speed: "Instant Computation",
+    href: "/retrieval-portal?view=filing",
+    desc: "Compute PAYE, NSSF, SHIF, and Housing Levy obligations and follow step-by-step official KRA iTax Nil Return instructions.",
   },
 ]
 
@@ -182,11 +182,11 @@ export default function AboutPage() {
             </div>
 
             <div className="pt-2">
-              <Link href="/contact">
-                <Button className="h-12 px-7 rounded-xl bg-primary text-white font-bold text-sm flex items-center gap-2 group w-fit">
+              <Button asChild className="h-12 px-7 rounded-xl bg-primary text-white font-bold text-sm flex items-center gap-2 group w-fit hover:bg-primary/90">
+                <Link href="/contact">
                   Work With Our Engineers <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </div>
 
@@ -271,14 +271,14 @@ export default function AboutPage() {
                 The best testament to our capabilities: high-concurrency compliance tools built and run completely in-house.
               </p>
             </div>
-            <Link href="/products">
-              <Button variant="outline" className="rounded-xl border-outline-variant text-on-surface font-bold text-xs flex items-center gap-2">
+            <Button asChild variant="outline" className="rounded-xl border-outline-variant text-on-surface font-bold text-xs flex items-center gap-2 w-fit">
+              <Link href="/products">
                 Explore All Products <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {inHouseProducts.map((prod) => (
               <Link key={prod.title} href={prod.href} className="group block">
                 <div className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant hover:border-primary/40 transition-all duration-300 space-y-4 h-full flex flex-col justify-between shadow-soft">
@@ -308,11 +308,11 @@ export default function AboutPage() {
           <p className="text-white/80 text-sm max-w-lg mx-auto">
             Whether launching a new venture, modernizing legacy enterprise systems, or automating statutory workflows — let&apos;s engineer something extraordinary together.
           </p>
-          <Link href="/contact">
-            <Button size="lg" className="h-12 px-8 rounded-xl bg-white text-primary font-bold text-sm flex items-center gap-2 mx-auto group">
+          <Button asChild size="lg" className="h-12 px-8 rounded-xl bg-white text-primary font-bold text-sm flex items-center gap-2 mx-auto group w-fit hover:bg-white/90">
+            <Link href="/contact">
               Start a Conversation <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
 
       </div>

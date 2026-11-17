@@ -1,3 +1,5 @@
+'use client';
+
 // components/ErrorBoundary.jsx
 import React from 'react';
 
@@ -18,15 +20,16 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="p-4 border border-red-200 rounded-md bg-red-50">
-          <h3 className="text-lg font-semibold text-red-700 mb-2">
+        <div role="alert" className="p-4 border border-red-200 dark:border-red-900 rounded-xl bg-red-50 dark:bg-red-950/40">
+          <h3 className="text-lg font-semibold text-red-700 dark:text-red-300 mb-2">
             Something went wrong
           </h3>
-          <p className="text-red-600">
-            {this.state.error?.message || 'An unexpected error occurred'}
+          <p className="text-sm text-red-600 dark:text-red-400">
+            An unexpected display error occurred. Please try again or refresh the page.
           </p>
           <button
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            type="button"
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700"
             onClick={() => this.setState({ hasError: false, error: null })}
           >
             Try again

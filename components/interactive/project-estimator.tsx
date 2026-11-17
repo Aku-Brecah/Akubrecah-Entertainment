@@ -46,16 +46,16 @@ const SERVICES: ServiceType[] = [
 
 const SCALES = [
   { id: "starter", label: "MVP / Pilot", desc: "Up to 1,000 monthly users", multiplier: 1 },
-  { id: "growth", label: "Growth / SME Hub", desc: "5,000 - 25,000 monthly transactions", multiplier: 1.3 },
-  { id: "enterprise", label: "High-Concurrency", desc: "100,000+ requests with 99.99% SLA", multiplier: 1.7 },
+  { id: "growth", label: "Growth / SME Hub", desc: "5,000 – 25,000 monthly transactions", multiplier: 1.3 },
+  { id: "enterprise", label: "High-Concurrency", desc: "100,000+ monthly requests with failover", multiplier: 1.7 },
 ]
 
 const ADDONS = [
-  { id: "billing", label: "Automated Instant Mobile Billing", days: 2 },
-  { id: "etr", label: "80mm Thermal ETR Fiscal Slip Engine", days: 2 },
-  { id: "bot", label: "Automated WhatsApp Customer Assistant", days: 3 },
-  { id: "ratelimit", label: "High-Concurrency Rate Limiter", days: 1 },
-  { id: "rbac", label: "Multi-Role Client Portal & Admin RBAC", days: 2 },
+  { id: "billing", label: "Automated Instant Mobile Billing", shortLabel: "M-Pesa Billing", days: 2 },
+  { id: "etr", label: "80mm Thermal Receipt Engine", shortLabel: "Thermal Receipts", days: 2 },
+  { id: "bot", label: "Automated WhatsApp Customer Assistant", shortLabel: "WhatsApp Bot", days: 3 },
+  { id: "ratelimit", label: "High-Concurrency Rate Limiter", shortLabel: "Rate Limiter", days: 1 },
+  { id: "rbac", label: "Multi-Role Client Portal & Admin RBAC", shortLabel: "Admin RBAC", days: 2 },
 ]
 
 export function ProjectEstimator() {
@@ -108,11 +108,11 @@ export function ProjectEstimator() {
         <div className="lg:col-span-7 space-y-6 p-6 sm:p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft">
           
           {/* Step 1: Service Type */}
-          <div className="space-y-3">
-            <label className="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-1.5">
+          <div className="space-y-3" role="group" aria-labelledby="estimator-step-1">
+            <h3 id="estimator-step-1" className="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-1.5">
               <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-mono">1</span>
               Select Core Engineering Domain:
-            </label>
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {SERVICES.map((srv) => {
                 const isSelected = selectedService === srv.id
@@ -120,6 +120,7 @@ export function ProjectEstimator() {
                   <button
                     key={srv.id}
                     type="button"
+                    aria-pressed={isSelected}
                     onClick={() => setSelectedService(srv.id)}
                     className={`p-4 rounded-2xl text-left transition-all cursor-pointer border ${
                       isSelected
@@ -143,18 +144,19 @@ export function ProjectEstimator() {
           </div>
 
           {/* Step 2: Deployment Scale */}
-          <div className="space-y-3">
-            <label className="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-1.5">
+          <div className="space-y-3" role="group" aria-labelledby="estimator-step-2">
+            <h3 id="estimator-step-2" className="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-1.5">
               <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-mono">2</span>
-              Deployment Scale & Concurrency:
-            </label>
-            <div className="grid grid-cols-3 gap-2.5">
+              Deployment Scale &amp; Concurrency:
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {SCALES.map((scale) => {
                 const isSelected = selectedScale === scale.id
                 return (
                   <button
                     key={scale.id}
                     type="button"
+                    aria-pressed={isSelected}
                     onClick={() => setSelectedScale(scale.id)}
                     className={`p-3 rounded-xl text-center transition-all cursor-pointer border ${
                       isSelected
@@ -173,11 +175,11 @@ export function ProjectEstimator() {
           </div>
 
           {/* Step 3: Add-on Capabilities */}
-          <div className="space-y-3">
-            <label className="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-1.5">
+          <div className="space-y-3" role="group" aria-labelledby="estimator-step-3">
+            <h3 id="estimator-step-3" className="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-1.5">
               <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-mono">3</span>
               Select Enterprise Capabilities:
-            </label>
+            </h3>
             <div className="flex flex-wrap gap-2">
               {ADDONS.map((addon) => {
                 const isChecked = selectedAddons.includes(addon.id)
@@ -185,6 +187,7 @@ export function ProjectEstimator() {
                   <button
                     key={addon.id}
                     type="button"
+                    aria-pressed={isChecked}
                     onClick={() => toggleAddon(addon.id)}
                     className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                       isChecked
@@ -250,7 +253,7 @@ export function ProjectEstimator() {
                     key={addonId}
                     className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                   >
-                    + {a.label.split(" ")[0]}
+                    + {a.shortLabel}
                   </span>
                 ) : null
               })}

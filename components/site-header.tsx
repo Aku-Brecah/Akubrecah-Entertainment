@@ -218,6 +218,7 @@ function MegaMenu({
                   <Link
                     key={sub.title}
                     href={sub.href}
+                    role="menuitem"
                     onClick={onClose}
                     className="block p-2.5 rounded-xl hover:bg-surface-container transition-colors group cursor-pointer"
                   >
@@ -287,16 +288,23 @@ function DesktopNavItem({
     }, 160)
   }
 
-  // Close on outside click
+  // Close on outside click or Escape key
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false)
       }
     }
-    if (open) document.addEventListener("mousedown", handler)
+    function keyHandler(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false)
+    }
+    if (open) {
+      document.addEventListener("mousedown", handler)
+      document.addEventListener("keydown", keyHandler)
+    }
     return () => {
       document.removeEventListener("mousedown", handler)
+      document.removeEventListener("keydown", keyHandler)
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
     }
   }, [open])
@@ -560,19 +568,20 @@ export function SiteHeader() {
               isLoaded && isSignedIn ? (
                 <div className="flex items-center gap-2 flex-nowrap">
                   {isAdmin && (
-                    <Link href="/admin">
-                      <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all cursor-pointer shrink-0">
-                        <Shield className="h-3 w-3" />
-                        Admin
-                      </span>
+                    <Link
+                      href="/admin"
+                      className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all cursor-pointer shrink-0"
+                    >
+                      <Shield className="h-3 w-3" />
+                      Admin
                     </Link>
                   )}
-                  <Link href="/dashboard">
-                    <Button size="sm" className="h-8.5 px-3 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
+                  <Button asChild size="sm" className="h-8.5 px-3 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
+                    <Link href="/dashboard">
                       <LayoutDashboard className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Console</span>
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                   <UserButton
                     appearance={{
                       elements: { avatarBox: "w-8.5 h-8.5 rounded-full ring-2 ring-primary/20" },
@@ -583,13 +592,11 @@ export function SiteHeader() {
                 <div className="hidden sm:flex items-center gap-3 flex-nowrap">
                   <div className="hidden md:flex items-center gap-1.5 text-xs text-on-surface-variant font-medium">
                     <Lock className="w-3.5 h-3.5 text-primary" />
-                    <span>Verified Node</span>
+                    <span>Encrypted Session</span>
                   </div>
-                  <Link href="/sign-in">
-                    <Button size="sm" className="h-9 px-4 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 shrink-0">
-                      Sign In
-                    </Button>
-                  </Link>
+                  <Button asChild size="sm" className="h-9 px-4 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 shrink-0">
+                    <Link href="/sign-in">Sign In</Link>
+                  </Button>
                 </div>
               ) : null
             ) : (
@@ -597,19 +604,20 @@ export function SiteHeader() {
               isLoaded && isSignedIn ? (
                 <div className="flex items-center gap-2 flex-nowrap">
                   {isAdmin && (
-                    <Link href="/admin">
-                      <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all cursor-pointer shrink-0">
-                        <Shield className="h-3 w-3" />
-                        Admin
-                      </span>
+                    <Link
+                      href="/admin"
+                      className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all cursor-pointer shrink-0"
+                    >
+                      <Shield className="h-3 w-3" />
+                      Admin
                     </Link>
                   )}
-                  <Link href="/dashboard">
-                    <Button size="sm" className="h-8.5 px-3 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
+                  <Button asChild size="sm" className="h-8.5 px-3 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
+                    <Link href="/dashboard">
                       <LayoutDashboard className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Console</span>
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                   <UserButton
                     appearance={{
                       elements: { avatarBox: "w-8.5 h-8.5 rounded-full ring-2 ring-primary/20" },
@@ -618,16 +626,14 @@ export function SiteHeader() {
                 </div>
               ) : (
                 <div className="hidden sm:flex items-center gap-2 flex-nowrap">
-                  <Link href="/sign-in">
-                    <Button variant="ghost" size="sm" className="h-9 px-3 rounded-xl text-xs font-bold text-on-surface hover:text-primary shrink-0">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link href="/contact">
-                    <Button size="sm" className="h-9 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/95 shadow-sm flex items-center gap-1.5 shrink-0">
+                  <Button asChild variant="ghost" size="sm" className="h-9 px-3 rounded-xl text-xs font-bold text-on-surface hover:text-primary shrink-0">
+                    <Link href="/sign-in">Sign In</Link>
+                  </Button>
+                  <Button asChild size="sm" className="h-9 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/95 shadow-sm flex items-center gap-1.5 shrink-0">
+                    <Link href="/contact">
                       Start a Project <ArrowRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
               )
             )}
@@ -665,18 +671,18 @@ export function SiteHeader() {
                       <p className="text-xs font-bold text-on-surface">{user?.fullName || "Welcome back"}</p>
                       <p className="text-[11px] text-on-surface-variant truncate max-w-[200px]">{user?.primaryEmailAddress?.emailAddress}</p>
                     </div>
-                    <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                      <Button size="sm" className="h-8 px-3.5 rounded-xl text-xs bg-primary text-white font-bold">Console</Button>
-                    </Link>
+                    <Button asChild size="sm" className="h-8 px-3.5 rounded-xl text-xs bg-primary text-white font-bold">
+                      <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>Console</Link>
+                    </Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
-                    <Link href="/sign-in" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-xl">Sign In</Button>
-                    </Link>
-                    <a href="https://akubrecah.com" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                      <Button size="sm" className="w-full h-10 text-xs font-bold bg-primary text-white rounded-xl">Agency Home</Button>
-                    </a>
+                    <Button asChild variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-xl">
+                      <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+                    </Button>
+                    <Button asChild size="sm" className="w-full h-10 text-xs font-bold bg-primary text-white rounded-xl">
+                      <a href="https://akubrecah.com" onClick={() => setMobileMenuOpen(false)}>Agency Home</a>
+                    </Button>
                   </div>
                 )
               ) : (
@@ -686,20 +692,20 @@ export function SiteHeader() {
                       <p className="text-xs font-bold text-on-surface">{user?.fullName || "Welcome back"}</p>
                       <p className="text-[11px] text-on-surface-variant truncate max-w-[180px]">{user?.primaryEmailAddress?.emailAddress}</p>
                     </div>
-                    <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                      <Button size="sm" className="h-8 px-3 rounded-xl text-xs bg-primary text-white font-bold">Console</Button>
-                    </Link>
+                    <Button asChild size="sm" className="h-8 px-3 rounded-xl text-xs bg-primary text-white font-bold">
+                      <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>Console</Link>
+                    </Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
-                    <Link href="/sign-in" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-xl">Sign In</Button>
-                    </Link>
-                    <Link href="/contact" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-                      <Button size="sm" className="w-full h-10 text-xs font-bold bg-primary text-white rounded-xl flex items-center justify-center gap-1.5">
+                    <Button asChild variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-xl">
+                      <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
+                    </Button>
+                    <Button asChild size="sm" className="w-full h-10 text-xs font-bold bg-primary text-white rounded-xl flex items-center justify-center gap-1.5">
+                      <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
                         Start a Project <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   </div>
                 )
               )}
@@ -714,11 +720,11 @@ export function SiteHeader() {
               {/* Admin link */}
               {isLoaded && isSignedIn && isAdmin && (
                 <Link
-                  href="/admin/system-health"
+                  href="/admin"
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-2 px-3.5 py-3 rounded-2xl text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
                 >
-                  <Shield className="h-4 w-4" /> Admin Central
+                  <Shield className="h-4 w-4" /> Admin Console
                 </Link>
               )}
 

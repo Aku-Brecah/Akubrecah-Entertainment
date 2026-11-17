@@ -88,11 +88,11 @@ export function ReviewSection() {
   if (!hasVerifiedReviews) {
     return null
   }
-  const rating = hasVerifiedReviews ? (data?.rating || 0) : null
+  const rating = hasVerifiedReviews && typeof data?.rating === "number" ? data.rating : null
   const totalCount = data?.totalReviews || (data?.reviews?.length || 0)
   const writeReviewUrl =
     data?.googleWriteReviewUrl ||
-    "https://www.google.com/search?q=Akubrecah+Entertainment+Nairobi#lrd=0x0:0x0,3"
+    "https://www.google.com/maps/search/?api=1&query=Akubrecah+Entertainment+Nairobi"
   const mapsUrl =
     data?.googleMapsUrl ||
     "https://www.google.com/maps/search/?api=1&query=Akubrecah+Entertainment+Nairobi"
@@ -128,7 +128,14 @@ export function ReviewSection() {
                   <span>{rating.toFixed(1)}</span>
                   <div className="flex text-amber-400">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                      <Star
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= Math.round(rating)
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-outline-variant"
+                        }`}
+                      />
                     ))}
                   </div>
                 </div>

@@ -184,7 +184,7 @@ export default async function Home() {
               <span className="hidden sm:inline text-outline-variant">•</span>
               <span className="flex items-center gap-1.5">
                 <Shield className="h-3.5 w-3.5 text-primary" />
-                99.98% High Availability
+                Zero-Disk Ephemeral Streaming
               </span>
               <span className="hidden sm:inline text-outline-variant">•</span>
               <span>Statutory GovTech &amp; Safaricom Daraja M-Pesa</span>
@@ -245,11 +245,11 @@ export default async function Home() {
                 Akubrecah KRA PIN Certificate Retrieval &amp; Statutory Portal
               </h2>
               <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">
-                Our high-availability statutory compliance gateway handles National ID verification, automated Nil return filing, and sub-120ms volatile RAM PDF streaming with instant Safaricom Daraja M-Pesa Express reconciliation. Built with zero-disk unencrypted persistence under strict compliance with the Kenya Data Protection Act 2019.
+                Our independent statutory compliance gateway handles live National ID &amp; PIN verification, volatile RAM PDF streaming, and Safaricom Daraja M-Pesa Express reconciliation. Engineered with zero-disk document persistence aligned with the Kenya Data Protection Act 2019.
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
                 <span className="px-3 py-1 rounded-md bg-surface-container-low text-xs font-mono font-semibold text-on-surface border border-outline-variant">
-                  Sub-120ms Volatile Streaming
+                  Volatile RAM PDF Streaming
                 </span>
                 <span className="px-3 py-1 rounded-md bg-surface-container-low text-xs font-mono font-semibold text-on-surface border border-outline-variant">
                   Zero-Disk Persistence
@@ -258,7 +258,7 @@ export default async function Home() {
                   Instant M-Pesa STK (KES 20)
                 </span>
                 <span className="px-3 py-1 rounded-md bg-surface-container-low text-xs font-mono font-semibold text-on-surface border border-outline-variant">
-                  KDPA 2019 Certified
+                  KDPA 2019 Aligned
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-3 pt-3">

@@ -35,37 +35,54 @@ import { BreadcrumbSchema, SoftwareSchema } from "@/components/seo/site-schema"
 
 const products = [
   {
+    id: "kra-portal",
+    tag: "Flagship GovTech",
+    title: "KRA PIN Certificate Retrieval Portal",
+    subtitle: "Independent KRA PIN lookup & ephemeral PDF streaming",
+    description: "An independent Kenyan cyber facilitation platform for verifying KRA PIN records via National ID or PIN and downloading formatted PDF certificates via Safaricom Daraja M-Pesa (KES 20 single or KES 500/month Cyber Cafe pass) with zero server-side PDF storage.",
+    href: "/retrieval-portal",
+    ctaText: "Launch Retrieval Portal",
+    features: [
+      "National ID & KRA PIN live verification",
+      "Volatile RAM PDF generation with zero disk retention",
+      "Safaricom Daraja M-Pesa STK Push & receipt verification",
+      "Cyber Cafe monthly pass (up to 50 retrievals/day)",
+      "WhatsApp bot certificate fulfillment channel",
+      "Integrated Kenya P9 income tax calculator",
+    ],
+  },
+  {
     id: "api-gateway",
     tag: "Core Infrastructure",
     title: "Akubrecah API Gateway",
     subtitle: "High-throughput microservice routing & event bus",
-    description: "Our proprietary distributed API gateway architecture designed for low-latency request routing, token rate-limiting, and resilient webhook dispatch. Built with Next.js, Redis, and high-concurrency Node.js workers.",
+    description: "Our distributed API gateway architecture designed for resilient request routing, rate limiting, and webhook verification. Built with Next.js, Upstash Redis, and PostgreSQL.",
     href: "/services#enterprise",
     ctaText: "Explore Gateway Architecture",
     features: [
       "Low-latency distributed routing",
-      "Dynamic in-memory bounded LRU rate limiting",
-      "Automated webhook retry with exponential backoff",
+      "Redis + in-memory bounded LRU rate limiting",
+      "Idempotent webhook processing with replay protection",
       "End-to-end payload signature verification (HMAC-SHA256)",
-      "Zero-downtime hot reload configuration",
-      "Prometheus & OpenTelemetry metric exports",
+      "Encrypted TLS upstream transport",
+      "Structured telemetry & audit logging",
     ],
   },
   {
     id: "observability-console",
     tag: "Developer Platform",
     title: "Client & Engineering Console",
-    subtitle: "Full-stack project observability & deployment hub",
-    description: "A centralized dashboard for enterprise engineering clients. Track live production metrics, server resource utilization, database migration logs, and payment reconciliation in real-time.",
+    subtitle: "Account, subscription & retrieval workspace",
+    description: "A centralized console for registered taxpayers, cyber cafe operators, and administrators to manage subscriptions, verify payment status, and monitor portal health in real time.",
     href: "/dashboard",
     ctaText: "Open Engineering Console",
     features: [
-      "Real-time container CPU, RAM & disk telemetry",
-      "Integrated CI/CD build status and git commit tracking",
-      "Audited multi-role team access control (RBAC)",
-      "Automated incident alert notifications via WhatsApp & Email",
-      "Encrypted credential & secret rotation manager",
-      "Comprehensive API request logs and error tracking",
+      "Cyber Cafe subscription status & invoice ledger",
+      "Live database, Clerk, Daraja & KRA health monitoring",
+      "Audited role-based access control (RBAC)",
+      "Automated inquiry notifications via WhatsApp & Email",
+      "Real-time Daraja STK Push reconciliation console",
+      "Comprehensive system audit log viewer",
     ],
   },
 ]
@@ -165,11 +182,11 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="pt-2">
-                  <Link href={product.href}>
-                    <Button className="h-11 px-7 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm flex items-center gap-2 group w-fit hover:bg-primary/90">
+                  <Button asChild className="h-11 px-7 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm flex items-center gap-2 group w-fit hover:bg-primary/90">
+                    <Link href={product.href}>
                       {product.ctaText} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
               </div>
             )
@@ -204,11 +221,11 @@ export default function ProductsPage() {
             We configure and deploy our software architecture for enterprise and institutional clients. 
             Dedicated support and customized hosting options available.
           </p>
-          <Link href="/contact">
-            <Button size="lg" className="h-12 px-8 rounded-xl bg-white text-primary font-bold text-sm flex items-center gap-2 mx-auto group">
+          <Button asChild size="lg" className="h-12 px-8 rounded-xl bg-white text-primary font-bold text-sm flex items-center gap-2 mx-auto group w-fit hover:bg-white/90">
+            <Link href="/contact">
               Inquire About Deployment <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
 
       </div>

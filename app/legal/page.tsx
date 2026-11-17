@@ -87,8 +87,6 @@ export default function LegalIndexPage() {
     <div className="space-y-8 sm:space-y-12">
       {/* Header Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-10 shadow-xs">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-
         <div className="relative z-10 space-y-4 max-w-2xl">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">
@@ -199,7 +197,7 @@ export default function LegalIndexPage() {
 
       {/* Footer Info */}
       <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-        <p>All legal documents last reviewed: <strong>October 2026</strong> · Akubrecah Technologies Limited</p>
+        <p>All legal documents last reviewed: <strong>10 June 2026</strong> · Akubrecah Entertainment</p>
         <div className="flex items-center gap-4">
           <a href="mailto:legal@akubrecah.com" className="text-primary hover:underline font-bold">
             legal@akubrecah.com

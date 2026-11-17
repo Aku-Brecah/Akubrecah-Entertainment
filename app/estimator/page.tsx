@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-  title: "Interactive System Architecture & Project Estimator | Akubrecah Technologies",
+  title: "Interactive System Architecture & Project Estimator",
   description:
     "Scope your enterprise software, GovTech statutory portal, native mobile app, or digital platform in seconds. Instant architecture specifications, engineering stack recommendations, and timeline calculation.",
   alternates: {
@@ -50,9 +50,6 @@ export default function EstimatorPage() {
 
       {/* Hero Header */}
       <section className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none" />
-        <div className="absolute top-12 left-10 w-72 h-72 bg-[#00C2FF]/4 rounded-full filter blur-[100px] pointer-events-none" />
-
         <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-5 relative z-10">
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
             <Link href="/" className="hover:text-primary transition-colors">
@@ -69,8 +66,8 @@ export default function EstimatorPage() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-on-surface tracking-tight leading-[1.08]">
-              Scope & Architect Your{" "}
-              <span className="text-primary bg-gradient-to-br from-primary via-red-600 to-red-800 bg-clip-text text-transparent">
+              Scope &amp; Architect Your{" "}
+              <span className="text-primary">
                 Digital Platform
               </span>
             </h1>
@@ -84,7 +81,7 @@ export default function EstimatorPage() {
       </section>
 
       {/* Main Sandbox Section */}
-      <main className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-10">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-10">
         <ProjectEstimator />
 
         {/* Discovery & Consultation Banner */}
@@ -118,7 +115,7 @@ export default function EstimatorPage() {
             </Button>
           </div>
         </section>
-      </main>
+      </div>
     </div>
   )
 }

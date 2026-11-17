@@ -46,6 +46,8 @@
   --surface-container: #f1f5f9;
   --on-background: #0f172a;
   --surface-container-lowest: #ffffff;
+  --surface-card: #ffffff;
+  --primary-hover: #991b1b;
   --on-surface: #0f172a;
   --surface: #f8fafc;
   --on-error-container: #7f1d1d;
@@ -114,6 +116,8 @@
   --surface-container: #1d202c;
   --on-background: #f8fafc;
   --surface-container-lowest: #12141c;
+  --surface-card: #12141c;
+  --primary-hover: #dc2626;
   --on-surface: #f8fafc;
   --surface: #0c0d12;
   --on-error-container: #fca5a5;
