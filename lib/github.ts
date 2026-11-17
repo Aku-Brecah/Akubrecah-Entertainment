@@ -249,6 +249,9 @@ export async function saveRepoVisibilitySettings(settings: {
     updatedBy: settings.updatedBy || 'admin',
   };
 
+  let dbSaved = false;
+  let fsSaved = false;
+
   // 1. Save to database
   try {
     const prismaModule = await import('@/lib/prisma');
@@ -258,11 +261,12 @@ export async function saveRepoVisibilitySettings(settings: {
       update: { value: payload as any },
       create: { key: 'github_repo_visibility', value: payload as any },
     });
+    dbSaved = true;
   } catch (dbErr: any) {
     log.warn('[saveRepoVisibilitySettings DB Warning]:', dbErr.message);
   }
 
-  // 2. Save to filesystem fallback
+  // 2. Save to filesystem fallback (non-fatal on read-only serverless FS)
   try {
     const fs = await import('fs');
     const path = await import('path');
@@ -272,11 +276,12 @@ export async function saveRepoVisibilitySettings(settings: {
     }
     const filePath = path.join(dataDir, 'repo-visibility.json');
     fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf-8');
+    fsSaved = true;
   } catch (fsErr: any) {
     log.warn('[saveRepoVisibilitySettings FS Warning]:', fsErr.message);
   }
 
-  return true;
+  return dbSaved || fsSaved;
 }
 
 /**
@@ -359,6 +364,7 @@ export async function getRepoReadme(repoName: string, defaultBranch = 'main'): P
     const res = await fetch(`https://api.github.com/repos/${DEFAULT_USERNAME}/${encodeURIComponent(repoName)}/readme`, {
       headers,
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(8000),
     });
     if (res.ok) {
       raw = await res.text();
@@ -374,8 +380,8 @@ export async function getRepoReadme(repoName: string, defaultBranch = 'main'): P
       if (raw && !raw.startsWith('{"message":')) break;
       try {
         const rawRes = await fetch(
-          `https://raw.githubusercontent.com/${DEFAULT_USERNAME}/${encodeURIComponent(repoName)}/${b}/README.md`,
-          { next: { revalidate: 3600 } }
+          `https://raw.githubusercontent.com/${DEFAULT_USERNAME}/${encodeURIComponent(repoName)}/${encodeURIComponent(b)}/README.md`,
+          { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) }
         );
         if (rawRes.ok) {
           const txt = await rawRes.text();
@@ -392,8 +398,10 @@ export async function getRepoReadme(repoName: string, defaultBranch = 'main'): P
     return { content: '', hasReadme: false };
   }
 
-  const rawBase = `https://raw.githubusercontent.com/${DEFAULT_USERNAME}/${repoName}/${defaultBranch}`;
-  const blobBase = `https://github.com/${DEFAULT_USERNAME}/${repoName}/blob/${defaultBranch}`;
+  const encodedRepo = encodeURIComponent(repoName);
+  const encodedBranch = encodeURIComponent(defaultBranch);
+  const rawBase = `https://raw.githubusercontent.com/${DEFAULT_USERNAME}/${encodedRepo}/${encodedBranch}`;
+  const blobBase = `https://github.com/${DEFAULT_USERNAME}/${encodedRepo}/blob/${encodedBranch}`;
 
   let processed = raw;
 

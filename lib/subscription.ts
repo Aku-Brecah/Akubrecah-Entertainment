@@ -1,5 +1,6 @@
 import { log } from '@/lib/monitoring/logger';
 import prisma from '@/lib/prisma';
+import crypto from 'crypto';
 
 /**
  * Determines if a Clerk user is a super admin / admin.
@@ -11,12 +12,12 @@ export async function isAdminUser(clerkId?: string | null): Promise<boolean> {
     const { clerkClient } = await import('@clerk/nextjs/server');
     const client = await clerkClient();
     const user = await client.users.getUser(clerkId);
-    const email = user.primaryEmailAddress?.emailAddress?.toLowerCase() || '';
-    const configAdmin = (process.env.SUPER_ADMIN_EMAIL || '').toLowerCase();
-    const publicAdmin = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
+    const email = (user.primaryEmailAddress?.emailAddress || '').trim().toLowerCase();
+    const configAdmin = (process.env.SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+    const publicAdmin = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
     return (
-      email === configAdmin ||
-      email === publicAdmin ||
+      (Boolean(email) && Boolean(configAdmin) && email === configAdmin) ||
+      (Boolean(email) && Boolean(publicAdmin) && email === publicAdmin) ||
       user.publicMetadata?.role === 'Super Admin' ||
       user.publicMetadata?.role === 'Admin'
     );
@@ -223,11 +224,11 @@ export async function getOrCreateDbUser(clerkId: string, email?: string, fullNam
 
     // 4. Create new user record (check if id already taken)
     const existingById = await db.users?.findUnique({ where: { id: clerkId } });
-    const canUseClerkIdAsId = !existingById && Boolean(clerkId);
+    const newId = !existingById && Boolean(clerkId) ? clerkId : crypto.randomUUID();
 
     dbUser = await db.users?.create({
       data: {
-        ...(canUseClerkIdAsId ? { id: clerkId } : {}),
+        id: newId,
         clerkId,
         email: primaryEmail,
         firstName: resolvedFirst,

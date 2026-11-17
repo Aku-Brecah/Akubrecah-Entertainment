@@ -4,7 +4,14 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { createSystemLog } from "@/lib/prisma";
-import { verifyAdminCaller } from "@/lib/admin-auth";
+import { verifyAdminCaller, isSuperAdminCaller } from "@/lib/admin-auth";
+
+const SAFE_MIGRATION_ROLES = new Set([
+  "Registered Taxpayer",
+  "Cybercafe Partner",
+  "Portal Auditor",
+  "user",
+]);
 
 export const maxDuration = 60; // Allow sufficient time for batch user migration
 
@@ -66,9 +73,9 @@ function parseCsv(content: string): any[] {
 export async function POST(req: NextRequest) {
   try {
     const admin = await verifyAdminCaller(req);
-    if (!admin) {
+    if (!isSuperAdminCaller(admin) || !admin) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized: Admin privileges required." },
+        { success: false, error: "Unauthorized: Super Admin privileges required." },
         { status: 403 }
       );
     }
@@ -76,14 +83,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const devSecretKey = (body.devSecretKey || process.env.DEV_CLERK_SECRET_KEY || process.env.CLERK_DEV_SECRET_KEY || "").trim();
     const csvContent = (body.csvContent || "").trim();
-    // SECURITY: no hardcoded default password. An explicit password must be
-    // supplied per migration run; a published default lets anyone log in as
-    // every migrated account.
     const defaultPassword = String(body.defaultPassword || "").trim();
 
-    // SECURITY: when replicating users via the Clerk API, every migrated
-    // account needs an explicit password provided at run time — never a
-    // shared, published default.
     if (devSecretKey && !defaultPassword) {
       return NextResponse.json(
         {
@@ -95,17 +96,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (!devSecretKey && !csvContent) {
-      // Check if old clerk.csv exists on server filesystem as fallback
-      const fallbackPath = path.resolve(process.cwd(), "old clerk.csv");
-      if (!fs.existsSync(fallbackPath)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Please provide your Clerk Development Secret Key (sk_test_...) or upload a Clerk CSV export.",
-          },
-          { status: 400 }
-        );
-      }
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Please provide a Clerk Development Secret Key (sk_test_...) or upload a Clerk CSV export.",
+        },
+        { status: 400 }
+      );
     }
 
     const client = await clerkClient();
@@ -215,13 +212,7 @@ export async function POST(req: NextRequest) {
     // METHOD 2: Clerk CSV Export Sync
     // =========================================================
     else {
-      let rawContent = csvContent;
-      if (!rawContent) {
-        const fallbackPath = path.resolve(process.cwd(), "old clerk.csv");
-        rawContent = fs.readFileSync(fallbackPath, "utf8");
-      }
-
-      const parsedUsers = parseCsv(rawContent);
+      const parsedUsers = parseCsv(csvContent);
       results.total = parsedUsers.length;
 
       for (const u of parsedUsers) {
@@ -241,6 +232,9 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
+        const requestedRole = String(u.role || u["Role"] || "Registered Taxpayer").trim();
+        const safeRole = SAFE_MIGRATION_ROLES.has(requestedRole) ? requestedRole : "Registered Taxpayer";
+
         const payload: any = {
           emailAddress: [email],
           firstName: u.first_name || u["First Name"] || undefined,
@@ -248,7 +242,7 @@ export async function POST(req: NextRequest) {
           username: u.username || u["Username"] || undefined,
           skipPasswordChecks: true,
           publicMetadata: {
-            role: u.role || u["Role"] || "Registered Taxpayer",
+            role: safeRole,
             migrated_from_csv: true,
             migrated_at: new Date().toISOString(),
           },
@@ -261,8 +255,14 @@ export async function POST(req: NextRequest) {
         if (passwordDigest && passwordHasher) {
           payload.passwordDigest = passwordDigest;
           payload.passwordHasher = passwordHasher;
-        } else {
+        } else if (defaultPassword) {
           payload.password = defaultPassword;
+        } else {
+          results.failed.push({
+            email,
+            error: "Row has no password_digest and no defaultPassword was supplied.",
+          });
+          continue;
         }
 
         const phone = u.phone_number || u["Phone Number"];
@@ -328,23 +328,21 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const admin = await verifyAdminCaller(req);
-    if (!admin) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 });
+    if (!isSuperAdminCaller(admin)) {
+      return NextResponse.json({ success: false, error: "Unauthorized: Super Admin privileges required." }, { status: 403 });
     }
 
-    const fallbackPath = path.resolve(process.cwd(), "old clerk.csv");
-    const hasLocalCsv = fs.existsSync(fallbackPath);
     const hasEnvDevKey = Boolean(process.env.DEV_CLERK_SECRET_KEY || process.env.CLERK_DEV_SECRET_KEY);
 
     return NextResponse.json({
       success: true,
       ready: true,
-      hasLocalCsv,
+      hasLocalCsv: false,
       hasEnvDevKey,
       methods: ["api", "csv"],
       message: "User migration engine is ready. You can sync via Clerk Dev Secret Key or CSV upload.",
     });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Failed to check migration status." }, { status: 500 });
   }
 }

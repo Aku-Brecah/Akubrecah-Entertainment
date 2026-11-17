@@ -1,53 +1,25 @@
 import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, clerkClient } from '@clerk/nextjs/server';
 import { fetchTaxpayerById } from '@/lib/kra-api';
 import { createSystemLog } from '@/lib/prisma';
-import { getUserSubscriptionStatus } from '@/lib/subscription';
+import { verifyAdminCaller } from '@/lib/admin-auth';
 import { maskTaxpayerData } from '@/lib/masking';
-
 
 export const maxDuration = 45;
 
 export async function POST(req: NextRequest) {
   try {
-    let clerkId: string | null = null;
-    let userEmail = 'guest@akubrecah.co.ke';
-    try {
-      const session = await auth();
-      clerkId = session?.userId || null;
-      if (clerkId) {
-        userEmail = clerkId;
-        const client = await clerkClient();
-        const user = await client.users.getUser(clerkId);
-        userEmail = user.primaryEmailAddress?.emailAddress || clerkId;
-      }
-    } catch {}
-
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+    const admin = await verifyAdminCaller(req);
 
-    // Check if user is super admin
-    let isAdmin = false;
-    if (clerkId) {
-      try {
-        const client = await clerkClient();
-        const user = await client.users.getUser(clerkId);
-        const email = user.primaryEmailAddress?.emailAddress?.toLowerCase();
-        const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || '').toLowerCase();
-        const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
-        if (email === configAdminEmail || email === configPublicAdminEmail || user.publicMetadata?.role === "Super Admin" || user.publicMetadata?.role === "Admin") {
-          isAdmin = true;
-        }
-      } catch {}
-    }
-
-    if (!isAdmin) {
+    if (!admin) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized: Taxpayer PIN verification engine is restricted to administrative audit access.' },
         { status: 403 }
       );
     }
 
+    const userEmail = admin.email;
     const body = await req.json();
     const { idNumber, engineMode = 'auto' } = body;
 
@@ -66,26 +38,16 @@ export async function POST(req: NextRequest) {
 
     const taxpayerData = await fetchTaxpayerById(cleanId, engineMode);
 
-    if (!taxpayerData.email && userEmail && userEmail.includes('@') && !userEmail.includes('guest@') && !userEmail.startsWith('user_')) {
-      taxpayerData.email = userEmail;
-    }
-
     // Zero-storage policy: Do not persist taxpayer lookup details into database cache.
-    // Live taxpayer results are processed ephemerally in-memory for the active session.
-    
-    //Check user subscription status
-    const { isSubscribed} = await getUserSubscriptionStatus(clerkId);
-
-    // Apply strict privacy masking: unsubscribes users cannot see phone or location
-    const maskedData = maskTaxpayerData(taxpayerData as any, isSubscribed, isAdmin);
+    const maskedData = maskTaxpayerData(taxpayerData as any, true, true);
     await createSystemLog({
       level: 'info',
       service: 'KRA-Live-ID-Checker',
-      message: `National ID lookup executed (Subscribed: ${isSubscribed})`,
+      message: 'National ID lookup executed (Admin Audit)',
       actor: userEmail,
       ip,
       details: {
-        isSubscribed,
+        isSubscribed: true,
         source: taxpayerData.source,
       },
     });
@@ -97,12 +59,12 @@ export async function POST(req: NextRequest) {
         rawPin: taxpayerData.pin,
         rawId: cleanId,
       },
-      isSubscribed,
+      isSubscribed: true,
     });
   } catch (error: any) {
-    log.error('[API /api/kra/live-verify/id Error]:', error);
+    log.error('[API /api/kra/live-verify/id Error]:', error?.message);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to verify National ID with KRA live gateway.' },
+      { success: false, error: 'Failed to verify National ID with KRA live gateway. Please try again shortly.' },
       { status: 500 }
     );
   }

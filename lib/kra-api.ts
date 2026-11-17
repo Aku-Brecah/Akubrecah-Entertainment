@@ -68,8 +68,9 @@ export function fetchManufacturerDetails(pin: string, cookieString = ''): Promis
       'Referer': 'https://itax.kra.go.ke/KRA-Portal/',
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     };
-    if (cookieString && cookieString.trim()) {
-      headers['Cookie'] = cookieString.trim();
+    const sanitizedCookie = (cookieString || '').replace(/[\r\n]/g, '').trim();
+    if (sanitizedCookie) {
+      headers['Cookie'] = sanitizedCookie;
     }
 
     const req = https.request({
@@ -79,7 +80,7 @@ export function fetchManufacturerDetails(pin: string, cookieString = ''): Promis
       method: 'POST',
       headers,
       timeout: 8000,
-      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS !== 'true', // MITM guard: strict TLS unless explicitly opted out
     }, (res) => {
       const chunks: Buffer[] = [];
       res.on('data', (c) => chunks.push(c));
@@ -267,7 +268,7 @@ export function initKraSession(): Promise<string> {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
       timeout: 5000,
-      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS !== 'true', // MITM guard: strict TLS unless explicitly opted out
     }, (res) => {
       const cookies = ((res.headers['set-cookie'] as string[]) || []).map(c => c.split(';')[0]).join('; ');
       res.resume();
@@ -372,8 +373,9 @@ export async function lookupPinByIdNumber(idNumber: string, cookieString = ''): 
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
       'Accept': '*/*',
     };
-    if (activeCookie) {
-      headers['Cookie'] = activeCookie;
+    const sanitizedActiveCookie = activeCookie.replace(/[\r\n]/g, '').trim();
+    if (sanitizedActiveCookie) {
+      headers['Cookie'] = sanitizedActiveCookie;
     }
 
     const req = https.request({
@@ -383,7 +385,7 @@ export async function lookupPinByIdNumber(idNumber: string, cookieString = ''): 
       method: 'POST',
       headers,
       timeout: 6000,
-      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS !== 'true', // MITM guard: strict TLS unless explicitly opted out
     }, (res) => {
       const chunks: Buffer[] = [];
       res.on('data', (c) => chunks.push(c));
@@ -401,7 +403,7 @@ export async function lookupPinByIdNumber(idNumber: string, cookieString = ''): 
               resolve(resolved);
               return;
             }
-            log.info('[KRA-API] iTax returned unresolvable PIN callback:', rawVal);
+            log.info('[KRA-API] iTax returned unresolvable PIN callback (length: %d)', rawVal.length);
           }
           const directMatch = raw.match(/\b([A-Z]\d{9}[A-Z])\b/i);
           if (directMatch) {

@@ -327,8 +327,8 @@ export async function handleWhatsAppChat(params: {
       currentStep !== 'CYBER_AWAITING_PAYMENT'
     ) {
       const targetArg = cleanCmdArgs || trimmedInput.split(/\s+/).slice(1).join(' ').trim();
-      const extractedPhone = extractKenyanPhone(targetArg);
-      const queryPhone = extractedPhone || metadata.paymentPhone || userPhone;
+      // SECURITY: Never allow looking up arbitrary third-party phone numbers via .paid <victim_phone>
+      const queryPhone = metadata.paymentPhone || userPhone;
 
       const isPinArg = /^[A-Z]\d{9}[A-Z]$/i.test(targetArg);
       const isRefArg =
@@ -1532,11 +1532,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await handleWhatsAppChat(body);
+    // Explicitly allowlist accepted fields; never accept spoofed isFromBotOwner from untrusted HTTP JSON
+    const safePayload = {
+      phone: typeof body.phone === 'string' ? body.phone : undefined,
+      from: typeof body.from === 'string' ? body.from : undefined,
+      remoteJid: typeof body.remoteJid === 'string' ? body.remoteJid : undefined,
+      message: typeof body.message === 'string' ? body.message : undefined,
+      text: typeof body.text === 'string' ? body.text : undefined,
+      pushName: typeof body.pushName === 'string' ? body.pushName : undefined,
+      instanceName: typeof body.instanceName === 'string' ? body.instanceName : undefined,
+      messageId: typeof body.messageId === 'string' ? body.messageId : undefined,
+      sendDirect: typeof body.sendDirect === 'boolean' ? body.sendDirect : undefined,
+      isFromBotOwner: false,
+    };
+
+    const result = await handleWhatsAppChat(safePayload);
     const status = result.success ? 200 : 400;
     return NextResponse.json(result, { status });
   } catch (error: any) {
     log.error('[WhatsApp Chat POST Handler Error]:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to process WhatsApp message.' }, { status: 500 });
   }
 }

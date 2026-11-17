@@ -3,12 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPublicGithubRepos } from '@/lib/github';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 60; // 1 minute ISR cache
+
+const ALLOWED_GITHUB_OWNERS = new Set(['akubrecah', 'aku-brecah']);
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const username = searchParams.get('user') || 'Akubrecah';
+    const requestedUser = (searchParams.get('user') || 'Akubrecah').trim();
+    const username = ALLOWED_GITHUB_OWNERS.has(requestedUser.toLowerCase()) ? 'Akubrecah' : 'Akubrecah';
     const language = searchParams.get('language') || 'all';
     const search = (searchParams.get('q') || '').toLowerCase().trim();
     const sort = searchParams.get('sort') || 'updated'; // 'updated' | 'stars' | 'forks' | 'name'
@@ -51,7 +53,7 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     log.error('[API /api/github/repos Error]:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to load GitHub repositories' },
+      { success: false, error: 'Failed to load GitHub repositories' },
       { status: 500 }
     );
   }

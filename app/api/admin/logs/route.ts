@@ -12,11 +12,12 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const limit = parseInt(searchParams.get("limit") || "100", 10);
+    const rawLimit = Number.parseInt(searchParams.get("limit") || "100", 10);
+    const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 100;
     const level = searchParams.get("level") || "all";
 
     const where: any = {};
-    if (level !== "all") {
+    if (level === "info" || level === "warning" || level === "error") {
       where.level = level;
     }
 
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
     }
     const logs = await db.systemLog.findMany({
       where,
-      take: limit > 200 ? 200 : limit,
+      take: limit,
       orderBy: {
         timestamp: "desc",
       },
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
         warning: "Database tables are not initialized yet. Please run: npx prisma db push" 
       });
     }
-    return NextResponse.json({ success: false, error: error.message || "Internal server error" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Failed to load system logs." }, { status: 500 });
   }
 }
 
@@ -75,6 +76,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, log });
   } catch (error: any) {
     log.error("[API System Logs POST Error]:", error);
-    return NextResponse.json({ success: false, error: error.message || "Internal server error" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Failed to load system logs." }, { status: 500 });
   }
 }

@@ -238,24 +238,21 @@ export async function POST(req: NextRequest) {
 
             let isPaid = false;
             let mpesaReceipt = '';
-            let amountKes = 20;
+            let amountKes = 0;
+            const isCyberFlow = conv?.metadata?.step === 'CYBER_AWAITING_PAYMENT';
 
-            // 1. Check if DB recorded certificate download via webhook or callback
-            if (typeof db.certificateDownload?.findFirst === 'function') {
+            // 1. Check if DB recorded certificate download via webhook or callback (non-cyber flows only)
+            if (!isCyberFlow && typeof db.certificateDownload?.findFirst === 'function') {
               const dl = await db.certificateDownload.findFirst({
                 where: {
                   OR: [
+                    { checkoutId: pendingCheckoutId },
                     { mpesaReceipt: pendingCheckoutId },
-                    { clerkId: `wa_${userPhone.replace(/[^a-zA-Z0-9]/g, '')}` },
                   ],
                 },
                 orderBy: { createdAt: 'desc' },
               });
-              if (
-                dl &&
-                (dl.mpesaReceipt === pendingCheckoutId ||
-                  (conv?.metadata?.pin && dl.pin === conv.metadata.pin && Date.now() - new Date(dl.createdAt).getTime() < 300000))
-              ) {
+              if (dl && (!conv?.metadata?.pin || dl.pin === conv.metadata.pin)) {
                 isPaid = true;
                 mpesaReceipt = dl.mpesaReceipt || pendingCheckoutId;
                 amountKes = Number(dl.amountCharged) || 20;
@@ -327,8 +324,13 @@ export async function POST(req: NextRequest) {
               log.info(`[WhatsApp Webhook after] Payment verified for ${pendingCheckoutId}! Initiating fulfillment.`);
 
               const isCyberPayment = conv?.metadata?.step === 'CYBER_AWAITING_PAYMENT';
+              const minCyberFee = Number(process.env.MPESA_SUBSCRIPTION_AMOUNT_KES || 500);
 
               if (isCyberPayment) {
+                if (amountKes < minCyberFee) {
+                  log.warn(`[WhatsApp Webhook after] Rejected underpaid cyber activation (KES ${amountKes} < KES ${minCyberFee}) for ${pendingCheckoutId}`);
+                  break;
+                }
                 log.info(`[WhatsApp Webhook after] Activating Cyber Cafe subscription for phone ***${userPhone.slice(-3)} (ref: ${mpesaReceipt})`);
                 const { activateCyberCafeSubscription, deliverCyberInvoiceToWhatsApp } = await import('@/lib/cyber-subscription');
                 const { sendEvolutionTextMessage } = await import('@/lib/evolution');
@@ -340,7 +342,7 @@ export async function POST(req: NextRequest) {
                   paymentPhone: conv?.metadata?.paymentPhone || userPhone,
                   mpesaReceipt,
                   checkoutId: pendingCheckoutId,
-                  amountKes: 500,
+                  amountKes,
                 });
 
                 if (conv && typeof db.ai_conversations?.update === 'function') {

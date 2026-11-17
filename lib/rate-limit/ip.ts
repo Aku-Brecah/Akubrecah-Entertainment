@@ -37,8 +37,8 @@ function safeEqual(a: string, b: string): boolean {
 export function extractClientIp(req: NextRequest | Request): string {
   const headers = req.headers;
 
-  // Vercel edge sets its own non-spoofable geo headers; XFF there is edge-controlled.
-  const onVercel = Boolean(headers.get('x-vercel-ip-country') || headers.get('x-vercel-ip-city'));
+  // Detect Vercel via server environment variable (never attacker-controllable request headers).
+  const onVercel = Boolean(process.env.VERCEL);
 
   const internalSecret = process.env.INTERNAL_PROXY_SECRET || '';
   const providedSecret = headers.get('x-internal-proxy-secret') || '';

@@ -308,10 +308,18 @@ export async function getPublishedProjects() {
 
 export async function getProjectBySlug(slug: string) {
   try {
-    const project = await prisma.project.findUnique({
-      where: { slug },
+    const project = await prisma.project.findFirst({
+      where: { slug, isPublished: true },
     });
     if (project) return sanitizeProjectForPublic(project);
+    // If record exists in DB as an unpublished draft, do NOT fall back to static showcase
+    const existsAsDraft = await prisma.project.findUnique({
+      where: { slug },
+      select: { id: true, isPublished: true },
+    });
+    if (existsAsDraft && !existsAsDraft.isPublished) {
+      return null;
+    }
   } catch (error) {
     log.warn(`[getProjectBySlug DB Notice for ${slug} - Checking Flagship Fallback]`);
   }
@@ -373,13 +381,13 @@ export async function getPublishedArticles() {
 export async function getArticleBySlug(slug: string) {
   const fallbackList = getFallbackArticles();
   const matchingFallback =
-    fallbackList.find((a) => a.slug.toLowerCase() === slug.toLowerCase()) || null;
+    fallbackList.find((a) => a.slug.toLowerCase() === slug.toLowerCase() && a.isPublished) || null;
   try {
-    await ensureFallbackArticlesSeeded().catch(() => { });
     const article = await prisma.article.findUnique({
       where: { slug },
     });
     if (article) {
+      if (!article.isPublished) return null;
       return enrichArticleWithFallback(article, matchingFallback);
     }
   } catch (error) {

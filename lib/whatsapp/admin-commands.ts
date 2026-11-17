@@ -2,6 +2,7 @@
  * WhatsApp Admin Bot Controller for Super Admin phones.
  * Revenue/stats queries, system logs, 1-click magic link login, role access.
  */
+import { safeCompare } from '@/lib/admin-auth';
 import { log } from '@/lib/monitoring/logger';
 import prisma from '@/lib/prisma';
 import { createAdminMagicToken } from '@/lib/magic-token';
@@ -40,15 +41,14 @@ export async function handleAdminBotCommand({
   const rawArg = parsed.cleanCmdArgs;
 
   const expectedPin = process.env.ADMIN_BOT_PIN || '';
-  // Tokenized containment: a PIN embedded inside a longer number (e.g. inside
-  // a phone number or a payment reference that happens to contain the PIN
-  // digits) must NOT authenticate. The PIN has to be a standalone token.
   const messageTokens = (parsed.cleanCmdText || '')
     .toLowerCase()
     .split(/[\s,.!;:()[\]{}]+/)
     .map((t) => t.replace(/^[^0-9a-z]+|[^0-9a-z]+$/g, ''))
     .filter(Boolean);
-  const hasPinInText = Boolean(expectedPin) && messageTokens.includes(expectedPin.toLowerCase());
+  const hasPinInText =
+    Boolean(expectedPin) &&
+    messageTokens.some((tok) => safeCompare(tok, expectedPin.toLowerCase()));
 
   const BOT_NUMBER = '254791497858';
   const effectivePhoneDigits = String(authorPhone || userPhone || '').replace(/[^0-9]/g, '');
@@ -109,10 +109,11 @@ export async function handleAdminBotCommand({
 
   if (!isAdminTrigger) return null;
 
-  // Authenticate if owner, whitelisted, active session, OR if message contains the master PIN!
-  let isAdminAuthenticated = isWhitelisted || hasActivePinSession || hasPinInText;
+  // SECURITY: Require the sender phone to be on the explicit admin whitelist.
+  // A non-whitelisted phone can never unlock admin access or mint magic links even by guessing PINs.
+  let isAdminAuthenticated = isWhitelisted;
 
-  if (hasPinInText && !hasActivePinSession) {
+  if (isWhitelisted && hasPinInText && !hasActivePinSession) {
     await saveConversationState(metadata.step || 'IDLE', {
       isAdminAuthenticated: true,
       adminAuthExpiry: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
@@ -170,12 +171,12 @@ export async function handleAdminBotCommand({
   // claimed, not proven. Require a live PIN-authenticated session so a
   // spoofed sender must still know the secret PIN to mint admin links.
   if (cmd === 'link' || cmd === 'magic' || cmd === 'web') {
-    if (!hasActivePinSession && !hasPinInText) {
+    if (!isWhitelisted || (!hasActivePinSession && !hasPinInText)) {
       return (
         `🔐 *Admin Verification Required for Web Access*\n` +
         `─────────────────────────\n` +
         `To prevent impersonation, first authenticate with the master PIN:\n\n` +
-        `*!admin <your ADMIN_BOT_PIN>*\n\n` +
+        `*/admin <your ADMIN_BOT_PIN>*\n\n` +
         `...then request the link again (the session stays unlocked 24h).\n` +
         `─────────────────────────`
       );
@@ -455,16 +456,17 @@ export async function handleAdminBotCommand({
       maxAgeMinutes: 180, // last 3 hours
     });
 
-    // 2. Lookup conversation in DB
+    // 2. Lookup conversation in DB (guard against empty contains match)
     let conv: any = null;
     try {
+      const phoneFilters = [
+        ...(cleanQuery.length >= 9 ? [{ user_phone: { contains: cleanQuery } }] : []),
+        { user_phone: query },
+      ];
       conv = await db.ai_conversations?.findFirst({
         where: {
           channel: 'whatsapp',
-          OR: [
-            { user_phone: { contains: cleanQuery } },
-            { user_phone: query },
-          ],
+          OR: phoneFilters,
         },
         orderBy: { updated_at: 'desc' },
       });
@@ -563,13 +565,14 @@ export async function handleAdminBotCommand({
     const cleanTarget = target.replace(/[^0-9]/g, '');
     let conv: any = null;
     try {
+      const targetFilters = [
+        ...(cleanTarget.length >= 9 ? [{ user_phone: { contains: cleanTarget } }] : []),
+        { user_phone: target },
+      ];
       conv = await db.ai_conversations?.findFirst({
         where: {
           channel: 'whatsapp',
-          OR: [
-            { user_phone: { contains: cleanTarget } },
-            { user_phone: target },
-          ],
+          OR: targetFilters,
         },
         orderBy: { updated_at: 'desc' },
       });

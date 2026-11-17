@@ -483,11 +483,9 @@ export async function verifyManualMpesaReceipt({
     };
   }
 
-  const hasSmsProof =
-    /(?:confirmed|received|paid)\b/i.test(mpesaCodeInput) &&
-    /(?:ksh|kes)\.?\s*[\d,]+/i.test(mpesaCodeInput);
-
-  if (!matchingTx && !existingDownload && !hasSmsProof) {
+  // SECURITY: Never accept unverified free-text SMS strings as payment proof.
+  // A valid server-verified Daraja MpesaTransaction or CertificateDownload record MUST exist.
+  if (!matchingTx && !existingDownload) {
     return {
       success: false,
       verified: false,
@@ -495,7 +493,7 @@ export async function verifyManualMpesaReceipt({
       checkoutRequestId: `MANUAL-${receiptCode}`,
       httpStatus: 400,
       error:
-        'This M-Pesa transaction code was not found in verified payment records. Please confirm your payment or paste the full confirmation SMS.',
+        'This M-Pesa transaction code was not found in verified payment records. Please complete payment via M-Pesa STK Push or contact support with your receipt.',
     };
   }
 

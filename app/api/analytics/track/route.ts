@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import prisma from '@/lib/prisma';
+import { extractClientIp } from '@/lib/rate-limit/ip';
 
 export const maxDuration = 15;
 
@@ -14,14 +15,13 @@ export async function POST(req: NextRequest) {
         payload = JSON.parse(bodyText);
       }
     } catch {
-      payload = {};
+      return NextResponse.json({ success: false, error: 'Invalid JSON payload' }, { status: 400 });
     }
 
     const {
       sessionId,
       activityType,
       description,
-      pin,
       metadata = {},
       isMobile = false,
       deviceInfo = {},
@@ -31,32 +31,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing sessionId or activityType' }, { status: 400 });
     }
 
-    // SECURITY: sessionId becomes a primary key via upsert — enforce a sane
-    // format and size, and reject oversized/untrusted device payloads so the
-    // endpoint cannot be used for DB flooding.
     if (typeof sessionId !== 'string' || sessionId.length > 64 || !/^[A-Za-z0-9_-]+$/.test(sessionId)) {
       return NextResponse.json({ success: false, error: 'Invalid sessionId format' }, { status: 400 });
     }
     if (typeof activityType !== 'string' || activityType.length > 64) {
       return NextResponse.json({ success: false, error: 'Invalid activityType' }, { status: 400 });
     }
-    if (deviceInfo && typeof deviceInfo !== 'object') {
+    if (deviceInfo && (typeof deviceInfo !== 'object' || Array.isArray(deviceInfo))) {
       return NextResponse.json({ success: false, error: 'Invalid deviceInfo' }, { status: 400 });
     }
     if (JSON.stringify(deviceInfo || {}).length > 2048) {
       return NextResponse.json({ success: false, error: 'deviceInfo too large' }, { status: 400 });
     }
+    if (metadata && (typeof metadata !== 'object' || Array.isArray(metadata))) {
+      return NextResponse.json({ success: false, error: 'Invalid metadata' }, { status: 400 });
+    }
+    if (JSON.stringify(metadata || {}).length > 2048) {
+      return NextResponse.json({ success: false, error: 'metadata too large' }, { status: 400 });
+    }
 
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      req.headers.get('x-real-ip') ||
-      '127.0.0.1';
-    const userAgent = req.headers.get('user-agent') || '';
+    const ip = extractClientIp(req);
+    const userAgent = (req.headers.get('user-agent') || '').slice(0, 512);
 
     const db = prisma as any;
 
-    // Check if sessions table is accessible; persist asynchronously so telemetry never blocks HTTP callers
+    // Persist reliably after response via Next.js after() so serverless doesn't drop tasks
     if (typeof db.sessions?.upsert === 'function') {
-      void (async () => {
+      after(async () => {
         try {
           await db.sessions.upsert({
             where: { id: sessionId },
@@ -84,6 +85,8 @@ export async function POST(req: NextRequest) {
             delete (sanitizedMetadata as any).pin;
             delete (sanitizedMetadata as any).idNumber;
             delete (sanitizedMetadata as any).id_number;
+            delete (sanitizedMetadata as any).phone;
+            delete (sanitizedMetadata as any).email;
 
             await db.session_activities.create({
               data: {
@@ -98,12 +101,11 @@ export async function POST(req: NextRequest) {
         } catch {
           // Non-blocking background telemetry
         }
-      })().catch(() => { });
+      });
     }
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    // Non-blocking response
-    return NextResponse.json({ success: true, notice: 'Event recorded or queued' });
+  } catch {
+    return NextResponse.json({ success: false, error: 'Telemetry processing error' }, { status: 500 });
   }
 }

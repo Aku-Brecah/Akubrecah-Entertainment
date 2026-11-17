@@ -1,8 +1,8 @@
 import { log } from '@/lib/monitoring/logger';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendEvolutionTextMessage } from '@/lib/evolution';
-import { checkRateLimit } from '@/lib/rate-limit/limiter';
+import { extractClientIp } from '@/lib/rate-limit/ip';
 import { sendAdminNotification } from '@/lib/email/reply';
 
 export const maxDuration = 30;
@@ -21,28 +21,9 @@ function sanitizeText(input: unknown, maxLength: number): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const ipAddress =
-      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      req.headers.get('x-real-ip') ||
-      'unknown';
-
-    // 1. Strict Rate Limiting (Abuse & Spam Protection)
-    const rateResult = await checkRateLimit(ipAddress, '/api/inquiries');
-    if (!rateResult.allowed) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Too many submissions. Please wait a moment before sending another message.',
-          resetSec: rateResult.resetSec,
-        },
-        {
-          status: 429,
-          headers: {
-            'Retry-After': String(rateResult.resetSec),
-          },
-        }
-      );
-    }
+    // Rate limiting is enforced centrally in proxy.ts (Tier 3: 10 req/min);
+    // use the verified client IP extractor for audit storage.
+    const ipAddress = extractClientIp(req);
 
     const body = await req.json().catch(() => ({}));
 
@@ -116,8 +97,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 5. Automated Multi-Channel Admin Notifications
-    const adminPhone = process.env.SUPER_ADMIN_PHONE || '254791497858';
+    // 5. Automated Multi-Channel Admin Notifications (scheduled via after() so serverless doesn't drop them)
+    const adminPhone = (process.env.SUPER_ADMIN_PHONE || process.env.ADMIN_WHATSAPP_PHONE || '').replace(/[^0-9]/g, '');
     const alertText =
       `*NEW CLIENT INQUIRY RECEIVED*\n\n` +
       `*Client:* ${inquiry.name}\n` +
@@ -130,12 +111,20 @@ export async function POST(req: NextRequest) {
       `*Message:*\n"${inquiry.message}"\n\n` +
       `_Status: NEW. View and manage in your Admin Portal at /admin/inquiries_`;
 
-    sendEvolutionTextMessage(adminPhone, alertText).catch((err) => {
-      log.warn('[Inquiries WhatsApp Alert Error]:', err.message);
-    });
-
-    sendAdminNotification(inquiry).catch((err) => {
-      log.warn('[Inquiries Admin Email Alert Error]:', err.message);
+    after(async () => {
+      const tasks: Promise<unknown>[] = [
+        sendAdminNotification(inquiry).catch((err) => {
+          log.warn('[Inquiries Admin Email Alert Error]:', err?.message || err);
+        }),
+      ];
+      if (adminPhone) {
+        tasks.push(
+          sendEvolutionTextMessage(adminPhone, alertText).catch((err) => {
+            log.warn('[Inquiries WhatsApp Alert Error]:', err?.message || err);
+          })
+        );
+      }
+      await Promise.allSettled(tasks);
     });
 
     return NextResponse.json({
@@ -146,7 +135,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     log.error('[API Inquiries POST Error]:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to submit inquiry. Please try again.' },
+      { success: false, error: 'Failed to submit inquiry. Please try again.' },
       { status: 500 }
     );
   }

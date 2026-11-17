@@ -72,7 +72,9 @@ export async function POST(req: NextRequest) {
 
     const { verifyCertificateDownloadEligibility } = await import('@/lib/mpesa-redemption');
     const { isAdminUser } = await import('@/lib/subscription');
-    const isAdmin = userId ? await isAdminUser(userId) : false;
+    const { verifyAdminCaller } = await import('@/lib/admin-auth');
+    const adminCaller = await verifyAdminCaller(req);
+    const isAdmin = Boolean(adminCaller) || (userId ? await isAdminUser(userId) : false);
     const requestedPin = (clientResolvedPin || (pin || '')).toUpperCase().trim();
 
     let eligibility: any = null;
@@ -124,10 +126,10 @@ export async function POST(req: NextRequest) {
     // Validate the download record exists in DB (or fallback)
     let downloadRecord = downloadId
       ? await db.certificateDownload?.findFirst({
-          where: {
-            id: downloadId,
-          },
-        }).catch(() => null)
+        where: {
+          id: downloadId,
+        },
+      }).catch(() => null)
       : null;
 
     if (!downloadRecord && isServiceAuthorized) {
@@ -185,7 +187,7 @@ export async function POST(req: NextRequest) {
     let dbUser: any = null;
     try {
       dbUser = await getOrCreateDbUser(effectiveClerkId, 'guest@akubrecah.co.ke', 'Guest Taxpayer');
-    } catch {}
+    } catch { }
 
     // Prioritize clean unmasked PIN from eligibility / download record, fallback to payload
     let cleanPin = eligibility?.cleanPin || '';
@@ -321,7 +323,7 @@ export async function POST(req: NextRequest) {
         const client = await clerkClient();
         const user = await client.users.getUser(userId);
         userEmail = user.primaryEmailAddress?.emailAddress || userId;
-      } catch {}
+      } catch { }
     }
 
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';

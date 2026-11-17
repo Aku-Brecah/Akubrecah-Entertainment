@@ -35,29 +35,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required.' }, { status: 403 });
     }
 
-    await ensureFallbackArticlesSeeded().catch(() => { });
-
     let dbArticles: Awaited<ReturnType<typeof prisma.article.findMany>> = [];
+    let dbFailed = false;
     try {
       dbArticles = await prisma.article.findMany({
         orderBy: { publishedAt: 'desc' },
       });
     } catch (dbErr) {
-      log.warn('[API Admin Articles GET DB Notice - Merging Fallback]:', (dbErr as Error)?.message);
+      dbFailed = true;
+      log.warn('[API Admin Articles GET DB Notice - Fallback Used]:', (dbErr as Error)?.message);
     }
 
-    const fallbackList = getFallbackArticles();
-    const dbSlugs = new Set(dbArticles.map((a) => a.slug.toLowerCase()));
-    const merged = [
-      ...dbArticles,
-      ...fallbackList.filter((fb) => !dbSlugs.has(fb.slug.toLowerCase())),
-    ].sort(
-      (a, b) =>
-        new Date(b.publishedAt || b.createdAt).getTime() -
-        new Date(a.publishedAt || a.createdAt).getTime()
-    );
+    const result = dbFailed
+      ? getFallbackArticles().sort(
+          (a, b) =>
+            new Date(b.publishedAt || b.createdAt).getTime() -
+            new Date(a.publishedAt || a.createdAt).getTime()
+        )
+      : dbArticles;
 
-    return NextResponse.json({ success: true, articles: merged });
+    return NextResponse.json({ success: true, articles: result });
   } catch (error: unknown) {
     const err = error as Error;
     log.error('[API Admin Articles GET Error]:', err);

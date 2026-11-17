@@ -39,6 +39,11 @@ function safeCompare(a: string, b: string): boolean {
 
 export { safeCompare };
 
+export function isSuperAdminCaller(admin: AdminCaller | null | undefined): boolean {
+  if (!admin) return false;
+  return admin.role === "Super Admin";
+}
+
 export async function verifyAdminCaller(req?: NextRequest): Promise<AdminCaller | null> {
   // 1. Check direct PIN header (no query params — headers only)
   if (req) {
@@ -74,20 +79,24 @@ export async function verifyAdminCaller(req?: NextRequest): Promise<AdminCaller 
     if (userId) {
       const client = await clerkClient();
       const currentUser = await client.users.getUser(userId);
-      const email = currentUser.primaryEmailAddress?.emailAddress?.toLowerCase();
+      const email = currentUser.primaryEmailAddress?.emailAddress?.toLowerCase() || "";
       // SECURITY: no default role. A user without explicit role metadata is a
       // normal taxpayer and must never be granted admin access.
       const role = (currentUser.publicMetadata?.role as string) || "";
-      const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || '').toLowerCase();
-      const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
+      const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+      const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
 
-      if (
-        email === configAdminEmail ||
-        email === configPublicAdminEmail ||
-        role === "Super Admin" ||
-        role === "Admin"
-      ) {
-        return { userId, email: email || "admin@akubrecah.co.ke", role: role || "Super Admin" };
+      const isConfiguredSuperAdmin =
+        Boolean(email) &&
+        ((Boolean(configAdminEmail) && email === configAdminEmail) ||
+          (Boolean(configPublicAdminEmail) && email === configPublicAdminEmail));
+
+      if (isConfiguredSuperAdmin || role === "Super Admin" || role === "Admin") {
+        return {
+          userId,
+          email: email || "admin@akubrecah.co.ke",
+          role: isConfiguredSuperAdmin ? "Super Admin" : role,
+        };
       }
     }
   } catch (err: any) {
