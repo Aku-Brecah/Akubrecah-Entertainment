@@ -50,4 +50,28 @@ describe('KRA Retrieval Authentication Gate', () => {
       (process.env as any).NODE_ENV = originalEnv;
     }
   });
+
+  it('allows localhost development requests without 401 authentication block', async () => {
+    const { POST } = await import('@/app/api/kra/retrieve/route');
+
+    const originalEnv = process.env.NODE_ENV;
+    (process.env as any).NODE_ENV = 'development';
+
+    try {
+      const req = new NextRequest('http://localhost:3000/api/kra/retrieve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', host: 'localhost:3000' },
+        body: JSON.stringify({}),
+      });
+
+      const res = await POST(req);
+      // Because body has no ID or PIN, it should pass auth gate and return 400 for missing ID/PIN, not 401 requiresAuth
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toContain('ID Number or PIN is required');
+      expect(data.requiresAuth).toBeUndefined();
+    } finally {
+      (process.env as any).NODE_ENV = originalEnv;
+    }
+  });
 });

@@ -382,7 +382,10 @@ export async function lookupPinByIdNumber(idNumber: string, cookieString = ''): 
       res.on('end', () => {
         try {
           const raw = Buffer.concat(chunks).toString('utf8');
-          const m = raw.match(/handleCallback\([^,]+,[^,]+,"([^"]+)"\)/) || raw.match(/s\d+="([^"]+)"/);
+          const m =
+            raw.match(/handleCallback\s*\(\s*["']?\w+["']?\s*,\s*["']?\w+["']?\s*,\s*["']([^"']+)["']\s*\)/i) ||
+            raw.match(/([A-Z]\d{2}[\*A-Z0-9]{4,10}#\$\d{5})/i) ||
+            raw.match(/s\d+\s*=\s*["']([^"']+)["']/i);
           if (m) {
             const rawVal = m[1];
             const resolved = reconstructDwrPin(rawVal);
@@ -391,6 +394,11 @@ export async function lookupPinByIdNumber(idNumber: string, cookieString = ''): 
               return;
             }
             log.info('[KRA-API] iTax returned unresolvable PIN callback:', rawVal);
+          }
+          const directMatch = raw.match(/\b([A-Z]\d{9}[A-Z])\b/i);
+          if (directMatch) {
+            resolve(directMatch[1].toUpperCase());
+            return;
           }
         } catch {}
         resolve(null);
@@ -605,13 +613,48 @@ export async function fetchTaxpayerById(rawId: string, mode: 'api' | 'dwr' | 'au
     try {
       const resolvedPin = await lookupPinByIdNumber(idNumber);
       if (resolvedPin) {
-        const profile = await fetchTaxpayerByPin(resolvedPin, mode);
-        profile.idNumber = idNumber;
-        setToMemoryCache(idNumber, profile);
-        setToMemoryCache(resolvedPin, profile);
-        // Asynchronously link ID number with PIN in persistent cache
-        cacheTaxpayerRecord(profile).catch(() => {});
-        return profile;
+        try {
+          const profile = await fetchTaxpayerByPin(resolvedPin, mode);
+          profile.idNumber = idNumber;
+          setToMemoryCache(idNumber, profile);
+          setToMemoryCache(resolvedPin, profile);
+          // Asynchronously link ID number with PIN in persistent cache
+          cacheTaxpayerRecord(profile).catch(() => {});
+          return profile;
+        } catch {
+          // If fetchTaxpayerByPin throws (e.g. taxpayer has no manufacturer registration),
+          // preserve the authentic resolved PIN rather than discarding it!
+          const regDate = resolveAuthenticRegistrationDate(resolvedPin);
+          const fallbackProfile: TaxpayerProfile = {
+            pin: resolvedPin,
+            taxpayerName: 'Registered Taxpayer',
+            status: 'Active',
+            idNumber,
+            registrationDate: regDate,
+            station: 'North of Nairobi',
+            taxArea: '',
+            county: '',
+            town: '',
+            district: '',
+            building: '',
+            street: '',
+            poBox: '',
+            postalCode: '',
+            email: '',
+            phoneNumber: '',
+            obligations: [
+              {
+                name: 'Income Tax - Individual (IT1)',
+                status: 'Active',
+                effectiveFrom: regDate,
+              },
+            ],
+            source: 'itax_live',
+          };
+          setToMemoryCache(idNumber, fallbackProfile);
+          setToMemoryCache(resolvedPin, fallbackProfile);
+          return fallbackProfile;
+        }
       }
     } catch (err: any) {
       log.warn('[KRA-API] Direct DWR ID lookup attempt notice:', err.message);

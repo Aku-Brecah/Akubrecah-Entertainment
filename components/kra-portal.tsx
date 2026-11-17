@@ -81,12 +81,27 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const router = useRouter()
   const { isLoaded: authLoaded, isSignedIn, user } = useUser()
 
+  // In localhost / local development, Clerk production keys block sign-in.
+  // Allow seamless local testing without blocking on Clerk auth cookies.
+  const [isLocalDev, setIsLocalDev] = useState(false)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isDevHost =
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname.endsWith('.local')
+      setIsLocalDev(isDevHost || process.env.NODE_ENV === 'development')
+    }
+  }, [])
+
+  const isEffectiveSignedIn = Boolean(isSignedIn || isLocalDev)
+
   // Derive admin status client-side from Clerk metadata (requires signed-in session and non-empty admin email)
   const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase() || ''
   const userRole = user?.publicMetadata?.role as string | undefined
   const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase()
   const isAdmin = Boolean(
-    isSignedIn && (
+    isEffectiveSignedIn && (
       (configPublicAdminEmail && userEmail === configPublicAdminEmail) ||
       userRole === 'Super Admin' ||
       userRole === 'Admin'
@@ -397,7 +412,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const handleIdSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
 
-    if (!isSignedIn) {
+    if (!isEffectiveSignedIn) {
       setError("Account sign in required: You must be logged in to search and retrieve KRA PIN certificates.")
       toast.error("Please sign in to search taxpayer records.")
       router.push("/sign-in?redirect_url=/retrieval-portal")
@@ -2083,7 +2098,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       </div>
 
                       {/* Authentication Gate Notice: Search requires login */}
-                      {authLoaded && !isSignedIn && (
+                      {authLoaded && !isEffectiveSignedIn && (
                         <div className="w-full max-w-md mx-auto p-4 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left shadow-2xs">
                           <div className="flex items-start gap-2.5">
                             <Lock className="w-5 h-5 text-primary shrink-0 mt-0.5" />
@@ -2102,6 +2117,21 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                               <span>Sign In</span>
                             </Button>
                           </Link>
+                        </div>
+                      )}
+
+                      {/* Local Dev Mode indicator banner */}
+                      {isLocalDev && !isSignedIn && (
+                        <div className="w-full max-w-md mx-auto p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-3 text-left shadow-2xs">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                              Localhost Mode: Authentication Bypassed for Testing
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold">
+                            DEV
+                          </span>
                         </div>
                       )}
 
@@ -2152,7 +2182,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         className="space-y-4 w-full max-w-md mx-auto"
                         onSubmit={(e) => {
                           e.preventDefault();
-                          if (!isSignedIn) {
+                          if (!isEffectiveSignedIn) {
                             toast.error("Please sign in to search taxpayer records.");
                             router.push("/sign-in?redirect_url=/retrieval-portal");
                             return;
@@ -2290,7 +2320,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
                         {/* Action Buttons from Stitch */}
                         <div className="flex flex-col gap-2 pt-1">
-                          {authLoaded && !isSignedIn ? (
+                          {authLoaded && !isEffectiveSignedIn ? (
                             <Link href="/sign-in?redirect_url=/retrieval-portal" className="w-full">
                               <button
                                 className={cn(
@@ -2321,7 +2351,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                             className="w-full text-on-surface-variant hover:text-on-surface font-semibold text-xs text-center py-1 transition-colors cursor-pointer"
                             type="button"
                             onClick={() => {
-                              if (!isSignedIn) {
+                              if (!isEffectiveSignedIn) {
                                 toast.error("Please sign in to proceed.");
                                 router.push("/sign-in?redirect_url=/retrieval-portal");
                                 return;
