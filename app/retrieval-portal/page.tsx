@@ -52,23 +52,23 @@ function FlagshipPortalContent() {
   }
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface font-sans selection:bg-primary/20 selection:text-primary flex flex-col">
+    <div className="min-h-screen overflow-x-hidden bg-surface text-on-surface font-sans selection:bg-primary/20 selection:text-primary flex flex-col">
 
       {/* ============================================================== */}
       {/* 1. ADAPTIVE RESPONSIVE GOVTECH TOP NAVIGATION BAR */}
       {/* ============================================================== */}
       <header className="sticky top-0 z-50 w-full bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant/80 shadow-2xs">
-        <div className="w-full max-w-none px-4 sm:px-6 lg:px-10 xl:px-12 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="w-full max-w-none px-3 sm:px-6 lg:px-10 xl:px-12 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
 
           {/* Brand Mark & Identity */}
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-90 shrink-0">
-            <Logo width={120} height={34} className="h-7 sm:h-8 w-auto transition-transform group-hover:scale-[1.02]" />
-            <div className="flex flex-col">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-90 min-w-0">
+            <Logo width={120} height={34} className="h-7 sm:h-8 w-auto shrink-0 transition-transform group-hover:scale-[1.02]" />
+            <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1 sm:gap-1.5">
-                <span className="text-[11px] sm:text-sm font-black tracking-tight text-on-surface uppercase">
+                <span className="text-xs sm:text-sm font-black tracking-tight text-on-surface uppercase truncate">
                   Akubrecah<span className="hidden sm:inline"> Cyber Portal</span>
                 </span>
-                <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
                   Independent
                 </span>
               </div>
@@ -78,38 +78,17 @@ function FlagshipPortalContent() {
             </div>
           </Link>
 
-          {/* Center: Responsive Mode Segmented Control */}
-          <div className="flex items-center p-0.5 sm:p-1 rounded-xl sm:rounded-2xl bg-surface-container border border-outline-variant/80 shadow-2xs">
+          {/* Right Header: Active Mode Badge & Profile */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               type="button"
               onClick={() => handleModeChange("retrieval")}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all ${mode === "retrieval"
-                  ? "bg-primary text-white shadow-xs"
-                  : "text-on-surface-variant hover:text-on-surface"
-                }`}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-primary text-white shadow-xs transition-all"
             >
               <FileCheck2 className="w-3.5 h-3.5 shrink-0" />
               <span><span className="hidden sm:inline">Certificate </span>Retrieval</span>
             </button>
-            <button
-              type="button"
-              onClick={() => handleModeChange("filing")}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all ${mode === "filing"
-                  ? "bg-primary text-white shadow-xs"
-                  : "text-on-surface-variant hover:text-on-surface"
-                }`}
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
-              <span><span className="hidden sm:inline">Returns </span>Filing</span>
-              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-extrabold ml-0.5">
-                Demo · Coming Soon
-              </span>
-            </button>
-          </div>
-
-          {/* Right Header Profile */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {isLoaded && isSignedIn ? (
+            {isLoaded && isSignedIn && (
               <UserButton
                 appearance={{
                   elements: {
@@ -117,19 +96,6 @@ function FlagshipPortalContent() {
                   },
                 }}
               />
-            ) : (
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <Link href="/sign-in?redirect_url=/retrieval-portal">
-                  <Button variant="ghost" size="sm" className="h-8 px-2.5 sm:px-3 rounded-lg text-xs font-bold text-on-surface hover:text-primary">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/sign-up?redirect_url=/retrieval-portal">
-                  <Button size="sm" className="h-8 px-3 sm:px-3.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 shadow-2xs">
-                    Register
-                  </Button>
-                </Link>
-              </div>
             )}
           </div>
 
@@ -139,7 +105,7 @@ function FlagshipPortalContent() {
       {/* ============================================================== */}
       {/* 2. FOCUSED HERO WORKSPACE (ZERO SCROLL ACROSS ALL DEVICES) */}
       {/* ============================================================== */}
-      <main className="flex-1 w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-3 sm:py-5 space-y-4 sm:space-y-6">
+      <main className="flex-1 w-full max-w-[1360px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-12 py-3 sm:py-5 space-y-4 sm:space-y-6">
 
         {/* Focused Hero Header from Stitch Design */}
         <div className="text-center space-y-2 max-w-3xl mx-auto px-1 mb-2">

@@ -138,13 +138,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const [error, setError] = useState<string | null>(null)
   const [hasConsented, setHasConsented] = useState(false)
 
-  // Auto-sync authenticated user email when available
-  useEffect(() => {
-    if (userEmail && !formData.email) {
-      setFormData(prev => ({ ...prev, email: userEmail }))
-    }
-  }, [userEmail])
-
   // CAPTCHA state
   const [captchaImage, setCaptchaImage] = useState<string | null>(null)
   const [sessionToken, setSessionToken] = useState<string | null>(null)
@@ -490,7 +483,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             pin: isAdmin ? (result.data?.pin || prev.pin) : maskPin(result.data?.pin || prev.pin),
             rawPin: effectiveRawPin || result.data?.pin || '',
             idNumber: effectiveIdNumber,
-            email: result.data?.email || prev.email || userEmail || '',
+            email: result.data?.email || '',
             building: result.data?.building || '',
             street: result.data?.street || '',
             town: result.data?.town || '',
@@ -510,9 +503,14 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         setCaptchaStatus("idle")
         setCaptchaImage(null)
         setCaptchaAnswer("")
-        setCurrentStep(2)
+        // Everything loaded directly from KRA — take client straight to Payment / Download step
+        setCurrentStep(4)
         trackEvent({ activityType: "view_masked" })
-        toast.success("KRA Taxpayer Details Found!")
+        toast.success(
+          isAdmin
+            ? "KRA Taxpayer Details Found! Ready for instant certificate download."
+            : "KRA Taxpayer Details Found! Complete M-Pesa payment to unlock your certificate."
+        )
       } else {
         setIdSearchStatus("idle")
         setError(result.error || "Details not found. Please check your credentials.")
@@ -551,7 +549,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             pin: result.data.pin || prev.pin,
             rawPin: result.data.pin || prev.rawPin,
             idNumber: result.data.idNumber || prev.idNumber,
-            email: result.data.email || prev.email || userEmail || '',
+            email: result.data.email || prev.email || '',
             building: result.data.building || prev.building,
             street: result.data.street || prev.street,
             town: result.data.town || prev.town,
@@ -1929,13 +1927,13 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       )}
 
       {/* Step Process Tracker from Stitch Design (Institutional 4-node connected tracker) */}
-      <div className="w-full max-w-xl mx-auto mb-6 px-2">
+      <div className="w-full max-w-xl mx-auto mb-5 sm:mb-6 px-1 sm:px-2">
         <div className="relative flex items-center justify-between">
           {/* Background Connecting Track */}
-          <div className="absolute left-6 right-6 top-4 -translate-y-1/2 h-0.5 bg-surface-container-highest -z-0" />
+          <div className="absolute left-5 right-5 sm:left-6 sm:right-6 top-4 -translate-y-1/2 h-0.5 bg-surface-container-highest -z-0" />
           {/* Active Progress Fill */}
           <motion.div
-            className="absolute left-6 top-4 -translate-y-1/2 h-0.5 bg-primary -z-0"
+            className="absolute left-5 sm:left-6 top-4 -translate-y-1/2 h-0.5 bg-primary -z-0"
             initial={{ width: "0%" }}
             animate={{ width: `${((currentStep - 1) / 3) * 88}%` }}
             transition={{ type: "spring", stiffness: 200, damping: 20 }}
@@ -1957,7 +1955,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             </div>
             <span
               className={cn(
-                "mt-2 text-[11px] tracking-tight",
+                "mt-2 text-[10px] sm:text-[11px] tracking-tight whitespace-nowrap",
                 currentStep === 1 ? "text-primary font-bold" : currentStep > 1 ? "text-on-surface font-semibold" : "text-on-surface-variant/70"
               )}
             >
@@ -1981,7 +1979,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             </div>
             <span
               className={cn(
-                "mt-2 text-[11px] tracking-tight",
+                "mt-2 text-[10px] sm:text-[11px] tracking-tight whitespace-nowrap",
                 currentStep === 2 ? "text-primary font-bold" : currentStep > 2 ? "text-on-surface font-semibold" : "text-on-surface-variant/70"
               )}
             >
@@ -2005,7 +2003,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             </div>
             <span
               className={cn(
-                "mt-2 text-[11px] tracking-tight",
+                "mt-2 text-[10px] sm:text-[11px] tracking-tight whitespace-nowrap",
                 currentStep === 3 ? "text-primary font-bold" : currentStep > 3 ? "text-on-surface font-semibold" : "text-on-surface-variant/70"
               )}
             >
@@ -2019,9 +2017,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
               className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all",
                 currentStep === 4
-                  ? isRecordUnlocked
-                    ? "bg-primary text-white ring-4 ring-primary/20 shadow-xs"
-                    : "bg-primary text-white ring-4 ring-primary/20 shadow-xs"
+                  ? "bg-primary text-white ring-4 ring-primary/20 shadow-xs"
                   : "bg-surface-container-lowest border-2 border-outline-variant text-on-surface-variant font-medium"
               )}
             >
@@ -2029,11 +2025,12 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
             </div>
             <span
               className={cn(
-                "mt-2 text-[11px] tracking-tight",
+                "mt-2 text-[10px] sm:text-[11px] tracking-tight whitespace-nowrap",
                 currentStep === 4 ? "text-primary font-bold" : isRecordUnlocked ? "text-on-surface font-semibold" : "text-on-surface-variant/70"
               )}
             >
-              4. Download (KES 20)
+              <span className="hidden sm:inline">4. Download (KES 20)</span>
+              <span className="sm:hidden">4. Pay</span>
             </span>
           </div>
         </div>
@@ -2046,7 +2043,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
         >
-          <div className={cn("w-full bg-surface-container-lowest rounded-2xl sm:rounded-3xl shadow-soft border border-outline-variant p-5 sm:p-7 md:p-8 relative overflow-hidden z-10 mx-auto", currentStep === 4 ? "max-w-6xl" : currentStep === 1 ? "max-w-xl" : "max-w-3xl")}>
+          <div className={cn("w-full bg-surface-container-lowest rounded-2xl sm:rounded-3xl shadow-soft border border-outline-variant p-4 sm:p-7 md:p-8 relative overflow-hidden z-10 mx-auto", currentStep === 4 ? "max-w-6xl" : currentStep === 1 ? "max-w-xl" : "max-w-3xl")}>
             <AnimatePresence mode="wait">
               {currentStep === 1 && (
                 <motion.div key="step1" variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
@@ -2219,6 +2216,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                 className={cn(inputClass, "pr-11 text-base tracking-wider font-extrabold")}
                                 placeholder="e.g. 12345678"
                                 type="text"
+                                inputMode="numeric"
                                 maxLength={8}
                                 value={formData.idNumber}
                                 onChange={(e) => handleInputChange('idNumber', e.target.value.toUpperCase())}
@@ -2264,18 +2262,18 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
                         {/* Arithmetic Security Challenge (Captcha Box from Stitch) */}
                         <div className="bg-surface-container-low border border-outline-variant/80 rounded-xl p-3.5 flex flex-col gap-2.5 text-left">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
-                              <Lock className="w-3.5 h-3.5 text-primary" />
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+                              <Lock className="w-3.5 h-3.5 text-primary shrink-0" />
                               Solve arithmetic question
                             </span>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md border border-outline-variant">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md border border-outline-variant shrink-0">
                               Spam Protection
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2.5">
-                            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-1.5 font-mono text-base font-bold text-on-surface tracking-wider flex items-center gap-2 select-none shrink-0">
+                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2 font-mono text-base font-bold text-on-surface tracking-wider flex items-center justify-between sm:justify-start gap-2 select-none shrink-0">
                               {captchaImage ? (
                                 <img src={captchaImage} alt="KRA Security Stamp" className="h-8 object-contain" />
                               ) : (
@@ -2286,19 +2284,20 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                               <button
                                 type="button"
                                 onClick={loadCaptcha}
-                                className="text-on-surface-variant hover:text-primary transition-colors p-1 cursor-pointer"
+                                className="text-on-surface-variant hover:text-primary transition-colors p-1.5 cursor-pointer"
                                 title="Refresh Challenge"
                               >
-                                <RefreshCw className={cn("w-3.5 h-3.5", captchaStatus === "loading" && "animate-spin text-primary")} />
+                                <RefreshCw className={cn("w-4 h-4", captchaStatus === "loading" && "animate-spin text-primary")} />
                               </button>
                             </div>
-                            <div className="flex-1 min-w-[120px]">
+                            <div className="flex-1 min-w-0">
                               <input
                                 type="number"
+                                inputMode="numeric"
                                 value={captchaAnswer}
                                 onChange={(e) => setCaptchaAnswer(e.target.value)}
                                 placeholder="Enter answer"
-                                className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-3.5 py-2 text-sm font-bold text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                                className="w-full h-11 bg-surface-container-lowest border border-outline-variant rounded-xl px-3.5 py-2 text-base font-bold text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                               />
                             </div>
                           </div>
@@ -2565,7 +2564,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           className="w-full h-11 bg-surface-container-low border border-outline-variant rounded-xl px-4 text-xs font-mono font-bold text-on-surface cursor-not-allowed outline-none"
                           readOnly
                           type="text"
-                          value={isRecordUnlocked ? (formData.email || userEmail) : maskEmail(formData.email || userEmail || "akubrecah@gmail.com")}
+                          value={isRecordUnlocked ? (formData.email || "") : maskEmail(formData.email || "")}
                         />
                         <Shield className="w-4 h-4 absolute right-3 text-on-surface-variant" />
                       </div>
@@ -2819,24 +2818,16 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                             </button>
                           )}
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                          <div className="pt-1">
                             <a
                               href={`https://wa.me/?text=${encodeURIComponent(`Official KRA Taxpayer Certificate for ${formData.fullName} (PIN: ${formData.pin}) verified and retrieved on Akubrecah Cyber Portal.`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="w-full bg-surface-container-lowest border border-outline-variant hover:bg-surface-container-low text-on-surface h-11 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition duration-150 cursor-pointer"
+                              className="w-full bg-surface-container-lowest border border-outline-variant hover:bg-surface-container-low text-on-surface h-12 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition duration-150 cursor-pointer"
                             >
                               <Share2 className="w-4 h-4 text-emerald-600" />
                               <span>Send to WhatsApp</span>
                             </a>
-                            <button
-                              type="button"
-                              onClick={() => toast.success(`Receipt ${verifiedReceipt || 'UB12XYZ789'} verified & recorded in session.`)}
-                              className="w-full bg-surface-container-lowest border border-outline-variant hover:bg-surface-container-low text-on-surface h-11 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition duration-150 cursor-pointer"
-                            >
-                              <Receipt className="w-4 h-4 text-on-surface-variant" />
-                              <span>Download Receipt</span>
-                            </button>
                           </div>
                         </div>
 
@@ -2863,17 +2854,17 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       </div>
                     </div>
                   ) : (
-                    /* Screen 4: Locked Preview + M-Pesa Checkout Panel (7/5 Split) */
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                      {/* LEFT COLUMN: Certificate Details & Locked PDF Preview (7 Cols) */}
-                      <section className="lg:col-span-7 flex flex-col gap-5">
-                        <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-5 sm:p-6 shadow-soft flex flex-col gap-5">
+                    /* Screen 4: Locked Preview + M-Pesa Checkout Panel (7/5 Split; Payment first on mobile) */
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
+                      {/* LEFT COLUMN (2nd on mobile): Certificate Details & Locked PDF Preview (7 Cols) */}
+                      <section className="order-2 lg:order-1 lg:col-span-7 flex flex-col gap-5 min-w-0">
+                        <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-4 sm:p-6 shadow-soft flex flex-col gap-4 sm:gap-5">
                           {/* Column Header */}
-                          <div className="border-b border-outline-variant pb-4 flex justify-between items-start gap-2">
-                            <div>
+                          <div className="border-b border-outline-variant pb-3.5 sm:pb-4 flex justify-between items-start gap-2">
+                            <div className="min-w-0">
                               <div className="flex items-center gap-2">
-                                <CheckCircle2 className="w-5 h-5 text-primary" />
-                                <h2 className="text-base sm:text-lg font-bold text-on-surface">Taxpayer Compliance Certificate</h2>
+                                <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                                <h2 className="text-sm sm:text-lg font-bold text-on-surface truncate">Taxpayer Compliance Certificate</h2>
                               </div>
                               <p className="text-xs text-on-surface-variant mt-1">Verified and generated from KRA iTax database</p>
                             </div>
@@ -2884,27 +2875,27 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           </div>
 
                           {/* Taxpayer Summary Grid */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-surface-container-low p-4 rounded-xl border border-outline-variant text-xs">
-                            <div className="flex flex-col">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-surface-container-low p-3.5 sm:p-4 rounded-xl border border-outline-variant text-xs">
+                            <div className="flex flex-col min-w-0">
                               <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Taxpayer Name</span>
-                              <span className="font-bold text-on-surface mt-0.5">{maskName(formData.fullName || "TAXPAYER")} (Individual)</span>
+                              <span className="font-bold text-on-surface mt-0.5 break-words">{maskName(formData.fullName || "TAXPAYER")} (Individual)</span>
                             </div>
-                            <div className="flex flex-col">
+                            <div className="flex flex-col min-w-0">
                               <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">KRA PIN</span>
                               <span className="font-mono font-bold text-primary mt-0.5 tracking-wider">{maskPin(formData.pin) || "A00****78Z"}</span>
                             </div>
-                            <div className="flex flex-col">
+                            <div className="flex flex-col min-w-0">
                               <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Certificate Serial</span>
-                              <span className="font-mono text-on-surface mt-0.5">{(formData as any).certificateSerial || "KRA-PIN-2025-09824X"}</span>
+                              <span className="font-mono text-on-surface mt-0.5 break-all">{(formData as any).certificateSerial || "KRA-PIN-2025-09824X"}</span>
                             </div>
-                            <div className="flex flex-col">
+                            <div className="flex flex-col min-w-0">
                               <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Status</span>
                               <span className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                                 Active &amp; Valid
                               </span>
                             </div>
-                            <div className="flex flex-col sm:col-span-2">
+                            <div className="flex flex-col sm:col-span-2 min-w-0">
                               <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Tax Obligation</span>
                               <span className="font-medium text-on-surface mt-0.5">Income Tax - Resident Individual</span>
                             </div>
@@ -2919,7 +2910,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                 A4 Document • 1 Page
                               </span>
                             </div>
-                            <div className="relative bg-surface-container rounded-xl border border-outline-variant overflow-hidden p-6 flex flex-col items-center justify-center min-h-[300px] select-none">
+                            <div className="relative bg-surface-container rounded-xl border border-outline-variant overflow-hidden p-4 sm:p-6 flex flex-col items-center justify-center min-h-[220px] sm:min-h-[280px] select-none">
                               {/* Subtle dot pattern */}
                               <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#906f6b_1px,transparent_1px)] [background-size:14px_14px]" />
 
@@ -2942,21 +2933,21 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                               </div>
 
                               {/* Overlay Lock & Shield Badge Layer */}
-                              <div className="absolute inset-0 bg-on-background/15 backdrop-blur-[2px] flex flex-col items-center justify-center p-6 text-center">
-                                <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg mb-3">
-                                  <Lock className="w-6 h-6" />
+                              <div className="absolute inset-0 bg-on-background/15 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 sm:p-6 text-center">
+                                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg mb-2.5 sm:mb-3">
+                                  <Lock className="w-5 h-5 sm:w-6 sm:h-6" />
                                 </div>
                                 <div className="inline-flex items-center gap-1 px-3 py-1 bg-surface-container-lowest text-primary text-[10px] rounded-full shadow-sm mb-2 uppercase border border-outline-variant font-black tracking-wider">
                                   Payment Required To Unlock
                                 </div>
-                                <p className="text-base sm:text-lg font-black text-on-surface max-w-xs leading-snug">
+                                <p className="text-sm sm:text-lg font-black text-on-surface max-w-xs leading-snug">
                                   Encrypted Document Preview
                                 </p>
                                 <p className="text-xs text-on-surface-variant max-w-xs mt-1">
                                   Unlock full official signed PDF with digital seal &amp; instant download.
                                 </p>
-                                <div className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-on-surface-variant bg-surface-container-lowest/90 px-3 py-1.5 rounded-lg border border-outline-variant">
-                                  <QrCode className="w-4 h-4 text-primary" />
+                                <div className="mt-3 sm:mt-4 inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold text-on-surface-variant bg-surface-container-lowest/90 px-3 py-1.5 rounded-lg border border-outline-variant">
+                                  <QrCode className="w-4 h-4 text-primary shrink-0" />
                                   <span>Official Digital QR Hash Included upon unlock</span>
                                 </div>
                               </div>
@@ -2973,16 +2964,27 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         </div>
                       </section>
 
-                      {/* RIGHT COLUMN: Payment Panel - M-Pesa Checkout (5 Cols) */}
-                      <section className="lg:col-span-5 flex flex-col gap-6">
-                        <div className="bg-surface-container-lowest border-2 border-primary/25 rounded-2xl p-5 sm:p-6 shadow-soft flex flex-col gap-5">
+                      {/* RIGHT COLUMN (1st on mobile): Payment Panel - M-Pesa Checkout (5 Cols) */}
+                      <section className="order-1 lg:order-2 lg:col-span-5 flex flex-col gap-5 sm:gap-6 min-w-0">
+                        <div className="bg-surface-container-lowest border-2 border-primary/25 rounded-2xl p-4 sm:p-6 shadow-soft flex flex-col gap-4 sm:gap-5">
+                          {/* Compact Mobile Taxpayer Verification Pill */}
+                          <div className="lg:hidden flex items-center justify-between gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">KRA Record Found</p>
+                              <p className="font-bold text-on-surface truncate">{maskName(formData.fullName || "TAXPAYER")}</p>
+                            </div>
+                            <span className="font-mono font-bold text-primary bg-surface-container-lowest px-2.5 py-1 rounded-lg border border-outline-variant shrink-0">
+                              {maskPin(formData.pin) || "A00****78Z"}
+                            </span>
+                          </div>
+
                           {/* Panel Header */}
-                          <div className="flex justify-between items-start border-b border-outline-variant pb-4">
+                          <div className="flex justify-between items-start gap-2 border-b border-outline-variant pb-3.5 sm:pb-4">
                             <div>
                               <h2 className="text-base sm:text-lg font-black text-on-surface">Pay via M-Pesa</h2>
                               <p className="text-xs text-on-surface-variant mt-0.5">Instant automated STK Push to your phone.</p>
                             </div>
-                            <span className="bg-primary text-white font-black text-xs px-3 py-1 rounded-full shadow-sm">
+                            <span className="bg-primary text-white font-black text-xs px-3 py-1 rounded-full shadow-sm shrink-0">
                               KES 20.00
                             </span>
                           </div>
@@ -2995,19 +2997,20 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                               </label>
                             </div>
                             <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant">
+                              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-on-surface-variant">
                                 <Smartphone className="w-4 h-4" />
                               </div>
                               <input
                                 id="mpesa-phone"
                                 type="tel"
+                                inputMode="tel"
                                 value={paymentPhone}
                                 onChange={(e) => setPaymentPhone(e.target.value)}
                                 placeholder="0712 345 678"
-                                className="w-full h-11 pl-10 pr-10 bg-surface-container-lowest border border-outline-variant rounded-xl text-sm font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                                className="w-full h-12 pl-10 pr-10 bg-surface-container-lowest border border-outline-variant rounded-xl text-base font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                               />
                               {isValidUnmaskedKenyanPhone(paymentPhone) && (
-                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-emerald-600">
+                                <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-emerald-600">
                                   <CheckCircle2 className="w-4 h-4" />
                                 </div>
                               )}
@@ -3021,7 +3024,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                               type="button"
                               onClick={() => void handleMpesaDarajaPayment(paymentPhone)}
                               disabled={isMpesaBusy || !isValidUnmaskedKenyanPhone(paymentPhone)}
-                              className="w-full h-11 bg-primary hover:bg-[#9c1414] text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-50"
+                              className="w-full h-12 bg-primary hover:bg-[#9c1414] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-50"
                             >
                               {mpesaStatus === "initiating" ? (
                                 <>

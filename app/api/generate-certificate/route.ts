@@ -197,16 +197,19 @@ export async function POST(req: NextRequest) {
       cleanPin = pin.toUpperCase().trim();
     }
 
-    // Helper to detect masked or empty placeholder values
+    // Helper to detect masked, empty, or internal system placeholder values
     const isMaskedOrEmpty = (val: any) => !val || typeof val !== 'string' || val.includes('•') || val.includes('***') || val.includes('*****');
+    const isSystemEmail = (val: any) =>
+      typeof val === 'string' &&
+      /@akubrecah\.(com|co\.ke|local)\b|^akubrecah@gmail\.com$/i.test(val.trim());
 
     // Strict Zero-Storage: Never rely on persistent kra_pin_cache.
     const cachedRecord: any = null;
 
-    // If passed address fields are masked, fetch live unmasked details directly from KRA
+    // Always resolve authoritative unmasked taxpayer & manufacturer details directly from KRA
+    // so certificate email, name, and address match the official KRA iTax/manufacturer record.
     let liveProfile: any = null;
-    const needsAuthoritativeFetch = cleanPin && (isMaskedOrEmpty(building) || isMaskedOrEmpty(station));
-    if (needsAuthoritativeFetch) {
+    if (cleanPin && /^[A-Z]\d{9}[A-Z]$/i.test(cleanPin)) {
       try {
         const { fetchTaxpayerByPin } = await import('@/lib/kra-api');
         liveProfile = await fetchTaxpayerByPin(cleanPin);
@@ -216,42 +219,43 @@ export async function POST(req: NextRequest) {
     }
 
     const resolvedPin = cleanPin || clientResolvedPin || cachedRecord?.pin || liveProfile?.pin || (pin && !pin.includes('*') ? pin.toUpperCase() : 'KRA_CERT');
-    const resolvedName = !isMaskedOrEmpty(name)
-      ? name
-      : (cachedRecord?.name || liveProfile?.taxpayerName || [dbUser?.firstName, dbUser?.lastName].filter(Boolean).join(' ') || 'Registered Taxpayer');
-    const resolvedEmail = !isMaskedOrEmpty(email)
-      ? email
-      : (cachedRecord?.email || liveProfile?.email || dbUser?.email || '');
-    const resolvedBuilding = !isMaskedOrEmpty(building)
-      ? building
-      : (!isMaskedOrEmpty(cachedRecord?.building) ? cachedRecord.building : (liveProfile?.building || ''));
-    const resolvedStreet = !isMaskedOrEmpty(street)
-      ? street
-      : (!isMaskedOrEmpty(cachedRecord?.street) ? cachedRecord.street : (liveProfile?.street || ''));
-    const resolvedCity = !isMaskedOrEmpty(city)
-      ? city
-      : (!isMaskedOrEmpty(cachedRecord?.city) ? cachedRecord.city : (liveProfile?.town || ''));
-    const resolvedCounty = !isMaskedOrEmpty(county)
-      ? county
-      : (!isMaskedOrEmpty(cachedRecord?.county) ? cachedRecord.county : (liveProfile?.county || ''));
-    const resolvedDistrict = !isMaskedOrEmpty(district)
-      ? district
-      : (!isMaskedOrEmpty(cachedRecord?.district) ? cachedRecord.district : (liveProfile?.district || ''));
-    const resolvedTaxArea = !isMaskedOrEmpty(taxArea)
-      ? taxArea
-      : (!isMaskedOrEmpty(cachedRecord?.tax_area) ? cachedRecord.tax_area : (liveProfile?.taxArea || ''));
-    const resolvedStation = !isMaskedOrEmpty(station)
-      ? station
-      : (!isMaskedOrEmpty(cachedRecord?.station) ? cachedRecord.station : (liveProfile?.station || ''));
-    const resolvedPoBox = !isMaskedOrEmpty(poBox)
-      ? poBox
-      : (!isMaskedOrEmpty(cachedRecord?.po_box) ? cachedRecord.po_box : (liveProfile?.poBox || ''));
-    const resolvedPostalCode = !isMaskedOrEmpty(postalCode)
-      ? postalCode
-      : (!isMaskedOrEmpty(cachedRecord?.postal_code) ? cachedRecord.postal_code : (liveProfile?.postalCode || ''));
-    const resolvedRegDate = !isMaskedOrEmpty(registeredDate)
-      ? registeredDate
-      : (!isMaskedOrEmpty(cachedRecord?.registered_date) ? cachedRecord.registered_date : (liveProfile?.registrationDate || ''));
+    const resolvedName = !isMaskedOrEmpty(liveProfile?.taxpayerName) && liveProfile?.taxpayerName !== 'Registered Taxpayer'
+      ? liveProfile.taxpayerName
+      : (!isMaskedOrEmpty(name) ? name : (cachedRecord?.name || liveProfile?.taxpayerName || 'Registered Taxpayer'));
+    // Strictly use KRA manufacturer/taxpayer email — never substitute admin/system @akubrecah emails
+    const resolvedEmail = !isMaskedOrEmpty(liveProfile?.email) && !isSystemEmail(liveProfile?.email)
+      ? liveProfile.email
+      : (!isMaskedOrEmpty(email) && !isSystemEmail(email) ? email : '');
+    const resolvedBuilding = !isMaskedOrEmpty(liveProfile?.building)
+      ? liveProfile.building
+      : (!isMaskedOrEmpty(building) ? building : '');
+    const resolvedStreet = !isMaskedOrEmpty(liveProfile?.street)
+      ? liveProfile.street
+      : (!isMaskedOrEmpty(street) ? street : '');
+    const resolvedCity = !isMaskedOrEmpty(liveProfile?.town)
+      ? liveProfile.town
+      : (!isMaskedOrEmpty(city) ? city : '');
+    const resolvedCounty = !isMaskedOrEmpty(liveProfile?.county)
+      ? liveProfile.county
+      : (!isMaskedOrEmpty(county) ? county : '');
+    const resolvedDistrict = !isMaskedOrEmpty(liveProfile?.district)
+      ? liveProfile.district
+      : (!isMaskedOrEmpty(district) ? district : '');
+    const resolvedTaxArea = !isMaskedOrEmpty(liveProfile?.taxArea)
+      ? liveProfile.taxArea
+      : (!isMaskedOrEmpty(taxArea) ? taxArea : '');
+    const resolvedStation = !isMaskedOrEmpty(liveProfile?.station)
+      ? liveProfile.station
+      : (!isMaskedOrEmpty(station) ? station : '');
+    const resolvedPoBox = !isMaskedOrEmpty(liveProfile?.poBox)
+      ? liveProfile.poBox
+      : (!isMaskedOrEmpty(poBox) ? poBox : '');
+    const resolvedPostalCode = !isMaskedOrEmpty(liveProfile?.postalCode)
+      ? liveProfile.postalCode
+      : (!isMaskedOrEmpty(postalCode) ? postalCode : '');
+    const resolvedRegDate = !isMaskedOrEmpty(liveProfile?.registrationDate)
+      ? liveProfile.registrationDate
+      : (!isMaskedOrEmpty(registeredDate) ? registeredDate : '');
 
     // 4. Resolve template PDF file path
     let templatePath = path.join(process.cwd(), 'public', 'receipt-template.pdf');

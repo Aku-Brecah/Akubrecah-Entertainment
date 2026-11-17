@@ -919,8 +919,8 @@ export async function POST(req: NextRequest) {
     const street = first(man?.street, pc?.street, api?.street, '');
     const poBox = first(man?.poBox, pc?.poBox, api?.poBox, '');
     const postalCode = first(man?.postalCode, pc?.postalCode, api?.postalCode, '');
-    const authenticatedEmail = (userEmail && userEmail.includes('@') && !userEmail.includes('guest@') && !userEmail.startsWith('user_')) ? userEmail : '';
-    const email = first(man?.email, pc?.email, api?.email, authenticatedEmail, '');
+    // Strictly use authentic KRA manufacturer/portal email — never fall back to logged-in Clerk/admin email
+    const email = first(man?.email, pc?.email, api?.email, '');
     const phoneNumber = first(man?.phoneNumber, pc?.phoneNumber, api?.phoneNumber, '');
 
     const fullTaxpayerRecord = {

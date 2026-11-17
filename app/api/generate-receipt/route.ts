@@ -18,6 +18,15 @@ export const maxDuration = 30;
  * fiscal invoices (historically this endpoint was fully unauthenticated).
  */
 export async function POST(req: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Receipt downloads are disabled. Only the official KRA PIN Certificate PDF is available after payment.',
+      },
+      { status: 403 }
+    );
+  }
   try {
     const body = await req.json();
     const parsed = generateReceiptSchema.safeParse(body);
