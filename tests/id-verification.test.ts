@@ -1,19 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { maskTaxpayerData, maskPin, maskEmail, maskPhone } from '@/lib/masking';
+import { reconstructDwrPin } from '@/lib/kra-api';
 
 describe('National ID Verification & KRA PIN Decoder Suite', () => {
 
   describe('DWR Obfuscated Digits Decoding Logic', () => {
-    it('correctly decodes the obfuscated 5 middle digits in exact forward order from KRA DWR response', () => {
-      // Live KRA DWR callback response where middle digits "55372" are sent directly in natural order (e.g. for ID 23812094)
+    it('correctly decodes the reversed 5 middle digits from KRA DWR response per iTax validateId()', () => {
+      // KRA iTax validateId() reverses the 5 digits after "#$" before replacing "*****":
+      //   "A01*****12N#$55372" -> reverse("55372") = "27355" -> "A012735512N"
       const rawDwrVal = 'A01*****12N#$55372';
-      const [masked, digits] = rawDwrVal.split('#$');
-      const actualDigits = digits ? digits.trim() : '';
-      const decodedPin = masked.replace(/\*+/g, actualDigits).trim().toUpperCase();
+      const decodedPin = reconstructDwrPin(rawDwrVal);
 
-      expect(actualDigits).toBe('55372');
-      expect(decodedPin).toBe('A015537212N');
-      expect(/^[A-Z]\d{9}[A-Z]$/.test(decodedPin)).toBe(true);
+      expect(decodedPin).toBe('A012735512N');
+      expect(/^[A-Z]\d{9}[A-Z]$/.test(decodedPin!)).toBe(true);
     });
 
     it('correctly handles direct unmasked PIN callback responses', () => {

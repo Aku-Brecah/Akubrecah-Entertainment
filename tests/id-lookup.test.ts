@@ -80,10 +80,12 @@ describe('National ID & KRA PIN lookup normalization (lib/kra-api.ts)', () => {
 });
 
 describe('Authentic DWR PIN Reconstitution (lib/kra-api.ts)', () => {
-  it('correctly reconstructs authentic KRA PIN from DWR carrier callback format', () => {
-    // KRA iTax DWR returns e.g. "A01*****19Q#$31886"
-    expect(reconstructDwrPin('A01*****19Q#$31886')).toBe('A013188619Q');
-    expect(reconstructDwrPin('A01*****77I#$22104')).toBe('A012210477I');
+  it('correctly reconstructs authentic KRA PIN by reversing the 5-digit carrier after #$ (KRA validateId spec)', () => {
+    // KRA iTax validateId(): const mNum = prts[1].split('').reverse().join('');
+    expect(reconstructDwrPin('A00*****36D#$79435')).toBe('A005349736D');
+    expect(reconstructDwrPin('A02*****31K#$65314')).toBe('A024135631K');
+    expect(reconstructDwrPin('A01*****19Q#$31886')).toBe('A016881319Q');
+    expect(reconstructDwrPin('A01*****77I#$22104')).toBe('A014012277I');
     expect(reconstructDwrPin('P051234567X')).toBe('P051234567X');
     expect(reconstructDwrPin('invalid')).toBeNull();
     expect(reconstructDwrPin(null)).toBeNull();

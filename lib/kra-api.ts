@@ -284,8 +284,14 @@ export function initKraSession(): Promise<string> {
 
 /**
  * Reconstructs authentic KRA PIN from iTax DWR response.
- * KRA's findPinByIdnumber returns e.g.:
- *   "A01*****19Q#$31886" -> A01 + 31886 + 19Q = A013188619Q
+ * Matches KRA iTax's official validateId() client decoding:
+ *   const prts = data.split("#$");
+ *   const mNum = prts[1].split('').reverse().join('');
+ *   pin = prts[0].replace('*****', mNum);
+ *
+ * Examples:
+ *   "A00*****36D#$79435" -> reverse("79435") = "53497" -> "A005349736D"
+ *   "A02*****31K#$65314" -> reverse("65314") = "41356" -> "A024135631K"
  * Or unmasked:
  *   "A013188619Q"
  */
@@ -293,12 +299,14 @@ export function reconstructDwrPin(rawVal?: string | null): string | null {
   if (!rawVal || typeof rawVal !== 'string') return null;
   const trimmed = rawVal.trim().toUpperCase();
 
-  // 1. If KRA returned the DWR carrier format with #$ (e.g. "A01*****19Q#$31886")
+  // 1. If KRA returned the DWR carrier format with #$ (e.g. "A00*****36D#$79435")
+  //    KRA iTax reverses the 5 middle digits after "#$".
   if (trimmed.includes('#$')) {
     const [maskedPart, carrierDigits] = trimmed.split('#$');
     const carrier = (carrierDigits || '').trim();
     if (maskedPart.includes('*') && carrier.length === 5 && /^\d{5}$/.test(carrier)) {
-      const reconstructed = maskedPart.replace(/\*+/g, carrier).trim().toUpperCase();
+      const unreversedMiddle = carrier.split('').reverse().join('');
+      const reconstructed = maskedPart.replace(/\*+/g, unreversedMiddle).trim().toUpperCase();
       if (/^[A-Z]\d{9}[A-Z]$/.test(reconstructed)) {
         return reconstructed;
       }
