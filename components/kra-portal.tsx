@@ -2880,14 +2880,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                               <span className="font-mono font-bold text-primary mt-0.5 tracking-wider">{maskPin(formData.pin) || "A00****78Z"}</span>
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Tax Station</span>
-                              <span className="font-medium text-on-surface mt-0.5">{formData.station || "Nairobi West"}</span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Tax Obligation</span>
-                              <span className="font-medium text-on-surface mt-0.5">Income Tax - Resident Individual</span>
-                            </div>
-                            <div className="flex flex-col">
                               <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Certificate Serial</span>
                               <span className="font-mono text-on-surface mt-0.5">{(formData as any).certificateSerial || "KRA-PIN-2025-09824X"}</span>
                             </div>
@@ -2897,6 +2889,10 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 Active &amp; Valid
                               </span>
+                            </div>
+                            <div className="flex flex-col sm:col-span-2">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant">Tax Obligation</span>
+                              <span className="font-medium text-on-surface mt-0.5">Income Tax - Resident Individual</span>
                             </div>
                           </div>
 
