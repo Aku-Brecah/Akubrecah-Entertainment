@@ -183,11 +183,11 @@ export async function POST(req: NextRequest) {
       ];
       const fullName = names[numSeed % names.length];
       profile = {
-        pin: verifiedPin && /^[A-Z0-9]{11}$/.test(verifiedPin) ? verifiedPin : `A00${seed.padEnd(7, '9').slice(0, 7)}Z`,
+        pin: verifiedPin && /^[A-Z0-9]{11}$/.test(verifiedPin) ? verifiedPin : (downloadRecord?.pin || verifiedPin),
         name: fullName,
         taxpayerName: fullName,
         fullName: fullName,
-        idNumber: cleanId || `${(numSeed * 7919) % 89999999 + 10000000}`,
+        idNumber: cleanId || downloadRecord?.idNumber || '',
         email: 'j***k***@gmail.com',
         phoneNumber: '+254 712 345 892',
         building: 'View Park Towers, 4th Floor',

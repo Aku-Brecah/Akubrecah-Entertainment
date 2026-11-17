@@ -6,8 +6,9 @@ import net from 'net';
 import tls from 'tls';
 import url from 'url';
 import { createSystemLog } from '@/lib/prisma';
-import { fetchTaxpayerByPin, fetchTaxpayerById } from '@/lib/kra-api';
+import { fetchTaxpayerByPin, fetchTaxpayerById, reconstructDwrPin } from '@/lib/kra-api';
 import { getKraStationForCounty, formatKraStation, sanitizeTaxArea } from '@/lib/kra-stations';
+import { resolveAuthenticRegistrationDate } from '@/lib/certificate-fulfillment';
 import { getUserSubscriptionStatus } from '@/lib/subscription';
 import { maskTaxpayerData, tryResolveKraPin, sealKraPin, looksLikeKraPin, maskPin } from '@/lib/masking';
 
@@ -169,11 +170,11 @@ async function lookupPinByIdNumber(idNumber: string, cookieString: string, proxy
   const m = raw.match(/handleCallback\([^,]+,[^,]+,"([^"]+)"\)/) || raw.match(/s\d+="([^"]+)"/);
   if (m) {
     const val = m[1];
-    const cleanPin = val.split('#$')[0].trim().toUpperCase();
-    // Authentic complete PIN must be 11 characters without any masking asterisks
-    if (!cleanPin.includes('*') && /^[A-Z]\d{9}[A-Z]$/.test(cleanPin)) {
-      return { pin: cleanPin, maskedPin: null };
+    const resolved = reconstructDwrPin(val);
+    if (resolved) {
+      return { pin: resolved, maskedPin: maskPin(resolved) };
     }
+    const cleanPin = val.split('#$')[0].trim().toUpperCase();
     if (cleanPin.includes('*')) {
       return { pin: null, maskedPin: cleanPin };
     }
@@ -769,8 +770,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. If cookieString is still empty and not a local challenge, attempt initializing upstream session
-    if (!cookieString && !isLocalChallenge) {
+    // 2. If cookieString is still empty, attempt initializing upstream session
+    if (!cookieString) {
       try {
         const cookies = await initKraSession(proxyUrl);
         cookieString = Object.entries(cookies).map(([k, v]) => `${k}=${v}`).join('; ');
@@ -781,17 +782,15 @@ export async function POST(req: NextRequest) {
 
     // Fresh separate session for DWR & manufacturer lookups
     freshCookieString = cookieString;
-    if (!isLocalChallenge) {
-      try {
-        const freshCookies = await initKraSession(proxyUrl);
-        freshCookieString = Object.entries(freshCookies).map(([k, v]) => `${k}=${v}`).join('; ');
-      } catch { }
-    }
+    try {
+      const freshCookies = await initKraSession(proxyUrl);
+      freshCookieString = Object.entries(freshCookies).map(([k, v]) => `${k}=${v}`).join('; ');
+    } catch { }
 
     let maskedPinHint: string | null = null;
-    if (!fullPin && idNumber && !isLocalChallenge) {
+    if (!fullPin && cleanId) {
       try {
-        const lookup = await lookupPinByIdNumber(String(idNumber).trim(), freshCookieString, proxyUrl);
+        const lookup = await lookupPinByIdNumber(cleanId, freshCookieString, proxyUrl);
         fullPin = lookup.pin;
         maskedPinHint = lookup.maskedPin;
       } catch (err: any) {
@@ -800,7 +799,7 @@ export async function POST(req: NextRequest) {
     }
 
     // If fullPin was resolved and we don't have live API taxpayer details yet, query Live API with fullPin
-    if (fullPin && !liveApiTaxpayer && engineMode !== 'dwr' && !isLocalChallenge) {
+    if (fullPin && !liveApiTaxpayer && engineMode !== 'dwr') {
       try {
         liveApiTaxpayer = await fetchTaxpayerByPin(fullPin);
       } catch (err: any) {
@@ -813,9 +812,9 @@ export async function POST(req: NextRequest) {
     let manData: ManufacturerResult | null = null;
     let parseError = false;
 
-    if (fullPin && !isLocalChallenge) {
+    if (fullPin) {
       try {
-        if (captchaAnswer && captchaAnswer.trim()) {
+        if (captchaAnswer && captchaAnswer.trim() && !isLocalChallenge) {
           const postData = `viewType=static&actionCode=checkPin&vo.pinNo=${encodeURIComponent(fullPin)}&captcahText=${encodeURIComponent(captchaAnswer.trim())}`;
           log.info('[retrieve] Using cookieString for pinChecker:', cookieString);
           log.info('[retrieve] Posting to pinChecker with postData:', postData.replace(/vo\.pinNo=[^&]+/, 'vo.pinNo=***'));
@@ -867,63 +866,62 @@ export async function POST(req: NextRequest) {
     // Prefer unmasked name from manufacturer/API over masked pinChecker name (e.g. "Powel M*****")
     let name = first(man?.name, api?.taxpayerName, pc?.name, '');
 
-    // Statutory profile fallback if upstream KRA is down / in maintenance
-    const statutory = resolveStatutoryProfile(cleanId, cleanDirectPin);
-    if (!fullPin) {
-      fullPin = statutory.pin;
+    // If searching by ID, enforce that the authentic PIN must have been resolved from KRA
+    if (cleanId && !fullPin) {
+      log.warn(`[retrieve] No PIN resolved for National ID: ${cleanId}`);
+      return NextResponse.json({
+        success: false,
+        error: `No KRA record found for National ID ${cleanId}. Please verify your National ID number or check your registration on itax.kra.go.ke.`,
+      }, { status: 404 });
     }
-    const effectivePin = fullPin || maskedPinHint || statutory.pin;
+
+    const effectivePin = fullPin || cleanDirectPin;
+    if (!effectivePin) {
+      return NextResponse.json({
+        success: false,
+        error: 'Unable to identify taxpayer PIN. Please verify your credentials and try again.',
+      }, { status: 400 });
+    }
+
     if (!name) {
+      const statutory = resolveStatutoryProfile(cleanId, cleanDirectPin);
       name = statutory.name;
     }
 
-    const registeredDate = first(pc?.registeredDate, pc?.obligationDate, api?.registrationDate, statutory.registeredDate);
+    const registeredDate = first(pc?.registeredDate, pc?.obligationDate, api?.registrationDate, resolveAuthenticRegistrationDate(effectivePin));
 
     // Verify user subscription status while keeping pre-payment PII/PIN strictly
     // masked for all non-admin callers until payment verification completes.
     const { isSubscribed } = await getUserSubscriptionStatus(clerkId);
     const callerKnowsPin = isAdmin;
 
-    // If fullPin is known and authentic, and name or registration date is missing, and no CAPTCHA answer provided
-    if (fullPin && looksLikeKraPin(fullPin) && (!name || !registeredDate) && (!captchaAnswer || !captchaAnswer.trim()) && !isLocalChallenge) {
-      const maskedPin = maskPin(fullPin);
-      log.info(`[retrieve] PIN ${maskedPin} identified. Prompting for security stamp to retrieve official details.`);
-      return NextResponse.json({
-        success: false,
-        captchaRequired: true,
-        pin: callerKnowsPin ? fullPin : maskedPin,
-        rawPin: callerKnowsPin ? fullPin : sealKraPin(fullPin),
-        error: `Taxpayer PIN (${maskedPin}) identified. Please solve the security stamp to retrieve your official registration date and station.`
-      }, { status: 422 });
-    }
-
-    const county = first(man?.county, pc?.county, api?.county, statutory.county);
+    const county = first(man?.county, pc?.county, api?.county, '');
     const normalizedCounty = county ? county.toLowerCase().replace(/\bcounty\b/g, '').replace(/[-\s]+/g, ' ').trim() : '';
-    const defaultTown = normalizedCounty ? (COUNTY_TOWN_MAP[normalizedCounty] || county) : statutory.town;
+    const defaultTown = normalizedCounty ? (COUNTY_TOWN_MAP[normalizedCounty] || county) : '';
     const town = first(man?.town, pc?.town, api?.town, defaultTown);
     const district = first(man?.district, pc?.district, api?.district, '');
 
     // Station: Prefer authentic station from pinChecker.htm (e.g. KITALE -> Kitale TSO), then API, then county matrix
     const rawStation = first(pc?.station, api?.station, '');
-    const station = rawStation ? formatKraStation(rawStation) : (county ? getKraStationForCounty(county) : statutory.station);
+    const station = rawStation ? formatKraStation(rawStation) : (county ? getKraStationForCounty(county) : 'North of Nairobi');
 
     // Tax Area: sanitize to prevent cross-county leakage (e.g. Endebbes in West Pokot)
     const rawTaxArea = first(man?.taxArea, pc?.taxArea, api?.taxArea, '');
     const taxArea = sanitizeTaxArea(rawTaxArea, county, town);
 
-    const building = first(man?.building, pc?.building, api?.building, statutory.building);
-    const street = first(man?.street, pc?.street, api?.street, statutory.street);
-    const poBox = first(man?.poBox, pc?.poBox, api?.poBox, statutory.poBox);
-    const postalCode = first(man?.postalCode, pc?.postalCode, api?.postalCode, statutory.postalCode);
+    const building = first(man?.building, pc?.building, api?.building, '');
+    const street = first(man?.street, pc?.street, api?.street, '');
+    const poBox = first(man?.poBox, pc?.poBox, api?.poBox, '');
+    const postalCode = first(man?.postalCode, pc?.postalCode, api?.postalCode, '');
     const authenticatedEmail = (userEmail && userEmail.includes('@') && !userEmail.includes('guest@') && !userEmail.startsWith('user_')) ? userEmail : '';
-    const email = first(man?.email, pc?.email, api?.email, authenticatedEmail, statutory.email);
-    const phoneNumber = first(man?.phoneNumber, pc?.phoneNumber, api?.phoneNumber, statutory.phoneNumber);
+    const email = first(man?.email, pc?.email, api?.email, authenticatedEmail, '');
+    const phoneNumber = first(man?.phoneNumber, pc?.phoneNumber, api?.phoneNumber, '');
 
     const fullTaxpayerRecord = {
       pin: effectivePin,
-      idNumber: cleanId || liveApiTaxpayer?.idNumber || man?.idNumber || statutory.idNumber,
-      name: name || statutory.name,
-      email: email || statutory.email,
+      idNumber: cleanId || liveApiTaxpayer?.idNumber || man?.idNumber || '',
+      name: name || 'TAXPAYER RECORD',
+      email: email || '',
       status: 'Active',
       certificate_url: isAdmin && effectivePin ? `https://itax.kra.go.ke/KRA-Portal/dotDownloadCertificate.htm?pin=${effectivePin}` : '',
       building: building || '',
@@ -936,8 +934,14 @@ export async function POST(req: NextRequest) {
       poBox: poBox || '',
       postalCode: postalCode || '',
       phoneNumber: phoneNumber || '',
-      registeredDate: registeredDate || statutory.registeredDate,
-      obligations: statutory.obligations,
+      registeredDate: registeredDate || resolveAuthenticRegistrationDate(effectivePin),
+      obligations: pc?.obligations?.length ? pc.obligations : [
+        {
+          name: 'Income Tax - Resident Individual',
+          status: 'Active',
+          effectiveFrom: registeredDate || resolveAuthenticRegistrationDate(effectivePin),
+        }
+      ],
     };
 
     // Apply strict server-side masking for all non-admin callers prior to confirmed payment

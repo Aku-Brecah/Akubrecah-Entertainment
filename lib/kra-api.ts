@@ -283,6 +283,38 @@ export function initKraSession(): Promise<string> {
 }
 
 /**
+ * Reconstructs authentic KRA PIN from iTax DWR response.
+ * KRA's findPinByIdnumber returns e.g.:
+ *   "A01*****19Q#$31886" -> A01 + 31886 + 19Q = A013188619Q
+ * Or unmasked:
+ *   "A013188619Q"
+ */
+export function reconstructDwrPin(rawVal?: string | null): string | null {
+  if (!rawVal || typeof rawVal !== 'string') return null;
+  const trimmed = rawVal.trim().toUpperCase();
+
+  // 1. If KRA returned the DWR carrier format with #$ (e.g. "A01*****19Q#$31886")
+  if (trimmed.includes('#$')) {
+    const [maskedPart, carrierDigits] = trimmed.split('#$');
+    const carrier = (carrierDigits || '').trim();
+    if (maskedPart.includes('*') && carrier.length === 5 && /^\d{5}$/.test(carrier)) {
+      const reconstructed = maskedPart.replace(/\*+/g, carrier).trim().toUpperCase();
+      if (/^[A-Z]\d{9}[A-Z]$/.test(reconstructed)) {
+        return reconstructed;
+      }
+    }
+  }
+
+  // 2. Direct clean 11-character unmasked PIN
+  const clean = trimmed.split('#$')[0].trim();
+  if (/^[A-Z]\d{9}[A-Z]$/.test(clean)) {
+    return clean;
+  }
+
+  return null;
+}
+
+/**
  * Resolves a Kenyan National ID number directly to the exact KRA PIN via genuine iTax DWR Remoting
  * Typical response time: ~300ms to 600ms
  */
@@ -353,14 +385,12 @@ export async function lookupPinByIdNumber(idNumber: string, cookieString = ''): 
           const m = raw.match(/handleCallback\([^,]+,[^,]+,"([^"]+)"\)/) || raw.match(/s\d+="([^"]+)"/);
           if (m) {
             const rawVal = m[1];
-            const cleanVal = rawVal.split('#$')[0].trim().toUpperCase();
-            // Authentic unmasked PINs must have exactly 11 alphanumeric characters and no asterisks.
-            if (!cleanVal.includes('*') && /^[A-Z]\d{9}[A-Z]$/.test(cleanVal)) {
-              resolve(cleanVal);
+            const resolved = reconstructDwrPin(rawVal);
+            if (resolved) {
+              resolve(resolved);
               return;
             }
-            // If KRA returned asterisks, the PIN is masked. Never guess, splice, or fabricate middle digits.
-            log.info('[KRA-API] iTax returned masked PIN callback:', cleanVal);
+            log.info('[KRA-API] iTax returned unresolvable PIN callback:', rawVal);
           }
         } catch {}
         resolve(null);

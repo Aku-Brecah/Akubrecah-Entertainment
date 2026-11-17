@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cachedRecordToProfile, normalizeKraTaxpayerResponse } from '@/lib/kra-api';
+import { cachedRecordToProfile, normalizeKraTaxpayerResponse, reconstructDwrPin } from '@/lib/kra-api';
 import { looksLikeKraPin, maskPin } from '@/lib/masking';
 
 /**
@@ -79,19 +79,19 @@ describe('National ID & KRA PIN lookup normalization (lib/kra-api.ts)', () => {
   });
 });
 
-describe('Masked PIN rejection (lib/masking.ts — mirrors the ITax DWR guard)', () => {
-  it('recognizes that masked DWR callbacks are NOT usable full PINs', () => {
-    // dwr.engine.remote.handleCallback("0","0","A01*****19Q#$31886");
-    // The real parser strips the #$ carrier suffix — this test pins the * rule:
-    // masked middle digits must never be spliced from the #$ payload (31886).
-    const maskedWithCarrier = 'A01*****19Q#$31886';
-    const cleanPin = maskedWithCarrier.split('#$')[0].trim().toUpperCase();
+describe('Authentic DWR PIN Reconstitution (lib/kra-api.ts)', () => {
+  it('correctly reconstructs authentic KRA PIN from DWR carrier callback format', () => {
+    // KRA iTax DWR returns e.g. "A01*****19Q#$31886"
+    expect(reconstructDwrPin('A01*****19Q#$31886')).toBe('A013188619Q');
+    expect(reconstructDwrPin('A01*****77I#$22104')).toBe('A012210477I');
+    expect(reconstructDwrPin('P051234567X')).toBe('P051234567X');
+    expect(reconstructDwrPin('invalid')).toBeNull();
+    expect(reconstructDwrPin(null)).toBeNull();
+  });
 
-    expect(cleanPin).toBe('A01*****19Q');
-    expect(looksLikeKraPin(cleanPin)).toBe(false);
-    // NOTE: a spliced PIN built from the #$ digits would happen to satisfy the
-    // 11-char shape — which is exactly why the DWR parser refuses masked values
-    // outright instead of trying to reconstruct them.
+  it('recognizes that raw un-reconstructed masked strings are NOT usable full PINs', () => {
+    const rawMasked = 'A01*****19Q';
+    expect(looksLikeKraPin(rawMasked)).toBe(false);
   });
 
   it('accepts only authentic unmasked 11-char PIN shells', () => {
