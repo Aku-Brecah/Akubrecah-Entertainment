@@ -15,8 +15,12 @@ export default function ProfileWarningPopup({ isProfileComplete }: ProfileWarnin
 
   useEffect(() => {
     setIsMounted(true);
-    const count = parseInt(localStorage.getItem("profile_dismiss_count") || "0", 10);
-    setDismissCount(count);
+    try {
+      const count = parseInt(localStorage.getItem("profile_dismiss_count") || "0", 10);
+      setDismissCount(Number.isFinite(count) ? count : 0);
+    } catch {
+      setDismissCount(0);
+    }
   }, []);
 
   if (!isMounted || isProfileComplete || isDismissedThisVisit) {
@@ -25,7 +29,11 @@ export default function ProfileWarningPopup({ isProfileComplete }: ProfileWarnin
 
   const handleDismiss = () => {
     const nextCount = dismissCount + 1;
-    localStorage.setItem("profile_dismiss_count", String(nextCount));
+    try {
+      localStorage.setItem("profile_dismiss_count", String(nextCount));
+    } catch {
+      // Storage unavailable
+    }
     setDismissCount(nextCount);
     setIsDismissedThisVisit(true);
   };
@@ -33,7 +41,7 @@ export default function ProfileWarningPopup({ isProfileComplete }: ProfileWarnin
   const canDismiss = dismissCount < 3;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 rounded-2xl shadow-xl p-5 animate-in slide-in-from-bottom-5">
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 sm:max-w-sm bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 rounded-2xl shadow-xl p-5 animate-in slide-in-from-bottom-5">
       <div className="flex gap-3">
         <div className="p-2 bg-amber-100 dark:bg-amber-900/60 rounded-xl h-max">
           <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
@@ -45,7 +53,9 @@ export default function ProfileWarningPopup({ isProfileComplete }: ProfileWarnin
             </span>
             {canDismiss && (
               <button
+                type="button"
                 onClick={handleDismiss}
+                aria-label="Dismiss notification"
                 className="p-1 rounded-lg hover:bg-amber-200/50 dark:hover:bg-amber-900/40 transition-colors text-amber-700 dark:text-amber-400"
                 title="Dismiss notification"
               >

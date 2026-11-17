@@ -45,7 +45,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "motion/react"
 import {
   Select,
   SelectContent,
@@ -187,7 +187,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     mpesaStatus === "stk_sent" ||
     mpesaStatus === "waiting" ||
     mpesaStatus === "verifying"
-  const isRecordUnlocked = Boolean(verifiedDownloadId || isAdmin)
+  const isRecordUnlocked = Boolean(verifiedDownloadId || isAdmin || isSubscribed)
 
   const isValidUnmaskedKenyanPhone = (raw: string) => {
     const trimmed = raw.trim()
@@ -294,6 +294,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   }, [redemptionExpiresAt])
 
   const handleResetForNewPayment = () => {
+    clearPaymentTimers()
     try {
       sessionStorage.removeItem('mpesa_redemption_state')
     } catch {}
@@ -307,7 +308,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     setManualMpesaCode("")
     setPaymentError(null)
     setTransactionAssignedError(null)
-    setShowPaymentModal(true)
+    setShowPaymentModal(false)
   }
 
   // Sync phone number from taxpayer profile only when it is a valid unmasked Kenyan number
@@ -321,7 +322,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   useEffect(() => {
     if (currentStep !== 4 || isRecordUnlocked || mpesaStatus !== "ready" || paymentMethod !== "stk") return
     const timer = setTimeout(() => {
-      const targetId = showPaymentModal ? "modal-phone-input" : "same-page-phone-input"
+      const targetId = showPaymentModal ? "modal-phone-input" : "mpesa-phone"
       const el = document.getElementById(targetId)
       if (el && document.activeElement !== el) {
         el.focus({ preventScroll: true })
@@ -409,6 +410,11 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       setError("Account sign in required: You must be logged in to search and retrieve KRA PIN certificates.")
       toast.error("Please sign in to search taxpayer records.")
       router.push("/sign-in?redirect_url=/retrieval-portal")
+      return
+    }
+
+    if (!hasConsented) {
+      setError("Please confirm the authorization consent checkbox before searching.")
       return
     }
 
@@ -594,12 +600,12 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         setRedemptionSecondsLeft(diffSecs)
         setIsRedemptionExpired(diffSecs <= 0)
         try {
+          // Strict zero-storage: never store raw unmasked KRA PIN in browser storage
           sessionStorage.setItem(
             'mpesa_redemption_state',
             JSON.stringify({
               receipt,
               downloadId: resolvedDlId,
-              pin: vData.pin || certPin,
               expiresAt: vData.expiresAt,
               firstClaimedAt: vData.firstClaimedAt,
             })
@@ -1064,7 +1070,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pin: formData.pin,
+          pin: formData.rawPin || formData.pin,
           downloadType: 'subscription',
           subscriptionId: accessInfo?.subscription?.id,
         }),
@@ -2360,20 +2366,6 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                               <span>Verify Security Code</span>
                             </button>
                           )}
-                          <button
-                            className="w-full text-on-surface-variant hover:text-on-surface font-semibold text-xs text-center py-1 transition-colors cursor-pointer"
-                            type="button"
-                            onClick={() => {
-                              if (!isEffectiveSignedIn) {
-                                toast.error("Please sign in to proceed.");
-                                router.push("/sign-in?redirect_url=/retrieval-portal");
-                                return;
-                              }
-                              setCurrentStep(2);
-                            }}
-                          >
-                            Manual Entry
-                          </button>
                         </div>
                       </form>
                     </motion.div>
@@ -2659,7 +2651,27 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     /* Screen 5: Payment Success & Download Ready */
                     <div className="max-w-2xl mx-auto bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-soft overflow-hidden">
                       {/* Top Status Accent Banner */}
-                      {isRedemptionExpired ? (
+                      {isAdmin ? (
+                        <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-6 py-2.5 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                              ADMIN ACCESS GRANTED • DIRECT DOWNLOAD READY
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold uppercase text-emerald-800 dark:text-emerald-300">Admin</span>
+                        </div>
+                      ) : isSubscribed && !verifiedDownloadId ? (
+                        <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-6 py-2.5 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                              ACTIVE CYBER SUBSCRIPTION • NO PER-DOCUMENT FEE
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold uppercase text-emerald-800 dark:text-emerald-300">Subscribed</span>
+                        </div>
+                      ) : isRedemptionExpired ? (
                         <div className="bg-red-500/10 border-b border-red-500/30 px-6 py-2.5 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-red-600" />
@@ -2686,7 +2698,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
                       <div className="p-6 md:p-8 space-y-6">
                         {/* Header & Icon Cluster */}
-                        {isRedemptionExpired ? (
+                        {isRedemptionExpired && !isAdmin && !isSubscribed ? (
                           <div className="text-center space-y-3">
                             <div className="w-14 h-14 mx-auto rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center ring-8 ring-red-50 dark:ring-red-950 text-red-700 dark:text-red-300">
                               <AlertCircle className="w-8 h-8 font-bold" />
@@ -2704,16 +2716,24 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                               <CheckCircle2 className="w-8 h-8 font-bold" />
                             </div>
                             <h2 className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
-                              Payment Verified Successfully
+                              {isAdmin
+                                ? "Certificate Ready for Admin Download"
+                                : isSubscribed && !verifiedDownloadId
+                                  ? "Certificate Ready (Active Subscription)"
+                                  : "Payment Verified Successfully"}
                             </h2>
                             <p className="text-xs sm:text-sm text-on-surface-variant max-w-lg mx-auto leading-relaxed">
-                              Your payment has been verified. You have 5 minutes to download your KRA PIN certificate.
+                              {isAdmin
+                                ? "Administrative access verified. Download the live KRA PIN certificate directly below."
+                                : isSubscribed && !verifiedDownloadId
+                                  ? "Your active Cyber Cafe monthly subscription covers this retrieval with zero per-document fee."
+                                  : "Your payment has been verified. You have 5 minutes to download your KRA PIN certificate."}
                             </p>
                           </div>
                         )}
 
-                        {/* Visible Synchronized Countdown Timer Banner */}
-                        {!isRedemptionExpired && (
+                        {/* Visible Synchronized Countdown Timer Banner (Pay-per-download only) */}
+                        {!isAdmin && !isSubscribed && !isRedemptionExpired && redemptionSecondsLeft !== null && (
                           <div className="bg-primary/10 border border-primary/25 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                             <div className="flex items-center gap-3">
                               <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center text-primary shrink-0">
@@ -2744,14 +2764,14 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                             </div>
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
                               <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                              SIGNED
+                              VERIFIED
                             </span>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3.5 gap-x-6 text-xs">
                             <div>
                               <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Taxpayer Name</p>
-                              <p className="font-bold text-on-surface mt-0.5">{formData.fullName || "VERIFIED CITIZEN"} (Individual)</p>
+                              <p className="font-bold text-on-surface mt-0.5">{formData.fullName || "Registered Taxpayer"}</p>
                             </div>
                             <div>
                               <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">KRA PIN</p>
@@ -2761,48 +2781,58 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                             </div>
                             <div>
                               <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Tax Station</p>
-                              <p className="font-medium text-on-surface mt-0.5">{formData.station || "Nairobi West"}</p>
+                              <p className="font-medium text-on-surface mt-0.5">{formData.station || "Not specified"}</p>
                             </div>
                             <div>
                               <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Obligation</p>
-                              <p className="font-medium text-on-surface mt-0.5">Income Tax - Resident Individual</p>
-                            </div>
-                            <div>
-                              <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Certificate Serial</p>
-                              <p className="font-mono text-on-surface mt-0.5">{(formData as any).certificateSerial || "KRA-PIN-2025-09824X"}</p>
-                            </div>
-                            <div>
-                              <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">M-Pesa Amount Paid</p>
-                              <p className="font-bold text-on-surface mt-0.5">
-                                KES 20.00 <span className="font-normal text-on-surface-variant text-[11px]">({verifiedReceipt || "CONFIRMED"})</span>
+                              <p className="font-medium text-on-surface mt-0.5">
+                                {String(formData.rawPin || formData.pin || "").toUpperCase().startsWith("P")
+                                  ? "Income Tax - Company / Non-Individual"
+                                  : "Income Tax - Resident Individual"}
                               </p>
                             </div>
-                            <div className="md:col-span-2 pt-2 border-t border-outline-variant flex items-center justify-between">
-                              <span className="text-[11px] font-bold text-on-surface-variant">Document Status</span>
-                              <span className="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1 text-xs">
-                                <Clock className="w-3.5 h-3.5" />
-                                Valid &amp; Cryptographically Signed
-                              </span>
+                            <div>
+                              <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Access Entitlement</p>
+                              <p className="font-bold text-on-surface mt-0.5">
+                                {isAdmin
+                                  ? "KES 0.00 (Admin)"
+                                  : isSubscribed && !verifiedDownloadId
+                                    ? "KES 0.00 (Cyber Subscription)"
+                                    : <>KES 20.00 <span className="font-normal text-on-surface-variant text-[11px]">({verifiedReceipt || "CONFIRMED"})</span></>}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Document Status</p>
+                              <p className="font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">
+                                Ready for PDF Generation
+                              </p>
                             </div>
                           </div>
                         </div>
 
                         {/* Action Buttons */}
                         <div className="space-y-3">
-                          {isRedemptionExpired ? (
+                          {isRedemptionExpired && !isAdmin && !isSubscribed ? (
                             <button
                               type="button"
                               onClick={() => handleResetForNewPayment()}
-                              className="w-full bg-primary hover:bg-[#9c1414] text-white h-12 px-6 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer"
+                              className="w-full bg-primary hover:bg-primary/90 text-white h-12 px-6 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer"
                             >
                               <RefreshCw className="w-4 h-4" />
                               <span>Make a New Payment to Retrieve Certificate</span>
                             </button>
                           ) : (
                             <button
-                              onClick={() => executeDownload()}
+                              type="button"
+                              onClick={() => {
+                                if (isSubscribed && !isAdmin && !verifiedDownloadId) {
+                                  void handleSubscriptionDownload()
+                                } else {
+                                  void executeDownload()
+                                }
+                              }}
                               disabled={isDownloadingPdf}
-                              className="w-full bg-primary hover:bg-[#9c1414] text-white h-12 px-6 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-50"
+                              className="w-full bg-primary hover:bg-primary/90 text-white h-12 px-6 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-50"
                             >
                               {isDownloadingPdf ? (
                                 <>
@@ -2820,13 +2850,13 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
                           <div className="pt-1">
                             <a
-                              href={`https://wa.me/?text=${encodeURIComponent(`Official KRA Taxpayer Certificate for ${formData.fullName} (PIN: ${formData.pin}) verified and retrieved on Akubrecah Cyber Portal.`)}`}
+                              href={`https://wa.me/?text=${encodeURIComponent(`KRA Taxpayer Certificate for ${formData.fullName} (PIN: ${formData.pin}) retrieved via Akubrecah Portal.`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="w-full bg-surface-container-lowest border border-outline-variant hover:bg-surface-container-low text-on-surface h-12 px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition duration-150 cursor-pointer"
                             >
                               <Share2 className="w-4 h-4 text-emerald-600" />
-                              <span>Send to WhatsApp</span>
+                              <span>Share Summary via WhatsApp</span>
                             </a>
                           </div>
                         </div>
@@ -2842,7 +2872,26 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                           <button
                             type="button"
                             onClick={() => {
-                              clearPaymentTimers()
+                              handleResetForNewPayment()
+                              setFormData({
+                                fullName: "",
+                                idNumber: "",
+                                pin: "",
+                                rawPin: "",
+                                email: "",
+                                phoneNumber: "",
+                                station: "",
+                                county: "",
+                                town: "",
+                                district: "",
+                                taxArea: "",
+                                building: "",
+                                street: "",
+                                poBox: "",
+                                postalCode: "",
+                                registeredDate: "",
+                              })
+                              setIdSearchStatus("idle")
                               setCurrentStep(1)
                             }}
                             className="inline-flex items-center gap-1.5 text-primary hover:underline font-bold text-xs cursor-pointer"
@@ -3024,7 +3073,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                               type="button"
                               onClick={() => void handleMpesaDarajaPayment(paymentPhone)}
                               disabled={isMpesaBusy || !isValidUnmaskedKenyanPhone(paymentPhone)}
-                              className="w-full h-12 bg-primary hover:bg-[#9c1414] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-50"
+                              className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition duration-150 active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-50"
                             >
                               {mpesaStatus === "initiating" ? (
                                 <>
@@ -3041,19 +3090,50 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
                             {/* Waiting Indicator */}
                             {(mpesaStatus === "waiting" || mpesaStatus === "stk_sent" || mpesaStatus === "verifying") && (
-                              <div className="flex flex-col gap-2 p-3 bg-surface-container-low border border-outline-variant rounded-xl">
+                              <div className="flex flex-col gap-2.5 p-3 bg-surface-container-low border border-outline-variant rounded-xl">
                                 <div className="flex items-center justify-center gap-2.5">
                                   <Loader2 className="w-4 h-4 text-primary animate-spin" />
                                   <span className="text-xs font-semibold text-on-surface">
                                     Waiting for STK confirmation on phone... ({pollingSecondsLeft}s)
                                   </span>
                                 </div>
+                                <div className="flex items-center justify-center gap-4">
+                                  {activeCheckoutId && (
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleCheckPaymentStatus()}
+                                      disabled={mpesaStatus === "verifying"}
+                                      className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer disabled:opacity-50"
+                                    >
+                                      I Entered PIN — Verify Now
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={handleCancelOrResetPayment}
+                                    className="text-[11px] text-primary hover:underline text-center cursor-pointer font-semibold"
+                                  >
+                                    Cancel STK Push
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {(mpesaStatus === "timeout" || mpesaStatus === "cancelled" || mpesaStatus === "failed") && activeCheckoutId && (
+                              <div className="flex flex-wrap items-center justify-center gap-3">
                                 <button
                                   type="button"
-                                  onClick={clearPaymentTimers}
-                                  className="text-[11px] text-primary hover:underline text-center cursor-pointer"
+                                  onClick={() => void handleCheckPaymentStatus()}
+                                  className="text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
                                 >
-                                  Cancel STK Push
+                                  Already Paid? Verify Status Now
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleCancelOrResetPayment}
+                                  className="text-xs font-semibold text-on-surface-variant hover:text-primary cursor-pointer"
+                                >
+                                  Try Again
                                 </button>
                               </div>
                             )}
@@ -3094,12 +3174,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                                   <span className="text-lg font-black text-primary tracking-wider">{activeTill}</span>
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(activeTill)
-                                      setCopiedTill(true)
-                                      toast.success("Till number copied!")
-                                      setTimeout(() => setCopiedTill(false), 2000)
-                                    }}
+                                    aria-label="Copy Till Number"
+                                    onClick={() => void handleCopyTill(activeTill)}
                                     className="p-1 text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
                                     title="Copy Till Number"
                                   >
@@ -3118,13 +3194,13 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                             {/* Manual Code Input */}
                             <div className="flex flex-col gap-1.5">
                               <label className="text-[11px] font-bold text-on-surface" htmlFor="mpesa-code">
-                                Enter 10-character M-Pesa Reference Code
+                                Enter M-Pesa Reference Code or Paste Confirmation SMS
                               </label>
                               <div className="flex gap-2">
                                 <input
                                   id="mpesa-code"
                                   type="text"
-                                  maxLength={10}
+                                  maxLength={500}
                                   value={manualMpesaCode}
                                   onChange={(e) => setManualMpesaCode(e.target.value.toUpperCase())}
                                   placeholder="e.g. TCI89XX12A"
@@ -3176,6 +3252,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         clearPaymentTimers()
                         try {
                           sessionStorage.removeItem("kra_active_form_data")
+                          sessionStorage.removeItem("mpesa_redemption_state")
                           localStorage.removeItem("kra_active_form_data")
                         } catch { }
                         window.location.reload()

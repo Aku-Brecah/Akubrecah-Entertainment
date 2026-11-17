@@ -43,27 +43,26 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (!isLoaded || !user) return;
-    const hasCompletedLocal = typeof window !== 'undefined' ? localStorage.getItem('hasCompletedOnboarding') : null;
+    let hasCompletedLocal: string | null = null;
+    try {
+      hasCompletedLocal = typeof window !== 'undefined' ? localStorage.getItem('hasCompletedOnboarding') : null;
+    } catch { }
     const hasCompletedClerk = user.publicMetadata?.onboardingComplete;
     if (!hasCompletedLocal && !hasCompletedClerk) {
       router.push('/onboarding');
       return;
     } else if (hasCompletedClerk && !hasCompletedLocal && typeof window !== 'undefined') {
-      localStorage.setItem('hasCompletedOnboarding', 'true');
-    }
-
-    const hasName = !!(user?.firstName && user?.lastName) || !!user?.fullName;
-    const hasPhone = (user?.phoneNumbers && user?.phoneNumbers.length > 0) || !!user?.publicMetadata?.phoneNumber;
-    if (pathname?.startsWith('/dashboard/filing') && (!hasName || !hasPhone)) {
-      router.push('/dashboard/profile?message=incomplete_profile');
+      try {
+        localStorage.setItem('hasCompletedOnboarding', 'true');
+      } catch { }
     }
   }, [pathname, isLoaded, user, router]);
 
-  const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
-  const userRole = user?.publicMetadata?.role as string;
-  const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
+  const userEmail = (user?.primaryEmailAddress?.emailAddress || '').trim().toLowerCase();
+  const userRole = (user?.publicMetadata?.role as string) || '';
+  const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
   const isAdmin =
-    userEmail === configAdminEmail ||
+    (Boolean(userEmail) && Boolean(configAdminEmail) && userEmail === configAdminEmail) ||
     userRole === "Super Admin" ||
     userRole === "Admin";
 

@@ -10,7 +10,7 @@ export default function SSOCallbackPage() {
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
         <h2 className="text-lg font-black text-foreground">Completing Secure Sign-In...</h2>
         <p className="text-xs text-muted-foreground">
-          Authenticating your credentials with Kenya Revenue Authority portal gateway.
+          Completing your Akubrecah account sign-in via encrypted authentication.
         </p>
       </div>
       <AuthenticateWithRedirectCallback />

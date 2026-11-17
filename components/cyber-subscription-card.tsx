@@ -93,13 +93,19 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
     paymentPhone: "",
   });
 
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
   const fetchStatus = async () => {
     if (!isSignedIn) {
       setLoading(false);
       return;
     }
+    setFetchError(null);
     try {
       const res = await fetch("/api/cyber/user-status");
+      if (!res.ok) {
+        throw new Error(`Unable to load subscription status (${res.status})`);
+      }
       const data = await res.json();
       if (data.success) {
         setHasSubscription(data.hasSubscription);
@@ -116,9 +122,11 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
             paymentPhone: data.cafe.paymentPhone || "",
           }));
         }
+      } else {
+        setFetchError(data.error || "Unable to load subscription details.");
       }
-    } catch (e) {
-      console.warn("Failed to fetch cyber subscription status:", e);
+    } catch (e: any) {
+      setFetchError(e?.message || "Failed to load subscription status. Please retry.");
     } finally {
       setLoading(false);
     }
@@ -214,15 +222,20 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
       }
     }, 1000);
 
+    let pollInFlight = false;
     const poller = setInterval(async () => {
+      if (pollInFlight) return;
+      pollInFlight = true;
       try {
         const res = await fetch(`/api/mpesa/status/${pollingCheckoutId}`);
         const data = await res.json();
         await applyCyberStatusOutcome(data);
       } catch {
         // Continue polling on transient network error
+      } finally {
+        pollInFlight = false;
       }
-    }, 1000);
+    }, 1500);
 
     return () => {
       clearInterval(countdown);

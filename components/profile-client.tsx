@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useClerk, useUser } from "@clerk/nextjs";
 import {
   Camera,
@@ -76,12 +76,34 @@ function Modal({
   );
 }
 
-function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+function Toast({
+  message,
+  type = "success",
+  onClose,
+}: {
+  message: string;
+  type?: "success" | "error";
+  onClose: () => void;
+}) {
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg px-5 py-3 animate-in slide-in-from-bottom-4">
-      <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+    <div
+      role={type === "error" ? "alert" : "status"}
+      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-surface-container-lowest border rounded-xl shadow-lg px-5 py-3 animate-in slide-in-from-bottom-4 ${
+        type === "error" ? "border-red-500/50" : "border-outline-variant"
+      }`}
+    >
+      {type === "error" ? (
+        <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+      ) : (
+        <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+      )}
       <span className="font-medium text-on-surface text-sm">{message}</span>
-      <button onClick={onClose} className="ml-2 text-on-surface-variant hover:text-on-surface">
+      <button
+        type="button"
+        aria-label="Close notification"
+        onClick={onClose}
+        className="ml-2 text-on-surface-variant hover:text-on-surface"
+      >
         <X className="w-4 h-4" />
       </button>
     </div>
@@ -107,7 +129,8 @@ export default function ProfileClient({
   const [dob, setDob] = useState(initialDob);
   const [gender, setGender] = useState(initialGender);
   const [nationality, setNationality] = useState(initialNationality);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toastState, setToastState] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Modal state
   const [modal, setModal] = useState<
@@ -122,18 +145,28 @@ export default function ProfileClient({
   const [tempNationality, setTempNationality] = useState("");
   const [tempPhone, setTempPhone] = useState("");
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3500);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = (msg: string, type: "success" | "error" = "success") => {
+    setToastState({ message: msg, type });
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToastState(null), 4000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("message") === "incomplete_profile") {
-        setTimeout(() => {
-          showToast("Please update your full name and phone number to unlock services.");
+        const t = setTimeout(() => {
+          showToast("Please update your full name and phone number to unlock services.", "error");
         }, 100);
+        return () => clearTimeout(t);
       }
     }
   }, []);
@@ -149,6 +182,8 @@ export default function ProfileClient({
   };
 
   const savePersonal = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       const res = await updateProfileDetails({
         firstName: tempFirstName,
@@ -163,10 +198,13 @@ export default function ProfileClient({
         setGender(tempGender);
         setNationality(tempNationality);
         setModal(null);
+        await clerkUser?.reload().catch(() => {});
         showToast("Personal information updated successfully.");
       }
     } catch (err: any) {
-      showToast(err.message || "Failed to update personal information.");
+      showToast(err.message || "Failed to update personal information.", "error");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -176,6 +214,8 @@ export default function ProfileClient({
   };
 
   const saveContact = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       const res = await updateProfileDetails({
         phone: tempPhone,
@@ -183,10 +223,13 @@ export default function ProfileClient({
       if (res.success) {
         setPhone(tempPhone || null);
         setModal(null);
+        await clerkUser?.reload().catch(() => {});
         showToast("Phone number updated successfully.");
       }
     } catch (err: any) {
-      showToast(err.message || "Failed to update contact information.");
+      showToast(err.message || "Failed to update contact information.", "error");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -244,11 +287,13 @@ export default function ProfileClient({
           </p>
           <div className="mt-5 flex flex-wrap justify-center md:justify-start gap-3">
             <span className="px-4 py-1.5 bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300 rounded-full text-sm font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-4 h-4" /> Active Status
+              <CheckCircle2 className="w-4 h-4" /> Active Account
             </span>
-            <span className="px-4 py-1.5 bg-surface-container-high text-on-surface-variant rounded-full text-sm font-medium flex items-center gap-1">
-              <ShieldCheck className="w-4 h-4" /> KYC Verified
-            </span>
+            {completeness === 100 && (
+              <span className="px-4 py-1.5 bg-surface-container-high text-on-surface-variant rounded-full text-sm font-medium flex items-center gap-1">
+                <ShieldCheck className="w-4 h-4" /> Profile Complete
+              </span>
+            )}
           </div>
         </div>
       </section>
@@ -295,10 +340,11 @@ export default function ProfileClient({
                 </p>
               </div>
               <button
-                onClick={openContactModal}
+                type="button"
+                onClick={() => openUserProfile()}
                 className="text-amber-700 dark:text-amber-300 text-xs font-bold border border-amber-400 rounded-lg px-3 py-1.5 hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors whitespace-nowrap"
               >
-                Update Now
+                Manage in Account Settings
               </button>
             </div>
           )}
@@ -312,10 +358,11 @@ export default function ProfileClient({
                 </p>
               </div>
               <button
-                onClick={openContactModal}
+                type="button"
+                onClick={() => openUserProfile()}
                 className="text-amber-700 dark:text-amber-300 text-xs font-bold border border-amber-400 rounded-lg px-3 py-1.5 hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors whitespace-nowrap"
               >
-                Update Now
+                Manage in Account Settings
               </button>
             </div>
           )}
@@ -456,16 +503,6 @@ export default function ProfileClient({
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="mt-12 text-center text-on-surface-variant border-t border-outline-variant pt-8">
-        <p className="text-sm">For updates requiring document verification, please visit any KRA Huduma Centre.</p>
-        <div className="flex justify-center gap-6 mt-4">
-          <Link href="/legal/privacy" className="text-xs font-bold hover:text-primary transition-colors uppercase">Privacy Policy</Link>
-          <Link href="/legal/terms" className="text-xs font-bold hover:text-primary transition-colors uppercase">Terms of Service</Link>
-          <Link href="/contact" className="text-xs font-bold hover:text-primary transition-colors uppercase">Support</Link>
-        </div>
-      </footer>
-
       {/* ─── MODALS ─── */}
 
       {/* Edit Personal Information */}
@@ -503,9 +540,9 @@ export default function ProfileClient({
               </select>
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setModal(null)} className="flex-1 py-2.5 border border-outline-variant rounded-xl text-on-surface font-bold hover:bg-surface-container transition-colors text-sm">Cancel</button>
-              <button onClick={savePersonal} className="flex-1 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 text-sm">
-                <Save className="w-4 h-4" /> Save Changes
+              <button type="button" onClick={() => setModal(null)} disabled={isSaving} className="flex-1 py-2.5 border border-outline-variant rounded-xl text-on-surface font-bold hover:bg-surface-container transition-colors text-sm disabled:opacity-50">Cancel</button>
+              <button type="button" onClick={savePersonal} disabled={isSaving} className="flex-1 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-50">
+                <Save className="w-4 h-4" /> {isSaving ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>
@@ -531,9 +568,9 @@ export default function ProfileClient({
               <input type="tel" value={tempPhone} onChange={e => setTempPhone(e.target.value)} className={inputCls} placeholder="+254 700 000 000" />
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setModal(null)} className="flex-1 py-2.5 border border-outline-variant rounded-xl text-on-surface font-bold hover:bg-surface-container transition-colors text-sm">Cancel</button>
-              <button onClick={saveContact} className="flex-1 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 text-sm">
-                <Save className="w-4 h-4" /> Save Changes
+              <button type="button" onClick={() => setModal(null)} disabled={isSaving} className="flex-1 py-2.5 border border-outline-variant rounded-xl text-on-surface font-bold hover:bg-surface-container transition-colors text-sm disabled:opacity-50">Cancel</button>
+              <button type="button" onClick={saveContact} disabled={isSaving} className="flex-1 py-2.5 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-50">
+                <Save className="w-4 h-4" /> {isSaving ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>
@@ -585,7 +622,13 @@ export default function ProfileClient({
       )}
 
       {/* Toast */}
-      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+      {toastState && (
+        <Toast
+          message={toastState.message}
+          type={toastState.type}
+          onClose={() => setToastState(null)}
+        />
+      )}
     </div>
   );
 }
