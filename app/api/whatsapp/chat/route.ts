@@ -395,7 +395,7 @@ export async function handleWhatsAppChat(params: {
             `• *Receipt / Ref:* \`${payment.reference}\`\n` +
             `• *KRA PIN:* \`${resolvedPin}\`\n` +
             `• *Amount Paid:* KES ${resolvedFee}.00\n\n` +
-            `📄 Official KRA PIN Certificate and fiscal receipt have been generated and dispatched above!\n\n` +
+            `📄 Your official KRA PIN Certificate (PDF) has been generated and dispatched above!\n\n` +
             `🌐 *Self-Service Web Portal:* https://kra.akubrecah.com`;
 
           let sendRes = null;
@@ -1249,7 +1249,7 @@ export async function handleWhatsAppChat(params: {
             `🆔 *KRA PIN:* \`${pinToDownload}\`\n` +
             `─────────────────────────\n` +
             `👉 *Enter your M-Pesa PIN* on \`${stkRes.normalizedPhone}\` to complete retrieval.\n\n` +
-            `Your official KRA PIN Certificate and fiscal receipt will be delivered right here in this chat.\n\n` +
+            `Your official KRA PIN Certificate (PDF) will be delivered right here in this chat.\n\n` +
             `─────────────────────────\n` +
             `_Reply 1 to resend prompt | Send another number | Reply 0 to cancel_`;
         } else {
@@ -1454,7 +1454,7 @@ export async function handleWhatsAppChat(params: {
             `• *Receipt / Ref:* \`${verifiedReceipt || metadata.checkoutId || 'APPROVED'}\`\n` +
             `• *KRA PIN:* \`${pinToDownload}\`\n` +
             `• *Amount Paid:* KES ${downloadFee}.00\n\n` +
-            `📄 Official KRA PIN Certificate and fiscal receipt are being delivered directly to your chat below...\n\n` +
+            `📄 Your official KRA PIN Certificate (PDF) is being delivered directly to your chat below...\n\n` +
             `🌐 *Web Portal:* https://kra.akubrecah.com`;
         } else {
           await saveConversationState('AWAITING_PAYMENT', { activeSession: true });

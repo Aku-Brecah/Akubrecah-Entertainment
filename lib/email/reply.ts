@@ -137,14 +137,13 @@ export async function sendInquiryReply(params: SendReplyParams): Promise<SendRep
     <div class="content">
       <div class="greeting">Dear ${escapeHtml(recipientName || 'Valued Client')},</div>
       <div class="message-text">${escapeHtml(body)}</div>
-      ${
-        originalMessage
-          ? `<div class="quote-box">
+      ${originalMessage
+      ? `<div class="quote-box">
               <strong>Your Original Project Brief:</strong><br />
               ${escapeHtml(originalMessage)}
             </div>`
-          : ''
-      }
+      : ''
+    }
     </div>
     <div class="footer">
       <p>This message was sent from Akubrecah Technologies (Nairobi, Kenya). For urgent statutory or engineering support, reply directly to this email or visit <a href="https://akubrecah.com" style="color: #BA1A1A; text-decoration: none;">akubrecah.com</a>.</p>

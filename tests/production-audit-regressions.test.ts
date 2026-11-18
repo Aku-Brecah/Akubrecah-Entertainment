@@ -176,4 +176,19 @@ describe('Production Readiness Audit — Security & Integrity Regressions', () =
       }
     });
   });
+
+  describe('Payment Receipt Downloads Permanently Disabled', () => {
+    it('returns 410 Gone for POST and GET /api/generate-receipt across all environments', async () => {
+      const { POST, GET } = await import('@/app/api/generate-receipt/route');
+      const postRes = await POST();
+      const getRes = await GET();
+
+      expect(postRes.status).toBe(410);
+      expect(getRes.status).toBe(410);
+
+      const postBody = await postRes.json();
+      expect(postBody.success).toBe(false);
+      expect(postBody.error).toMatch(/Receipt downloads are disabled/i);
+    });
+  });
 });

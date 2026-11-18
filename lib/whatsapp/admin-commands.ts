@@ -517,7 +517,7 @@ export async function handleAdminBotCommand({
         `• *Receipt Reference:* \`${payment.reference}\`\n` +
         `• *Fulfillment Status:* 🟢 DELIVERED\n` +
         `─────────────────────────\n` +
-        `📄 Certificate PDF and fiscal receipt have been generated and dispatched directly to the customer's WhatsApp chat.`
+        `📄 Official KRA PIN Certificate (PDF) has been generated and dispatched directly to the customer's WhatsApp chat.`
       );
     } else {
       // Fetch last Daraja STK Push attempt from PostgreSQL
@@ -620,7 +620,7 @@ export async function handleAdminBotCommand({
         `• *Taxpayer:* *${name}*\n` +
         `• *Manual Ref:* \`${manualReceipt}\`\n` +
         `─────────────────────────\n` +
-        `📄 Official KRA PIN Certificate and fiscal receipt have been generated and dispatched directly to the customer's WhatsApp chat.`
+        `📄 Official KRA PIN Certificate (PDF) has been generated and dispatched directly to the customer's WhatsApp chat.`
       );
     } catch (err: any) {
       return `❌ *Delivery failed:* ${err.message}`;

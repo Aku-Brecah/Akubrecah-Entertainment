@@ -188,7 +188,7 @@ function FlagshipPortalContent() {
                 </div>
                 <h3 className="text-sm font-bold text-on-surface">M-Pesa KES 20 payment</h3>
                 <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
-                  Instant automated Safaricom Daraja STK Push micro-billing with digital receipt and manual fallback.
+                  Instant automated Safaricom Daraja STK Push micro-billing with instant M-Pesa verification and manual Till fallback.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-outline-variant/50 flex items-center gap-1.5 text-[11px] font-semibold text-primary">

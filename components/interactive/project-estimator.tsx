@@ -103,10 +103,10 @@ export function ProjectEstimator() {
 
       {/* Main Interactive Container */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
+
         {/* Left: Configuration Steps (7 cols) */}
         <div className="lg:col-span-7 space-y-6 p-6 sm:p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft">
-          
+
           {/* Step 1: Service Type */}
           <div className="space-y-3" role="group" aria-labelledby="estimator-step-1">
             <h3 id="estimator-step-1" className="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-1.5">
@@ -122,11 +122,10 @@ export function ProjectEstimator() {
                     type="button"
                     aria-pressed={isSelected}
                     onClick={() => setSelectedService(srv.id)}
-                    className={`p-4 rounded-2xl text-left transition-all cursor-pointer border ${
-                      isSelected
+                    className={`p-4 rounded-2xl text-left transition-all cursor-pointer border ${isSelected
                         ? "bg-primary/5 dark:bg-primary/10 border-primary ring-2 ring-primary/20 shadow-xs"
                         : "bg-surface-container/40 dark:bg-slate-800/50 border-outline-variant hover:border-primary/40"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black text-on-surface">{srv.label}</span>
@@ -158,11 +157,10 @@ export function ProjectEstimator() {
                     type="button"
                     aria-pressed={isSelected}
                     onClick={() => setSelectedScale(scale.id)}
-                    className={`p-3 rounded-xl text-center transition-all cursor-pointer border ${
-                      isSelected
+                    className={`p-3 rounded-xl text-center transition-all cursor-pointer border ${isSelected
                         ? "bg-primary text-white border-primary shadow-xs"
                         : "bg-surface-container/40 dark:bg-slate-800/50 border-outline-variant text-on-surface hover:border-primary/40"
-                    }`}
+                      }`}
                   >
                     <p className="text-xs font-bold leading-tight">{scale.label}</p>
                     <p className={`text-[10px] mt-1 ${isSelected ? "text-white/80" : "text-on-surface-variant"}`}>
@@ -189,11 +187,10 @@ export function ProjectEstimator() {
                     type="button"
                     aria-pressed={isChecked}
                     onClick={() => toggleAddon(addon.id)}
-                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-                      isChecked
+                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${isChecked
                         ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
                         : "bg-surface-container/40 dark:bg-slate-800/50 border-outline-variant text-on-surface-variant hover:text-on-surface hover:border-primary/30"
-                    }`}
+                      }`}
                   >
                     <span className={`w-2 h-2 rounded-full ${isChecked ? "bg-emerald-500" : "bg-outline-variant"}`} />
                     <span>{addon.label}</span>
@@ -206,7 +203,7 @@ export function ProjectEstimator() {
 
         {/* Right: Live Architecture Blueprint & Turnaround (5 cols) */}
         <div className="lg:col-span-5 p-6 sm:p-8 rounded-3xl bg-slate-950 text-white border border-slate-800 shadow-xl space-y-6">
-          
+
           {/* Card Header */}
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
             <span className="text-xs font-black uppercase tracking-widest text-slate-300">

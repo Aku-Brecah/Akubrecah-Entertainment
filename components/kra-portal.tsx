@@ -167,6 +167,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null)
   const stkTransitionRef = useRef<NodeJS.Timeout | null>(null)
   const initialPollTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const autoDownloadedIdRef = useRef<string | null>(null)
 
   // 5-Minute Authoritative M-Pesa Redemption State
   const [redemptionExpiresAt, setRedemptionExpiresAt] = useState<string | null>(null)
@@ -252,7 +253,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
           }
         }
       }
-    } catch {}
+    } catch { }
   }, [])
 
   // Authoritative 5-minute synchronized countdown timer
@@ -295,9 +296,10 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
   const handleResetForNewPayment = () => {
     clearPaymentTimers()
+    autoDownloadedIdRef.current = null
     try {
       sessionStorage.removeItem('mpesa_redemption_state')
-    } catch {}
+    } catch { }
     setVerifiedDownloadId(null)
     setVerifiedReceipt(null)
     setRedemptionExpiresAt(null)
@@ -532,10 +534,13 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   }
 
   // Refreshes unmasked taxpayer details from authorized backend endpoint
-  const refreshVerifiedData = async (downloadId?: string, targetPin?: string) => {
+  const refreshVerifiedData = async (
+    downloadId?: string,
+    targetPin?: string
+  ): Promise<typeof formData | null> => {
     try {
       const pinToVerify = targetPin || formData.rawPin || formData.pin
-      if (!pinToVerify && !downloadId) return
+      if (!pinToVerify && !downloadId) return null
 
       const res = await fetch('/api/certificate/verified-data', {
         method: 'POST',
@@ -547,32 +552,32 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       })
       const result = await res.json()
       if (result.success && result.data) {
-        setIsSubscribed(true)
-        setFormData(prev => {
-          const updated = {
-            ...prev,
-            fullName: result.data.name || result.data.taxpayerName || prev.fullName,
-            pin: result.data.pin || prev.pin,
-            rawPin: result.data.pin || prev.rawPin,
-            idNumber: result.data.idNumber || prev.idNumber,
-            email: result.data.email || prev.email || '',
-            building: result.data.building || prev.building,
-            street: result.data.street || prev.street,
-            town: result.data.town || prev.town,
-            county: result.data.county || prev.county,
-            district: result.data.district || prev.district,
-            taxArea: result.data.taxArea || prev.taxArea,
-            station: result.data.station || prev.station,
-            poBox: result.data.poBox || prev.poBox,
-            postalCode: result.data.postalCode || prev.postalCode,
-            phoneNumber: result.data.phoneNumber || prev.phoneNumber,
-            registeredDate: result.data.registeredDate || prev.registeredDate,
-          }
-          return updated
-        })
+        const updated = {
+          ...formData,
+          fullName: result.data.name || result.data.taxpayerName || formData.fullName,
+          pin: result.data.pin || formData.pin,
+          rawPin: result.data.pin || formData.rawPin,
+          idNumber: result.data.idNumber || formData.idNumber,
+          email: result.data.email || formData.email || '',
+          building: result.data.building || formData.building,
+          street: result.data.street || formData.street,
+          town: result.data.town || formData.town,
+          county: result.data.county || formData.county,
+          district: result.data.district || formData.district,
+          taxArea: result.data.taxArea || formData.taxArea,
+          station: result.data.station || formData.station,
+          poBox: result.data.poBox || formData.poBox,
+          postalCode: result.data.postalCode || formData.postalCode,
+          phoneNumber: result.data.phoneNumber || formData.phoneNumber,
+          registeredDate: result.data.registeredDate || formData.registeredDate,
+        }
+        setFormData(updated)
+        return updated
       }
+      return null
     } catch (e) {
       console.warn("Failed to refresh unmasked data:", e)
+      return null
     }
   }
 
@@ -610,17 +615,26 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
               firstClaimedAt: vData.firstClaimedAt,
             })
           )
-        } catch {}
+        } catch { }
       }
 
-      toast.success(
-        `M-Pesa payment confirmed${receipt ? ` (${receipt})` : ''}. Unlocking record & downloading certificate...`,
-        { duration: 5000 }
+      // Guard against duplicate auto-downloads from overlapping poll/manual callbacks.
+      // Auto-download triggers ONLY the official KRA PIN Certificate PDF (never a payment receipt).
+      const shouldAutoDownload = Boolean(
+        resolvedDlId && autoDownloadedIdRef.current !== resolvedDlId
       )
-      await Promise.all([
-        refreshVerifiedData(resolvedDlId, vData.pin || certPin),
-        resolvedDlId ? executeDownload(resolvedDlId) : Promise.resolve(),
-      ])
+      if (shouldAutoDownload && resolvedDlId) {
+        autoDownloadedIdRef.current = resolvedDlId
+        toast.success(
+          `M-Pesa payment confirmed${receipt ? ` (${receipt})` : ''}. Downloading your KRA PIN Certificate...`,
+          { duration: 5000 }
+        )
+      }
+
+      const unmaskedForm = await refreshVerifiedData(resolvedDlId, vData.pin || certPin)
+      if (shouldAutoDownload && resolvedDlId) {
+        await executeDownload(resolvedDlId, unmaskedForm || undefined)
+      }
       return true
     }
 
@@ -977,8 +991,9 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     }
   }
 
-  // Called when user proceeds through the modal (active subscription OR after payment confirmed)
-  const executeDownload = async (downloadId?: string) => {
+  // Called when user proceeds through the modal (active subscription OR after payment confirmed).
+  // Downloads ONLY the official KRA PIN Certificate PDF — never a payment receipt.
+  const executeDownload = async (downloadId?: string, formOverride?: typeof formData) => {
     if (isRedemptionExpired && !isAdmin) {
       toast.error("Your 5-minute certificate download window has expired. Please make a new payment.")
       return
@@ -995,9 +1010,9 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
     }
 
     setIsDownloadingPdf(true)
-    const loadingToast = toast.loading("Securely generating your compliance certificate...")
+    const loadingToast = toast.loading("Securely generating your KRA PIN Certificate (PDF)...")
     try {
-      const activeForm = { ...formData }
+      const activeForm = formOverride ? { ...formOverride } : { ...formData }
       const certPin = activeForm.rawPin || activeForm.pin
       const payload = {
         pin: certPin,
@@ -1079,8 +1094,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
       if (!recordData.success) throw new Error(recordData.error || 'Failed to authorize download')
       setVerifiedDownloadId(recordData.downloadId)
       setMpesaStatus("success")
-      await refreshVerifiedData(recordData.downloadId, formData.rawPin || formData.pin)
-      await executeDownload(recordData.downloadId)
+      const unmaskedForm = await refreshVerifiedData(recordData.downloadId, formData.rawPin || formData.pin)
+      await executeDownload(recordData.downloadId, unmaskedForm || undefined)
     } catch (err: any) {
       toast.error(err.message || 'Download failed. Please try again.')
     }
