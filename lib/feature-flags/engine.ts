@@ -23,15 +23,23 @@ export async function isFeatureEnabled(
   flagKey: FeatureFlagKey | string,
   userIdentifier?: string
 ): Promise<boolean> {
-  const definition = FEATURE_FLAGS[flagKey];
+  const definition = Object.prototype.hasOwnProperty.call(FEATURE_FLAGS, flagKey)
+    ? FEATURE_FLAGS[flagKey]
+    : undefined;
   const defaultValue = definition ? definition.defaultValue : false;
 
   // 1. Environment Variable Override (highest precedence)
   const envVarKey = `FEATURE_FLAG_${flagKey.toUpperCase()}`;
   const envVal = process.env[envVarKey];
   if (envVal !== undefined) {
-    if (envVal.toLowerCase() === 'true' || envVal === '1') return true;
-    if (envVal.toLowerCase() === 'false' || envVal === '0') return false;
+    if (envVal.toLowerCase() === 'true' || envVal === '1') {
+      flagCache.set(flagKey, { isActive: true, source: 'env', cachedAt: Date.now() });
+      return true;
+    }
+    if (envVal.toLowerCase() === 'false' || envVal === '0') {
+      flagCache.set(flagKey, { isActive: false, source: 'env', cachedAt: Date.now() });
+      return false;
+    }
   }
 
   // 2. In-Memory TTL Cache Check
@@ -123,19 +131,38 @@ export async function getAllFeatureFlags(): Promise<
     source: 'env' | 'db' | 'default';
   }>
 > {
+  const dbMap = new Map<string, boolean>();
+  try {
+    const db = prisma as any;
+    if (typeof db.service_settings?.findMany === 'function') {
+      const records = await db.service_settings.findMany({
+        where: { service_key: { in: Object.keys(FEATURE_FLAGS) } },
+      });
+      for (const rec of records || []) {
+        dbMap.set(rec.service_key, Boolean(rec.is_active));
+      }
+    }
+  } catch {
+    // Fallback to env/default
+  }
+
+  const now = Date.now();
   const results = [];
 
   for (const [key, def] of Object.entries(FEATURE_FLAGS)) {
-    const isActive = await isFeatureEnabled(key);
-    const cached = flagCache.get(key);
-    results.push({
-      key,
-      name: def.name,
-      description: def.description,
-      isActive,
-      category: def.category,
-      source: cached?.source || 'default',
-    });
+    const envVal = process.env[`FEATURE_FLAG_${key.toUpperCase()}`];
+    if (envVal !== undefined && ['true', '1', 'false', '0'].includes(envVal.toLowerCase())) {
+      const isActive = envVal.toLowerCase() === 'true' || envVal === '1';
+      flagCache.set(key, { isActive, source: 'env', cachedAt: now });
+      results.push({ key, name: def.name, description: def.description, isActive, category: def.category, source: 'env' as const });
+    } else if (dbMap.has(key)) {
+      const isActive = dbMap.get(key)!;
+      flagCache.set(key, { isActive, source: 'db', cachedAt: now });
+      results.push({ key, name: def.name, description: def.description, isActive, category: def.category, source: 'db' as const });
+    } else {
+      flagCache.set(key, { isActive: def.defaultValue, source: 'default', cachedAt: now });
+      results.push({ key, name: def.name, description: def.description, isActive: def.defaultValue, category: def.category, source: 'default' as const });
+    }
   }
 
   return results;

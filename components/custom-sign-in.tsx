@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useSignIn } from "@clerk/nextjs/legacy"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "motion/react"
 import { 
   Mail, 
   Lock, 
@@ -22,15 +22,25 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Logo } from "@/components/logo"
+import { isSafeRedirectPath } from "@/lib/edge/routing"
 
 export function CustomSignIn() {
   const { isLoaded, signIn, setActive } = useSignIn()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const isHostAdmin = typeof window !== "undefined" && window.location.hostname.startsWith("admin.")
-  const isHostKra = typeof window !== "undefined" && (window.location.hostname.startsWith("kra.") || searchParams.get("portal") === "kra")
-  const defaultRedirect = isHostAdmin || isHostKra ? "/" : "/dashboard"
-  const redirectUrl = searchParams.get("redirect_url") || defaultRedirect
+  const [defaultRedirect, setDefaultRedirect] = useState("/dashboard")
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname.toLowerCase()
+      const isHostAdmin = host.startsWith("admin.")
+      const isHostKra = host.startsWith("kra.") || searchParams.get("portal") === "kra"
+      setDefaultRedirect(isHostAdmin || isHostKra ? "/" : "/dashboard")
+    }
+  }, [searchParams])
+
+  const rawRedirect = searchParams.get("redirect_url")
+  const redirectUrl = rawRedirect && isSafeRedirectPath(rawRedirect) ? rawRedirect : defaultRedirect
 
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
@@ -210,9 +220,6 @@ export function CustomSignIn() {
     <div className="flex flex-col lg:flex-row w-full min-h-screen font-body-md text-on-surface bg-background overflow-hidden">
       {/* Left Hero Panel (Desktop) */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex-col justify-between p-12 lg:p-16 overflow-hidden border-r border-border/30">
-        {/* Glow Spheres */}
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-red-600/25 rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-500/15 rounded-full blur-[140px] pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:20px_20px] opacity-40 pointer-events-none" />
 
         {/* Brand Logo */}

@@ -25,6 +25,8 @@ model ai_conversations {
   updated_at      DateTime   @default(now())
   ai_tasks        ai_tasks[]
   tickets         tickets[]
+
+  @@index([channel, user_phone, status])
 }
 
 model ai_task_logs {
@@ -188,6 +190,8 @@ model ticket_messages {
   metadata    Json     @default("{}")
   created_at  DateTime @default(now())
   tickets     tickets  @relation(fields: [ticket_id], references: [id], onDelete: Cascade)
+
+  @@index([ticket_id])
 }
 
 model tickets {
@@ -300,7 +304,6 @@ model CertificateDownload {
   @@index([clerkId])
   @@index([userId])
   @@index([pin])
-  @@index([checkoutId])
   @@index([mpesaReceipt])
   @@index([redemptionStatus])
   @@index([expiresAt])
@@ -327,7 +330,7 @@ model MpesaTransaction {
   expiresAt          DateTime? @map("expires_at")
   downloadCount      Int       @default(0) @map("download_count")
   lastDownloadedAt   DateTime? @map("last_downloaded_at")
-  userId             String?   @map("user_id") @db.Uuid
+  userId             String?   @map("user_id")
   clerkId            String?   @map("clerk_id")
   channel            String    @default("web") // web, whatsapp, cyber
   metadata           Json?
@@ -338,6 +341,7 @@ model MpesaTransaction {
   @@index([pin, status])
   @@index([status, createdAt])
   @@index([mpesaReceiptNumber])
+  @@index([clerkId])
   @@index([redemptionStatus])
   @@index([expiresAt])
   @@map("mpesa_transactions")
@@ -362,7 +366,6 @@ model CyberCafe {
   updatedAt        DateTime       @updatedAt
   invoices         CyberInvoice[]
 
-  @@index([whatsappPhone])
   @@index([clerkUserId])
   @@index([status])
   @@map("cyber_cafes")
@@ -385,7 +388,7 @@ model CyberInvoice {
   createdAt     DateTime  @default(now())
 
   @@index([cyberCafeId])
-  @@index([invoiceNumber])
+  @@index([checkoutId])
   @@map("cyber_invoices")
 }
 
@@ -402,6 +405,7 @@ model SystemLog {
   @@index([timestamp])
   @@index([level])
   @@index([service])
+  @@index([actor])
   @@map("system_logs")
 }
 

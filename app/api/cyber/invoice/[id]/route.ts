@@ -79,7 +79,7 @@ export async function GET(
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="${invoice.invoiceNumber}.pdf"`,
-        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        'Cache-Control': 'private, no-store, max-age=0',
       },
     });
   } catch (error: any) {

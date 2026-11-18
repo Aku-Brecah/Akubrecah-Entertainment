@@ -200,8 +200,9 @@ export async function sendEvolutionDocument({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': EVOLUTION_API_KEY,
+        'apikey': process.env.EVOLUTION_API_KEY || EVOLUTION_API_KEY,
       },
+      signal: AbortSignal.timeout(15000),
       body: JSON.stringify({
         number: formattedPhone,
         mediatype: 'document',
@@ -258,8 +259,9 @@ export async function sendEvolutionImage({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': EVOLUTION_API_KEY,
+        'apikey': process.env.EVOLUTION_API_KEY || EVOLUTION_API_KEY,
       },
+      signal: AbortSignal.timeout(15000),
       body: JSON.stringify({
         number: formattedPhone,
         mediatype: 'image',
@@ -274,6 +276,12 @@ export async function sendEvolutionImage({
       const errText = await response.text();
       log.error('[Evolution API] Failed to send image:', response.status, errText);
       return { success: false, error: `Evolution API returned ${response.status}: ${errText}` };
+    }
+
+    const imgData = await response.json().catch(() => ({}));
+    const imgMessageId = imgData?.key?.id || imgData?.id || imgData?.messageId;
+    if (imgMessageId) {
+      recordBotSentMessageId(String(imgMessageId));
     }
 
     return { success: true };

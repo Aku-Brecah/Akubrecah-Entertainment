@@ -2,14 +2,6 @@
 
 import { useState, useEffect } from "react";
 
-const LOG_ITEMS = [
-  { type: "info", icon: "task_alt", title: "DB Ping Successful", desc: "TCP handshake established with Neon instance.", time: "Just now", actor: "System" },
-  { type: "info", icon: "login", title: "Admin Login Approved", desc: "Authenticated request verified.", time: "10 mins ago", actor: "AuthSystem" },
-  { type: "warning", icon: "warning", title: "KRA Latency Warning", desc: "itax.kra.go.ke responded slower than 1200ms.", time: "18 mins ago", actor: "PingWorker" },
-  { type: "info", icon: "dns", title: "Cache Flushed", desc: "Memory cache cleared successfully.", time: "1 hr ago", actor: "CronJob" },
-  { type: "error", icon: "error", title: "Blocked Login Request", desc: "clerk.com detected an invalid token attempt.", time: "3 hrs ago", actor: "Security" },
-];
-
 const iconColors: Record<string, string> = {
   error: "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400",
   warning: "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400",
@@ -26,13 +18,14 @@ const metricIcons: Record<string, string> = {
 export default function SystemHealthPage() {
   const [metrics, setMetrics] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
-  const [logs, setLogs] = useState<any[]>(LOG_ITEMS);
+  const [logs, setLogs] = useState<any[]>([]);
   const [logFilter, setLogFilter] = useState<"all" | "warning" | "error">("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  
-  // Real-time Load chart tracking
-  const [loadHistory, setLoadHistory] = useState<number[]>([10, 14, 18, 12, 16, 22, 19, 25, 21, 28, 20, 24]);
+
+  // Real-time Load chart tracking (populated strictly from live telemetry responses)
+  const [loadHistory, setLoadHistory] = useState<number[]>([]);
   const [loadLabels, setLoadLabels] = useState<string[]>([]);
 
   const showToast = (msg: string) => {
@@ -48,26 +41,28 @@ export default function SystemHealthPage() {
       ]);
       const data = await res.json();
       if (data.success) {
-        setMetrics(data.metrics);
-        setServices(data.services);
+        setFetchError(null);
+        setMetrics(data.metrics || []);
+        setServices(data.services || []);
 
-        // Update load history chart based on cpu load
-        const cpuMetric = data.metrics.find((m: any) => m.label.includes("CPU"));
+        // Update load history chart based on real CPU load reading
+        const cpuMetric = (data.metrics || []).find((m: any) => String(m.label || "").includes("CPU"));
         if (cpuMetric) {
-          const loadVal = Math.round(parseFloat(cpuMetric.value) * 100);
-          setLoadHistory(prev => [...prev.slice(1), loadVal > 100 ? 100 : loadVal]);
-          setLoadLabels(prev => [
-            ...prev.slice(1), 
-            new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-          ]);
+          const parsed = parseFloat(cpuMetric.value);
+          const loadVal = Number.isFinite(parsed) ? Math.min(100, Math.max(0, Math.round(parsed * 100))) : 0;
+          const timeLabel = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+          setLoadHistory((prev) => [...prev, loadVal].slice(-12));
+          setLoadLabels((prev) => [...prev, timeLabel].slice(-12));
         }
       } else {
-        showToast("Error retrieving live health metrics: " + (data.error || "Access Denied"));
+        const msg = data.error || "Access Denied";
+        setFetchError(msg);
+        showToast("Error retrieving live health metrics: " + msg);
       }
 
       if (logsRes && logsRes.ok) {
         const logsData = await logsRes.json().catch(() => null);
-        if (logsData?.success && Array.isArray(logsData.logs) && logsData.logs.length > 0) {
+        if (logsData?.success && Array.isArray(logsData.logs)) {
           setLogs(
             logsData.logs.map((l: any) => ({
               type: l.level === "error" || l.level === "warning" ? l.level : "info",
@@ -84,6 +79,7 @@ export default function SystemHealthPage() {
       }
     } catch (e) {
       console.error(e);
+      setFetchError("Network error fetching live health telemetry.");
       showToast("Network error fetching live metrics.");
     } finally {
       setIsLoading(false);
@@ -91,24 +87,17 @@ export default function SystemHealthPage() {
   };
 
   useEffect(() => {
-    // Populate initial chart labels
-    const timeLabels = [];
-    for (let i = 11; i >= 0; i--) {
-      const t = new Date(Date.now() - i * 10000);
-      timeLabels.push(t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-    }
-    setLoadLabels(timeLabels);
-
     fetchHealth();
     const interval = setInterval(fetchHealth, 10000);
     return () => clearInterval(interval);
   }, []);
 
   const formatUptime = (seconds: number) => {
-    const d = Math.floor(seconds / (3600 * 24));
-    const h = Math.floor((seconds % (3600 * 24)) / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
+    const safeSec = Number.isFinite(seconds) && seconds >= 0 ? seconds : 0;
+    const d = Math.floor(safeSec / (3600 * 24));
+    const h = Math.floor((safeSec % (3600 * 24)) / 3600);
+    const m = Math.floor((safeSec % 3600) / 60);
+    const s = Math.floor(safeSec % 60);
 
     const parts = [];
     if (d > 0) parts.push(`${d}d`);
@@ -118,7 +107,11 @@ export default function SystemHealthPage() {
     return parts.join(" ");
   };
 
-  const avgLoad = Math.round(loadHistory.reduce((a, b) => a + b, 0) / loadHistory.length);
+  const avgLoad =
+    loadHistory.length > 0
+      ? Math.round(loadHistory.reduce((a, b) => a + b, 0) / loadHistory.length)
+      : 0;
+  const filteredLogs = logs.filter((log) => logFilter === "all" || log.type === logFilter);
 
   return (
     <div className="w-full max-w-[1280px] mx-auto space-y-6 animate-fade-in font-sans">
@@ -185,34 +178,59 @@ export default function SystemHealthPage() {
         )}
       </div>
 
+      {fetchError && (
+        <div role="alert" className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs font-medium text-red-700 dark:text-red-300 flex items-center justify-between gap-3">
+          <span>{fetchError}</span>
+          <button
+            type="button"
+            onClick={fetchHealth}
+            className="px-3 py-1 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition-colors shrink-0"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Chart + Live Logs */}
       <div className="flex flex-col xl:flex-row gap-6">
         {/* Chart */}
-        <div className="flex-1 min-w-[300px] md:min-w-[500px] bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden shadow-soft">
-          <div className="px-5 py-4 border-b border-outline-variant bg-surface flex justify-between items-center">
+        <div className="flex-1 min-w-0 w-full bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden shadow-soft">
+          <div className="px-5 py-4 border-b border-outline-variant bg-surface flex justify-between items-center gap-2">
             <div>
               <h3 className="font-bold text-on-surface">System Load Trajectory (CPU Load %)</h3>
-              <p className="text-[10px] text-on-surface-variant mt-0.5">Average load across current timeline: <strong>{avgLoad}%</strong></p>
+              <p className="text-[10px] text-on-surface-variant mt-0.5">
+                {loadHistory.length > 0 ? (
+                  <>Average load across {loadHistory.length} live sample{loadHistory.length === 1 ? "" : "s"}: <strong>{avgLoad}%</strong></>
+                ) : (
+                  "Waiting for live CPU telemetry samples..."
+                )}
+              </p>
             </div>
-            <span className="text-[10px] uppercase font-extrabold text-on-surface-variant/80 tracking-wider">Updates live</span>
+            <span className="text-[10px] uppercase font-extrabold text-on-surface-variant/80 tracking-wider shrink-0">Updates live</span>
           </div>
           <div className="p-5 bg-surface-container-low min-h-[240px] relative flex items-end gap-2.5 pt-10">
-            {loadHistory.map((h, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center justify-end gap-1 h-36">
-                <div
-                  className={`w-full rounded-t-md hover:opacity-100 transition-all cursor-pointer ${
-                    h > 75 ? "bg-red-500/80 hover:bg-red-500" :
-                    h > 40 ? "bg-amber-500/80 hover:bg-amber-500" :
-                    "bg-primary/70 hover:bg-primary"
-                  }`}
-                  style={{ height: `${h > 0 ? h : 4}%` }}
-                  title={`Load: ${h}%`}
-                />
-                <span className="text-[8px] text-on-surface-variant/80 font-mono tracking-tight font-semibold mt-1 block select-none whitespace-nowrap overflow-hidden max-w-full">
-                  {loadLabels[i] ? loadLabels[i].split(" ")[0] : ""}
-                </span>
+            {loadHistory.length === 0 ? (
+              <div className="w-full h-36 flex items-center justify-center text-xs text-on-surface-variant">
+                {isLoading ? "Collecting live CPU load readings..." : "No CPU load readings recorded yet."}
               </div>
-            ))}
+            ) : (
+              loadHistory.map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center justify-end gap-1 h-36">
+                  <div
+                    className={`w-full rounded-t-md hover:opacity-100 transition-all cursor-pointer ${
+                      h > 75 ? "bg-red-500/80 hover:bg-red-500" :
+                      h > 40 ? "bg-amber-500/80 hover:bg-amber-500" :
+                      "bg-primary/70 hover:bg-primary"
+                    }`}
+                    style={{ height: `${h > 0 ? h : 4}%` }}
+                    title={`Load: ${h}%`}
+                  />
+                  <span className="text-[8px] text-on-surface-variant/80 font-mono tracking-tight font-semibold mt-1 block select-none whitespace-nowrap overflow-hidden max-w-full">
+                    {loadLabels[i] ? loadLabels[i].split(" ")[0] : ""}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -238,22 +256,26 @@ export default function SystemHealthPage() {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            <ul className="divide-y divide-outline-variant/50">
-              {logs
-                .filter((log) => logFilter === "all" || log.type === logFilter)
-                .map((log, i) => (
-                <li key={i} className="px-5 py-3 hover:bg-surface-container-low transition-colors flex gap-3 items-start">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${iconColors[log.type]}`}>
-                    <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>{log.icon}</span>
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-on-surface truncate">{log.title}</p>
-                    <p className="text-xs text-on-surface-variant truncate">{log.desc}</p>
-                    <p className="text-xs text-on-surface-variant mt-0.5">{log.time} · {log.actor}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {filteredLogs.length === 0 ? (
+              <div className="px-5 py-10 text-center text-xs text-on-surface-variant">
+                {isLoading ? "Loading live health logs..." : "No matching system log events recorded."}
+              </div>
+            ) : (
+              <ul className="divide-y divide-outline-variant/50">
+                {filteredLogs.map((log, i) => (
+                  <li key={i} className="px-5 py-3 hover:bg-surface-container-low transition-colors flex gap-3 items-start">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${iconColors[log.type]}`}>
+                      <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>{log.icon}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-on-surface truncate">{log.title}</p>
+                      <p className="text-xs text-on-surface-variant truncate">{log.desc}</p>
+                      <p className="text-xs text-on-surface-variant mt-0.5">{log.time} · {log.actor}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </div>
@@ -269,21 +291,25 @@ export default function SystemHealthPage() {
             Array(3).fill(0).map((_, i) => (
               <div key={i} className="px-5 py-6 bg-surface-container-lowest animate-pulse" />
             ))
+          ) : services.length === 0 ? (
+            <div className="px-5 py-8 text-center text-xs text-on-surface-variant">
+              No connectivity probe results available.
+            </div>
           ) : (
             services.map(s => (
               <div
                 key={s.name}
-                className="flex items-center justify-between px-5 py-4 hover:bg-surface-container-low transition-colors group"
+                className="flex flex-wrap items-center justify-between gap-2 sm:gap-4 px-5 py-4 hover:bg-surface-container-low transition-colors group"
               >
-                <div className="flex items-center gap-3">
-                  <span className={`w-2.5 h-2.5 rounded-full transition-all ${
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-all ${
                     s.status === "Operational" ? "bg-green-500" :
                     s.status === "Degraded" ? "bg-amber-500 animate-pulse" :
                     "bg-red-500 animate-ping"
                   }`} />
                   <span className="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">{s.name}</span>
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-6">
                   <span className="text-xs text-on-surface-variant">Response Latency: <strong className="text-on-surface">{s.latency}</strong></span>
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-lg select-none transition-all ${
                     s.status === "Operational" ? "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300" :

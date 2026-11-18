@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useSignUp, useSignIn } from "@clerk/nextjs/legacy"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "motion/react"
 import {
   Mail,
   Lock,
@@ -21,13 +21,15 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { isSafeRedirectPath } from "@/lib/edge/routing"
 
 export function KRASignUp() {
   const { isLoaded, signUp, setActive } = useSignUp()
   const { isLoaded: isSignInLoaded, signIn } = useSignIn()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectUrl = searchParams.get("redirect_url") || "/"
+  const rawRedirect = searchParams.get("redirect_url")
+  const redirectUrl = rawRedirect && isSafeRedirectPath(rawRedirect) ? rawRedirect : "/"
 
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -211,12 +213,6 @@ export function KRASignUp() {
 
   return (
     <div className="relative min-h-[92vh] flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-background overflow-hidden">
-      {/* Background ambient lighting — KRA Crimson Red */}
-      <div 
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] pointer-events-none rounded-full blur-[140px] opacity-20"
-        style={{ background: "radial-gradient(circle, #BA1A1A 0%, transparent 70%)" }}
-      />
-
       <motion.div 
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

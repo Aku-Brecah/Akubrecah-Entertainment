@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-VPS_USER="root"
-VPS_HOST="169.58.96.131"
-REMOTE_DIR="/var/www/akubrecah"
+VPS_USER="${VPS_USER:-root}"
+VPS_HOST="${VPS_HOST:?Set VPS_HOST environment variable before deploying}"
+REMOTE_DIR="${REMOTE_DIR:-/var/www/akubrecah}"
 LOCAL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "=================================================="
-echo "🚀 Deploying Akubrecah directly to VPS: ${VPS_HOST}"
+echo "Deploying Akubrecah directly to VPS: ${VPS_HOST}"
 echo "=================================================="
 
 echo ""
-echo "🔑 Verifying SSH connectivity..."
-ssh -o BatchMode=yes -o ConnectTimeout=8 "${VPS_USER}@${VPS_HOST}" "echo '  ✓ SSH connection established'"
+echo "Verifying SSH connectivity..."
+ssh -o BatchMode=yes -o ConnectTimeout=8 "${VPS_USER}@${VPS_HOST}" "echo '  SSH connection established'"
 
 echo ""
-echo "📦 Step 1: Syncing project files to ${VPS_USER}@${VPS_HOST}:${REMOTE_DIR}..."
+echo "Step 1: Syncing project files to ${VPS_USER}@${VPS_HOST}:${REMOTE_DIR}..."
 
 rsync -avz --progress \
   --exclude 'node_modules' \
@@ -24,12 +24,15 @@ rsync -avz --progress \
   --exclude 'temp' \
   --exclude '.agents' \
   --exclude '.agent' \
+  --exclude '.env' \
+  --exclude '.env.*' \
+  --exclude 'deploy/.env' \
+  --exclude 'deploy/.env.*' \
   --exclude 'redis-data' \
   --exclude 'evolution-data' \
   --exclude 'evolution-postgres-data' \
   --exclude 'deploy/certs' \
   --exclude 'training cv' \
-  --exclude 'deploy/.env' \
   "${LOCAL_DIR}/" \
   "${VPS_USER}@${VPS_HOST}:${REMOTE_DIR}/"
 

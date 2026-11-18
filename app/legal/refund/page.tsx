@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Refund Policy | Akubrecah Technologies",
+  title: "Refund Policy",
   description: "Akubrecah's policy on service fees, automated delivery guarantees, refunds, and payment disputes.",
   alternates: {
     canonical: "https://akubrecah.com/legal/refund",
@@ -58,8 +58,9 @@ export default function RefundPolicyPage() {
             payment processing error.
           </li>
           <li>
-            <strong>Extended unavailability:</strong> The service was down for more than <strong>48 hours</strong>{" "}
-            after your payment and you did not receive the service.
+            <strong>Extended unavailability or upstream KRA outage:</strong> Either our service or the upstream KRA iTax
+            gateway experienced an extended outage of more than <strong>24 hours</strong> after your confirmed payment and
+            no certificate was delivered.
           </li>
         </ul>
       </Section>
@@ -76,11 +77,7 @@ export default function RefundPolicyPage() {
             incorrect KRA PIN, wrong CAPTCHA answers).
           </li>
           <li>
-            Failure caused by <strong>KRA system outages, maintenance, or changes</strong> to the KRA portal that
-            are beyond our control.
-          </li>
-          <li>
-            You changed your mind after the service was initiated or partially completed.
+            You changed your mind after the service was initiated and completed.
           </li>
           <li>
             Your account was suspended or terminated due to a violation of our Terms of Service.

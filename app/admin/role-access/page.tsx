@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const INITIAL_ROLES = [
-  { id: "admin", name: "Super Admin", desc: "Full administrative controls and security configurations." },
+  { id: "super_admin", name: "Super Admin", desc: "Full administrative, user-management, billing, and security controls." },
+  { id: "admin", name: "Admin", desc: "Operational access to CMS content, inquiries, telemetry, and retrieval diagnostics." },
   { id: "auditor", name: "Portal Auditor", desc: "Read-only access to audit logs and system performance." },
-  { id: "operator", name: "Cybercafe Partner", desc: "Bulk returns filing, certificate printing, and client management." },
-  { id: "taxpayer", name: "Registered Taxpayer", desc: "Self-service returns filing, payments, and personal PIN lookups." },
+  { id: "operator", name: "Cybercafe Partner", desc: "High-volume certificate printing and client facilitation under a Cyber Cafe plan." },
+  { id: "taxpayer", name: "Registered Taxpayer", desc: "Self-service PIN retrieval, payments, and personal account controls." },
 ];
 
 const PERMISSIONS = [
   { key: "dashboard", label: "View Dashboard", category: "General Access" },
-  { key: "file_returns", label: "File Tax Return", category: "Core Features" },
+  { key: "file_returns", label: "Tax Calculator & Filing Tools", category: "Core Features" },
   { key: "cert_retrieval", label: "Download Certificates", category: "Core Features" },
   { key: "manage_users", label: "Manage Portal Users", category: "Administration" },
   { key: "system_settings", label: "System Config Settings", category: "Administration" },
@@ -19,7 +20,8 @@ const PERMISSIONS = [
 ];
 
 const DEFAULT_MATRIX: Record<string, Record<string, boolean>> = {
-  admin: { dashboard: true, file_returns: true, cert_retrieval: true, manage_users: true, system_settings: true, security_logs: true },
+  super_admin: { dashboard: true, file_returns: true, cert_retrieval: true, manage_users: true, system_settings: true, security_logs: true },
+  admin: { dashboard: true, file_returns: true, cert_retrieval: true, manage_users: false, system_settings: true, security_logs: true },
   auditor: { dashboard: true, file_returns: false, cert_retrieval: false, manage_users: false, system_settings: false, security_logs: true },
   operator: { dashboard: true, file_returns: true, cert_retrieval: true, manage_users: false, system_settings: false, security_logs: false },
   taxpayer: { dashboard: true, file_returns: true, cert_retrieval: true, manage_users: false, system_settings: false, security_logs: false },
@@ -27,44 +29,93 @@ const DEFAULT_MATRIX: Record<string, Record<string, boolean>> = {
 
 export default function RoleAccessPage() {
   const [matrix, setMatrix] = useState<Record<string, Record<string, boolean>>>(DEFAULT_MATRIX);
-  const [selectedRole, setSelectedRole] = useState("admin");
+  const [selectedRole, setSelectedRole] = useState("super_admin");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 3500);
   };
 
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/settings");
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load saved RBAC matrix");
+        }
+        if (active && data.rbac_matrix && typeof data.rbac_matrix === "object") {
+          setMatrix((prev) => {
+            const merged: Record<string, Record<string, boolean>> = { ...prev };
+            for (const role of INITIAL_ROLES) {
+              const savedRole = data.rbac_matrix[role.id];
+              if (savedRole && typeof savedRole === "object") {
+                merged[role.id] = { ...prev[role.id], ...savedRole };
+              }
+            }
+            return merged;
+          });
+        }
+      } catch (err: any) {
+        if (active) setLoadError(err?.message || "Failed to load RBAC matrix from server.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const handleToggle = (roleId: string, permKey: string) => {
-    // Protect admin from stripping own settings
-    if (roleId === "admin" && permKey === "system_settings") {
-      showToast("Cannot revoke core System Settings permission from Super Admin.");
+    // Protect Super Admin from stripping core settings or user management
+    if (roleId === "super_admin" && (permKey === "system_settings" || permKey === "manage_users")) {
+      showToast("Cannot revoke core System Settings or User Management permissions from Super Admin.");
       return;
     }
-    
-    setMatrix(prev => ({
+
+    const nextGranted = !matrix[roleId]?.[permKey];
+    setMatrix((prev) => ({
       ...prev,
       [roleId]: {
         ...prev[roleId],
-        [permKey]: !prev[roleId][permKey]
-      }
+        [permKey]: nextGranted,
+      },
     }));
-    
-    const roleName = INITIAL_ROLES.find(r => r.id === roleId)?.name || roleId;
-    const permLabel = PERMISSIONS.find(p => p.key === permKey)?.label || permKey;
-    const isGranted = !matrix[roleId][permKey];
-    showToast(`${isGranted ? "Granted" : "Revoked"} "${permLabel}" for ${roleName}`);
+
+    const roleName = INITIAL_ROLES.find((r) => r.id === roleId)?.name || roleId;
+    const permLabel = PERMISSIONS.find((p) => p.key === permKey)?.label || permKey;
+    showToast(`${nextGranted ? "Granted" : "Revoked"} "${permLabel}" for ${roleName} (click Save to persist)`);
   };
 
-  const saveMatrix = () => {
-    // Honesty fix: this matrix is UI-local only and is not persisted to the
-    // server. Say so plainly instead of telling admins RBAC was saved.
-    showToast("Preview only — the access matrix is not yet persisted to the server.");
+  const saveMatrix = async () => {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rbac_matrix: matrix }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to persist RBAC matrix");
+      }
+      showToast("Access matrix saved to database.");
+    } catch (err: any) {
+      showToast("Save failed: " + (err?.message || "Unknown error"));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const resetMatrix = () => {
     setMatrix(DEFAULT_MATRIX);
-    showToast("Permissions matrix reset to factory defaults.");
+    showToast("Permissions matrix reset to defaults (click Save to persist).");
   };
 
   return (
@@ -73,33 +124,44 @@ export default function RoleAccessPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-on-surface">Role & Permissions</h1>
-          <p className="text-on-surface-variant text-sm mt-1">Configure feature visibility and access levels for portal roles.</p>
+          <p className="text-on-surface-variant text-sm mt-1">Configure and persist role capabilities for portal administrators and users.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
             onClick={resetMatrix}
-            className="px-4 py-2 bg-surface-container border border-outline-variant hover:bg-surface-container-high text-sm font-bold text-on-surface rounded-xl transition-all"
+            disabled={isSaving}
+            className="px-4 py-2 bg-surface-container border border-outline-variant hover:bg-surface-container-high text-sm font-bold text-on-surface rounded-xl transition-all disabled:opacity-50"
           >
             Reset Matrix
           </button>
           <button
+            type="button"
             onClick={saveMatrix}
-            className="px-5 py-2 bg-primary text-white hover:bg-primary/90 text-sm font-bold rounded-xl shadow-soft transition-all"
+            disabled={isSaving || isLoading}
+            className="px-5 py-2 bg-primary text-white hover:bg-primary/90 text-sm font-bold rounded-xl shadow-soft transition-all disabled:opacity-50"
           >
-            Save Access Matrix
+            {isSaving ? "Saving..." : "Save Access Matrix"}
           </button>
         </div>
       </div>
 
+      {loadError && (
+        <div role="alert" className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs font-medium text-amber-800 dark:text-amber-300">
+          {loadError} Showing default matrix until saved.
+        </div>
+      )}
+
       {/* Access Matrix Dashboard */}
       <div className="flex flex-col xl:flex-row gap-6 items-start">
         {/* Permission Grid Matrix Table */}
-        <div className="flex-1 min-w-[300px] md:min-w-[600px] bg-surface-container-lowest border border-outline-variant rounded-2xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-outline-variant bg-surface">
+        <div className="flex-1 min-w-0 w-full bg-surface-container-lowest border border-outline-variant rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-outline-variant bg-surface flex items-center justify-between">
             <h3 className="font-bold text-on-surface">System Permissions Matrix</h3>
+            {isLoading && <span className="text-xs text-on-surface-variant">Loading saved policy...</span>}
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[600px]">
+            <table className="w-full text-left border-collapse min-w-[640px]">
               <thead>
                 <tr className="bg-surface-container-low border-b border-outline-variant">
                   <th className="text-xs font-bold text-on-surface-variant uppercase py-3.5 px-5">Permission Module</th>
@@ -120,8 +182,12 @@ export default function RoleAccessPage() {
                       return (
                         <td key={role.id} className="py-4 px-5 text-center">
                           <button
+                            type="button"
+                            role="switch"
+                            aria-checked={isChecked}
+                            aria-label={`${perm.label} for ${role.name}`}
                             onClick={() => handleToggle(role.id, perm.key)}
-                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/20 ${isChecked ? "bg-primary" : "bg-surface-container-high"}`}
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/40 ${isChecked ? "bg-primary" : "bg-surface-container-high"}`}
                           >
                             <span
                               className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isChecked ? "translate-x-5" : "translate-x-0"}`}
@@ -150,7 +216,7 @@ export default function RoleAccessPage() {
                 >
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className={`material-symbols-outlined text-[18px] ${selectedRole === role.id ? "text-primary" : "text-on-surface-variant"}`}>
-                      {role.id === "admin" ? "shield" : role.id === "auditor" ? "visibility" : role.id === "operator" ? "storefront" : "person"}
+                      {role.id === "super_admin" || role.id === "admin" ? "shield" : role.id === "auditor" ? "visibility" : role.id === "operator" ? "storefront" : "person"}
                     </span>
                     <h4 className="font-bold text-on-surface text-sm">{role.name}</h4>
                   </div>
@@ -161,9 +227,9 @@ export default function RoleAccessPage() {
           </div>
 
           <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-5">
-            <h4 className="text-xs font-extrabold text-primary tracking-wider uppercase mb-3">Security Notice</h4>
+            <h4 className="text-xs font-extrabold text-primary tracking-wider uppercase mb-3">Policy Enforcement Note</h4>
             <p className="text-xs text-on-surface-variant leading-relaxed">
-              Any changes made to the Access Matrix instantly alter the session authorization tokens. Revoking a feature will lock users out of their respective screens upon the next API call or page reload.
+              This matrix is persisted to the portal settings store (<code className="font-mono text-[11px]">rbac_matrix</code>). Core privileged API routes (user management, Daraja diagnostics, user migration, and Nil-return actions) strictly enforce server-side <strong className="text-on-surface">Super Admin</strong> verification via Clerk metadata and configured administrator identity.
             </p>
           </div>
         </div>

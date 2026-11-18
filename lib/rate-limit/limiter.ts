@@ -19,12 +19,21 @@ interface MemoryBucket {
 const MAX_BUCKETS = 5000;
 const memoryBuckets = new Map<string, MemoryBucket>();
 
-// Redis Client Singleton with Fast Timeout & Offline Protection
+// Redis Client Singleton with Fast Timeout, Offline Protection & Automatic Recovery
 let redisClient: Redis | null = null;
-let isRedisFailed = false;
+let redisFailedUntil = 0;
+const REDIS_COOLDOWN_MS = 30_000;
+
+function markRedisFailed() {
+  redisFailedUntil = Date.now() + REDIS_COOLDOWN_MS;
+}
+
+function isRedisAvailable(): boolean {
+  return Date.now() >= redisFailedUntil;
+}
 
 function getRedisClient(): Redis | null {
-  if (isRedisFailed) return null;
+  if (!isRedisAvailable()) return null;
   if (redisClient) return redisClient;
 
   const redisUrl = process.env.REDIS_URL;
@@ -39,25 +48,24 @@ function getRedisClient(): Redis | null {
       enableOfflineQueue: false,
       retryStrategy: (times) => {
         if (times > 3) {
-          isRedisFailed = true;
-          return null; // Stop retrying, switch to memory
+          markRedisFailed();
+          return null;
         }
         return Math.min(times * 100, 1000);
       },
     });
 
     client.on('error', (err) => {
-      // Graceful notice without throwing unhandled exceptions
-      if (!isRedisFailed) {
-        log.warn('[RateLimiter notice] Redis unreachable, falling back to in-memory limiter:', err.message);
-        isRedisFailed = true;
+      if (isRedisAvailable()) {
+        log.warn('[RateLimiter notice] Redis unreachable, falling back to in-memory limiter for 30s:', err.message);
       }
+      markRedisFailed();
     });
 
     redisClient = client;
     return client;
   } catch {
-    isRedisFailed = true;
+    markRedisFailed();
     return null;
   }
 }
@@ -121,7 +129,7 @@ export async function checkRateLimit(
 
   const redis = getRedisClient();
 
-  if (redis && !isRedisFailed) {
+  if (redis && isRedisAvailable()) {
     try {
       const pipeline = redis.pipeline();
       pipeline.incr(key);
@@ -148,8 +156,7 @@ export async function checkRateLimit(
         };
       }
     } catch {
-      // Mark Redis failed for subsequent requests in this process lifetime
-      isRedisFailed = true;
+      markRedisFailed();
     }
   }
 

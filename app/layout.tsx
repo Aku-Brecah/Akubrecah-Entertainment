@@ -126,10 +126,6 @@ export default function RootLayout({
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
           signInUrl="/sign-in"
           signUpUrl="/sign-up"
-          taskUrls={{
-            'setup-mfa': '/session-tasks/setup-mfa',
-            'reset-password': '/session-tasks/reset-password',
-          }}
           appearance={{
             layout: {
               unsafe_disableDevelopmentModeWarnings: true,
@@ -150,7 +146,7 @@ export default function RootLayout({
               >
                 Skip to main content
               </a>
-              <div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-hidden bg-background">
+              <div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-x-clip bg-background">
                 <KRAAnnouncementBanner />
                 <AdminLayoutWrapper>
                   {children}

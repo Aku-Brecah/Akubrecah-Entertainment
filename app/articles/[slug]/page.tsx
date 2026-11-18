@@ -86,7 +86,7 @@ export default async function ArticleDetailPage({ params }: Props) {
         description={article.excerpt}
         url={`https://akubrecah.com/articles/${slug}`}
         publishedAt={publishedIso}
-        authorName="Akubrecah Engineering"
+        authorName={article.authorName || 'Akubrecah Engineering'}
         imageUrl={absoluteImage}
         keywords={article.tags}
       />
@@ -100,7 +100,6 @@ export default async function ArticleDetailPage({ params }: Props) {
       />
       {/* Header & Hero */}
       <div className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none" />
         <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-6 relative z-10">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>

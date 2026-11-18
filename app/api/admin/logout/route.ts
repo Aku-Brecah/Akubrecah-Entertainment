@@ -50,6 +50,9 @@ export async function POST(req: NextRequest) {
   return response;
 }
 
-export async function GET(req: NextRequest) {
-  return POST(req);
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: "Method Not Allowed. Use POST to sign out." },
+    { status: 405, headers: { Allow: "POST" } }
+  );
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Cookie Policy | Akubrecah Technologies",
+  title: "Cookie Policy",
   description: "Information about how Akubrecah uses cookies and similar tracking technologies in compliance with privacy regulations.",
   alternates: {
     canonical: "https://akubrecah.com/legal/cookies",
@@ -143,9 +143,9 @@ function CookieCategory({
     red: "border-red-500/20 bg-red-500/5",
   }
   const badgeMap = {
-    green: "bg-green-500/20 text-green-400",
-    amber: "bg-primary/20 text-primary",
-    red: "bg-red-500/20 text-red-400",
+    green: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+    amber: "bg-primary/15 text-primary",
+    red: "bg-red-500/15 text-red-700 dark:text-red-400",
   }
 
   return (
@@ -159,13 +159,13 @@ function CookieCategory({
         </span>
       </div>
       <p className="text-[11px] text-muted-foreground">{description}</p>
-      <div className="space-y-2">
+      <div className="space-y-2 overflow-x-auto">
         {cookies.map((c, i) => (
-          <div key={i} className="grid grid-cols-4 gap-2 text-[10px] border-t border-outline-variant/30 pt-2">
+          <div key={i} className="grid grid-cols-1 sm:grid-cols-4 gap-1.5 sm:gap-2 text-[10px] border-t border-outline-variant/30 pt-2">
             <span className="font-bold text-foreground font-mono">{c.name}</span>
             <span className="text-muted-foreground">{c.provider}</span>
-            <span className="text-muted-foreground col-span-1">{c.purpose}</span>
-            <span className="text-muted-foreground text-right">{c.duration}</span>
+            <span className="text-muted-foreground">{c.purpose}</span>
+            <span className="text-muted-foreground sm:text-right">{c.duration}</span>
           </div>
         ))}
       </div>

@@ -89,7 +89,7 @@ const navSections: NavSection[] = [
     items: [
       { href: "https://mail.akubrecah.com", label: "Mailcow Webmail", icon: Mail, isExternal: true },
       { href: "https://wa.akubrecah.com", label: "WhatsApp Gateway", icon: Smartphone, isExternal: true },
-      { href: "/retrieval-portal", label: "KRA Taxpayer Hub (Dev)", icon: Building2 },
+      { href: "https://kra.akubrecah.com", label: "KRA Taxpayer Hub", icon: Building2, isExternal: true },
       { href: "https://akubrecah.com", label: "Main Agency Website", icon: Globe, isExternal: true },
     ],
   },
@@ -107,8 +107,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isResizing, setIsResizing] = useState(false);
 
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [magicSession, setMagicSession] = useState<{ authenticated: boolean; role?: string; email?: string; phone?: string } | null>(null);
+  const [portalHref, setPortalHref] = useState("/dashboard");
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [unreadInquiriesCount, setUnreadInquiriesCount] = useState<number>(0);
+
+  // Enforce Admin Email Authorization (never match empty strings)
+  const userEmail = (user?.primaryEmailAddress?.emailAddress || "").trim().toLowerCase();
+  const userRole = (user?.publicMetadata?.role as string) || "";
+  const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || "").trim().toLowerCase();
+
+  const isClerkAdmin = Boolean(
+    userEmail &&
+    (
+      (Boolean(configPublicAdminEmail) && userEmail === configPublicAdminEmail) ||
+      userRole === "Super Admin" ||
+      userRole === "Admin"
+    )
+  );
+  const isAuthorizedAdmin = isClerkAdmin || Boolean(magicSession?.authenticated);
 
   // Dynamically load Material Symbols only in Admin view to keep public pages ultra-fast
   useEffect(() => {
@@ -120,13 +137,50 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       link.href = "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap";
       document.head.appendChild(link);
     }
+    if (typeof window !== "undefined" && window.location.hostname.toLowerCase().startsWith("admin.")) {
+      setPortalHref("https://akubrecah.com/dashboard");
+    }
   }, []);
 
+  // Verify magic-cookie / server-side admin session when Clerk alone hasn't authorized the caller
   useEffect(() => {
+    if (!isLoaded) return;
+    if (isClerkAdmin) {
+      setCheckingAuth(false);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/magic-login?check=1", { cache: "no-store" });
+        const data = await res.json().catch(() => null);
+        if (!cancelled) {
+          setMagicSession(data?.authenticated ? data : { authenticated: false });
+        }
+      } catch {
+        if (!cancelled) {
+          setMagicSession({ authenticated: false });
+        }
+      } finally {
+        if (!cancelled) {
+          setCheckingAuth(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isClerkAdmin, user?.id]);
+
+  useEffect(() => {
+    if (!isAuthorizedAdmin) return;
     let active = true;
     const fetchUnread = async () => {
       try {
         const res = await fetch("/api/admin/inquiries?limit=1");
+        if (!res.ok) return;
         const data = await res.json();
         if (active && data.success && data.stats) {
           setUnreadInquiriesCount(data.stats.unread || 0);
@@ -141,7 +195,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       active = false;
       clearInterval(interval);
     };
-  }, [pathname]);
+  }, [pathname, isAuthorizedAdmin]);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -169,35 +223,43 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setMobileDrawerOpen(false);
   }, [pathname]);
 
-  // Load and persist sidebar state
+  // Load and persist sidebar state safely
   useEffect(() => {
     setIsMounted(true);
-    const storedCollapsed = localStorage.getItem("admin-sidebar-collapsed");
-    if (storedCollapsed) {
-      setIsCollapsed(storedCollapsed === "true");
-    } else if (typeof window !== "undefined") {
-      const width = window.innerWidth;
-      if (width >= 768 && width < 1024) {
-        setIsCollapsed(true); // Slim by default on tablets
+    try {
+      const storedCollapsed = localStorage.getItem("admin-sidebar-collapsed");
+      if (storedCollapsed) {
+        setIsCollapsed(storedCollapsed === "true");
+      } else if (typeof window !== "undefined") {
+        const width = window.innerWidth;
+        if (width >= 768 && width < 1024) {
+          setIsCollapsed(true); // Slim by default on tablets
+        }
       }
-    }
 
-    const storedWidth = localStorage.getItem("admin-sidebar-width");
-    if (storedWidth) {
-      const parsed = parseInt(storedWidth, 10);
-      if (!isNaN(parsed) && parsed >= 180 && parsed <= 320) {
-        setSidebarWidth(parsed);
-      } else {
-        setSidebarWidth(256);
-        localStorage.setItem("admin-sidebar-width", "256");
+      const storedWidth = localStorage.getItem("admin-sidebar-width");
+      if (storedWidth) {
+        const parsed = parseInt(storedWidth, 10);
+        if (!isNaN(parsed) && parsed >= 180 && parsed <= 320) {
+          setSidebarWidth(parsed);
+        } else {
+          setSidebarWidth(256);
+          localStorage.setItem("admin-sidebar-width", "256");
+        }
       }
+    } catch {
+      // Storage unavailable (private browsing / restricted context)
     }
   }, []);
 
   const toggleSidebar = () => {
     const next = !isCollapsed;
     setIsCollapsed(next);
-    localStorage.setItem("admin-sidebar-collapsed", String(next));
+    try {
+      localStorage.setItem("admin-sidebar-collapsed", String(next));
+    } catch {
+      // Ignored
+    }
   };
 
   const startResizing = (e: React.MouseEvent | React.TouchEvent) => {
@@ -208,7 +270,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const resetWidth = () => {
     const defaultWidth = 256;
     setSidebarWidth(defaultWidth);
-    localStorage.setItem("admin-sidebar-width", String(defaultWidth));
+    try {
+      localStorage.setItem("admin-sidebar-width", String(defaultWidth));
+    } catch {
+      // Ignored
+    }
   };
 
   // Draggable sidebar resizer
@@ -252,26 +318,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       window.removeEventListener("touchend", stopResizing);
     };
   }, [isResizing]);
-
-  // Enforce Admin Email Authorization
-  const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
-  const userRole = (user?.publicMetadata?.role as string) || "";
-  const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
-
-  const isSuperAdmin = Boolean(
-    userEmail &&
-    (
-      userEmail === configPublicAdminEmail ||
-      userRole === "Super Admin" ||
-      userRole === "Admin"
-    )
-  );
-
-  useEffect(() => {
-    if (isLoaded) {
-      setCheckingAuth(false);
-    }
-  }, [isLoaded, user]);
 
   // Render seamless skeleton shell during initial check (NO distorted text ligatures, NO layout jump)
   if (!isLoaded || checkingAuth) {
@@ -317,12 +363,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // Gate 1: Not signed in at all — Require Admin Email Sign In
-  if (!user) {
+  // Gate 1: Not signed in at all (neither Clerk nor WhatsApp magic session)
+  if (!user && !magicSession?.authenticated) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-surface-container-lowest p-4 relative overflow-hidden font-sans">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/10 rounded-full blur-[130px] pointer-events-none" />
-
         <div className="w-full max-w-md bg-surface border border-outline-variant p-6 sm:p-8 rounded-3xl shadow-2xl relative z-10 space-y-6 text-center">
           <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto text-primary mb-2">
             <Shield className="w-8 h-8" />
@@ -358,7 +402,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   // Gate 2: Signed in, but NOT an authorized administrator
-  if (!isSuperAdmin) {
+  if (!isAuthorizedAdmin) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-surface-container-lowest p-4 relative overflow-hidden font-sans">
         <div className="w-full max-w-md bg-surface border border-outline-variant p-6 sm:p-8 rounded-3xl shadow-2xl relative z-10 space-y-6 text-center">
@@ -556,7 +600,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     )}
 
                     {link.href === "/admin/inquiries" && unreadInquiriesCount > 0 && !isCollapsed && (
-                      <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-black bg-primary text-white shadow-xs">
+                      <span
+                        className={`ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-black shadow-xs ${
+                          isActive ? "bg-white text-primary" : "bg-primary text-white"
+                        }`}
+                      >
                         {unreadInquiriesCount}
                       </span>
                     )}
@@ -581,8 +629,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Sidebar Footer */}
         <div className="mt-auto pt-4 border-t border-outline-variant/60 space-y-1">
-          <Link
-            href="/dashboard"
+          <a
+            href={portalHref}
             className={`flex items-center rounded-xl text-xs font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors ${
               isCollapsed ? "justify-center p-3" : "gap-3 px-3 py-2"
             }`}
@@ -590,7 +638,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <ArrowLeft className="w-4 h-4 shrink-0" />
             {!isCollapsed && <span>Back to Portal</span>}
-          </Link>
+          </a>
 
           <button
             onClick={handleSignOut}
@@ -695,7 +743,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <Icon className="w-4 h-4 shrink-0" />
                         <span className="truncate">{link.label}</span>
                         {link.href === "/admin/inquiries" && unreadInquiriesCount > 0 && (
-                          <span className="ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-black bg-primary text-white shadow-xs">
+                          <span
+                            className={`ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-black shadow-xs ${
+                              isActive ? "bg-white text-primary" : "bg-primary text-white"
+                            }`}
+                          >
                             {unreadInquiriesCount}
                           </span>
                         )}
@@ -711,14 +763,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* Bottom Actions */}
             <div className="pt-4 border-t border-outline-variant/60 space-y-2 mt-auto">
-              <Link
-                href="/dashboard"
+              <a
+                href={portalHref}
                 onClick={() => setMobileDrawerOpen(false)}
                 className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-on-surface-variant hover:bg-surface-container transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Return to Portal</span>
-              </Link>
+              </a>
               <button
                 onClick={() => {
                   setMobileDrawerOpen(false);
@@ -793,13 +845,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* Right Header Badges & Actions */}
           <div className="flex items-center gap-2 sm:gap-3 ml-auto">
-            <Link
-              href="/dashboard"
+            <a
+              href={portalHref}
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant bg-surface-container hover:bg-surface-container-high transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Client Portal</span>
-            </Link>
+            </a>
 
             <Link
               href="/admin/inquiries"

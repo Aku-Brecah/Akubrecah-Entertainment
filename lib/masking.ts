@@ -203,8 +203,11 @@ export function tryResolveKraPin(input?: string | null): string | null {
     try {
       const [ivB64, ctB64, tagB64] = value.slice(PIN_SEAL_PREFIX.length).split('.');
       if (!ivB64 || !ctB64 || !tagB64) return null;
-      const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivB64, 'base64url'));
-      decipher.setAuthTag(Buffer.from(tagB64, 'base64url'));
+      const iv = Buffer.from(ivB64, 'base64url');
+      const tag = Buffer.from(tagB64, 'base64url');
+      if (iv.length !== 12 || tag.length !== 16) return null;
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });
+      decipher.setAuthTag(tag);
       const plaintext = Buffer.concat([
         decipher.update(Buffer.from(ctB64, 'base64url')),
         decipher.final(),

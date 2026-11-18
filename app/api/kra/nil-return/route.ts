@@ -1,6 +1,6 @@
 import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { verifyAdminCaller, isSuperAdminCaller } from '@/lib/admin-auth';
 import { chromium } from 'playwright-core';
 import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
@@ -18,29 +18,6 @@ if (!globalThis.kraSessions) {
   globalThis.kraSessions = activeSessions;
 }
 
-async function verifySuperAdmin(): Promise<boolean> {
-  try {
-    const { userId } = await auth();
-    if (!userId) return false;
-
-    const client = await clerkClient();
-    const currentUser = await client.users.getUser(userId);
-    const email = currentUser.primaryEmailAddress?.emailAddress?.toLowerCase();
-    const role = currentUser.publicMetadata?.role as string;
-    const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || '').toLowerCase();
-    const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
-
-    return (
-      email === configAdminEmail ||
-      email === configPublicAdminEmail ||
-      role === "Super Admin" ||
-      role === "Admin"
-    );
-  } catch {
-    return false;
-  }
-}
-
 function cleanupExpiredSessions() {
   const now = Date.now();
   for (const [sessionId, session] of activeSessions.entries()) {
@@ -54,8 +31,8 @@ function cleanupExpiredSessions() {
 
 export async function POST(req: NextRequest) {
   // Enforce Super Admin authorization: prevent unauthenticated server-side browser spawning
-  const isAuthorized = await verifySuperAdmin();
-  if (!isAuthorized) {
+  const admin = await verifyAdminCaller(req);
+  if (!isSuperAdminCaller(admin)) {
     return NextResponse.json(
       { success: false, error: 'Unauthorized: Nil Returns automated browser filing is restricted to Super Administrators.' },
       { status: 403 }

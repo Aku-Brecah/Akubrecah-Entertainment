@@ -28,10 +28,13 @@ export function AdminLayoutWrapper({
     }
   }, [])
 
-  const isStandalonePage = 
-    pathname?.startsWith('/sign-in') || 
-    pathname?.startsWith('/sign-up') || 
-    pathname?.startsWith('/onboarding') || 
+  const isStandalonePage =
+    pathname?.startsWith('/sign-in') ||
+    pathname?.startsWith('/sign-up') ||
+    pathname?.startsWith('/forgot-password') ||
+    pathname?.startsWith('/sso-callback') ||
+    pathname?.startsWith('/remotion-demo') ||
+    pathname?.startsWith('/onboarding') ||
     pathname?.startsWith('/admin') ||
     pathname?.startsWith('/dashboard') ||
     pathname === '/retrieval-portal' ||

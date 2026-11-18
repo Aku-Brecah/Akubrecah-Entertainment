@@ -8,12 +8,13 @@ export function SiteFooter(): JSX.Element {
   const currentYear = new Date().getFullYear()
 
   const legalLinks = [
-    { label: "Terms of Service", href: "/legal/terms" },
-    { label: "Privacy Policy", href: "/legal/privacy" },
-    { label: "Security Compliance", href: "/legal" },
-    { label: "Verify Certificate", href: "/retrieval-portal" },
-    { label: "KRA Portal", href: "https://itax.kra.go.ke" },
-    { label: "Support Desk", href: "/contact" },
+    { label: "Terms of Service", href: "/legal/terms", external: false },
+    { label: "Privacy Policy", href: "/legal/privacy", external: false },
+    { label: "Disclaimer", href: "/legal/disclaimer", external: false },
+    { label: "Legal & Compliance", href: "/legal", external: false },
+    { label: "Retrieve Certificate", href: "/retrieval-portal", external: false },
+    { label: "Official iTax Portal", href: "https://itax.kra.go.ke", external: true },
+    { label: "Support Desk", href: "/contact", external: false },
   ]
 
   return (
@@ -150,27 +151,39 @@ export function SiteFooter(): JSX.Element {
         {/* Bottom Sub-bar */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-[11px] text-on-surface-variant/80">
-            &copy; {currentYear} Akubrecah Services. Secure KRA Tax Retrieval Portal. State compliance authorized.
+            &copy; {currentYear} Akubrecah Entertainment. Independent software engineering &amp; cyber facilitation services. Not affiliated with KRA.
           </p>
 
           <nav aria-label="Legal navigation" className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            {legalLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-[11px] hover:text-primary transition-colors underline-offset-4 hover:underline"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {legalLinks.map((link) =>
+              link.external ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] hover:text-primary transition-colors underline-offset-4 hover:underline"
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-[11px] hover:text-primary transition-colors underline-offset-4 hover:underline"
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
           </nav>
         </div>
 
         {/* Micro Disclaimer */}
         <div className="mt-4 pt-3 border-t border-outline-variant/40 text-center sm:text-left">
           <p className="text-[10px] text-on-surface-variant/60 leading-tight">
-            Akubrecah Technologies operates independent software engineering solutions and third-party automated compliance gateways. 
-            Government services are also accessible directly via official public portals such as <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">itax.kra.go.ke</a>.
+            Akubrecah Entertainment operates independent software engineering solutions and third-party automated document retrieval facilitation. 
+            Government services are also accessible directly and free of charge via official public portals such as <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">itax.kra.go.ke</a>.
           </p>
         </div>
 

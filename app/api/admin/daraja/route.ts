@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { verifyAdminCaller } from '@/lib/admin-auth';
+import { verifyAdminCaller, isSuperAdminCaller } from '@/lib/admin-auth';
 import { verifyAndFulfillMpesaCheckout } from '@/lib/mpesa-verification';
 import {
   getDarajaConfig,
@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(req: NextRequest) {
   const admin = await verifyAdminCaller(req);
-  if (!admin) {
+  if (!isSuperAdminCaller(admin)) {
     return NextResponse.json(
       { success: false, error: 'Unauthorized: Super Admin access required.' },
       { status: 403 }
@@ -123,7 +123,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   const admin = await verifyAdminCaller(req);
-  if (!admin) {
+  if (!isSuperAdminCaller(admin) || !admin) {
     return NextResponse.json(
       { success: false, error: 'Unauthorized: Super Admin access required.' },
       { status: 403 }
@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
         shortCode: config.shortCode,
         partyB: config.partyB,
         transactionType: config.transactionType,
-        tokenPreview: `${token.slice(0, 8)}...${token.slice(-4)}`,
+        tokenVerified: true,
       });
     }
 
@@ -197,7 +197,8 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const amount = Math.max(1, Math.round(Number(body?.amount) || 20));
+      const rawAmount = Math.round(Number(body?.amount) || 20);
+      const amount = Math.min(Math.max(rawAmount, 1), 5000);
       const rawPin = typeof body?.pin === 'string' ? body.pin.trim().toUpperCase() : '';
       const validPin = /^[A-Z]\d{9}[A-Z]$/.test(rawPin) ? rawPin : undefined;
       const reference = validPin

@@ -36,11 +36,15 @@ function getDarajaTimestamp(): string {
 }
 
 async function darajaFetchWithRetry(url: string, init: RequestInit): Promise<Response> {
-  const res = await fetch(url, init);
+  const withTimeout = (): RequestInit => ({
+    ...init,
+    signal: init.signal || AbortSignal.timeout(15000),
+  });
+  const res = await fetch(url, withTimeout());
   if (res.status === 429) {
     // Safaricom Apigee enforces a strict SpikeArrest burst limit (~2.5 req/s).
     await new Promise((resolve) => setTimeout(resolve, 450));
-    return fetch(url, init);
+    return fetch(url, withTimeout());
   }
   return res;
 }
@@ -596,11 +600,20 @@ export async function queryMpesaStkPushStatus(
     const db = prisma as any;
 
     if (status === 'success') {
+      let persistedTx: any = null;
+      try {
+        if (typeof db.mpesaTransaction?.findUnique === 'function') {
+          persistedTx = await db.mpesaTransaction.findUnique({
+            where: { checkoutRequestId },
+          });
+        }
+      } catch { }
+
       const metaBinding = g.mpesaStkMetaBindings?.[checkoutRequestId];
-      const boundPin = metaBinding?.pin || g.mpesaStkPinBindings?.[checkoutRequestId];
-      const amount = metaBinding?.amount || 20;
-      const phoneNumber = metaBinding?.phone || '';
-      const receiptFromQuery = data?.MpesaReceiptNumber || checkoutRequestId;
+      const boundPin = persistedTx?.pin || metaBinding?.pin || g.mpesaStkPinBindings?.[checkoutRequestId];
+      const amount = Number(persistedTx?.amount ?? metaBinding?.amount ?? Number(process.env.MPESA_DOWNLOAD_FEE_KES || 20));
+      const phoneNumber = persistedTx?.phone || metaBinding?.phone || '';
+      const receiptFromQuery = data?.MpesaReceiptNumber || persistedTx?.mpesaReceiptNumber || checkoutRequestId;
 
       g.mpesaCallbacks[checkoutRequestId] = {
         status: 'success',
@@ -699,13 +712,14 @@ export async function findRecentSuccessfulMpesaPayment(opts: {
       const txs = await db.mpesaTransaction.findMany({
         where: {
           status: 'COMPLETED',
+          redemptionStatus: 'UNUSED',
           createdAt: { gte: since },
           ...(reference
             ? {
               OR: [
                 { checkoutRequestId: reference },
                 { mpesaReceiptNumber: reference },
-                { reference: { contains: reference } },
+                { reference },
               ],
             }
             : {}),
@@ -717,15 +731,21 @@ export async function findRecentSuccessfulMpesaPayment(opts: {
       for (const tx of txs) {
         const txAmount = Number(tx.amount) || 0;
         if (txAmount < minAmountKes) continue;
-        const phoneMatch = normalizedPhone && tx.phone === normalizedPhone;
-        const pinMatch = cleanPin && tx.pin && tx.pin.toUpperCase() === cleanPin;
-        const refMatch =
+        const phoneMatch = Boolean(normalizedPhone && tx.phone === normalizedPhone);
+        const pinMatch = Boolean(cleanPin && tx.pin && tx.pin.toUpperCase() === cleanPin);
+        const refMatch = Boolean(
           reference &&
           (tx.checkoutRequestId === reference ||
             tx.mpesaReceiptNumber === reference ||
-            tx.reference === reference);
+            tx.reference === reference)
+        );
 
-        if (refMatch || (pinMatch && phoneMatch) || pinMatch || phoneMatch) {
+        // SECURITY: Prevent payment replay & cross-user/cross-PIN theft.
+        // Require either an exact reference match (still bounded by phone/pin when supplied)
+        // OR both phone AND pin matching the same unredeemed transaction.
+        const refAllowed = refMatch && (!cleanPin || !tx.pin || pinMatch) && (!normalizedPhone || phoneMatch);
+        const boundAllowed = Boolean(pinMatch && phoneMatch);
+        if (refAllowed || boundAllowed) {
           return {
             found: true,
             reference: tx.mpesaReceiptNumber || tx.checkoutRequestId,
@@ -739,19 +759,21 @@ export async function findRecentSuccessfulMpesaPayment(opts: {
       }
     }
 
-    if (typeof db.certificateDownload?.findFirst === 'function' && (cleanPin || reference)) {
+    if (typeof db.certificateDownload?.findFirst === 'function' && reference) {
       const dl = await db.certificateDownload.findFirst({
         where: {
           createdAt: { gte: since },
-          OR: [
-            ...(reference ? [{ mpesaReceipt: reference }, { checkoutId: reference }] : []),
-            ...(cleanPin ? [{ pin: cleanPin }] : []),
-          ],
+          redemptionStatus: 'ACTIVE',
+          OR: [{ mpesaReceipt: reference }, { checkoutId: reference }],
         },
         orderBy: { createdAt: 'desc' },
       });
 
-      if (dl && (Number(dl.amountCharged) || 0) >= minAmountKes) {
+      if (
+        dl &&
+        (Number(dl.amountCharged) || 0) >= minAmountKes &&
+        (!cleanPin || String(dl.pin || '').toUpperCase() === cleanPin)
+      ) {
         return {
           found: true,
           reference: dl.mpesaReceipt || dl.checkoutId || dl.id,

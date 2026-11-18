@@ -201,11 +201,11 @@ export function AdminGithubReposManager() {
 
   // Bulk action handlers
   const handleBulkAction = async (action: "show_all" | "hide_all" | "reset_defaults") => {
-    const actionLabel = 
-      action === "show_all" 
-        ? "make all 102+ repositories visible on the website" 
-        : action === "hide_all" 
-        ? "hide all repositories from the public website" 
+    const actionLabel =
+      action === "show_all"
+        ? `make all ${stats.total} repositories visible on the website`
+        : action === "hide_all"
+        ? "hide all repositories from the public website"
         : "reset repository visibility to system defaults";
 
     if (!confirm(`Are you sure you want to ${actionLabel}?`)) return;
@@ -246,9 +246,9 @@ export function AdminGithubReposManager() {
             </h2>
             <p className="text-xs text-on-surface-variant max-w-2xl leading-relaxed">
               Enable or disable which public GitHub repositories appear on{" "}
-              <a href="/projects" target="_blank" className="font-mono text-primary font-bold hover:underline">/projects</a>{" "}
+              <a href="https://akubrecah.com/projects" target="_blank" rel="noopener noreferrer" className="font-mono text-primary font-bold hover:underline">/projects</a>{" "}
               and star which ones appear in the top grid on the{" "}
-              <a href="/" target="_blank" className="font-mono text-primary font-bold hover:underline">homepage</a>.
+              <a href="https://akubrecah.com/" target="_blank" rel="noopener noreferrer" className="font-mono text-primary font-bold hover:underline">homepage</a>.
             </p>
           </div>
 

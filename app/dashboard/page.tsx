@@ -7,15 +7,14 @@ import {
   ArrowRight, 
   ShieldCheck, 
   Send,
-  User,
-  ExternalLink,
-  Lock
+  User
 } from "lucide-react";
 import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import prisma, { createSystemLog } from "@/lib/prisma";
 import ProfileWarningPopup from "@/components/profile-warning-popup";
+import { CyberSubscriptionCard } from "@/components/cyber-subscription-card";
 
 export default async function TaxpayerDashboard() {
   const user = await currentUser();
@@ -95,12 +94,12 @@ export default async function TaxpayerDashboard() {
     }
   }
 
-  // 4. Admin privilege check
-  const userEmail = email?.toLowerCase();
-  const userRole = user?.publicMetadata?.role as string;
-  const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || process.env.SUPER_ADMIN_EMAIL || '').toLowerCase();
+  // 4. Admin privilege check (strict non-empty email guard)
+  const userEmail = (email || "").trim().toLowerCase();
+  const userRole = (user?.publicMetadata?.role as string) || "";
+  const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
   const isAdmin =
-    userEmail === configAdminEmail ||
+    (Boolean(userEmail) && Boolean(configAdminEmail) && userEmail === configAdminEmail) ||
     userRole === "Super Admin" ||
     userRole === "Admin";
 
@@ -329,6 +328,9 @@ export default async function TaxpayerDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Cyber Cafe Monthly Subscription & Invoices */}
+      <CyberSubscriptionCard />
 
       {/* Floating warning popup if profile is incomplete */}
       <ProfileWarningPopup isProfileComplete={isProfileComplete} />

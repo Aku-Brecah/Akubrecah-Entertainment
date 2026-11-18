@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useSignUp, useSignIn } from "@clerk/nextjs/legacy"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "motion/react"
 import { 
   Mail, 
   Lock, 
@@ -23,6 +23,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Logo } from "@/components/logo"
+import { isSafeRedirectPath } from "@/lib/edge/routing"
 
 export function CustomSignUp() {
   const { isLoaded, signUp, setActive } = useSignUp()
@@ -43,7 +44,8 @@ export function CustomSignUp() {
     }
   }, [searchParams])
 
-  const redirectUrl = searchParams.get("redirect_url") || (isKra ? "/" : "/dashboard")
+  const rawRedirect = searchParams.get("redirect_url")
+  const redirectUrl = rawRedirect && isSafeRedirectPath(rawRedirect) ? rawRedirect : (isKra ? "/" : "/dashboard")
 
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -233,9 +235,6 @@ export function CustomSignUp() {
     <div className="flex flex-col lg:flex-row w-full min-h-screen font-body-md text-on-surface bg-background overflow-hidden">
       {/* Left Hero Panel (Desktop) */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex-col justify-between p-12 lg:p-16 overflow-hidden border-r border-border/30">
-        {/* Glow Spheres */}
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-red-600/25 rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-500/15 rounded-full blur-[140px] pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:20px_20px] opacity-40 pointer-events-none" />
 
         {/* Brand Logo */}

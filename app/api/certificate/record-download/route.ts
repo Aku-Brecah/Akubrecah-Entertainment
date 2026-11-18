@@ -2,7 +2,7 @@ import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import prisma from '@/lib/prisma';
-import { getOrCreateDbUser, isAdminUser } from '@/lib/subscription';
+import { getOrCreateDbUser, isAdminUser, getUserSubscriptionStatus } from '@/lib/subscription';
 import { recordDownloadSchema, firstIssueMessage } from '@/lib/validation/schemas';
 
 export const maxDuration = 10;
@@ -60,25 +60,18 @@ export async function POST(req: NextRequest) {
       let activeSubId: string | null = null;
 
       if (!isAdmin) {
-        const subDelegate = db.subscription || db.subscriptions;
-        const activeSub = await subDelegate?.findFirst({
-          where: {
-            userId: dbUser.id,
-            status: 'active',
-            expiresAt: { gt: now },
-          },
-        });
-        if (!activeSub) {
+        const subStatus = await getUserSubscriptionStatus(userId);
+        if (!subStatus.isSubscribed || !subStatus.subscription) {
           return NextResponse.json({ success: false, error: 'No active subscription found.' }, { status: 403 });
         }
-        activeSubId = activeSub.id;
+        activeSubId = subStatus.subscription.id;
       }
 
       // Record the subscription / admin download
       const record = await db.certificateDownload?.create({
         data: {
           userId: dbUser.id,
-          clerkId: userId,
+          clerkId: effectiveClerkId,
           pin: pin.toUpperCase(),
           downloadType: isAdmin ? 'admin' : 'subscription',
           amountCharged: 0,

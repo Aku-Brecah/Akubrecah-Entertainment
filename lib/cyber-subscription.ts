@@ -131,24 +131,31 @@ export async function getCyberCafeStatus(whatsappPhone: string): Promise<CyberCa
  */
 export async function incrementCyberCafeDownloadCount(cafeId: string): Promise<void> {
   const db = prisma as any;
-  const todayStr = new Date().toISOString().split('T')[0];
+  // Use East Africa Time (Africa/Nairobi = UTC+3) for Kenya fair-use daily reset
+  const eatNow = new Date(Date.now() + 3 * 60 * 60 * 1000);
+  const todayStr = eatNow.toISOString().split('T')[0];
 
   try {
-    const existing = await db.cyberCafe.findUnique({ where: { id: cafeId } });
-    if (!existing) return;
-
-    const isSameDay = existing.lastDownloadDate === todayStr;
-    const newDaily = isSameDay ? (existing.dailyDownloads + 1) : 1;
-
-    await db.cyberCafe.update({
-      where: { id: cafeId },
+    // Atomic increment when already on today's date; atomic reset if new day
+    const updatedSameDay = await db.cyberCafe.updateMany({
+      where: { id: cafeId, lastDownloadDate: todayStr },
       data: {
         totalDownloads: { increment: 1 },
-        dailyDownloads: newDaily,
-        lastDownloadDate: todayStr,
+        dailyDownloads: { increment: 1 },
         updatedAt: new Date(),
       },
     });
+    if (updatedSameDay.count === 0) {
+      await db.cyberCafe.update({
+        where: { id: cafeId },
+        data: {
+          totalDownloads: { increment: 1 },
+          dailyDownloads: 1,
+          lastDownloadDate: todayStr,
+          updatedAt: new Date(),
+        },
+      });
+    }
   } catch (err: any) {
     log.warn('[incrementCyberCafeDownloadCount] Notice:', err.message);
   }
@@ -157,6 +164,7 @@ export async function incrementCyberCafeDownloadCount(cafeId: string): Promise<v
 /**
  * Activates or renews a Cyber Cafe 30-day unlimited package (KES 500).
  * Stacks 30 days onto remaining time if renewing before expiry.
+ * Strictly idempotent on (checkoutId / mpesaReceipt) inside a transaction.
  */
 export async function activateCyberCafeSubscription(params: {
   cafeName: string;
@@ -192,94 +200,127 @@ export async function activateCyberCafeSubscription(params: {
 
   try {
     const now = new Date();
-    const existing = await db.cyberCafe.findFirst({
-      where: {
-        OR: [
-          { whatsappPhone: cleanWaPhone },
-          { whatsappPhone: cleanWaPhone.startsWith('254') ? '0' + cleanWaPhone.substring(3) : cleanWaPhone },
-          ...(clerkUserId ? [{ clerkUserId }] : []),
-        ],
-      },
-    });
-
-    let newStartsAt = now;
-    let newExpiresAt: Date;
-    let periodStart = now;
-    let isRenewal = false;
-
     const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
-    if (existing && existing.expiresAt && new Date(existing.expiresAt) > now) {
-      // Stack +30 days on top of current expiry date
-      isRenewal = true;
-      periodStart = new Date(existing.expiresAt);
-      newExpiresAt = new Date(new Date(existing.expiresAt).getTime() + THIRTY_DAYS_MS);
-      newStartsAt = existing.startsAt || now;
-    } else {
-      newExpiresAt = new Date(now.getTime() + THIRTY_DAYS_MS);
-    }
+    const runActivation = async (tx: any) => {
+      // Idempotency guard: if an invoice for this checkoutId or mpesaReceipt already exists,
+      // return it without stacking another +30 days.
+      if (checkoutId || mpesaReceipt) {
+        const existingInvoice = await tx.cyberInvoice?.findFirst({
+          where: {
+            OR: [
+              ...(checkoutId ? [{ checkoutId }] : []),
+              ...(mpesaReceipt ? [{ mpesaReceipt }] : []),
+            ],
+          },
+          include: { cyberCafe: true },
+        });
+        if (existingInvoice && existingInvoice.cyberCafe) {
+          const expiresAt = existingInvoice.cyberCafe.expiresAt
+            ? new Date(existingInvoice.cyberCafe.expiresAt)
+            : new Date(existingInvoice.periodEnd);
+          const daysRemaining = Math.max(
+            0,
+            Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          );
+          return {
+            cafe: existingInvoice.cyberCafe,
+            invoice: existingInvoice,
+            daysRemaining,
+            isRenewal: false,
+          };
+        }
+      }
 
-    let cafe: any;
-    if (existing) {
-      cafe = await db.cyberCafe.update({
-        where: { id: existing.id },
-        data: {
-          cafeName: cafeName || existing.cafeName,
-          ownerName: ownerName || existing.ownerName,
-          whatsappPhone: cleanWaPhone,
-          paymentPhone: cleanPayPhone,
-          status: 'active',
-          startsAt: newStartsAt,
-          expiresAt: newExpiresAt,
-          clerkUserId: clerkUserId || existing.clerkUserId,
-          updatedAt: now,
+      const existing = await tx.cyberCafe.findFirst({
+        where: {
+          OR: [
+            { whatsappPhone: cleanWaPhone },
+            { whatsappPhone: cleanWaPhone.startsWith('254') ? '0' + cleanWaPhone.substring(3) : cleanWaPhone },
+            ...(clerkUserId ? [{ clerkUserId }] : []),
+          ],
         },
       });
-    } else {
-      cafe = await db.cyberCafe.create({
+
+      let newStartsAt = now;
+      let newExpiresAt: Date;
+      let periodStart = now;
+      let isRenewal = false;
+
+      if (existing && existing.expiresAt && new Date(existing.expiresAt) > now) {
+        isRenewal = true;
+        periodStart = new Date(existing.expiresAt);
+        newExpiresAt = new Date(new Date(existing.expiresAt).getTime() + THIRTY_DAYS_MS);
+        newStartsAt = existing.startsAt || now;
+      } else {
+        newExpiresAt = new Date(now.getTime() + THIRTY_DAYS_MS);
+      }
+
+      let cafe: any;
+      if (existing) {
+        cafe = await tx.cyberCafe.update({
+          where: { id: existing.id },
+          data: {
+            cafeName: cafeName || existing.cafeName,
+            ownerName: ownerName || existing.ownerName,
+            whatsappPhone: cleanWaPhone,
+            paymentPhone: cleanPayPhone,
+            status: 'active',
+            startsAt: newStartsAt,
+            expiresAt: newExpiresAt,
+            clerkUserId: clerkUserId || existing.clerkUserId,
+            updatedAt: now,
+          },
+        });
+      } else {
+        cafe = await tx.cyberCafe.create({
+          data: {
+            cafeName,
+            ownerName,
+            whatsappPhone: cleanWaPhone,
+            paymentPhone: cleanPayPhone,
+            status: 'active',
+            startsAt: newStartsAt,
+            expiresAt: newExpiresAt,
+            clerkUserId: clerkUserId || null,
+            totalDownloads: 0,
+            dailyDownloads: 0,
+          },
+        });
+      }
+
+      const year = now.getFullYear();
+      const randCode = `${Date.now().toString().slice(-4)}${Math.floor(100 + Math.random() * 900)}`;
+      const invoiceNumber = `INV-CYBER-${year}-${randCode}`;
+
+      const invoice = await tx.cyberInvoice.create({
         data: {
-          cafeName,
-          ownerName,
-          whatsappPhone: cleanWaPhone,
-          paymentPhone: cleanPayPhone,
-          status: 'active',
-          startsAt: newStartsAt,
-          expiresAt: newExpiresAt,
-          clerkUserId: clerkUserId || null,
-          totalDownloads: 0,
-          dailyDownloads: 0,
+          invoiceNumber,
+          cyberCafeId: cafe.id,
+          amount: Number(amountKes),
+          currency: 'KES',
+          mpesaReceipt,
+          checkoutId,
+          status: 'paid',
+          periodStart,
+          periodEnd: newExpiresAt,
+          notes: `30-Day Cyber Cafe Unlimited Package for ${cafe.cafeName}`,
         },
       });
-    }
 
-    // Generate unique invoice number: INV-CYBER-YYYY-XXXXX
-    const year = now.getFullYear();
-    const randCode = Math.floor(10000 + Math.random() * 90000);
-    const invoiceNumber = `INV-CYBER-${year}-${randCode}`;
+      const daysRemaining = Math.max(1, Math.ceil((newExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
-    const invoice = await db.cyberInvoice.create({
-      data: {
-        invoiceNumber,
-        cyberCafeId: cafe.id,
-        amount: Number(amountKes),
-        currency: 'KES',
-        mpesaReceipt,
-        checkoutId,
-        status: 'paid',
-        periodStart,
-        periodEnd: newExpiresAt,
-        notes: `30-Day Cyber Cafe Unlimited Package for ${cafe.cafeName}`,
-      },
-    });
+      return { cafe, invoice, daysRemaining, isRenewal };
+    };
 
-    const daysRemaining = Math.max(1, Math.ceil((newExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    const result =
+      typeof db.$transaction === 'function'
+        ? await db.$transaction(async (tx: any) => runActivation(tx))
+        : await runActivation(db);
 
     return {
       success: true,
-      cafe,
-      invoice,
-      daysRemaining,
-      isRenewal,
+      ...result,
     };
   } catch (error: any) {
     log.error('[activateCyberCafeSubscription] Error:', error.message);

@@ -56,14 +56,15 @@ export async function withReceiptLock<T>(
     resolver = resolve;
   });
 
-  receiptMutexMap.set(normalizedKey, currentTask.then(() => nextTask));
+  const chained = currentTask.then(() => nextTask);
+  receiptMutexMap.set(normalizedKey, chained);
 
   try {
     await currentTask;
     return await task();
   } finally {
     resolver();
-    if (receiptMutexMap.get(normalizedKey) === nextTask) {
+    if (receiptMutexMap.get(normalizedKey) === chained) {
       receiptMutexMap.delete(normalizedKey);
     }
   }

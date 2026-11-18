@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useUser } from "@clerk/nextjs";
 import toast from "react-hot-toast";
 import { 
   Mail, Phone, Building, Calendar, MessageSquare, 
@@ -74,7 +75,10 @@ const STATUS_OPTIONS = [
 ];
 
 export default function AdminInquiriesPage() {
+  const { user } = useUser();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [stats, setStats] = useState<Stats>({
     total: 0,
     unread: 0,
@@ -104,10 +108,11 @@ export default function AdminInquiriesPage() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const fetchInquiries = useCallback(async () => {
+  const fetchInquiries = useCallback(async (overrideSearch?: string, targetPage = 1) => {
     setLoading(true);
     try {
-      let url = `/api/admin/inquiries?q=${encodeURIComponent(searchQuery)}`;
+      const effectiveSearch = overrideSearch !== undefined ? overrideSearch : searchQuery;
+      let url = `/api/admin/inquiries?q=${encodeURIComponent(effectiveSearch)}&page=${targetPage}&limit=25`;
 
       if (activeTab === "unread") {
         url += "&unread=true";
@@ -123,6 +128,8 @@ export default function AdminInquiriesPage() {
       const data = await res.json();
       if (data.success) {
         setInquiries(data.inquiries || []);
+        setPage(data.pagination?.page || targetPage);
+        setTotalPages(data.pagination?.totalPages || 1);
         if (data.stats) {
           setStats(data.stats);
         }
@@ -132,21 +139,24 @@ export default function AdminInquiriesPage() {
             setSelectedInquiry(fresh);
           }
         }
+      } else {
+        toast.error(data.error || "Failed to load inquiries.");
       }
     } catch (err) {
       console.error("Failed to load inquiries:", err);
+      toast.error("Network error loading inquiries.");
     } finally {
       setLoading(false);
     }
   }, [activeTab, searchQuery, selectedInquiry]);
 
   useEffect(() => {
-    fetchInquiries();
+    fetchInquiries(undefined, 1);
   }, [activeTab]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchInquiries();
+    fetchInquiries(searchQuery, 1);
   };
 
   const handleSelectInquiry = async (item: Inquiry) => {
@@ -267,7 +277,10 @@ export default function AdminInquiriesPage() {
           action: "note",
           inquiryId: selectedInquiry.id,
           content: newNote.trim(),
-          authorName: "Admin",
+          authorName:
+            user?.fullName ||
+            user?.primaryEmailAddress?.emailAddress ||
+            "Admin Operator",
         }),
       });
       const data = await res.json();
@@ -419,7 +432,8 @@ export default function AdminInquiriesPage() {
               {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => { setSearchQuery(""); fetchInquiries(); }}
+                  onClick={() => { setSearchQuery(""); fetchInquiries("", 1); }}
+                  aria-label="Clear search"
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface"
                 >
                   <X className="w-3 h-3" />
@@ -541,6 +555,32 @@ export default function AdminInquiriesPage() {
               })
             )}
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-3 py-2 rounded-2xl bg-surface-container-lowest border border-outline-variant text-xs">
+              <span className="text-on-surface-variant">
+                Page <strong className="text-on-surface">{page}</strong> of <strong className="text-on-surface">{totalPages}</strong>
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={page <= 1 || loading}
+                  onClick={() => fetchInquiries(undefined, page - 1)}
+                  className="px-2.5 py-1 rounded-lg bg-surface-container border border-outline-variant font-bold text-on-surface disabled:opacity-40"
+                >
+                  Prev
+                </button>
+                <button
+                  type="button"
+                  disabled={page >= totalPages || loading}
+                  onClick={() => fetchInquiries(undefined, page + 1)}
+                  className="px-2.5 py-1 rounded-lg bg-surface-container border border-outline-variant font-bold text-on-surface disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Pane: Message Viewer & Action Workspace (7 cols on lg) */}
@@ -790,14 +830,14 @@ export default function AdminInquiriesPage() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between pt-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                     <p className="text-[10px] text-on-surface-variant">
                       Sent from your verified engineering domain using configured SMTP / Mailcow transport.
                     </p>
                     <button
                       type="submit"
                       disabled={sendingReply || !replyBody.trim()}
-                      className="h-10 px-5 rounded-xl bg-primary text-white font-bold text-xs flex items-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                      className="h-10 px-5 rounded-xl bg-primary text-white font-bold text-xs flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 shrink-0"
                     >
                       {sendingReply ? (
                         <>

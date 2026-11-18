@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q")?.trim() || "";
-    const limit = Math.min(parseInt(searchParams.get("limit") || "100", 10), 500);
+    const rawLimit = Number.parseInt(searchParams.get("limit") || "100", 10);
+    const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 500) : 100;
 
     const db = prisma as any;
 
@@ -66,7 +67,7 @@ export async function GET(req: NextRequest) {
     const kraLogs = await db.systemLog?.findMany({
       where: {
         OR: [
-          { service: { in: ["KRA-Retrieve", "Certificate-Generation", "M-Pesa-Daraja", "M-Pesa-STK", "KRA-Live-PIN-Checker"] } },
+          { service: { in: ["KRA-Retrieve", "Certificate-Generation", "M-Pesa-Daraja", "M-Pesa-STK", "KRA-Live-PIN-Checker", "KRA-Live-ID-Checker"] } },
           { message: { contains: "PIN", mode: "insensitive" } },
           { message: { contains: "Certificate", mode: "insensitive" } },
         ],
@@ -85,7 +86,8 @@ export async function GET(req: NextRequest) {
       },
     }) || { _sum: { amountCharged: 0 } };
 
-    const totalRevenueKes = revenueAggregate._sum.amountCharged || totalDownloads * 20;
+    // Use real persisted revenue sum (do not fabricate revenue for admin/subscriber downloads)
+    const totalRevenueKes = Number(revenueAggregate?._sum?.amountCharged ?? 0);
 
     return NextResponse.json({
       success: true,

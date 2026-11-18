@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Acceptable Use Policy | Akubrecah Technologies",
+  title: "Acceptable Use Policy",
   description: "Rules governing acceptable and prohibited use of Akubrecah's software engineering and statutory retrieval services.",
   alternates: {
     canonical: "https://akubrecah.com/legal/aup",
@@ -199,17 +199,17 @@ function ProhibitionBlock({
   law: string
 }) {
   return (
-    <div className="rounded-xl border border-red-500/10 bg-red-500/5 p-4 space-y-2">
+    <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 space-y-2">
       <div className="flex items-start gap-2">
-        <span className="text-[9px] font-black text-red-400 font-mono mt-0.5">{number}</span>
-        <h3 className="text-[11px] font-black uppercase tracking-widest text-red-300">{title}</h3>
+        <span className="text-[9px] font-black text-red-700 dark:text-red-400 font-mono mt-0.5">{number}</span>
+        <h3 className="text-[11px] font-black uppercase tracking-widest text-red-800 dark:text-red-300">{title}</h3>
       </div>
       <ul className="list-disc pl-8 space-y-1">
         {items.map((item, i) => (
           <li key={i} className="text-[11px] text-muted-foreground">{item}</li>
         ))}
       </ul>
-      <p className="text-[9px] text-red-400/70 font-bold uppercase tracking-wide pl-1 pt-1 border-t border-red-500/10">
+      <p className="text-[9px] text-red-700 dark:text-red-400/90 font-bold uppercase tracking-wide pl-1 pt-1 border-t border-red-500/15">
         Applicable law: {law}
       </p>
     </div>

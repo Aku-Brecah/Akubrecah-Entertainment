@@ -66,11 +66,15 @@ export default async function ProjectDetailPage({ params }: Props) {
   let project = await getProjectBySlug(slug);
   let githubRepo: any = null;
 
-  // Retrieve GitHub metadata
-  const { repos } = await getAllGithubRepos('Akubrecah');
-  githubRepo = repos.find(
-    (r) => r.name.toLowerCase() === slug.toLowerCase() || (project && project.slug.toLowerCase() === r.name.toLowerCase())
-  );
+  // Retrieve GitHub metadata safely (best-effort; never crashes CMS projects if GitHub is rate-limited)
+  try {
+    const { repos } = await getAllGithubRepos('Akubrecah');
+    githubRepo = repos.find(
+      (r) => r.name.toLowerCase() === slug.toLowerCase() || (project && project.slug.toLowerCase() === r.name.toLowerCase())
+    );
+  } catch {
+    githubRepo = null;
+  }
 
   // If not in database CMS, dynamically construct from GitHub repo
   if (!project) {
@@ -92,7 +96,7 @@ export default async function ProjectDetailPage({ params }: Props) {
         measurableOutcomes: [
           'Enterprise Architecture Delivered',
           'Production Deployment Verified',
-          'Sub-second Processing SLA',
+          'Automated CI/CD & Observability',
         ],
         isFeatured: true,
         isPublished: true,
@@ -127,7 +131,6 @@ export default async function ProjectDetailPage({ params }: Props) {
       />
       {/* Header & Hero */}
       <div className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none" />
         <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 sm:py-10 space-y-5 relative z-10">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
@@ -165,12 +168,12 @@ export default async function ProjectDetailPage({ params }: Props) {
             {/* Live Action Buttons */}
             <div className="flex items-center gap-3 pt-4 flex-wrap">
               {publicLiveUrl && (
-                <a href={publicLiveUrl} target="_blank" rel="noopener noreferrer">
-                  <Button size="sm" className="rounded-xl px-4 bg-primary text-white font-bold hover:bg-primary/90 flex items-center gap-1.5 shadow-xs">
+                <Button asChild size="sm" className="rounded-xl px-4 bg-primary text-white font-bold hover:bg-primary/90 flex items-center gap-1.5 shadow-xs">
+                  <a href={publicLiveUrl} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="w-3.5 h-3.5" />
                     Open Live Deployment
-                  </Button>
-                </a>
+                  </a>
+                </Button>
               )}
             </div>
           </div>
@@ -203,11 +206,11 @@ export default async function ProjectDetailPage({ params }: Props) {
 
           <div className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-soft">
             <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">
-              Target SLA
+              Reliability Tier
             </span>
             <div className="text-xl sm:text-2xl font-black text-on-surface mt-1 flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-primary" />
-              <span>99.98% High Availability</span>
+              <span>High Availability</span>
             </div>
           </div>
 
@@ -327,11 +330,11 @@ export default async function ProjectDetailPage({ params }: Props) {
             <h3 className="text-2xl font-black text-on-surface tracking-tight">Need a similar architecture engineered?</h3>
             <p className="text-xs sm:text-sm text-on-surface-variant">We design and deliver robust digital systems tailored to your specific requirements.</p>
           </div>
-          <Link href="/contact">
-            <Button size="lg" className="rounded-2xl px-6 bg-primary text-white font-bold hover:bg-primary/90 shadow-sm flex items-center gap-2">
+          <Button asChild size="lg" className="rounded-2xl px-6 bg-primary text-white font-bold hover:bg-primary/90 shadow-sm flex items-center gap-2">
+            <Link href="/contact">
               Start Your Project <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
     </div>

@@ -16,8 +16,10 @@ export async function GET(req: NextRequest) {
     const searchQuery = searchParams.get("q")?.trim() || "";
     const channelFilter = searchParams.get("channel") || "all"; // "all" | "web" | "whatsapp"
     const gatewayFilter = searchParams.get("gateway") || "all"; // "all" | "daraja" | "historical"
-    const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 200);
-    const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1);
+    const rawLimit = Number.parseInt(searchParams.get("limit") || "50", 10);
+    const rawPage = Number.parseInt(searchParams.get("page") || "1", 10);
+    const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 50;
+    const page = Number.isFinite(rawPage) ? Math.max(rawPage, 1) : 1;
     const skip = (page - 1) * limit;
 
     const db = prisma as any;
@@ -62,31 +64,96 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const totalDownloadRevenue = allDownloads.reduce((acc, curr) => acc + (Number(curr.amountCharged) || 0), 0);
-    const totalSubRevenue = allSubscriptions.reduce((acc, curr) => acc + (Number(curr.amountPaid) || 0), 0);
-    const totalCyberRevenue = allCyberInvoices.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    // Use uncapped SQL aggregates when Prisma aggregate is available, falling back to fetched rows
+    const sumAgg = async (model: any, field: string, where?: Record<string, any>, fallbackRows?: any[]) => {
+      if (typeof model?.aggregate === "function") {
+        try {
+          const res = await model.aggregate({ where, _sum: { [field]: true } });
+          return Number(res?._sum?.[field] ?? 0);
+        } catch {
+          // Fall back to in-memory sum
+        }
+      }
+      return (fallbackRows || []).reduce((acc, curr) => acc + (Number(curr[field]) || 0), 0);
+    };
+
+    const [
+      totalDownloadRevenue,
+      totalSubRevenue,
+      totalCyberRevenue,
+      todayDownloadRevenue,
+      todaySubRevenue,
+      todayCyberRevenue,
+      sevenDayDownloadRevenue,
+      sevenDaySubRevenue,
+      sevenDayCyberRevenue,
+      thirtyDayDownloadRevenue,
+      thirtyDaySubRevenue,
+      thirtyDayCyberRevenue,
+    ] = await Promise.all([
+      sumAgg(db.certificateDownload, "amountCharged", undefined, allDownloads),
+      sumAgg(db.subscription, "amountPaid", undefined, allSubscriptions),
+      sumAgg(db.cyberInvoice, "amount", undefined, allCyberInvoices),
+      sumAgg(
+        db.certificateDownload,
+        "amountCharged",
+        { createdAt: { gte: startOfToday } },
+        allDownloads.filter((d) => new Date(d.createdAt) >= startOfToday)
+      ),
+      sumAgg(
+        db.subscription,
+        "amountPaid",
+        { createdAt: { gte: startOfToday } },
+        allSubscriptions.filter((s) => new Date(s.createdAt) >= startOfToday)
+      ),
+      sumAgg(
+        db.cyberInvoice,
+        "amount",
+        { createdAt: { gte: startOfToday } },
+        allCyberInvoices.filter((ci) => new Date(ci.createdAt) >= startOfToday)
+      ),
+      sumAgg(
+        db.certificateDownload,
+        "amountCharged",
+        { createdAt: { gte: sevenDaysAgo } },
+        allDownloads.filter((d) => new Date(d.createdAt) >= sevenDaysAgo)
+      ),
+      sumAgg(
+        db.subscription,
+        "amountPaid",
+        { createdAt: { gte: sevenDaysAgo } },
+        allSubscriptions.filter((s) => new Date(s.createdAt) >= sevenDaysAgo)
+      ),
+      sumAgg(
+        db.cyberInvoice,
+        "amount",
+        { createdAt: { gte: sevenDaysAgo } },
+        allCyberInvoices.filter((ci) => new Date(ci.createdAt) >= sevenDaysAgo)
+      ),
+      sumAgg(
+        db.certificateDownload,
+        "amountCharged",
+        { createdAt: { gte: thirtyDaysAgo } },
+        allDownloads.filter((d) => new Date(d.createdAt) >= thirtyDaysAgo)
+      ),
+      sumAgg(
+        db.subscription,
+        "amountPaid",
+        { createdAt: { gte: thirtyDaysAgo } },
+        allSubscriptions.filter((s) => new Date(s.createdAt) >= thirtyDaysAgo)
+      ),
+      sumAgg(
+        db.cyberInvoice,
+        "amount",
+        { createdAt: { gte: thirtyDaysAgo } },
+        allCyberInvoices.filter((ci) => new Date(ci.createdAt) >= thirtyDaysAgo)
+      ),
+    ]);
+
     const totalRevenue = totalDownloadRevenue + totalSubRevenue + totalCyberRevenue;
-
-    // Today's Revenue
-    const todayDownloadRevenue = allDownloads
-      .filter((d) => new Date(d.createdAt) >= startOfToday)
-      .reduce((acc, curr) => acc + (Number(curr.amountCharged) || 0), 0);
-    const todaySubRevenue = allSubscriptions
-      .filter((s) => new Date(s.createdAt) >= startOfToday)
-      .reduce((acc, curr) => acc + (Number(curr.amountPaid) || 0), 0);
-    const todayCyberRevenue = allCyberInvoices
-      .filter((ci) => new Date(ci.createdAt) >= startOfToday)
-      .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
     const todayRevenue = todayDownloadRevenue + todaySubRevenue + todayCyberRevenue;
-
-    // Last 7 & 30 Days Revenue
-    const sevenDayRevenue = allDownloads
-      .filter((d) => new Date(d.createdAt) >= sevenDaysAgo)
-      .reduce((acc, curr) => acc + (Number(curr.amountCharged) || 0), 0);
-
-    const thirtyDayRevenue = allDownloads
-      .filter((d) => new Date(d.createdAt) >= thirtyDaysAgo)
-      .reduce((acc, curr) => acc + (Number(curr.amountCharged) || 0), 0);
+    const sevenDayRevenue = sevenDayDownloadRevenue + sevenDaySubRevenue + sevenDayCyberRevenue;
+    const thirtyDayRevenue = thirtyDayDownloadRevenue + thirtyDaySubRevenue + thirtyDayCyberRevenue;
 
     // Channel Revenue (WhatsApp vs Web)
     const whatsappDownloads = allDownloads.filter((d) => d.clerkId?.startsWith("wa_"));
@@ -187,24 +254,10 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // If session tracking is newly initialized and empty, calculate directly from real downloads
-    if (totalSessions === 0) {
-      pcSessions = webDownloads.length;
-      mobileSessions = whatsappDownloads.length;
-      tabletSessions = 0;
-      totalSessions = pcSessions + mobileSessions;
-
-      if (totalSessions > 0) {
-        osCounts["macOS / Windows PC"] = pcSessions;
-        osCounts["Android / iOS Mobile"] = mobileSessions;
-        browserCounts["Web Browser"] = pcSessions;
-        browserCounts["WhatsApp In-App"] = mobileSessions;
-      }
-    }
-
     const pcPercentage = totalSessions > 0 ? Math.round((pcSessions / totalSessions) * 100) : 0;
     const mobilePercentage = totalSessions > 0 ? Math.round((mobileSessions / totalSessions) * 100) : 0;
-    const tabletPercentage = Math.max(0, 100 - pcPercentage - mobilePercentage);
+    const tabletPercentage =
+      totalSessions > 0 ? Math.max(0, 100 - pcPercentage - mobilePercentage) : 0;
 
     // -------------------------------------------------------------
     // 4. USER CLICKS & ENGAGEMENT FUNNEL
@@ -232,19 +285,13 @@ export async function GET(req: NextRequest) {
           }
         }
       } catch {
-        // Fallback
+        // Fallback: leave real counts as 0 when telemetry table is unavailable
       }
     }
 
-    if (searchesCount === 0) {
-      searchesCount = completedDownloadsCount;
-      maskedViewsCount = completedDownloadsCount;
-      checkoutClicksCount = completedDownloadsCount;
-    }
-
-    const overallConversionRate = searchesCount > 0 
-      ? ((completedDownloadsCount / searchesCount) * 100).toFixed(1)
-      : "100.0";
+    const overallConversionRate = searchesCount > 0
+      ? Math.min(100, (completedDownloadsCount / searchesCount) * 100).toFixed(1)
+      : "0.0";
 
     // -------------------------------------------------------------
     // 5. UNIFIED REAL-TIME TRANSACTION LOGS

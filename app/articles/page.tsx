@@ -43,8 +43,23 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function ArticlesPage() {
-  const articles = await getPublishedArticles();
+export default async function ArticlesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ q?: string }>;
+}) {
+  const resolvedParams = searchParams ? await searchParams : {};
+  const query = (resolvedParams?.q || '').trim().toLowerCase();
+  const allArticles = await getPublishedArticles().catch(() => []);
+  const articles = query
+    ? allArticles.filter(
+        (a) =>
+          a.title.toLowerCase().includes(query) ||
+          a.excerpt.toLowerCase().includes(query) ||
+          a.category.toLowerCase().includes(query) ||
+          (a.tags || []).some((t: string) => t.toLowerCase().includes(query))
+      )
+    : allArticles;
 
   return (
     <div className="min-h-screen bg-background text-on-background">
@@ -56,7 +71,6 @@ export default async function ArticlesPage() {
       />
       {/* Header */}
       <div className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none" />
         <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-5 relative z-10">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
@@ -81,7 +95,18 @@ export default async function ArticlesPage() {
       {/* Articles Feed */}
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-6 md:py-10 space-y-6">
         <div className="space-y-6">
-          {articles.map((article) => (
+          {articles.length === 0 ? (
+            <div className="p-10 rounded-3xl bg-surface-container-lowest border border-outline-variant text-center space-y-3">
+              <p className="text-sm font-bold text-on-surface">
+                {query ? `No articles matched "${resolvedParams?.q}".` : 'No technical articles published yet.'}
+              </p>
+              {query && (
+                <Link href="/articles" className="text-xs font-bold text-primary hover:underline">
+                  Clear search filter
+                </Link>
+              )}
+            </div>
+          ) : articles.map((article) => (
             <article
               key={article.id}
               className="p-6 sm:p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant hover:border-primary/40 transition-all shadow-soft group"

@@ -12,12 +12,12 @@ const envSchema = z.object({
   APP_ENV: z.enum(['development', 'staging', 'production', 'test']).default('development'),
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
 
-  // Database Connection
-  DATABASE_URL: z.string().min(1).default('postgresql://postgres:postgres@localhost:5432/postgres?schema=public'),
+  // Database Connection (never default to real credentials)
+  DATABASE_URL: z.string().default(''),
   DIRECT_URL: z.string().optional(),
 
-  // Authentication (Clerk)
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional().default('pk_live_Y2xlcmsuYWt1YnJlY2FoLmNvbSQ'),
+  // Authentication (Clerk — never default to a live publishable key)
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional().default(''),
   CLERK_SECRET_KEY: z.string().optional(),
   // Fail closed: empty means no admin identity is pre-authorized. Verified at
   // usage sites (must be a non-empty, lowercased email to grant access).
@@ -106,12 +106,21 @@ export function getAppConfig(): AppConfig {
 
   if (!parsed.success) {
     log.error('[Config Error] Invalid environment variables:', parsed.error.format());
-    // In production, log warning; in development, throw or supply safe fallback
-    if (process.env.NODE_ENV === 'production') {
-      log.warn('[Config Notice] Defaulting to safe fallbacks to prevent container crash.');
+    // Strip only the failing keys so valid runtime env vars are preserved instead of wiped
+    const failedKeys = new Set(
+      parsed.error.issues.map((issue) => String(issue.path[0] || ''))
+    );
+    const cleanedEnv: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(rawEnv)) {
+      if (!failedKeys.has(k)) {
+        cleanedEnv[k] = v;
+      }
     }
-    // Return parsed with defaults as far as possible
-    cachedConfig = envSchema.parse({});
+    if (process.env.NODE_ENV === 'production') {
+      log.warn('[Config Notice] Falling back to defaults only for invalid env keys:', Array.from(failedKeys));
+    }
+    const reparsed = envSchema.safeParse(cleanedEnv);
+    cachedConfig = reparsed.success ? reparsed.data : envSchema.parse({});
     return cachedConfig;
   }
 

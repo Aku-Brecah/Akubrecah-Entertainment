@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "motion/react"
 import {
   FileCheck2,
   FileSpreadsheet,
@@ -105,13 +105,13 @@ function FlagshipPortalContent() {
       {/* ============================================================== */}
       {/* 2. FOCUSED HERO WORKSPACE (ZERO SCROLL ACROSS ALL DEVICES) */}
       {/* ============================================================== */}
-      <main className="flex-1 w-full max-w-[1360px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-12 py-3 sm:py-5 space-y-4 sm:space-y-6">
+      <div className="flex-1 w-full max-w-[1360px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-12 py-3 sm:py-5 space-y-4 sm:space-y-6">
 
-        {/* Focused Hero Header from Stitch Design */}
+        {/* Focused Hero Header */}
         <div className="text-center space-y-2 max-w-3xl mx-auto px-1 mb-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant text-xs font-semibold">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>Official Cyber Facilitation Service</span>
+            <span>Independent Cyber Facilitation Service</span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight">
@@ -121,15 +121,15 @@ function FlagshipPortalContent() {
               </>
             ) : (
               <>
-                Assisted Tax Returns <span className="text-primary">Filing (Interactive Demo)</span>
+                Kenya P9 Tax Calculator &amp; <span className="text-primary">Filing Guide</span>
               </>
             )}
           </h1>
 
           <p className="text-xs sm:text-sm text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
             {mode === "retrieval"
-              ? "Enter your National ID or KRA PIN below to generate and download your verified compliance document in seconds."
-              : "Interactive Demo Preview: Test our automated returns preparation workflow. Direct statutory transmission to the KRA gateway is coming soon."}
+              ? "Enter your National ID or KRA PIN below to verify your taxpayer record and download your PDF certificate."
+              : "Calculate Kenyan PAYE, NSSF, SHIF, and Housing Levy estimates before filing directly on the official KRA iTax portal."}
           </p>
         </div>
 
@@ -407,27 +407,27 @@ function FlagshipPortalContent() {
                 },
                 {
                   q: "How much does it cost to retrieve and download the certificate?",
-                  a: "Identity lookup and preview verification are 100% free. Generating and downloading the official high-resolution PDF certificate with instant WhatsApp and Email delivery is only KES 20 (20 bob) per retrieval.",
+                  a: "Identity lookup and masked preview verification are free. Downloading the high-resolution PDF certificate is KES 20 per retrieval via M-Pesa (or unlimited downloads up to 50/day with the KES 500/month Cyber Cafe pass).",
                 },
                 {
                   q: "How fast is the certificate delivered?",
-                  a: "Retrieval and rendering take an average of 2.4 seconds. Upon completing the M-Pesa transaction, your certificate displays instantly on your screen and is simultaneously dispatched to your specified WhatsApp number and email.",
+                  a: "Once Safaricom confirms your M-Pesa payment, your PDF certificate is generated in memory and downloaded directly to your browser immediately. Orders initiated on our WhatsApp bot are delivered directly in the chat.",
                 },
                 {
                   q: "What should I do if the portal returns 'No Record Found'?",
                   a: "A 'No Record Found' result means no KRA PIN is currently associated with that National ID in the statutory database. If you have never registered for a KRA PIN before, you will need to register on the official iTax portal or visit a Huduma Centre.",
                 },
                 {
-                  q: "How do I file KRA Nil Returns online through this portal?",
-                  a: "Toggle the service selector to 'Returns Filing (Demo · Coming Soon)'. You can preview the automated returns calculation workflow in interactive demo mode. Live statutory submissions directly into KRA iTax will be enabled soon.",
+                  q: "Can I file KRA Nil Returns directly on this portal?",
+                  a: "Nil returns and annual income tax returns are submitted directly on the official KRA iTax portal (itax.kra.go.ke). You can use our free Kenya P9 Tax Calculator and Nil Returns checklist here to prepare your figures beforehand.",
                 },
                 {
                   q: "Is this certificate accepted by Kenyan banks, employers, and government agencies?",
-                  a: "Yes. The generated certificate is an official statutory compliance document complete with taxpayer names, PIN number, station, and the standard KRA QR verification code that can be scanned by any smartphone or validation terminal.",
+                  a: "The generated PDF reproduces your live verified KRA taxpayer record with your PIN, station, and QR verification link. Always verify acceptance requirements with your requesting institution or download directly from itax.kra.go.ke.",
                 },
                 {
-                  q: "Is Akubrecah Technologies affiliated with the Kenya Revenue Authority (KRA)?",
-                  a: "Akubrecah Technologies is an independent private software engineering firm and cyber facilitation service provider. We are not the Kenya Revenue Authority. We operate as an independent facilitator under Kenyan commercial law to assist citizens with technical and statutory document retrievals.",
+                  q: "Is Akubrecah Entertainment affiliated with the Kenya Revenue Authority (KRA)?",
+                  a: "No. Akubrecah Entertainment is an independent private software engineering firm and cyber facilitation provider. We are not affiliated with the Kenya Revenue Authority (KRA).",
                 },
               ].map((faq, index) => (
                 <details
@@ -482,7 +482,7 @@ function FlagshipPortalContent() {
 
         </section>
 
-      </main>
+      </div>
 
       {/* ============================================================== */}
       {/* 3. MINIMAL GOVTECH FOOTER */}
@@ -490,7 +490,7 @@ function FlagshipPortalContent() {
       <footer className="mt-auto border-t border-outline-variant/60 bg-surface-container-lowest/80 py-5 sm:py-6 text-xs text-on-surface-variant">
         <div className="w-full max-w-none px-4 sm:px-6 lg:px-10 xl:px-12 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
           <p className="text-[11px] text-on-surface-variant">
-            &copy; {new Date().getFullYear()} Akubrecah Technologies. Independent third-party cyber assistance provider. Not affiliated with the Kenya Revenue Authority (KRA).
+            &copy; {new Date().getFullYear()} Akubrecah Entertainment. Independent third-party cyber assistance provider. Not affiliated with the Kenya Revenue Authority (KRA).
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[11px]">

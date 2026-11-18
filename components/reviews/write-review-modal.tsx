@@ -46,37 +46,31 @@ export function WriteReviewModal({ onReviewSubmitted }: WriteReviewModalProps) {
     if (!name.trim() || !content.trim()) return
 
     setIsSubmitting(true)
+    const review: UserReview = {
+      id: `rev-${Date.now()}`,
+      name: name.trim(),
+      role: role.trim() || "Client",
+      location: location.trim() || "Kenya",
+      category,
+      rating,
+      date: "Just now",
+      content: content.trim(),
+      verified: false,
+      helpfulCount: 0,
+    }
+
+    onReviewSubmitted(review)
+    setIsSubmitting(false)
+    setSubmitted(true)
+
     setTimeout(() => {
-      // Honesty fix: submissions are stored locally as unverified drafts —
-      // nothing here is a "Verified Client" review, no fake counters are
-      // minted, and nothing is displayed as Google-syndicated.
-      const review: UserReview = {
-        id: `rev-${Date.now()}`,
-        name: name.trim(),
-        role: role.trim() || "Client",
-        location: location.trim() || "Kenya",
-        category,
-        rating,
-        date: "Just now",
-        content: content.trim(),
-        verified: false,
-        helpfulCount: 0,
-      }
-
-      onReviewSubmitted(review)
-      setIsSubmitting(false)
-      setSubmitted(true)
-
-      // Reset after a moment and close
-      setTimeout(() => {
-        setSubmitted(false)
-        setOpen(false)
-        setName("")
-        setRole("")
-        setContent("")
-        setRating(5)
-      }, 1600)
-    }, 600)
+      setSubmitted(false)
+      setOpen(false)
+      setName("")
+      setRole("")
+      setContent("")
+      setRating(5)
+    }, 1400)
   }
 
   return (
@@ -110,9 +104,9 @@ export function WriteReviewModal({ onReviewSubmitted }: WriteReviewModalProps) {
             <div className="w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h4 className="text-lg font-black text-on-surface">Thank You for Your Review!</h4>
+            <h4 className="text-lg font-black text-on-surface">Draft Feedback Saved Locally</h4>
             <p className="text-xs text-on-surface-variant max-w-xs">
-              Your feedback has been verified and published to the live community showcase.
+              Your feedback draft has been added to this session preview. To publish a public verified review, please post directly on Google Maps.
             </p>
           </div>
         ) : (
@@ -241,7 +235,7 @@ export function WriteReviewModal({ onReviewSubmitted }: WriteReviewModalProps) {
                 disabled={isSubmitting || !name.trim() || !content.trim()}
                 className="h-10 px-5 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary/90 shadow-md shadow-primary/20"
               >
-                {isSubmitting ? "Publishing..." : "Submit Verified Review"}
+                {isSubmitting ? "Saving..." : "Save Draft Feedback"}
               </Button>
             </div>
           </form>

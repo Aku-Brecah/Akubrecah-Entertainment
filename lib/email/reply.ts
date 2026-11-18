@@ -25,6 +25,15 @@ function sanitizeHeader(value: string): string {
   return value.replace(/[\r\n]+/g, ' ').trim();
 }
 
+function escapeHtml(value: string): string {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /**
  * Builds standard Nodemailer transport using configured SMTP credentials.
  * Supports Akubrecah's Mailcow instance, Postmark, AWS SES, or standard SMTP.
@@ -126,13 +135,13 @@ export async function sendInquiryReply(params: SendReplyParams): Promise<SendRep
       <p>Software Engineering & Digital Innovation • Nairobi, Kenya</p>
     </div>
     <div class="content">
-      <div class="greeting">Dear ${recipientName || 'Valued Client'},</div>
-      <div class="message-text">${body.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+      <div class="greeting">Dear ${escapeHtml(recipientName || 'Valued Client')},</div>
+      <div class="message-text">${escapeHtml(body)}</div>
       ${
         originalMessage
           ? `<div class="quote-box">
               <strong>Your Original Project Brief:</strong><br />
-              ${originalMessage.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+              ${escapeHtml(originalMessage)}
             </div>`
           : ''
       }
@@ -197,7 +206,7 @@ export async function sendAdminNotification(inquiry: {
     await transport.sendMail({
       from: fromAddress,
       to: sanitizeHeader(adminNotificationEmail),
-      subject: `[New Inquiry] ${inquiry.projectType} from ${inquiry.name}`,
+      subject: sanitizeHeader(`[New Inquiry] ${inquiry.projectType} from ${inquiry.name}`),
       text: `New Client Inquiry Received:\n\nName: ${inquiry.name}\nEmail: ${inquiry.email}\nPhone: ${inquiry.phone || 'N/A'}\nCompany: ${inquiry.company || 'N/A'}\nProject: ${inquiry.projectType}\nBudget: ${inquiry.budget || 'N/A'}\n\nMessage:\n${inquiry.message}\n\nManage at: https://akubrecah.com/admin/inquiries`,
     });
   } catch (err) {

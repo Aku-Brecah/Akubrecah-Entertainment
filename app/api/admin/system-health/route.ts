@@ -40,7 +40,7 @@ function createProxyAgent(proxyUrl: string): any {
             const secureSocket = tls.connect({
               socket,
               servername: opts.host,
-              rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
+              rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS !== 'true', // MITM guard: strict TLS unless explicitly opted out
             });
             callback(null, secureSocket);
           } else {
@@ -110,28 +110,76 @@ async function pingClerk(secretKey: string): Promise<{ status: string; latency: 
   }
 }
 
-// 3. KRA Portal check via proxy
+// 3. KRA Portal check via proxy (uses https.request so proxy agent is honoured)
 async function pingKRA(proxyUrl?: string): Promise<{ status: string; latency: number }> {
   const start = Date.now();
-  try {
-    const agent = proxyUrl ? createProxyAgent(proxyUrl) : undefined;
-    const res = await fetch("https://itax.kra.go.ke/KRA-Portal/pinChecker.htm?actionCode=loadPage&viewType=static", {
-      method: "HEAD",
-      agent,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      },
-      // Short timeout to prevent health route hangs
-      signal: AbortSignal.timeout(4000),
-    } as any);
-
-    const latency = Date.now() - start;
-    if (res.ok || res.status === 200 || res.status === 403 || res.status === 302) {
-      return { status: "Operational", latency };
+  return new Promise((resolve) => {
+    try {
+      const agent = proxyUrl ? createProxyAgent(proxyUrl) : undefined;
+      const req = https.request(
+        {
+          hostname: 'itax.kra.go.ke',
+          port: 443,
+          path: '/KRA-Portal/pinChecker.htm?actionCode=loadPage&viewType=static',
+          method: 'HEAD',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          },
+          timeout: 4000,
+          rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS !== 'true',
+          agent,
+        } as any,
+        (res) => {
+          const latency = Date.now() - start;
+          res.resume();
+          const code = res.statusCode || 0;
+          if ((code >= 200 && code < 400) || code === 403) {
+            resolve({ status: 'Operational', latency });
+          } else {
+            resolve({ status: 'Degraded', latency });
+          }
+        }
+      );
+      req.on('timeout', () => {
+        req.destroy();
+        resolve({ status: 'Outage', latency: Date.now() - start });
+      });
+      req.on('error', () => {
+        resolve({ status: 'Outage', latency: Date.now() - start });
+      });
+      req.end();
+    } catch {
+      resolve({ status: 'Outage', latency: Date.now() - start });
     }
-    return { status: "Degraded", latency };
-  } catch (err) {
-    return { status: "Outage", latency: Date.now() - start };
+  });
+}
+
+// 4. Evolution WhatsApp Gateway check
+async function pingEvolutionWhatsApp(): Promise<{ status: string; latency: number; state: string }> {
+  const start = Date.now();
+  const baseUrl = (process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com').replace(/\/$/, '');
+  const instanceName = encodeURIComponent(process.env.EVOLUTION_INSTANCE_NAME || 'akubrecah-kra');
+  const apiKey = process.env.EVOLUTION_API_KEY || '';
+  if (!apiKey) {
+    return { status: 'Unconfigured', latency: 0, state: 'missing_api_key' };
+  }
+  try {
+    const res = await fetch(`${baseUrl}/instance/connectionState/${instanceName}`, {
+      headers: {
+        apikey: apiKey,
+      },
+      signal: AbortSignal.timeout(3500),
+    });
+    const latency = Date.now() - start;
+    if (res.ok) {
+      const data = await res.json();
+      const state = data?.instance?.state || 'unknown';
+      const status = state === 'open' ? 'Operational' : state === 'connecting' ? 'Awaiting QR Scan' : 'Degraded';
+      return { status, latency, state };
+    }
+    return { status: 'Outage', latency: Date.now() - start, state: 'not_found' };
+  } catch {
+    return { status: 'Outage', latency: Date.now() - start, state: 'error' };
   }
 }
 
@@ -146,44 +194,21 @@ export async function GET(req: NextRequest) {
     const clerkSecret = process.env.CLERK_SECRET_KEY || "";
     const dbUrl = process.env.DATABASE_URL || "";
 
-    // Parse Database Host
-    let dbHost = "ep-calm-glade-a4i061nd-pooler.us-east-1.aws.neon.tech";
+    // Parse Database Host from DATABASE_URL (no hardcoded external host)
+    let dbHost = "";
     let dbPort = 5432;
     try {
       if (dbUrl) {
         const tempUrl = dbUrl.replace(/^postgres(ql)?:\/\//, "http://");
         const parsed = new URL(tempUrl);
-        dbHost = parsed.hostname || dbHost;
+        dbHost = parsed.hostname || "";
         dbPort = parsed.port ? parseInt(parsed.port, 10) : dbPort;
       }
     } catch {}
 
-// 4. Evolution WhatsApp Gateway check
-async function pingEvolutionWhatsApp(): Promise<{ status: string; latency: number; state: string }> {
-  const start = Date.now();
-  try {
-    const res = await fetch("https://wa.akubrecah.com/instance/connectionState/akubrecah-kra", {
-      headers: {
-        apikey: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || "",
-      },
-      signal: AbortSignal.timeout(3500),
-    });
-    const latency = Date.now() - start;
-    if (res.ok) {
-      const data = await res.json();
-      const state = data?.instance?.state || "unknown";
-      const status = state === "open" ? "Operational" : state === "connecting" ? "Awaiting QR Scan" : "Degraded";
-      return { status, latency, state };
-    }
-    return { status: "Outage", latency: Date.now() - start, state: "not_found" };
-  } catch {
-    return { status: "Outage", latency: Date.now() - start, state: "error" };
-  }
-}
-
     // Perform concurrent checks
     const [dbLatency, clerkRes, kraRes, waRes] = await Promise.all([
-      pingDatabase(dbHost, dbPort),
+      dbHost ? pingDatabase(dbHost, dbPort) : Promise.resolve(-1),
       pingClerk(clerkSecret),
       pingKRA(proxyUrl),
       pingEvolutionWhatsApp(),

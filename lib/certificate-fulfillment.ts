@@ -413,6 +413,19 @@ export async function generateEtrReceiptImageBuffer(opts: {
     const width = 440;
     const height = 930;
 
+    const escapeXml = (s: unknown) =>
+      String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const safeReceipt = escapeXml(cleanReceipt);
+    const safeTaxpayerName = escapeXml(displayTaxpayerName);
+    const safePin = escapeXml(cleanPin);
+    const safePhone = escapeXml(formattedPhone);
+
     const svg = `
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -433,36 +446,36 @@ export async function generateEtrReceiptImageBuffer(opts: {
 
       <!-- Top Tear Indication -->
       <line x1="16" y1="20" x2="${width - 16}" y2="20" class="divider" />
-      <text x="220" y="24" class="mono center muted" font-size="9">- - - - - - OFFICIAL ETR FISCAL SLIP - - - - - -</text>
+      <text x="220" y="24" class="mono center muted" font-size="9">- - - - - - OFFICIAL PAYMENT RECEIPT - - - - - -</text>
 
       <!-- Brand Logos: Akubrecah & KRA side-by-side -->
       ${akubrecahLogoDataUrl ? `<image href="${akubrecahLogoDataUrl}" x="116" y="38" width="145" height="46" preserveAspectRatio="xMidYMid meet" />` : ''}
       ${kraLogoDataUrl ? `<image href="${kraLogoDataUrl}" x="277" y="38" width="46" height="46" preserveAspectRatio="xMidYMid meet" />` : ''}
 
       <!-- Header -->
-      <text x="220" y="110" class="mono bold center" font-size="18">AKUBRECAH TECHNOLOGIES LTD</text>
+      <text x="220" y="110" class="mono bold center" font-size="18">AKUBRECAH ENTERTAINMENT</text>
       <text x="220" y="131" class="mono bold center" font-size="13">KRA COMPLIANCE &amp; RETRIEVAL PORTAL</text>
-      <text x="220" y="153" class="mono bold center" font-size="14">OFFICIAL ETR FISCAL TAX INVOICE</text>
+      <text x="220" y="153" class="mono bold center" font-size="14">PAYMENT CONFIRMATION RECEIPT</text>
       <text x="220" y="173" class="mono center muted" font-size="11">NAIROBI, KENYA | TEL: +254 791 497 858</text>
       <text x="220" y="191" class="mono bold center" font-size="12">PIN: P052184920K | VAT NO: 052184920K</text>
-      <text x="220" y="209" class="mono center muted" font-size="11">DEVICE CU SERIAL: ACR-TIMS-2026-08426</text>
+      <text x="220" y="209" class="mono center muted" font-size="11">REF: ${safeReceipt}</text>
 
       <!-- Divider -->
       <line x1="24" y1="225" x2="${width - 24}" y2="225" class="divider" />
 
       <!-- Transaction Meta -->
-      <text x="28" y="245" class="mono" font-size="12">DATE: ${dateStr}</text>
-      <text x="${width - 28}" y="245" class="mono right" font-size="12">TIME: ${timeStr}</text>
+      <text x="28" y="245" class="mono" font-size="12">DATE: ${escapeXml(dateStr)}</text>
+      <text x="${width - 28}" y="245" class="mono right" font-size="12">TIME: ${escapeXml(timeStr)}</text>
 
-      <text x="28" y="265" class="mono bold" font-size="12">RECEIPT NO: ${cleanReceipt}</text>
-      <text x="28" y="285" class="mono" font-size="12">CASHIER: JARVIS AUTO-AGENT</text>
+      <text x="28" y="265" class="mono bold" font-size="12">RECEIPT NO: ${safeReceipt}</text>
+      <text x="28" y="285" class="mono" font-size="12">CHANNEL: AUTOMATED PORTAL</text>
 
       <line x1="24" y1="297" x2="${width - 24}" y2="297" class="divider" />
 
       <!-- Taxpayer Details -->
-      <text x="28" y="317" class="mono bold" font-size="12">TAXPAYER: ${displayTaxpayerName}</text>
-      <text x="28" y="337" class="mono bold" font-size="13">KRA PIN: ${cleanPin}</text>
-      <text x="28" y="357" class="mono" font-size="12">PHONE: ${formattedPhone}</text>
+      <text x="28" y="317" class="mono bold" font-size="12">TAXPAYER: ${safeTaxpayerName}</text>
+      <text x="28" y="337" class="mono bold" font-size="13">KRA PIN: ${safePin}</text>
+      <text x="28" y="357" class="mono" font-size="12">PHONE: ${safePhone}</text>
 
       <!-- Line Items Table -->
       <line x1="24" y1="369" x2="${width - 24}" y2="369" class="solid-div" />
@@ -509,19 +522,19 @@ export async function generateEtrReceiptImageBuffer(opts: {
       <line x1="24" y1="633" x2="${width - 24}" y2="633" class="solid-div" />
 
       <!-- M-Pesa Info -->
-      <text x="28" y="655" class="mono bold" font-size="13">M-PESA REF: ${cleanReceipt}</text>
+      <text x="28" y="655" class="mono bold" font-size="13">M-PESA REF: ${safeReceipt}</text>
       <text x="28" y="675" class="mono" font-size="12">PAYMENT MODE: M-PESA EXPRESS</text>
-      <text x="28" y="693" class="mono muted" font-size="11">INTERNAL TIMS CODE: 8F3A-C94B-20E1-77FA</text>
+      <text x="28" y="693" class="mono muted" font-size="11">VERIFIED VIA SAFARICOM DARAJA</text>
 
       <line x1="24" y1="707" x2="${width - 24}" y2="707" class="divider" />
 
       <!-- QR Code Section -->
       <image href="${qrDataUrl}" x="150" y="720" width="140" height="140" />
-      <text x="220" y="873" class="mono bold center" font-size="11">SCAN TO VERIFY FISCAL RECEIPT</text>
+      <text x="220" y="873" class="mono bold center" font-size="11">SCAN TO VERIFY RECEIPT</text>
       <text x="220" y="889" class="mono center muted" font-size="9">https://kra.akubrecah.com</text>
 
       <line x1="24" y1="901" x2="${width - 24}" y2="901" class="divider" />
-      <text x="220" y="913" class="mono center muted" font-size="9">- - - - - - KEEP THIS RECEIPT FOR TAX AUDIT - - - - - -</text>
+      <text x="220" y="913" class="mono center muted" font-size="9">- - - - - - KEEP THIS RECEIPT FOR YOUR RECORDS - - - - - -</text>
     </svg>
     `;
 
@@ -600,19 +613,36 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
       where: { checkoutId },
     });
 
+    if (downloadRecord && (downloadRecord.downloadCount || 0) > 0) {
+      log.info(`[Fulfillment] Duplicate fulfillment skipped for already-delivered checkoutId ${checkoutId}`);
+      return { success: true };
+    }
+
     if (!downloadRecord && db.certificateDownload) {
-      downloadRecord = await db.certificateDownload.create({
-        data: {
-          userId: dbUser.id,
-          clerkId: 'wa_' + userPhone,
-          pin: cleanPin,
-          downloadType: isCyberSubscription ? 'cyber_subscription' : 'pay_per_download',
-          amountCharged: amount,
-          currency: 'KES',
-          mpesaReceipt: receiptNum,
-          checkoutId: checkoutId,
-        },
-      });
+      try {
+        downloadRecord = await db.certificateDownload.create({
+          data: {
+            userId: dbUser.id,
+            clerkId: 'wa_' + userPhone,
+            pin: cleanPin,
+            downloadType: isCyberSubscription ? 'cyber_subscription' : 'pay_per_download',
+            amountCharged: amount,
+            currency: 'KES',
+            mpesaReceipt: receiptNum,
+            checkoutId: checkoutId,
+            downloadCount: 0,
+          },
+        });
+      } catch (createErr: any) {
+        if (createErr?.code === 'P2002') {
+          downloadRecord = await db.certificateDownload.findFirst({ where: { checkoutId } });
+          if (downloadRecord && (downloadRecord.downloadCount || 0) > 0) {
+            return { success: true };
+          }
+        } else {
+          throw createErr;
+        }
+      }
     }
 
     // 3. Generate Certificate PDF Buffer (pure in-memory, authentic registration date, fully unmasked)
@@ -634,11 +664,12 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
       phoneNumber: (!isMaskedVal(passed.phone_number) ? passed.phone_number : (!isMaskedVal(passed.phoneNumber) ? passed.phoneNumber : (cachedRecord?.phone_number || liveProfile?.phoneNumber || userPhone))),
     });
 
-    // 4. Deliver via n8n workflow (so it reflects on n8n) or direct WhatsApp
+    // 4. Deliver directly via WhatsApp (Evolution API)
+    let deliveredDirect = false;
     if (!opts.skipDirectWhatsAppDocument) {
       const caption = isCyberSubscription
-        ? `📄 *KRA PIN Certificate*\n• Taxpayer: *${resolvedName}*\n• PIN: *${cleanPin}*\n• Cyber Package: *Active*\n\n🌐 https://kra.akubrecah.com`
-        : `📄 *KRA PIN Certificate*\n• Taxpayer: *${resolvedName}*\n• PIN: *${cleanPin}*\n• Ref: *${receiptNum}*\n• Fee: *KES 20.00*\n\n🌐 Portal: https://kra.akubrecah.com`;
+        ? `KRA PIN Certificate\nTaxpayer: ${resolvedName}\nPIN: ${cleanPin}\nCyber Package: Active`
+        : `KRA PIN Certificate\nTaxpayer: ${resolvedName}\nPIN: ${cleanPin}\nRef: ${receiptNum}`;
 
       const certRes = await sendEvolutionDocument({
         phone: userPhone,
@@ -649,77 +680,82 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
 
       if (!certRes.success) {
         log.error('[Fulfillment] Failed to send certificate document:', certRes.error);
+        return { success: false, error: certRes.error || 'WhatsApp document delivery failed' };
+      }
+      deliveredDirect = true;
+    }
+
+    // 5. Optional n8n notification webhook (only when explicitly configured; never send master secrets in JSON body)
+    const n8nWebhookUrl = process.env.N8N_KRA_DELIVERY_WEBHOOK;
+    if (n8nWebhookUrl) {
+      try {
+        const n8nHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (process.env.N8N_DISPATCH_SECRET) {
+          n8nHeaders['x-service-secret'] = process.env.N8N_DISPATCH_SECRET;
+        }
+        const n8nRes = await fetch(n8nWebhookUrl, {
+          method: 'POST',
+          headers: n8nHeaders,
+          signal: AbortSignal.timeout(8000),
+          body: JSON.stringify({
+            phone: userPhone,
+            pin: cleanPin,
+            downloadId: downloadRecord?.id || 'dl_' + Date.now(),
+            mpesaReceipt: receiptNum,
+            amount: isCyberSubscription ? 0 : (amount || 20),
+            taxpayerName: resolvedName,
+            appUrl: 'https://kra.akubrecah.com',
+            deliveredDirect,
+          }),
+        });
+
+        if (!n8nRes.ok && opts.skipDirectWhatsAppDocument) {
+          log.warn('[Fulfillment] n8n webhook returned status', n8nRes.status, '- executing direct fallback');
+          const fbRes = await sendEvolutionDocument({
+            phone: userPhone,
+            pdfBuffer: certBuffer,
+            fileName: `KRA_PIN_Certificate_${cleanPin}.pdf`,
+            caption: `KRA PIN Certificate\nTaxpayer: ${resolvedName}\nPIN: ${cleanPin}\nRef: ${receiptNum}`,
+          });
+          if (!fbRes.success) {
+            return { success: false, error: fbRes.error || 'Fallback WhatsApp delivery failed' };
+          }
+        }
+      } catch (n8nErr: any) {
+        log.warn('[Fulfillment] n8n delivery webhook error:', n8nErr.message);
+        if (opts.skipDirectWhatsAppDocument) {
+          const fbRes = await sendEvolutionDocument({
+            phone: userPhone,
+            pdfBuffer: certBuffer,
+            fileName: `KRA_PIN_Certificate_${cleanPin}.pdf`,
+            caption: `KRA PIN Certificate\nTaxpayer: ${resolvedName}\nPIN: ${cleanPin}\nRef: ${receiptNum}`,
+          });
+          if (!fbRes.success) {
+            return { success: false, error: fbRes.error || 'Fallback WhatsApp delivery failed' };
+          }
+        }
       }
     }
 
-    // 5. Trigger n8n delivery workflow so delivery visibly reflects in n8n execution monitor
-    const n8nWebhookUrl = process.env.N8N_KRA_DELIVERY_WEBHOOK || 'https://n8n.akubrecah.com/webhook/kra-delivery';
-    try {
-      const n8nRes = await fetch(n8nWebhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: userPhone,
-          pin: cleanPin,
-          downloadId: downloadRecord?.id || 'dl_' + Date.now(),
-          mpesaReceipt: receiptNum,
-          amount: isCyberSubscription ? 0 : (amount || 20),
-          taxpayerName: resolvedName,
-          appUrl: 'https://kra.akubrecah.com',
-          evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
-          instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment',
-          serviceSecret: process.env.N8N_DISPATCH_SECRET || process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
-          apiKey: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
-        }),
-      });
-
-      if (!n8nRes.ok && opts.skipDirectWhatsAppDocument) {
-        // Fallback: Send directly if n8n returned error
-        log.warn('[Fulfillment] n8n webhook returned status', n8nRes.status, '- executing direct fallback');
-        await sendEvolutionDocument({
-          phone: userPhone,
-          pdfBuffer: certBuffer,
-          fileName: `KRA_PIN_Certificate_${cleanPin}.pdf`,
-          caption: `📄 *KRA PIN Certificate*\n• Taxpayer: *${resolvedName}*\n• PIN: *${cleanPin}*\n• Ref: *${receiptNum}*\n\n🌐 https://kra.akubrecah.com`,
-        });
-      }
-    } catch (n8nErr: any) {
-      log.warn('[Fulfillment] n8n delivery webhook error:', n8nErr.message);
-      if (opts.skipDirectWhatsAppDocument) {
-        await sendEvolutionDocument({
-          phone: userPhone,
-          pdfBuffer: certBuffer,
-          fileName: `KRA_PIN_Certificate_${cleanPin}.pdf`,
-          caption: `📄 *KRA PIN Certificate*\n• Taxpayer: *${resolvedName}*\n• PIN: *${cleanPin}*\n• Ref: *${receiptNum}*\n\n🌐 https://kra.akubrecah.com`,
-        });
-      }
+    // Mark download record as delivered to make subsequent retries idempotent
+    if (downloadRecord?.id && typeof db.certificateDownload?.update === 'function') {
+      await db.certificateDownload
+        .update({
+          where: { id: downloadRecord.id },
+          data: { downloadCount: { increment: 1 }, lastDownloadedAt: new Date() },
+        })
+        .catch(() => {});
     }
 
     // 8. Update conversation step to COMPLETED and end active session
-    let conversation = await db.ai_conversations?.findFirst({
+    const conversation = await db.ai_conversations?.findFirst({
       where: {
         channel: 'whatsapp',
         user_phone: userPhone,
         status: 'active',
       },
+      orderBy: { updated_at: 'desc' },
     });
-
-    if (!conversation && checkoutId) {
-      try {
-        const convs = await db.ai_conversations?.findMany({
-          where: {
-            channel: 'whatsapp',
-            status: 'active',
-          },
-        });
-        conversation = convs?.find((c: any) => {
-          const meta = c.metadata as any;
-          return meta?.checkoutId === checkoutId;
-        });
-      } catch (findErr: any) {
-        log.warn('[Fulfillment] Conversation checkoutId fallback lookup notice:', findErr.message);
-      }
-    }
 
     if (conversation) {
       const meta = (conversation.metadata as any) || {};
@@ -739,9 +775,9 @@ export async function fulfillWhatsAppCertificateDelivery(opts: {
     await createSystemLog({
       level: 'info',
       service: 'WhatsApp-Fulfillment',
-      message: `Delivered KRA Certificate and Receipt to WhatsApp ***${userPhone.slice(-3)} for PIN ***${cleanPin.slice(-3)}`,
-      actor: `wa_${userPhone}`,
-      details: { pin: cleanPin, checkoutId, receiptNum, amount },
+      message: `Delivered KRA Certificate to WhatsApp ***${userPhone.slice(-3)}`,
+      actor: `wa_***${userPhone.slice(-3)}`,
+      details: { checkoutId, receiptNum, amount },
     });
 
     return { success: true };

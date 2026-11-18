@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   // SECURITY / hygiene: only registry-defined flags are queryable. Arbitrary
   // keys bypass the flag cache and turn this endpoint into a Postgres
   // existence oracle over service_settings keys.
-  if (!FEATURE_FLAGS[key]) {
+  if (!Object.prototype.hasOwnProperty.call(FEATURE_FLAGS, key)) {
     return NextResponse.json({ error: 'Unknown flag key' }, { status: 404 });
   }
 

@@ -1,5 +1,6 @@
 import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import { verifyAdminCaller } from '@/lib/admin-auth';
 
@@ -56,10 +57,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    revalidatePath('/services');
+    revalidatePath('/solutions');
+
     return NextResponse.json({ success: true, service });
   } catch (error: any) {
     log.error('[API Admin Services POST Error]:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to create service.' }, { status: 500 });
   }
 }
 
@@ -71,21 +75,42 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { id, ...data } = body;
+    const id = typeof body.id === 'string' ? body.id.trim() : '';
 
     if (!id) {
       return NextResponse.json({ success: false, error: 'Service ID is required.' }, { status: 400 });
     }
 
+    // Explicit field allowlist to prevent mass assignment
+    const updateData: Record<string, unknown> = {};
+    if (typeof body.title === 'string') updateData.title = body.title.trim();
+    if (typeof body.slug === 'string') {
+      updateData.slug = body.slug
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    }
+    if (typeof body.tagline === 'string') updateData.tagline = body.tagline.trim();
+    if (typeof body.description === 'string') updateData.description = body.description.trim();
+    if (typeof body.icon === 'string') updateData.icon = body.icon.trim();
+    if (Array.isArray(body.deliverables)) updateData.deliverables = body.deliverables.map(String);
+    if (Array.isArray(body.technologies)) updateData.technologies = body.technologies.map(String);
+    if (body.priceStarting !== undefined) updateData.priceStarting = typeof body.priceStarting === 'string' && body.priceStarting.trim() ? body.priceStarting.trim() : null;
+    if (typeof body.isFeatured === 'boolean') updateData.isFeatured = body.isFeatured;
+    if (body.displayOrder !== undefined && Number.isFinite(Number(body.displayOrder))) updateData.displayOrder = Number(body.displayOrder);
+
     const service = await prisma.serviceOffering.update({
       where: { id },
-      data,
+      data: updateData,
     });
+
+    revalidatePath('/services');
+    revalidatePath('/solutions');
 
     return NextResponse.json({ success: true, service });
   } catch (error: any) {
     log.error('[API Admin Services PUT Error]:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to update service.' }, { status: 500 });
   }
 }
 
@@ -105,9 +130,12 @@ export async function DELETE(req: NextRequest) {
 
     await prisma.serviceOffering.delete({ where: { id } });
 
+    revalidatePath('/services');
+    revalidatePath('/solutions');
+
     return NextResponse.json({ success: true, message: 'Service deleted successfully.' });
   } catch (error: any) {
     log.error('[API Admin Services DELETE Error]:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to delete service.' }, { status: 500 });
   }
 }

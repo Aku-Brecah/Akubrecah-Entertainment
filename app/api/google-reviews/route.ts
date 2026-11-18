@@ -17,7 +17,7 @@ export interface GoogleReview {
 export interface GoogleReviewsResponse {
   success: boolean;
   businessName: string;
-  rating: number;
+  rating: number | null;
   totalReviews: number;
   googleMapsUrl: string;
   googleWriteReviewUrl: string;
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     const defaultMapsUrl = customMapsUrl || `https://www.google.com/maps/search/?api=1&query=${businessQuery}`;
     const defaultWriteReviewUrl = customWriteUrl || (placeId
       ? `https://search.google.com/local/writereview?placeid=${placeId}`
-      : `https://www.google.com/search?q=${businessQuery}#lrd=0x0:0x0,3`);
+      : defaultMapsUrl);
 
     // 2. If API Key and Place ID are present, fetch live Google Places data
     if (apiKey && placeId) {
@@ -64,7 +64,10 @@ export async function GET(req: NextRequest) {
         placeId
       )}&fields=name,rating,reviews,user_ratings_total,url&key=${encodeURIComponent(apiKey)}`;
 
-      const res = await fetch(placesUrl, { next: { revalidate: 3600 } });
+      const res = await fetch(placesUrl, {
+        next: { revalidate: 3600 },
+        signal: AbortSignal.timeout(8000),
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.status === 'OK' && data.result) {
@@ -73,7 +76,7 @@ export async function GET(req: NextRequest) {
             author_name: r.author_name || 'Verified Google Reviewer',
             author_url: r.author_url || result.url || defaultMapsUrl,
             profile_photo_url: r.profile_photo_url || '',
-            rating: Number(r.rating) || 5,
+            rating: Number(r.rating) || 0,
             relative_time_description: r.relative_time_description || 'Recently',
             text: r.text || '',
             time: r.time,
@@ -82,7 +85,7 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({
             success: true,
             businessName: result.name || 'Akubrecah Entertainment',
-            rating: Number(result.rating) || 5.0,
+            rating: typeof result.rating === 'number' ? result.rating : null,
             totalReviews: Number(result.user_ratings_total) || reviews.length,
             googleMapsUrl: result.url || defaultMapsUrl,
             googleWriteReviewUrl: defaultWriteReviewUrl,
@@ -93,25 +96,23 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 3. Fallback when Google Places API key is not yet configured or pending API credentials:
-    // Return live Google Business Profile metadata with direct links to Google Maps reviews.
-    // Absolutely NO fake hardcoded names or dummy reviews are served.
+    // 3. Honest unconfigured fallback — zero fabricated ratings or reviews
     return NextResponse.json({
       success: true,
       businessName: 'Akubrecah Entertainment',
-      rating: 5.0,
+      rating: null,
       totalReviews: 0,
       googleMapsUrl: defaultMapsUrl,
       googleWriteReviewUrl: defaultWriteReviewUrl,
       reviews: [],
-      source: 'google_business_live',
+      source: 'pending_sync',
     });
   } catch (error: any) {
     log.error('[Google Reviews API Error]:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to retrieve Google Reviews',
+        error: 'Failed to retrieve Google Reviews',
         reviews: [],
       },
       { status: 500 }

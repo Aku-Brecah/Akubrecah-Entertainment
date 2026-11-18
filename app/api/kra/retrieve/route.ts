@@ -1,5 +1,6 @@
 import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import https from 'https';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import net from 'net';
@@ -48,7 +49,7 @@ function createProxyAgent(proxyUrl: string): any {
             const secureSocket = tls.connect({
               socket,
               servername: opts.host,
-              rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
+              rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS !== 'true', // MITM guard: strict TLS unless explicitly opted out
             });
             callback(null, secureSocket);
           } else {
@@ -83,7 +84,7 @@ function initKraSession(proxyUrl?: string): Promise<Record<string, string>> {
       method: 'GET',
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
       timeout: 8000,
-      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS !== 'true', // MITM guard: strict TLS unless explicitly opted out
       agent
     } as any, (res) => {
       const cookieMap: Record<string, string> = {};
@@ -115,8 +116,9 @@ function httpsPost(path: string, body: string, cookieString: string, contentType
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
       'Accept': isAjax ? 'application/json, text/javascript, */*; q=0.01' : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
     };
-    if (cookieString && cookieString.trim()) {
-      headers['Cookie'] = cookieString.trim();
+    const sanitizedCookie = (cookieString || '').replace(/[\r\n]/g, '').trim();
+    if (sanitizedCookie) {
+      headers['Cookie'] = sanitizedCookie;
     }
     if (isAjax) {
       headers['X-Requested-With'] = 'XMLHttpRequest';
@@ -129,7 +131,7 @@ function httpsPost(path: string, body: string, cookieString: string, contentType
       method: 'POST',
       headers,
       timeout: 10000,
-      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true', // MITM guard: opt-in escape hatch only
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS !== 'true', // MITM guard: strict TLS unless explicitly opted out
       agent
     } as any, (res) => {
       const chunks: Buffer[] = [];
@@ -600,50 +602,30 @@ function first(...vals: any[]): string {
   return '';
 }
 
-function resolveStatutoryProfile(cleanId: string, cleanDirectPin: string) {
-  const seed = (cleanId || cleanDirectPin || '28394812').replace(/[^0-9]/g, '') || '28394812';
-  const numSeed = parseInt(seed.slice(-4), 10) || 4812;
-  
-  const names = [
-    'JOHN KAMAU KARIUKI',
-    'MARY WANJIKU NDUNG\'U',
-    'PETER OTIENO ODHIAMBO',
-    'DAVID KIPROP CHERUIYOT',
-    'GRACE MUTHEU MWENDE',
-    'FATUMA HASSAN ALI',
-    'SAMUEL MAINA NJOROGE',
-    'FAITH CHERONO BETT',
-    'BRIAN OCHIENG AKETCH',
-    'JAMES MACHARIA WANJOHI'
-  ];
-  const name = names[numSeed % names.length];
-  
-  const pin = cleanDirectPin && /^[A-Z0-9]{11}$/.test(cleanDirectPin)
-    ? cleanDirectPin
-    : `A00${seed.padEnd(7, '9').slice(0, 7)}Z`;
-
-  return {
-    pin,
-    idNumber: cleanId || `${(numSeed * 7919) % 89999999 + 10000000}`,
-    name,
-    county: 'Nairobi',
-    town: 'Nairobi Central',
-    station: 'Nairobi West',
-    building: 'View Park Towers, 4th Floor',
-    street: 'Uhuru Highway',
-    poBox: 'P.O. Box 45021',
-    postalCode: '00100',
-    email: 'j***k***@gmail.com',
-    phoneNumber: '+254 712 345 892',
-    registeredDate: '14/08/2016',
-    obligations: [
-      {
-        name: 'Income Tax - Resident Individual',
-        status: 'Active',
-        effectiveFrom: '14/08/2016'
-      }
-    ]
-  };
+function verifySignedCaptchaToken(token: string, captchaAnswer: string): { valid: boolean; expired?: boolean } {
+  const secret = process.env.JWT_SECRET || process.env.ENCRYPTION_KEY || process.env.CLERK_SECRET_KEY || 'local-captcha-fallback-key';
+  const raw = token.slice('local_'.length);
+  const dotIdx = raw.lastIndexOf('.');
+  if (dotIdx > 0) {
+    const payloadB64 = raw.slice(0, dotIdx);
+    const sig = raw.slice(dotIdx + 1);
+    const expectedSig = crypto.createHmac('sha256', secret).update(payloadB64).digest('base64url');
+    const sigBuf = Buffer.from(sig);
+    const expBuf = Buffer.from(expectedSig);
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+      return { valid: false };
+    }
+    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+    if (!payload || payload.type !== 'local_math') return { valid: false };
+    if (payload.exp && Date.now() > payload.exp) return { valid: false, expired: true };
+    const answerNum = Number(String(captchaAnswer || '').trim());
+    if (!Number.isFinite(answerNum)) return { valid: false };
+    const expectedHash = crypto.createHmac('sha256', secret).update(`${payload.nonce}:${answerNum}`).digest('hex');
+    const providedHash = String(payload.answerHash || '');
+    if (expectedHash.length !== providedHash.length) return { valid: false };
+    return { valid: crypto.timingSafeEqual(Buffer.from(expectedHash), Buffer.from(providedHash)) };
+  }
+  return { valid: false };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -663,18 +645,18 @@ export async function POST(req: NextRequest) {
         const user = await client.users.getUser(clerkId);
         userEmail = user.primaryEmailAddress?.emailAddress || clerkId;
       }
-    } catch (authErr: any) {
-      // In development or decoupled requests, allow authenticated or proxy bypass
+    } catch {
+      // Unauthenticated request handled below
     }
 
-    // Enforce authentication: KRA taxpayer record search requires an authenticated session
-    const host = req.headers.get('host') || '';
-    const isLocalhost =
-      host.includes('localhost') ||
-      host.includes('127.0.0.1') ||
-      process.env.NODE_ENV === 'development';
+    // Enforce authentication: KRA taxpayer record search requires an authenticated session.
+    // Development localhost bypass is STRICTLY limited to NODE_ENV === 'development' AND exact localhost/127.0.0.1 host.
+    const host = (req.headers.get('host') || '').trim();
+    const isDevLocalhost =
+      process.env.NODE_ENV === 'development' &&
+      /^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(host);
 
-    if (!clerkId && isLocalhost) {
+    if (!clerkId && isDevLocalhost) {
       clerkId = 'dev_local_user';
       userEmail = 'dev@akubrecah.local';
     } else if (!clerkId && process.env.NODE_ENV !== 'test') {
@@ -690,16 +672,16 @@ export async function POST(req: NextRequest) {
 
     // Check if user is super admin
     let isAdmin = false;
-    if (clerkId) {
+    if (clerkId && clerkId !== 'dev_local_user') {
       try {
         const client = await clerkClient();
         const user = await client.users.getUser(clerkId);
-        const email = user.primaryEmailAddress?.emailAddress?.toLowerCase();
-        const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || '').toLowerCase();
-        const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
+        const email = (user.primaryEmailAddress?.emailAddress || '').trim().toLowerCase();
+        const configAdminEmail = (process.env.SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
+        const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').trim().toLowerCase();
         if (
-          (configAdminEmail && email === configAdminEmail) ||
-          (configPublicAdminEmail && email === configPublicAdminEmail) ||
+          (Boolean(email) && Boolean(configAdminEmail) && email === configAdminEmail) ||
+          (Boolean(email) && Boolean(configPublicAdminEmail) && email === configPublicAdminEmail) ||
           user.publicMetadata?.role === "Super Admin" ||
           user.publicMetadata?.role === "Admin"
         ) {
@@ -736,29 +718,32 @@ export async function POST(req: NextRequest) {
       if (sessionToken.startsWith('local_')) {
         isLocalChallenge = true;
         try {
-          const payload = JSON.parse(Buffer.from(sessionToken.replace('local_', ''), 'base64').toString('utf8'));
-          if (payload && payload.type === 'local_math') {
-            if (payload.exp && Date.now() > payload.exp) {
-              return NextResponse.json({
-                success: false,
-                error: 'Security verification expired. Please solve the security stamp again.',
-                captchaWrong: true,
-              }, { status: 422 });
-            }
-            if (!captchaAnswer || Number(String(captchaAnswer).trim()) !== Number(payload.answer)) {
-              return NextResponse.json({
-                success: false,
-                error: 'Incorrect arithmetic answer. Please calculate and try again.',
-                captchaWrong: true,
-              }, { status: 422 });
-            }
+          const check = verifySignedCaptchaToken(sessionToken, String(captchaAnswer || ''));
+          if (check.expired) {
+            return NextResponse.json({
+              success: false,
+              error: 'Security verification expired. Please solve the security stamp again.',
+              captchaWrong: true,
+            }, { status: 422 });
+          }
+          if (!check.valid) {
+            return NextResponse.json({
+              success: false,
+              error: 'Incorrect arithmetic answer or invalid security token. Please reload and try again.',
+              captchaWrong: true,
+            }, { status: 422 });
           }
         } catch (err) {
-          log.warn('[retrieve] Failed to decode local sessionToken:', err);
+          log.warn('[retrieve] Failed to verify local sessionToken:', err);
+          return NextResponse.json({
+            success: false,
+            error: 'Invalid security token. Please reload the security stamp.',
+            captchaWrong: true,
+          }, { status: 422 });
         }
       } else {
         try {
-          cookieString = Buffer.from(sessionToken, 'base64').toString('utf8');
+          cookieString = Buffer.from(sessionToken, 'base64').toString('utf8').replace(/[\r\n]/g, '');
         } catch (err) {
           log.error('[retrieve] Failed to decode sessionToken:', err);
         }

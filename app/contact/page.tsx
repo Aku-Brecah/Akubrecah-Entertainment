@@ -122,7 +122,7 @@ export default function ContactPage() {
         body: JSON.stringify(form),
       })
 
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Failed to submit project brief. Please try again.")
       }
@@ -228,7 +228,7 @@ export default function ContactPage() {
               <div className="space-y-2">
                 {[
                   { name: "KRA Certificate Retrieval Portal", href: "/retrieval-portal" },
-                  { name: "Automated Tax Returns Filing (Coming Soon)", href: "/dashboard/filing" },
+                  { name: "Kenya P9 Tax Calculator & Filing Guide", href: "/retrieval-portal?view=filing" },
                 ].map((tool) => (
                   <Link
                     key={tool.name}
@@ -384,7 +384,7 @@ export default function ContactPage() {
                 </div>
 
                 {formState === "error" && errorMessage && (
-                  <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold flex items-start gap-2.5">
+                  <div role="alert" className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold flex items-start gap-2.5">
                     <span className="font-bold shrink-0">[!]</span>
                     <span>{errorMessage}</span>
                   </div>

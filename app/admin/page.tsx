@@ -192,6 +192,7 @@ export default function AdminOverviewPage() {
 
   // Interactive Daraja Endpoint Console State
   const [darajaMeta, setDarajaMeta] = useState<DarajaAdminMeta | null>(null);
+  const [evolutionStatus, setEvolutionStatus] = useState<{ status: string; latency?: string } | null>(null);
   const [darajaTestPhone, setDarajaTestPhone] = useState("");
   const [darajaTestAmount, setDarajaTestAmount] = useState("20");
   const [darajaTestPin, setDarajaTestPin] = useState("");
@@ -245,9 +246,32 @@ export default function AdminOverviewPage() {
     }
   };
 
+  const fetchEvolutionStatus = async () => {
+    try {
+      const res = await fetch("/api/admin/system-health");
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json.success && Array.isArray(json.services)) {
+        const waSvc = json.services.find((s: any) =>
+          String(s.name || "").toLowerCase().includes("whatsapp") ||
+          String(s.name || "").toLowerCase().includes("evolution")
+        );
+        if (waSvc) {
+          setEvolutionStatus({ status: waSvc.status || "Unknown", latency: waSvc.latency });
+        }
+      }
+    } catch {
+      // Non-critical diagnostic status lookup
+    }
+  };
+
   useEffect(() => {
     fetchOverview(1);
     fetchDarajaMeta();
+    fetchEvolutionStatus();
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
   }, []);
 
   const handleRefresh = async () => {
@@ -496,11 +520,17 @@ export default function AdminOverviewPage() {
       return;
     }
 
+    const csvEscape = (val: unknown) => {
+      const raw = String(val ?? "");
+      const safe = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
+
     const headers = ["Transaction ID", "KRA PIN", "Amount (KES)", "Channel", "Gateway", "Receipt", "Customer", "Date"];
     const rows = data.transactions.items.map((t) => [
       t.id,
       t.pin,
-      t.amount,
+      Number(t.amount).toFixed(2),
       t.channel,
       t.gateway,
       t.receipt,
@@ -508,14 +538,22 @@ export default function AdminOverviewPage() {
       new Date(t.createdAt).toISOString(),
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const csvBody = [
+      headers.map(csvEscape).join(","),
+      ...rows.map((r) => r.map(csvEscape).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvBody], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute("download", `Akubrecah_Transactions_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    setTimeout(() => {
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    }, 1000);
     toast.success("CSV export downloaded");
   };
 
@@ -649,9 +687,6 @@ export default function AdminOverviewPage() {
 
   return (
     <div className="w-full max-w-none p-4 sm:p-6 md:p-8 space-y-6 md:space-y-8 text-on-surface relative">
-      {/* Subtle ambient red spotlight blur matching the website hero */}
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full filter blur-[120px] pointer-events-none" />
-
       {/* 1. Header & Live Controls matching website design */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-outline-variant/60 relative z-10">
         <div className="space-y-1">
@@ -840,23 +875,23 @@ export default function AdminOverviewPage() {
           </div>
           <div>
             <div className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight flex items-baseline gap-2">
-              <span>{dev?.pcPercentage || 65}%</span>
+              <span>{dev?.pcPercentage ?? 0}%</span>
               <span className="text-sm font-bold text-on-surface-variant">PC (Desktop)</span>
             </div>
             <div className="w-full h-2 rounded-full bg-surface-container-highest mt-3 overflow-hidden flex">
               <div
                 className="bg-primary h-full transition-all duration-500"
-                style={{ width: `${dev?.pcPercentage || 65}%` }}
+                style={{ width: `${dev?.pcPercentage ?? 0}%` }}
                 title="PC Desktop Sessions"
               />
               <div
                 className="bg-amber-500 h-full transition-all duration-500"
-                style={{ width: `${dev?.mobilePercentage || 30}%` }}
+                style={{ width: `${dev?.mobilePercentage ?? 0}%` }}
                 title="Mobile Sessions"
               />
               <div
                 className="bg-sky-500 h-full transition-all duration-500"
-                style={{ width: `${dev?.tabletPercentage || 5}%` }}
+                style={{ width: `${dev?.tabletPercentage ?? 0}%` }}
                 title="Tablet Sessions"
               />
             </div>
@@ -1162,7 +1197,7 @@ export default function AdminOverviewPage() {
                   </p>
                 </div>
                 <span className="text-xs font-mono font-bold text-primary px-2.5 py-1 rounded-lg bg-primary/10">
-                  {dev?.pcPercentage || 65}% PC Traffic
+                  {dev?.pcPercentage ?? 0}% PC Traffic
                 </span>
               </div>
 
@@ -1174,13 +1209,13 @@ export default function AdminOverviewPage() {
                       <strong>Desktop / PC Workstations</strong>
                     </span>
                     <span className="font-mono text-on-surface-variant">
-                      {dev?.pcSessions || 0} sessions ({dev?.pcPercentage || 65}%)
+                      {dev?.pcSessions || 0} sessions ({dev?.pcPercentage ?? 0}%)
                     </span>
                   </div>
                   <div className="w-full h-3 rounded-full bg-surface-container overflow-hidden">
                     <div
                       className="h-full bg-primary rounded-full transition-all duration-700"
-                      style={{ width: `${dev?.pcPercentage || 65}%` }}
+                      style={{ width: `${dev?.pcPercentage ?? 0}%` }}
                     />
                   </div>
                 </div>
@@ -1192,13 +1227,13 @@ export default function AdminOverviewPage() {
                       <strong>Smartphones & Mobile Devices</strong>
                     </span>
                     <span className="font-mono text-on-surface-variant">
-                      {dev?.mobileSessions || 0} sessions ({dev?.mobilePercentage || 35}%)
+                      {dev?.mobileSessions || 0} sessions ({dev?.mobilePercentage ?? 0}%)
                     </span>
                   </div>
                   <div className="w-full h-3 rounded-full bg-surface-container overflow-hidden">
                     <div
                       className="h-full bg-amber-500 rounded-full transition-all duration-700"
-                      style={{ width: `${dev?.mobilePercentage || 35}%` }}
+                      style={{ width: `${dev?.mobilePercentage ?? 0}%` }}
                     />
                   </div>
                 </div>
@@ -1211,15 +1246,21 @@ export default function AdminOverviewPage() {
                     Operating Systems
                   </span>
                   <div className="flex flex-wrap gap-1.5">
-                    {Object.entries(dev?.osBreakdown || {}).map(([os, count]) => (
-                      <span
-                        key={os}
-                        className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-surface-container text-on-surface border border-outline-variant/50"
-                      >
-                        <span>{os}:</span>
-                        <strong className="font-mono">{count}</strong>
+                    {Object.keys(dev?.osBreakdown || {}).length > 0 ? (
+                      Object.entries(dev?.osBreakdown || {}).map(([os, count]) => (
+                        <span
+                          key={os}
+                          className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-surface-container text-on-surface border border-outline-variant/50"
+                        >
+                          <span>{os}:</span>
+                          <strong className="font-mono">{count}</strong>
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[11px] text-on-surface-variant">
+                        No session telemetry recorded yet.
                       </span>
-                    ))}
+                    )}
                   </div>
                 </div>
 
@@ -1228,15 +1269,21 @@ export default function AdminOverviewPage() {
                     Client Browsers
                   </span>
                   <div className="flex flex-wrap gap-1.5">
-                    {Object.entries(dev?.browserBreakdown || {}).map(([browser, count]) => (
-                      <span
-                        key={browser}
-                        className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-surface-container text-on-surface border border-outline-variant/50"
-                      >
-                        <span>{browser}:</span>
-                        <strong className="font-mono">{count}</strong>
+                    {Object.keys(dev?.browserBreakdown || {}).length > 0 ? (
+                      Object.entries(dev?.browserBreakdown || {}).map(([browser, count]) => (
+                        <span
+                          key={browser}
+                          className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-lg bg-surface-container text-on-surface border border-outline-variant/50"
+                        >
+                          <span>{browser}:</span>
+                          <strong className="font-mono">{count}</strong>
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[11px] text-on-surface-variant">
+                        No browser telemetry recorded yet.
                       </span>
-                    ))}
+                    )}
                   </div>
                 </div>
               </div>
@@ -1815,7 +1862,7 @@ export default function AdminOverviewPage() {
                         </div>
                       </td>
                       <td className="py-3.5 px-4 font-mono font-bold text-on-surface">
-                        KES {tx.amount}.00
+                        KES {Number(tx.amount).toFixed(2)}
                       </td>
                       <td className="py-3.5 px-4">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
@@ -1875,8 +1922,20 @@ export default function AdminOverviewPage() {
                 <MessageSquare className="w-4 h-4 text-emerald-600" />
                 WhatsApp Bot Active Telemetry
               </h2>
-              <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
-                Evolution API Connected
+              <span
+                className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg ${
+                  evolutionStatus?.status === "Operational"
+                    ? "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10"
+                    : evolutionStatus?.status === "Degraded"
+                      ? "text-amber-700 dark:text-amber-400 bg-amber-500/10"
+                      : evolutionStatus?.status === "Outage"
+                        ? "text-red-700 dark:text-red-400 bg-red-500/10"
+                        : "text-on-surface-variant bg-surface-container"
+                }`}
+              >
+                {evolutionStatus
+                  ? `Evolution API: ${evolutionStatus.status}${evolutionStatus.latency ? ` (${evolutionStatus.latency})` : ""}`
+                  : "Checking Evolution API..."}
               </span>
             </div>
 

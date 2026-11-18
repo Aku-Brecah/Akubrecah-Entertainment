@@ -107,6 +107,8 @@
 				"surface-container": "var(--surface-container)",
 				"on-background": "var(--on-background)",
 				"surface-container-lowest": "var(--surface-container-lowest)",
+				"surface-card": "var(--surface-card)",
+				"primary-hover": "var(--primary-hover)",
 				"on-surface": "var(--on-surface)",
 				"surface": "var(--surface)",
 				"on-error-container": "var(--on-error-container)",
@@ -116,6 +118,7 @@
 			},
 			fontFamily: {
 				sans: ['var(--font-inter)'],
+				headline: ['var(--font-inter)'],
 				heading: ['var(--font-alfa)'],
 				script: ['var(--font-satisfy)'],
 				"label-md": ["Inter"],

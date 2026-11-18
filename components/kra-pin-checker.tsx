@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import { useUser } from "@clerk/nextjs"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "motion/react"
 import { 
   ShieldCheck, 
   Search, 
@@ -65,14 +65,15 @@ interface TaxpayerProfile {
 export function KraPinChecker() {
   const { user } = useUser()
 
-  // Derive admin status client-side from Clerk metadata
-  const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase() || ''
+  // Derive admin status client-side from Clerk metadata (never match empty strings)
+  const userEmail = (user?.primaryEmailAddress?.emailAddress || '').trim().toLowerCase()
   const userRole = user?.publicMetadata?.role as string | undefined
-  const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase()
-  const isAdmin = (
-    userEmail === configPublicAdminEmail ||
-    userRole === 'Super Admin' ||
-    userRole === 'Admin'
+  const configPublicAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').trim().toLowerCase()
+  const isAdmin = Boolean(
+    userEmail &&
+      ((Boolean(configPublicAdminEmail) && userEmail === configPublicAdminEmail) ||
+        userRole === 'Super Admin' ||
+        userRole === 'Admin')
   )
 
   const [activeTab, setActiveTab] = useState<"pin" | "id">("pin")
@@ -116,7 +117,7 @@ export function KraPinChecker() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pin: cleanPin, engineMode }),
         })
-        const data = await res.json()
+        const data = await res.json().catch(() => ({}))
         if (!res.ok || !data.success) {
           throw new Error(data.error || "Failed to verify KRA PIN.")
         }
@@ -148,7 +149,7 @@ export function KraPinChecker() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ idNumber: cleanId, engineMode }),
         })
-        const data = await res.json()
+        const data = await res.json().catch(() => ({}))
         if (!res.ok || !data.success) {
           throw new Error(data.error || "Failed to verify National ID.")
         }
@@ -343,7 +344,7 @@ export function KraPinChecker() {
                       placeholder="e.g. 12345678"
                       value={idInput}
                       onChange={(e) => setIdInput(e.target.value.replace(/\D/g, ""))}
-                      maxLength={10}
+                      maxLength={12}
                       disabled={loading}
                       className="font-mono text-base tracking-wider h-12 pl-4"
                     />
@@ -367,7 +368,7 @@ export function KraPinChecker() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Enter the Kenyan National Identity Number (5 to 10 digits).
+                  Enter the Kenyan National Identity Number (5 to 12 digits).
                 </p>
               </form>
             </TabsContent>
@@ -443,11 +444,11 @@ export function KraPinChecker() {
                       Verified Taxpayer Record • Ready to download official compliance certificate for KES 20.
                     </p>
                   </div>
-                  <Link href={`/retrieval-portal?pin=${result.pin}`}>
-                    <Button size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold text-xs h-7 px-3 flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap">
+                  <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold text-xs h-7 px-3 flex items-center gap-1 shadow-sm cursor-pointer whitespace-nowrap">
+                    <Link href="/retrieval-portal">
                       Download PDF (KES 20) <ArrowRight className="w-3 h-3" />
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
 
                 {/* Highlights Grid */}
@@ -557,26 +558,23 @@ export function KraPinChecker() {
                       <div>
                         <span className="text-[10px] font-semibold text-muted-foreground block mb-1">Registered Obligations:</span>
                         <div className="space-y-1">
-                          {(result.obligations && result.obligations.length > 0
-                            ? result.obligations
-                            : [
-                                {
-                                  name: "Income Tax - Individual (IT1)",
-                                  status: "Active",
-                                  effectiveFrom: result.registrationDate || "01/01/2015",
-                                },
-                              ]
-                          ).map((obl, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center justify-between p-1 px-2 rounded-md bg-white dark:bg-zinc-900 border border-outline-variant dark:border-zinc-700/60 text-xs"
-                            >
-                              <span className="font-medium text-[11px] truncate">{obl.name}</span>
-                              <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 text-[9px] px-1.5 py-0">
-                                {obl.status}
-                              </Badge>
-                            </div>
-                          ))}
+                          {result.obligations && result.obligations.length > 0 ? (
+                            result.obligations.map((obl, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between p-1 px-2 rounded-md bg-white dark:bg-zinc-900 border border-outline-variant dark:border-zinc-700/60 text-xs"
+                              >
+                                <span className="font-medium text-[11px] truncate">{obl.name}</span>
+                                <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 text-[9px] px-1.5 py-0">
+                                  {obl.status}
+                                </Badge>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-[11px] text-muted-foreground italic">
+                              Obligation schedule not returned by upstream lookup. Verify on iTax.
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -602,18 +600,18 @@ export function KraPinChecker() {
                     <RefreshCw className="w-3 h-3" />
                     New Search
                   </Button>
-                  <Link href={`/retrieval-portal?pin=${result.pin}`}>
-                    <Button variant="outline" size="sm" className="h-8 px-3 rounded-lg text-xs font-semibold whitespace-nowrap cursor-pointer text-primary border-primary/30 hover:bg-primary/10">
+                  <Button asChild variant="outline" size="sm" className="h-8 px-3 rounded-lg text-xs font-semibold whitespace-nowrap cursor-pointer text-primary border-primary/30 hover:bg-primary/10">
+                    <Link href="/retrieval-portal">
                       <Download className="w-3.5 h-3.5 mr-1" />
                       {isAdmin ? "Download Certificate (Admin)" : "Download Certificate (KES 20)"}
-                    </Button>
-                  </Link>
-                  <Link href={`/dashboard/filing?pin=${result.pin}`}>
-                    <Button size="sm" className="h-8 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold flex items-center gap-1 whitespace-nowrap cursor-pointer">
-                      File Nil Return
+                    </Link>
+                  </Button>
+                  <Button asChild size="sm" className="h-8 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold flex items-center gap-1 whitespace-nowrap cursor-pointer">
+                    <Link href="/retrieval-portal?view=filing">
+                      Tax Calculator &amp; Filing Guide
                       <ArrowRight className="w-3 h-3" />
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
               </CardFooter>
             </Card>

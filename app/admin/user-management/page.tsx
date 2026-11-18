@@ -15,6 +15,7 @@ interface User {
 const ROLES = [
   "All Roles",
   "Super Admin",
+  "Admin",
   "Portal Auditor",
   "Cybercafe Partner",
   "Registered Taxpayer"
@@ -48,6 +49,9 @@ function Modal({
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsersCount, setTotalUsersCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isMigrating, setIsMigrating] = useState(false);
   const [search, setSearch] = useState("");
@@ -63,7 +67,7 @@ export default function UserManagementPage() {
   const [showDevKey, setShowDevKey] = useState(false);
   const [csvContent, setCsvContent] = useState("");
   const [csvFileName, setCsvFileName] = useState("");
-  const [defaultPassword, setDefaultPassword] = useState("Akubrecah2026!#");
+  const [defaultPassword, setDefaultPassword] = useState("");
   const [migrationResults, setMigrationResults] = useState<{
     total: number;
     success: string[];
@@ -81,13 +85,16 @@ export default function UserManagementPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (targetPage = page) => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/admin/users");
+      const res = await fetch(`/api/admin/users?page=${targetPage}&limit=50`);
       const data = await res.json();
       if (data.success) {
-        setUsers(data.users);
+        setUsers(data.users || []);
+        setPage(data.page || targetPage);
+        setTotalPages(data.totalPages || 1);
+        setTotalUsersCount(data.total ?? (data.users?.length || 0));
       } else {
         showToast("Error retrieving user accounts from Clerk: " + (data.error || "Access Denied"));
       }
@@ -100,12 +107,8 @@ export default function UserManagementPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(1);
   }, []);
-
-  const openCreate = () => {
-    showToast("Invitations and public registrations dynamically generate Clerk user records.");
-  };
 
   const openEdit = (u: User) => {
     setSelectedUser(u);
@@ -120,10 +123,11 @@ export default function UserManagementPage() {
 
   const saveEdit = async () => {
     if (!selectedUser) return;
-    
-    // Protect admin from stripping own role
-    const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
-    if (( selectedUser.email.toLowerCase() === configAdminEmail) && formRole !== "Super Admin") {
+
+    // Protect admin from stripping own role (never match empty strings)
+    const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || "").trim().toLowerCase();
+    const targetEmail = (selectedUser.email || "").trim().toLowerCase();
+    if (Boolean(configAdminEmail) && targetEmail === configAdminEmail && formRole !== "Super Admin") {
       showToast("Cannot downgrade Super Admin role configuration.");
       setModal(null);
       return;
@@ -138,7 +142,7 @@ export default function UserManagementPage() {
       const data = await res.json();
       if (data.success) {
         showToast(`Updated user role to ${formRole} for ${selectedUser.name}`);
-        fetchUsers();
+        fetchUsers(page);
       } else {
         showToast(data.error || "Failed to update role on Clerk.");
       }
@@ -152,8 +156,9 @@ export default function UserManagementPage() {
     const targetUser = users.find(u => u.id === userId);
     if (!targetUser) return;
 
-    const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase();
-    if ( targetUser.email.toLowerCase() === configAdminEmail) {
+    const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || "").trim().toLowerCase();
+    const targetEmail = (targetUser.email || "").trim().toLowerCase();
+    if (Boolean(configAdminEmail) && targetEmail === configAdminEmail) {
       showToast("Cannot ban or deactivate the active Super Admin account.");
       setConfirmDeactivate(null);
       return;
@@ -253,8 +258,9 @@ export default function UserManagementPage() {
           <h1 className="text-3xl font-bold text-on-surface">User Management</h1>
           <p className="text-on-surface-variant text-sm mt-1">View and manage portal user roles, statuses, and access permissions from Clerk.</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <button
+            type="button"
             onClick={() => {
               setModal("migrate");
               setMigrationResults(null);
@@ -265,13 +271,15 @@ export default function UserManagementPage() {
             <span className="material-symbols-outlined text-[20px]">sync</span>
             Migrate Old Users
           </button>
-          <button
-            onClick={openCreate}
+          <a
+            href="https://dashboard.clerk.com"
+            target="_blank"
+            rel="noopener noreferrer"
             className="bg-primary text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-all flex items-center gap-2 whitespace-nowrap"
           >
-            <span className="material-symbols-outlined text-[20px]">person_add</span>
-            Invite New User
-          </button>
+            <span className="material-symbols-outlined text-[20px]">open_in_new</span>
+            Manage in Clerk
+          </a>
         </div>
       </div>
 
@@ -362,19 +370,19 @@ export default function UserManagementPage() {
                     </td>
                     <td className="py-4 px-6 text-on-surface-variant font-medium">{u.lastLogin}</td>
                     <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => openEdit(u)} className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg transition-colors" title="Change Role">
+                      <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <button type="button" onClick={() => openEdit(u)} className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg transition-colors" title="Change Role" aria-label={`Change role for ${u.name}`}>
                           <span className="material-symbols-outlined text-[18px]">edit</span>
                         </button>
-                        <button onClick={() => openResetPw(u)} className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg transition-colors" title="Send Password Reset">
+                        <button type="button" onClick={() => openResetPw(u)} className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-variant rounded-lg transition-colors" title="Revoke Active Sessions" aria-label={`Revoke active sessions for ${u.name}`}>
                           <span className="material-symbols-outlined text-[18px]">key</span>
                         </button>
                         {u.status === "Active" ? (
-                          <button onClick={() => setConfirmDeactivate(u)} className="p-1.5 text-on-surface-variant hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg transition-colors" title="Deactivate User">
+                          <button type="button" onClick={() => setConfirmDeactivate(u)} className="p-1.5 text-on-surface-variant hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 rounded-lg transition-colors" title="Deactivate User" aria-label={`Deactivate ${u.name}`}>
                             <span className="material-symbols-outlined text-[18px]">block</span>
                           </button>
                         ) : (
-                          <button onClick={() => handleToggleStatus(u.id, u.status)} className="p-1.5 text-on-surface-variant hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950 rounded-lg transition-colors" title="Reactivate User">
+                          <button type="button" onClick={() => handleToggleStatus(u.id, u.status)} className="p-1.5 text-on-surface-variant hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950 rounded-lg transition-colors" title="Reactivate User" aria-label={`Reactivate ${u.name}`}>
                             <span className="material-symbols-outlined text-[18px]">check_circle</span>
                           </button>
                         )}
@@ -386,14 +394,30 @@ export default function UserManagementPage() {
             </tbody>
           </table>
         </div>
-        <div className="bg-surface-container-lowest border-t border-outline-variant px-6 py-3 flex items-center justify-between">
-          <span className="text-xs text-on-surface-variant font-medium">Showing {filtered.length} of {users.length} registered Clerk users</span>
-          <div className="flex gap-1">
-            <button className="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low disabled:opacity-40" disabled>
+        <div className="bg-surface-container-lowest border-t border-outline-variant px-6 py-3 flex flex-wrap items-center justify-between gap-2">
+          <span className="text-xs text-on-surface-variant font-medium">
+            Showing {filtered.length} of {totalUsersCount} registered Clerk users (page {page} of {totalPages})
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => fetchUsers(page - 1)}
+              disabled={page <= 1 || isLoading}
+              aria-label="Previous page"
+              className="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low disabled:opacity-40"
+            >
               <span className="material-symbols-outlined text-[20px]">chevron_left</span>
             </button>
-            <button className="w-8 h-8 rounded-lg bg-primary text-white text-xs font-bold flex items-center justify-center">1</button>
-            <button className="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low" disabled>
+            <span className="min-w-8 h-8 px-2 rounded-lg bg-primary text-white text-xs font-bold flex items-center justify-center">
+              {page}
+            </span>
+            <button
+              type="button"
+              onClick={() => fetchUsers(page + 1)}
+              disabled={page >= totalPages || isLoading}
+              aria-label="Next page"
+              className="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container-low disabled:opacity-40"
+            >
               <span className="material-symbols-outlined text-[20px]">chevron_right</span>
             </button>
           </div>
@@ -588,13 +612,15 @@ export default function UserManagementPage() {
 
             {/* Default Password setting */}
             <div className="space-y-1.5 pt-1">
-              <label className="text-xs font-semibold text-on-surface-variant">
-                Default Password (for accounts without password digests):
+              <label htmlFor="migration-default-password" className="text-xs font-semibold text-on-surface-variant">
+                Temporary Password (required only for accounts without password digests, min 12 chars):
               </label>
               <input
-                type="text"
+                id="migration-default-password"
+                type="password"
                 value={defaultPassword}
                 onChange={(e) => setDefaultPassword(e.target.value)}
+                placeholder="Enter a strong temporary password..."
                 className="w-full font-mono text-xs rounded-xl border border-outline-variant bg-surface px-4 py-2 text-on-surface"
               />
             </div>

@@ -1,5 +1,6 @@
 import { log } from '@/lib/monitoring/logger';
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import https from 'https';
 import net from 'net';
 import tls from 'tls';
@@ -28,6 +29,9 @@ function createProxyAgent(proxyUrl: string): any {
         connectReq += '\r\n';
         socket.write(connectReq);
       });
+      socket.setTimeout(8000, () => {
+        socket.destroy(new Error('Proxy TCP connect timed out'));
+      });
 
       let buffer = '';
       const onData = (chunk: Buffer) => {
@@ -39,7 +43,7 @@ function createProxyAgent(proxyUrl: string): any {
             const secureSocket = tls.connect({
               socket,
               servername: opts.host,
-              rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true',
+              rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS !== 'true',
             });
             callback(null, secureSocket);
           } else {
@@ -61,10 +65,9 @@ function createProxyAgent(proxyUrl: string): any {
 }
 
 function generateLocalArithmeticChallenge(): { captchaImage: string; sessionToken: string } {
-  // Generate authentic KRA arithmetic challenge matching Stitch Screen 1 (e.g. 22 - 5 = ?)
-  const num1 = Math.floor(Math.random() * 25) + 12; // 12 - 36
-  const num2 = Math.floor(Math.random() * 9) + 3;   // 3 - 11
-  const isAddition = Math.random() > 0.4;
+  const num1 = crypto.randomInt(12, 37);
+  const num2 = crypto.randomInt(3, 12);
+  const isAddition = crypto.randomInt(0, 10) > 3;
   const question = isAddition ? `${num1} + ${num2}` : `${num1} - ${num2}`;
   const answer = isAddition ? num1 + num2 : num1 - num2;
 
@@ -78,12 +81,18 @@ function generateLocalArithmeticChallenge(): { captchaImage: string; sessionToke
   </svg>`;
 
   const captchaImage = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  const secret = process.env.JWT_SECRET || process.env.ENCRYPTION_KEY || process.env.CLERK_SECRET_KEY || 'local-captcha-fallback-key';
+  const nonce = crypto.randomBytes(12).toString('hex');
+  const answerHash = crypto.createHmac('sha256', secret).update(`${nonce}:${answer}`).digest('hex');
   const payload = {
     type: 'local_math',
-    answer,
+    nonce,
+    answerHash,
     exp: Date.now() + 15 * 60 * 1000,
   };
-  const sessionToken = 'local_' + Buffer.from(JSON.stringify(payload)).toString('base64');
+  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const sig = crypto.createHmac('sha256', secret).update(payloadB64).digest('base64url');
+  const sessionToken = `local_${payloadB64}.${sig}`;
 
   return { captchaImage, sessionToken };
 }
@@ -130,14 +139,11 @@ export async function GET(req: NextRequest) {
               sessionToken,
               source: 'kra_live',
             },
-            process.env.NODE_ENV !== 'production'
-              ? {
-                headers: {
-                  'Clear-Site-Data': '"cache"',
-                  'Cache-Control': 'no-store',
-                },
-              }
-              : undefined
+            {
+              headers: {
+                'Cache-Control': 'no-store, max-age=0',
+              },
+            }
           );
         }
       }
@@ -164,24 +170,28 @@ export async function GET(req: NextRequest) {
         sessionToken,
         source: 'kra_statutory',
       },
-      process.env.NODE_ENV !== 'production'
-        ? {
-          headers: {
-            'Clear-Site-Data': '"cache"',
-            'Cache-Control': 'no-store',
-          },
-        }
-        : undefined
+      {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+        },
+      }
     );
   } catch (err: any) {
     log.error('[captcha] Critical captcha error:', err.message);
     const { captchaImage, sessionToken } = generateLocalArithmeticChallenge();
-    return NextResponse.json({
-      success: true,
-      captchaImage,
-      sessionToken,
-      source: 'kra_statutory',
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        captchaImage,
+        sessionToken,
+        source: 'kra_statutory',
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+        },
+      }
+    );
   }
 }
 
@@ -201,7 +211,7 @@ function initKraSession(proxyUrl: string): Promise<Record<string, string>> {
         'Pragma': 'no-cache',
       },
       timeout: 10000,
-      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true',
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS !== 'true',
       agent
     } as any;
 
@@ -245,12 +255,13 @@ function fetchCaptchaImage(cookieString: string, randNum: number, proxyUrl: stri
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
       },
       timeout: 10000,
-      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS === 'true',
+      rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS !== 'true',
       agent
     } as any;
 
     const req = https.get(options, (res) => {
       if (res.statusCode && res.statusCode >= 400) {
+        res.resume();
         // Secondary fallback path: GenerateCaptchaServlet.do
         const fallbackOptions = {
           ...options,

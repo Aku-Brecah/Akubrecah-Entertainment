@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ServiceSchema, BreadcrumbSchema, FaqSchema } from "@/components/seo/site-schema";
 
 export const metadata: Metadata = {
-  title: "Engineering Services & Architecture Solutions | Akubrecah",
+  title: "Engineering Services & Architecture Solutions",
   description:
     "Full-cycle software engineering services: Next.js & React web applications, native iOS & Android mobile systems, AWS/GCP cloud DevOps, and automated GovTech statutory integration.",
   keywords: [
@@ -60,9 +60,9 @@ const servicesFaqs = [
       "We engineer four flagship systems: automated sovereign tax verification gateways (KRA iTax), high-concurrency Safaricom Daraja M-Pesa STK ledger engines, real-time Nairobi transit fleet telematics, and automated video transcoding & localization studios.",
   },
   {
-    question: "How does Akubrecah ensure compliance with the Kenya Data Protection Act 2019?",
+    question: "How does Akubrecah align with the Kenya Data Protection Act 2019?",
     answer:
-      "Our GovTech gateways utilize in-memory zero-cache parsing pipelines with sub-120ms volatile RAM streams. Citizen tax documents and personal identifiers are cryptographically unmasked in volatile memory only and never stored in plain persistent cloud databases.",
+      "Our GovTech gateways utilize in-memory ephemeral parsing pipelines that stream generated PDFs directly from RAM. Citizen tax documents are never saved to persistent disk storage and sensitive identifiers are masked prior to settlement.",
   },
   {
     question: "Can these solutions integrate into existing core banking and ERP architectures?",
@@ -74,25 +74,26 @@ const servicesFaqs = [
 const solutionCards = [
   {
     id: "govtech",
-    categoryPill: "GOVTECH & REGULATORY",
+    anchorAlias: "web",
+    categoryPill: "GOVTECH & WEB PLATFORMS",
     icon: Landmark,
     title: "Automated Sovereign Tax Verification & KRA Gateway",
     description:
-      "Direct cryptographic interoperability with national tax ledgers. Automated KRA PIN retrieval, real-time Nil returns submission, and compliant ephemeral validation with zero unencrypted taxpayer data retention.",
+      "Resilient web platform and statutory document retrieval architecture. Automated KRA PIN lookup, Kenya P9 tax calculation, and ephemeral PDF streaming with zero unencrypted document persistence.",
     chips: [
-      "Sub-120ms PDF generation",
-      "Zero-cache privacy engine",
-      "Official iTax API handshake",
+      "Volatile RAM PDF streaming",
+      "Zero-disk privacy engine",
+      "Encrypted TLS verification",
     ],
     outcomes: [
-      "Instant signed PDF taxpayer certificate generation with verified QR hash.",
-      "One-click Nil filing flow with immediate KRA acknowledgment receipt delivery.",
-      "Strict compliance with Kenya Data Protection Act 2019 via in-memory ephemeral parsing.",
+      "On-demand PDF taxpayer certificate generation with verifiable QR links.",
+      "Interactive Kenya P9 income tax calculator and official iTax filing guidance.",
+      "Privacy-by-design data minimization aligned with the Kenya Data Protection Act 2019.",
     ],
-    stack: ["Node.js", "Volatile Memory Streams", "KRA iTax API", "TypeScript", "AWS KMS"],
+    stack: ["Next.js", "TypeScript", "Volatile Memory Streams", "Node.js", "PostgreSQL"],
     ctaText: "Explore GovTech Engine",
     ctaHref: "/retrieval-portal",
-    mockupTitle: "kra.govtech.portal / audit-console",
+    mockupTitle: "kra.akubrecah.com / verification-console",
     mockupImage: "/images/solutions/govtech-gateway.jpg",
     mockupAlt: "KRA Tax Compliance & Verification Interface",
     isReversed: false,
@@ -100,22 +101,23 @@ const solutionCards = [
   },
   {
     id: "fintech",
-    categoryPill: "FINTECH & SETTLEMENT",
+    anchorAlias: "enterprise",
+    categoryPill: "FINTECH & ENTERPRISE SETTLEMENT",
     icon: CreditCard,
     title: "High-Concurrency Daraja M-Pesa STK & Ledger Reconciliation",
     description:
-      "Resilient financial transaction engine designed to eliminate payment dropouts during peak mobile money traffic. Instant STK push triggers, idempotent webhook queues, and automated treasury ledger reconciliations.",
+      "Resilient financial transaction engine designed to handle mobile money traffic reliably. Instant STK push triggers, idempotent callback verification, and automated ledger reconciliation.",
     chips: [
-      "99.998% STK callback capture",
-      "Under 1.2s settlement cycle",
-      "KES 210M+ daily clearing",
+      "Idempotent callback verification",
+      "Safaricom Daraja STK Push",
+      "PostgreSQL audit ledger",
     ],
     outcomes: [
-      "Real-time Safaricom Daraja C2B/B2C webhook ingestion with dead-letter isolation.",
-      "Instant cryptographic matching against internal core banking balances.",
-      "Automatic retry backoffs guaranteeing zero duplicate charges or unverified slips.",
+      "Real-time Safaricom Daraja STK Push & callback ingestion with fail-closed token verification.",
+      "Atomic receipt redemption preventing double-spending and duplicate charges.",
+      "Automatic STK Query reconciliation when callbacks are delayed.",
     ],
-    stack: ["Safaricom Daraja API", "Redis Dead-Letter Queues", "FastAPI", "PostgreSQL", "Docker"],
+    stack: ["Safaricom Daraja API", "Upstash Redis", "TypeScript", "PostgreSQL", "Docker"],
     ctaText: "Review Fintech Architecture",
     ctaHref: "/contact?solution=fintech",
     mockupTitle: "M-PESA ENTERPRISE GATEWAY • RECON ENGINE",
@@ -126,22 +128,23 @@ const solutionCards = [
   },
   {
     id: "transit",
-    categoryPill: "TRANSIT & MOBILITY",
+    anchorAlias: "mobile",
+    categoryPill: "MOBILE & TRANSIT TELEMATICS",
     icon: Bus,
-    title: "Real-Time Nairobi Fleet Telematics & Dynamic Route Dispatch",
+    title: "Real-Time Fleet Telematics & Mobile Ecosystems",
     description:
-      "Mission-critical routing engine built for East African transit corridors. Consolidates real-time GPS telemetry, passenger tap-and-go fare collection, and congestion-adaptive dispatch schedules.",
+      "Cross-platform mobile and geolocation architecture built for East African mobility corridors. Consolidates GPS telemetry, mobile money fare workflows, and adaptive dispatch schedules.",
     chips: [
-      "94% ETA precision in heavy traffic",
-      "19% fleet fuel reduction",
-      "Sub-second telemetry sync",
+      "Offline-first mobile sync",
+      "Live WebSocket geolocation",
+      "M-Pesa fare integration",
     ],
     outcomes: [
       "Live vehicle geolocation tracking and geo-fenced terminal queue orchestration.",
-      "Offline-first contactless tap-and-pay validators synchronizing across cellular edges.",
-      "Dynamic rerouting around Nairobi arterial bottlenecks (Mombasa Rd, Thika Superhighway).",
+      "Offline-tolerant mobile synchronization designed for variable cellular networks.",
+      "Dynamic dispatch tooling tailored for urban Nairobi transit corridors.",
     ],
-    stack: ["React Native / Expo", "WebSocket Gateways", "GeoJSON", "Google Maps", "TimescaleDB"],
+    stack: ["React Native / Expo", "WebSocket Gateways", "GeoJSON", "Google Maps", "PostgreSQL"],
     ctaText: "Inspect Fleet Platform",
     ctaHref: "/projects/swiftboda-ride",
     mockupTitle: "NAIROBI METRO TELEMETRY DISPATCH",
@@ -152,22 +155,23 @@ const solutionCards = [
   },
   {
     id: "media",
-    categoryPill: "MEDIA AI & WORKFLOW",
+    anchorAlias: "cloud",
+    categoryPill: "CLOUD INFRASTRUCTURE & MEDIA AI",
     icon: Sparkles,
-    title: "Intelligent Video Transcoding & Localization Automation",
+    title: "Cloud Pipelines, DevOps & Media Localization Automation",
     description:
-      "Automated studio pipelines orchestrating audio context extraction, multi-dialect translation (English and Swahili NLP), automatic subtitle burning, and multi-format edge streaming.",
+      "Automated cloud processing pipelines orchestrating audio transcription, English/Swahili localization, subtitle burning, containerized deployment, and multi-format media streaming.",
     chips: [
-      "4.2x real-time render velocity",
-      "99.4% Swahili/English accuracy",
-      "Multi-OS binary output",
+      "Containerized cloud workers",
+      "English & Swahili NLP",
+      "Automated FFmpeg pipelines",
     ],
     outcomes: [
-      "Automated news broadcast and commercial segmentation with frame-accurate cuts.",
-      "Specialized East African dialect speech recognition and auto-caption alignment.",
-      "Instant multi-bitrate H.264/WebM transcoding for bandwidth-constrained networks.",
+      "Automated media segmentation and frame-accurate clip rendering workflows.",
+      "Speech recognition and subtitle alignment for East African broadcast content.",
+      "Multi-bitrate H.264/WebM transcoding optimized for bandwidth-constrained networks.",
     ],
-    stack: ["CTranslate2 INT8", "FFmpeg Filtergraphs", "Faster-Whisper", "Gradio", "Python"],
+    stack: ["Docker", "FFmpeg Filtergraphs", "Faster-Whisper", "Python", "CI/CD Pipelines"],
     ctaText: "View Media AI Specs",
     ctaHref: "/projects/AutoChop",
     mockupTitle: "AETHERFLOW AI PIPELINE RUNNER",
@@ -238,38 +242,38 @@ export default function ServicesPage() {
               High-assurance digital platforms, compliance engines, and automated clearing pipelines built specifically for East Africa&apos;s regulatory, banking, and real-time transit landscape.
             </p>
 
-            {/* Metrics Counter Bar */}
+            {/* Engineering Architecture Guarantees Bar */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-6 border-t border-outline-variant/60">
               <div className="border-l-2 border-primary pl-4 space-y-0.5">
-                <div className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
-                  99.98%
+                <div className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
+                  Zero-Disk
                 </div>
                 <div className="text-xs text-on-surface-variant font-medium">
-                  Gateway SLA
+                  Ephemeral PDF Streams
                 </div>
               </div>
               <div className="border-l-2 border-primary pl-4 space-y-0.5">
-                <div className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
-                  &lt;120ms
+                <div className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
+                  Idempotent
                 </div>
                 <div className="text-xs text-on-surface-variant font-medium">
-                  Document Handshake
+                  Daraja STK Reconciliation
                 </div>
               </div>
               <div className="border-l-2 border-primary pl-4 space-y-0.5">
-                <div className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
-                  KES 10B+
+                <div className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
+                  TLS &amp; AES-256
                 </div>
                 <div className="text-xs text-on-surface-variant font-medium">
-                  Volume Routed
+                  Encrypted Data Transit
                 </div>
               </div>
               <div className="border-l-2 border-primary pl-4 space-y-0.5">
-                <div className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
-                  100%
+                <div className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
+                  KDPA 2019
                 </div>
                 <div className="text-xs text-on-surface-variant font-medium">
-                  Data Protection Act
+                  Privacy-by-Design
                 </div>
               </div>
             </div>
@@ -285,9 +289,9 @@ export default function ServicesPage() {
             <section
               key={card.id}
               id={card.id}
-              className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12"
+              className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 scroll-mt-24"
             >
-              <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 sm:p-8 lg:p-10 shadow-sm">
+              <div id={card.anchorAlias} className="scroll-mt-24 bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 sm:p-8 lg:p-10 shadow-sm">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
                   {/* Text Column */}
                   <div
@@ -510,17 +514,17 @@ export default function ServicesPage() {
           <div className="pt-8 border-t border-stone-800/80 flex flex-wrap items-center justify-center gap-6 text-xs text-stone-400 font-medium">
             <div className="flex items-center gap-1.5">
               <Lock className="h-4 w-4 text-primary" />
-              <span>256-Bit SSL Handshake</span>
+              <span>Encrypted TLS Handshake</span>
             </div>
             <span className="w-1 h-1 rounded-full bg-stone-700" />
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="h-4 w-4 text-primary" />
-              <span>Data Protection Act 2019 Certified</span>
+              <span>KDPA 2019 Privacy-by-Design</span>
             </div>
             <span className="w-1 h-1 rounded-full bg-stone-700" />
             <div className="flex items-center gap-1.5">
               <Zap className="h-4 w-4 text-primary" />
-              <span>99.98% Production Uptime</span>
+              <span>Automated Health Monitoring</span>
             </div>
           </div>
         </div>

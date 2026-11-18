@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Akubrecah Technologies",
-  description: "How Akubrecah collects, uses, and protects your personal data in compliance with Kenya's Data Protection Act 2019.",
+  title: "Privacy Policy",
+  description: "How Akubrecah Entertainment collects, uses, and protects your personal data in alignment with Kenya's Data Protection Act 2019.",
   alternates: {
     canonical: "https://akubrecah.com/legal/privacy",
   },
@@ -93,7 +93,12 @@ export default function PrivacyPolicyPage() {
             session management. Subject to their Privacy Policy.
           </li>
           <li>
-            <strong>Supabase</strong> — database and file storage provider. Data stored in Supabase is encrypted at rest.
+            <strong>Neon PostgreSQL (neon.tech)</strong> — managed relational database provider storing account records,
+            payment verification ledgers, and audit logs encrypted in transit and at rest.
+          </li>
+          <li>
+            <strong>Safaricom Daraja M-Pesa</strong> — payment processor handling STK Push payment prompts and transaction
+            confirmation callbacks.
           </li>
           <li>
             <strong>Vercel</strong> — hosting provider. Collects anonymous performance analytics with no personal
@@ -162,7 +167,7 @@ export default function PrivacyPolicyPage() {
       <Section title="9. International Transfers">
         <p>
           Your data may be processed in servers located outside Kenya (including the United States and European Union)
-          by our third-party providers (Clerk, Supabase, Vercel). Where such transfers occur, we ensure appropriate
+          by our third-party infrastructure providers (Clerk, Neon PostgreSQL, Vercel). Where such transfers occur, we ensure appropriate
           safeguards are in place consistent with Section 48 of the Data Protection Act 2019.
         </p>
       </Section>
