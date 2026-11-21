@@ -454,30 +454,6 @@ export async function POST(req: NextRequest) {
           } catch (fulErr: any) {
             log.error('[M-Pesa Callback] Direct fulfillment error:', fulErr.message);
           }
-
-          const n8nWebhookUrl = process.env.N8N_KRA_DELIVERY_WEBHOOK || 'https://n8n.akubrecah.com/webhook/kra-delivery';
-          try {
-            await fetch(n8nWebhookUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                checkoutId: CheckoutRequestID,
-                mpesaReceipt,
-                amount: Number(amount || minCertFee),
-                phone: targetPhone,
-                pin: resolvedPin,
-                downloadId,
-                taxpayerName,
-                appUrl: 'https://kra.akubrecah.com',
-                evolutionUrl: process.env.EVOLUTION_API_URL || 'https://wa.akubrecah.com',
-                instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'Akubrecah Entertainment',
-                serviceSecret: process.env.N8N_DISPATCH_SECRET || process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
-                apiKey: process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '',
-              }),
-            });
-          } catch (n8nErr: any) {
-            log.warn('[M-Pesa Callback] n8n delivery webhook notice:', n8nErr.message);
-          }
         }
       } catch (dbErr: any) {
         log.error('[M-Pesa Callback DB Handler Error]:', dbErr.message);

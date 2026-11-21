@@ -21,7 +21,7 @@
       "url": "https://n8n.akubrecah.com/mcp-server/http",
       "serverUrl": "https://n8n.akubrecah.com/mcp-server/http",
       "headers": {
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZjYxOGM1Zi1iMDAzLTRhNTQtYWE0OC1hM2E5NjZhNzVmMmYiLCJpc3MiOiJuOG4iLCJhdWQiOiJtY3Atc2VydmVyLWFwaSIsImp0aSI6IjVkOGY2YjBlLWE3NjgtNGY5Mi04NDMyLWU4NDU0YjVlYjExOCIsImlhdCI6MTc5MjI3OTMzMn0.omMlsdlfwSZmETKa84CGYdxE8OWUe5P1j36vNLn7iLw"
+        "Authorization": "Bearer ${N8N_MCP_API_KEY}"
       }
     }
   }

@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { resolveAuthenticRegistrationDate } from './certificate-fulfillment';
 import { getKraStationForCounty, formatKraStation, sanitizeTaxArea } from './kra-stations';
+import { MAX_UPSTREAM_RESPONSE_BYTES } from './security/ssrf';
 
 export interface TaxpayerObligation {
   name: string;
@@ -83,7 +84,15 @@ export function fetchManufacturerDetails(pin: string, cookieString = ''): Promis
       rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS !== 'true', // MITM guard: strict TLS unless explicitly opted out
     }, (res) => {
       const chunks: Buffer[] = [];
-      res.on('data', (c) => chunks.push(c));
+      let totalBytes = 0;
+      res.on('data', (c: Buffer) => {
+        totalBytes += c.length;
+        if (totalBytes > MAX_UPSTREAM_RESPONSE_BYTES) {
+          req.destroy(new Error('KRA manufacturer details response exceeded max size limit'));
+          return;
+        }
+        chunks.push(c);
+      });
       res.on('end', () => {
         try {
           const raw = Buffer.concat(chunks).toString('utf8');
@@ -388,7 +397,15 @@ export async function lookupPinByIdNumber(idNumber: string, cookieString = ''): 
       rejectUnauthorized: process.env.KRA_ALLOW_INSECURE_TLS !== 'true', // MITM guard: strict TLS unless explicitly opted out
     }, (res) => {
       const chunks: Buffer[] = [];
-      res.on('data', (c) => chunks.push(c));
+      let totalBytes = 0;
+      res.on('data', (c: Buffer) => {
+        totalBytes += c.length;
+        if (totalBytes > MAX_UPSTREAM_RESPONSE_BYTES) {
+          req.destroy(new Error('KRA manufacturer details response exceeded max size limit'));
+          return;
+        }
+        chunks.push(c);
+      });
       res.on('end', () => {
         try {
           const raw = Buffer.concat(chunks).toString('utf8');

@@ -45,7 +45,8 @@ export function getTierForRoute(pathname: string): RateTier {
     pathname.startsWith('/api/kra/retrieve') ||
     pathname.startsWith('/api/kra/live-verify') ||
     pathname.startsWith('/api/kra/captcha') ||
-    pathname.startsWith('/api/certificate/check-access')
+    pathname.startsWith('/api/certificate/') ||
+    pathname.startsWith('/api/admin/')
   ) {
     const limit = Number(process.env.RATE_LIMIT_LOOKUP) || 30;
     return { limit, windowMs, tierKey: 'lookup' };

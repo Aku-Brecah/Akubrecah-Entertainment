@@ -83,7 +83,6 @@ export function CustomSignUp() {
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" })
       setVerifying(true)
     } catch (err: any) {
-      console.error("[CustomSignUp] Error:", err)
       const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Sign up failed. Please check your details."
       setError(msg)
     } finally {
@@ -189,7 +188,6 @@ export function CustomSignUp() {
       const details = [missing ? `Missing fields: ${missing}` : null, unverified ? `Unverified: ${unverified}` : null].filter(Boolean).join(". ")
       setError(details ? `Account created but additional details are required: ${details}` : "Verification was not completed. Please try signing in.")
     } catch (err: any) {
-      console.error("[CustomSignUp] Verification error:", err)
       const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Invalid verification code."
       setError(msg)
     } finally {
@@ -443,9 +441,11 @@ export function CustomSignUp() {
                     <Input
                       type={showPassword ? "text" : "password"}
                       required
+                      minLength={8}
+                      autoComplete="new-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Create a strong password"
+                      placeholder="Create a strong password (8+ characters)"
                       className="pl-10 pr-10 h-10 bg-surface-container-low border-outline-variant rounded-lg text-sm"
                     />
                     <button

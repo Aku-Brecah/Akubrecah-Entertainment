@@ -44,13 +44,67 @@ export function isSuperAdminCaller(admin: AdminCaller | null | undefined): boole
   return admin.role === "Super Admin";
 }
 
+const MAX_FAILED_ADMIN_ATTEMPTS = 5;
+const ADMIN_LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+interface AdminAttemptEntry {
+  failures: number;
+  lockedUntil: number;
+}
+
+const failedAdminAuthByIp = new Map<string, AdminAttemptEntry>();
+
+function getRequestIpKey(req: NextRequest): string {
+  const cf = req.headers.get("cf-connecting-ip");
+  const realIp = req.headers.get("x-real-ip");
+  const xff = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return (cf || realIp || xff || "unknown").trim();
+}
+
+export function isIpLockedOutFromAdminAuth(ipKey: string, now = Date.now()): boolean {
+  const entry = failedAdminAuthByIp.get(ipKey);
+  if (!entry) return false;
+  if (entry.lockedUntil > now) return true;
+  if (entry.lockedUntil > 0 && entry.lockedUntil <= now) {
+    failedAdminAuthByIp.delete(ipKey);
+  }
+  return false;
+}
+
+function recordFailedAdminAuthAttempt(ipKey: string, now = Date.now()): void {
+  const existing = failedAdminAuthByIp.get(ipKey) || { failures: 0, lockedUntil: 0 };
+  const failures = existing.failures + 1;
+  const lockedUntil = failures >= MAX_FAILED_ADMIN_ATTEMPTS ? now + ADMIN_LOCKOUT_MS : 0;
+  failedAdminAuthByIp.set(ipKey, { failures, lockedUntil });
+}
+
+function clearFailedAdminAuthAttempts(ipKey: string): void {
+  failedAdminAuthByIp.delete(ipKey);
+}
+
+export function resetAdminAuthLockoutForTests(): void {
+  failedAdminAuthByIp.clear();
+}
+
 export async function verifyAdminCaller(req?: NextRequest): Promise<AdminCaller | null> {
   // 1. Check direct PIN header (no query params — headers only)
   if (req) {
+    const ipKey = getRequestIpKey(req);
+    if (isIpLockedOutFromAdminAuth(ipKey)) {
+      log.warn("[verifyAdminCaller] Blocked admin auth attempt from locked-out IP", { ipKey });
+      return null;
+    }
+
+    let attemptedHeaderOrCookieCred = false;
+
     const providedPin = req.headers.get("x-admin-pin");
     const expectedPin = process.env.ADMIN_BOT_PIN || "";
-    if (providedPin && expectedPin && safeCompare(providedPin, expectedPin)) {
-      return { userId: "admin_pin_user", email: "admin@akubrecah.co.ke", role: "Super Admin" };
+    if (providedPin) {
+      attemptedHeaderOrCookieCred = true;
+      if (expectedPin && safeCompare(providedPin, expectedPin)) {
+        clearFailedAdminAuthAttempts(ipKey);
+        return { userId: "admin_pin_user", email: "admin@akubrecah.co.ke", role: "Super Admin" };
+      }
     }
 
     // 2. Check service secret (headers only, env-configured, timing-safe)
@@ -59,17 +113,27 @@ export async function verifyAdminCaller(req?: NextRequest): Promise<AdminCaller 
     // never grant Super Admin access to the site.
     const serviceSecret = req.headers.get("x-service-secret");
     const expectedServiceSecret = process.env.EVOLUTION_WEBHOOK_SECRET || "";
-    if (serviceSecret && expectedServiceSecret && safeCompare(serviceSecret, expectedServiceSecret)) {
-      return { userId: "service_admin", email: "admin@akubrecah.co.ke", role: "Super Admin" };
+    if (serviceSecret) {
+      attemptedHeaderOrCookieCred = true;
+      if (expectedServiceSecret && safeCompare(serviceSecret, expectedServiceSecret)) {
+        clearFailedAdminAuthAttempts(ipKey);
+        return { userId: "service_admin", email: "admin@akubrecah.co.ke", role: "Super Admin" };
+      }
     }
 
     // 3. Check WhatsApp / Passcode Magic Cookie
     const magicCookie = req.cookies.get("admin_magic_auth")?.value;
     if (magicCookie) {
+      attemptedHeaderOrCookieCred = true;
       const verified = verifyAdminMagicToken(magicCookie);
       if (verified) {
+        clearFailedAdminAuthAttempts(ipKey);
         return { userId: "wa_admin_" + verified.phone, email: "admin@akubrecah.co.ke", role: "Super Admin" };
       }
+    }
+
+    if (attemptedHeaderOrCookieCred) {
+      recordFailedAdminAuthAttempt(ipKey);
     }
   }
 

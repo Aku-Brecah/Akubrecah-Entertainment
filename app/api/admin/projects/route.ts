@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: true, projects });
   } catch (error: any) {
     log.error('[API Admin Projects GET Error]:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 

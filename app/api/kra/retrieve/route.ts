@@ -12,6 +12,8 @@ import { getKraStationForCounty, formatKraStation, sanitizeTaxArea } from '@/lib
 import { resolveAuthenticRegistrationDate } from '@/lib/certificate-fulfillment';
 import { getUserSubscriptionStatus } from '@/lib/subscription';
 import { maskTaxpayerData, tryResolveKraPin, sealKraPin, looksLikeKraPin, maskPin } from '@/lib/masking';
+import { verifyAndConsumeLocalCaptchaToken } from '@/lib/security/captcha-token';
+import { validateProxyUrl, MAX_UPSTREAM_RESPONSE_BYTES } from '@/lib/security/ssrf';
 
 export const maxDuration = 60;
 
@@ -19,7 +21,8 @@ export const maxDuration = 60;
 // Pure Node.js Proxy Agent Generator (HTTP CONNECT)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function createProxyAgent(proxyUrl: string): any {
+function createProxyAgent(rawProxyUrl: string): any {
+  const proxyUrl = validateProxyUrl(rawProxyUrl);
   if (!proxyUrl) return undefined;
 
   return new https.Agent({
@@ -135,7 +138,15 @@ function httpsPost(path: string, body: string, cookieString: string, contentType
       agent
     } as any, (res) => {
       const chunks: Buffer[] = [];
-      res.on('data', (c: Buffer) => chunks.push(c));
+      let totalBytes = 0;
+      res.on('data', (c: Buffer) => {
+        totalBytes += c.length;
+        if (totalBytes > MAX_UPSTREAM_RESPONSE_BYTES) {
+          req.destroy(new Error('KRA httpsPost response exceeded max size limit'));
+          return;
+        }
+        chunks.push(c);
+      });
       res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     });
     req.on('timeout', () => {
@@ -602,30 +613,13 @@ function first(...vals: any[]): string {
   return '';
 }
 
-function verifySignedCaptchaToken(token: string, captchaAnswer: string): { valid: boolean; expired?: boolean } {
-  const secret = process.env.JWT_SECRET || process.env.ENCRYPTION_KEY || process.env.CLERK_SECRET_KEY || 'local-captcha-fallback-key';
-  const raw = token.slice('local_'.length);
-  const dotIdx = raw.lastIndexOf('.');
-  if (dotIdx > 0) {
-    const payloadB64 = raw.slice(0, dotIdx);
-    const sig = raw.slice(dotIdx + 1);
-    const expectedSig = crypto.createHmac('sha256', secret).update(payloadB64).digest('base64url');
-    const sigBuf = Buffer.from(sig);
-    const expBuf = Buffer.from(expectedSig);
-    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
-      return { valid: false };
-    }
-    const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
-    if (!payload || payload.type !== 'local_math') return { valid: false };
-    if (payload.exp && Date.now() > payload.exp) return { valid: false, expired: true };
-    const answerNum = Number(String(captchaAnswer || '').trim());
-    if (!Number.isFinite(answerNum)) return { valid: false };
-    const expectedHash = crypto.createHmac('sha256', secret).update(`${payload.nonce}:${answerNum}`).digest('hex');
-    const providedHash = String(payload.answerHash || '');
-    if (expectedHash.length !== providedHash.length) return { valid: false };
-    return { valid: crypto.timingSafeEqual(Buffer.from(expectedHash), Buffer.from(providedHash)) };
+function verifySignedCaptchaToken(token: string, captchaAnswer: string): { valid: boolean; expired?: boolean; error?: string } {
+  const result = verifyAndConsumeLocalCaptchaToken(token, captchaAnswer);
+  if (!result.valid) {
+    const expired = Boolean(result.error && result.error.toLowerCase().includes('expired'));
+    return { valid: false, expired, error: result.error };
   }
-  return { valid: false };
+  return { valid: true };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

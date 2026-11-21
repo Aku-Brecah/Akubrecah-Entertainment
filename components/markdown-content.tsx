@@ -14,27 +14,79 @@ marked.setOptions({
 });
 
 /**
+ * Decodes HTML numeric/hex/named entities and strips control/whitespace characters
+ * so obfuscated schemes like `jav&#x09;ascript:` or `&#106;avascript:` are caught.
+ */
+function normalizeUriForSchemeCheck(rawUri: string): string {
+  return rawUri
+    .replace(/&#x([0-9a-f]+);?/gi, (_, hex) => {
+      const code = parseInt(hex, 16);
+      return Number.isFinite(code) ? String.fromCharCode(code) : '';
+    })
+    .replace(/&#(\d+);?/g, (_, dec) => {
+      const code = parseInt(dec, 10);
+      return Number.isFinite(code) ? String.fromCharCode(code) : '';
+    })
+    .replace(/&colon;/gi, ':')
+    .replace(/&tab;/gi, '')
+    .replace(/&newline;/gi, '')
+    .replace(/[\u0000-\u0020\s]+/g, '')
+    .toLowerCase();
+}
+
+function isUnsafeUriAttributeValue(rawValue: string): boolean {
+  const normalized = normalizeUriForSchemeCheck(rawValue);
+  if (!normalized) return false;
+  if (
+    normalized.startsWith('javascript:') ||
+    normalized.startsWith('vbscript:') ||
+    normalized.startsWith('data:') ||
+    normalized.startsWith('file:') ||
+    normalized.startsWith('blob:')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Synchronous, SSR-safe HTML sanitizer that runs on both server and client
  * before DOMPurify hydrates, preventing SSR/initial-paint XSS via event
- * handlers, dangerous tags, or javascript:/vbscript:/data: URIs.
+ * handlers, dangerous tags, srcdoc, CSS expressions, or entity-obfuscated
+ * javascript:/vbscript:/data: URIs.
  */
 export function sanitizeMarkdownHtml(html: string): string {
   if (!html) return '';
   return html
     // Remove dangerous block elements and their contents
-    .replace(/<(script|style|iframe|object|embed|svg|math|form|textarea|template|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
+    .replace(/<(script|style|iframe|object|embed|svg|math|form|textarea|template|noscript|applet|frame|frameset)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
     // Remove self-closing or unclosed dangerous tags
-    .replace(/<\/?(script|style|iframe|object|embed|svg|math|form|input|button|select|textarea|meta|link|base)\b[^>]*\/?>/gi, '')
+    .replace(/<\/?(script|style|iframe|object|embed|svg|math|form|input|button|select|textarea|meta|link|base|applet|frame|frameset)\b[^>]*\/?>/gi, '')
     // Strip inline event handlers (onclick=, onerror=, onload=, etc.)
-    .replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-    // Strip dangerous URI schemes in href/src/xlink:href/action/formaction
+    .replace(/\s+on[a-z0-9_-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    // Strip iframe/embed srcdoc and unsafe inline style expressions
+    .replace(/\s+srcdoc\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/\s+style\s*=\s*(?:"[^"]*(?:expression|javascript|vbscript|behavior|-moz-binding)[^"]*"|'[^']*(?:expression|javascript|vbscript|behavior|-moz-binding)[^']*')/gi, '')
+    // Inspect and sanitize quoted URI attributes (including HTML entity & control-char obfuscation)
     .replace(
-      /\b(href|src|xlink:href|action|formaction)\s*=\s*("|\')\s*(?:javascript|vbscript|data):[^"']*\2/gi,
-      '$1="#"'
+      /\b(href|src|xlink:href|action|formaction|poster|background)\s*=\s*("([^"]*)"|'([^']*)')/gi,
+      (fullMatch, attrName, _quoted, doubleVal, singleVal) => {
+        const val = doubleVal !== undefined ? doubleVal : singleVal || '';
+        if (isUnsafeUriAttributeValue(val)) {
+          return `${attrName}="#"`;
+        }
+        return fullMatch;
+      }
     )
+    // Inspect and sanitize unquoted URI attributes
     .replace(
-      /\b(href|src|xlink:href|action|formaction)\s*=\s*(?:javascript|vbscript|data):[^\s>]+/gi,
-      '$1="#"'
+      /\b(href|src|xlink:href|action|formaction|poster|background)\s*=\s*([^\s"'>]+)/gi,
+      (fullMatch, attrName, rawVal) => {
+        if (isUnsafeUriAttributeValue(rawVal)) {
+          return `${attrName}="#"`;
+        }
+        return fullMatch;
+      }
     );
 }
 

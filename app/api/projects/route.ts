@@ -8,6 +8,6 @@ export async function GET() {
     const projects = await getPublishedProjects();
     return NextResponse.json({ success: true, projects });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to load published projects.' }, { status: 500 });
   }
 }

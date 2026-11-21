@@ -424,6 +424,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(chatResult);
   } catch (error: any) {
     log.error('[WhatsApp Webhook Handler Error]:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal webhook processing error.' }, { status: 500 });
   }
 }

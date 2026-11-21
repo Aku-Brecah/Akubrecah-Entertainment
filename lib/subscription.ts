@@ -28,6 +28,7 @@ export async function isAdminUser(clerkId?: string | null): Promise<boolean> {
 
 export interface UserSubscriptionStatus {
   isSubscribed: boolean;
+  dailyQuotaExceeded?: boolean;
   subscription: {
     id: string;
     planName: string;
@@ -38,8 +39,21 @@ export interface UserSubscriptionStatus {
     daysRemaining?: number;
     cafeName?: string;
     ownerName?: string;
+    dailyDownloads?: number;
+    dailyLimit?: number;
   } | null;
   userId: string | null;
+}
+
+const CYBER_DAILY_FAIR_USE_LIMIT = 100;
+
+function isCyberDailyQuotaExceeded(cafe: any): { exceeded: boolean; usedToday: number } {
+  const todayEat = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const usedToday = cafe?.lastResetDate === todayEat ? Number(cafe?.dailyDownloads || 0) : 0;
+  return {
+    exceeded: usedToday >= CYBER_DAILY_FAIR_USE_LIMIT,
+    usedToday,
+  };
 }
 
 /**
@@ -71,8 +85,10 @@ export async function getUserSubscriptionStatus(clerkId?: string | null): Promis
 
     if (cafeByClerk && cafeByClerk.expiresAt) {
       const daysRemaining = Math.max(0, Math.ceil((new Date(cafeByClerk.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+      const quota = isCyberDailyQuotaExceeded(cafeByClerk);
       return {
-        isSubscribed: true,
+        isSubscribed: !quota.exceeded,
+        dailyQuotaExceeded: quota.exceeded,
         subscription: {
           id: cafeByClerk.id,
           planName: 'cyber_monthly',
@@ -83,6 +99,8 @@ export async function getUserSubscriptionStatus(clerkId?: string | null): Promis
           daysRemaining,
           cafeName: cafeByClerk.cafeName,
           ownerName: cafeByClerk.ownerName,
+          dailyDownloads: quota.usedToday,
+          dailyLimit: CYBER_DAILY_FAIR_USE_LIMIT,
         },
         userId: clerkId,
       };
@@ -133,8 +151,10 @@ export async function getUserSubscriptionStatus(clerkId?: string | null): Promis
       });
       if (cafe && cafe.expiresAt) {
         const daysRemaining = Math.max(0, Math.ceil((new Date(cafe.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+        const quota = isCyberDailyQuotaExceeded(cafe);
         return {
-          isSubscribed: true,
+          isSubscribed: !quota.exceeded,
+          dailyQuotaExceeded: quota.exceeded,
           subscription: {
             id: cafe.id,
             planName: 'cyber_monthly',
@@ -145,6 +165,8 @@ export async function getUserSubscriptionStatus(clerkId?: string | null): Promis
             daysRemaining,
             cafeName: cafe.cafeName,
             ownerName: cafe.ownerName,
+            dailyDownloads: quota.usedToday,
+            dailyLimit: CYBER_DAILY_FAIR_USE_LIMIT,
           },
           userId: dbUser?.id || clerkId,
         };

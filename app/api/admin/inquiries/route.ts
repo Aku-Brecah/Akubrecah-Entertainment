@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: any) {
     log.error('[API Admin Inquiries GET Error]:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -152,7 +152,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: true, inquiry: updated });
   } catch (error: any) {
     log.error('[API Admin Inquiries PATCH Error]:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -252,7 +252,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, note });
   } catch (error: any) {
     log.error('[API Admin Inquiries POST Action Error]:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -287,6 +287,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Inquiry ID or list of IDs is required.' }, { status: 400 });
   } catch (error: any) {
     log.error('[API Admin Inquiries DELETE Error]:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

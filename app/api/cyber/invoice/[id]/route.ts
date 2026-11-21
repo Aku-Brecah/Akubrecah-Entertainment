@@ -47,10 +47,18 @@ export async function GET(
 
     const isAdmin = clerkId ? await isAdminUser(clerkId) : false;
     const normalizedClerkPhone = clerkPhone ? clerkPhone.replace(/\D/g, '').replace(/^0/, '254') : '';
+    // SECURITY (BOLA/IDOR guard): If the Cyber Cafe record is already bound to a
+    // Clerk user ID, ONLY that exact Clerk user (or an admin) may access the invoice.
+    // Phone-number fallback is permitted ONLY when the Cyber Cafe was registered via
+    // WhatsApp and does not yet have a bound `clerkUserId`.
+    const isBoundToAnotherUser =
+      Boolean(invoice.cyberCafe.clerkUserId) && invoice.cyberCafe.clerkUserId !== clerkId;
     const ownsCafe =
-      !!clerkId &&
+      Boolean(clerkId) &&
+      !isBoundToAnotherUser &&
       (invoice.cyberCafe.clerkUserId === clerkId ||
-        (normalizedClerkPhone &&
+        (!invoice.cyberCafe.clerkUserId &&
+          Boolean(normalizedClerkPhone) &&
           [invoice.cyberCafe.whatsappPhone, invoice.cyberCafe.paymentPhone]
             .map((p: any) => String(p || '').replace(/\D/g, ''))
             .includes(normalizedClerkPhone)));

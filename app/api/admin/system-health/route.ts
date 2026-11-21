@@ -6,11 +6,13 @@ import tls from "tls";
 import url from "url";
 import https from "https";
 import { verifyAdminCaller } from "@/lib/admin-auth";
+import { validateProxyUrl } from "@/lib/security/ssrf";
 
 export const maxDuration = 30;
 
 // Helper to create proxy agent (same as in KRA captcha/retrieve routes)
-function createProxyAgent(proxyUrl: string): any {
+function createProxyAgent(rawProxyUrl: string): any {
+  const proxyUrl = validateProxyUrl(rawProxyUrl);
   if (!proxyUrl) return undefined;
   
   return new https.Agent({
@@ -262,6 +264,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: any) {
     log.error("[API System Health GET Error]:", error);
-    return NextResponse.json({ success: false, error: error.message || "Internal server error" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }

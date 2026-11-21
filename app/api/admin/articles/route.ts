@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
   } catch (error: unknown) {
     const err = error as Error;
     log.error('[API Admin Articles GET Error]:', err);
-    return NextResponse.json({ success: false, error: err.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     const err = error as Error;
     log.error('[API Admin Articles POST Error]:', err);
-    return NextResponse.json({ success: false, error: err.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -229,7 +229,7 @@ export async function PUT(req: NextRequest) {
   } catch (error: unknown) {
     const err = error as Error;
     log.error('[API Admin Articles PUT Error]:', err);
-    return NextResponse.json({ success: false, error: err.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -255,6 +255,6 @@ export async function DELETE(req: NextRequest) {
   } catch (error: unknown) {
     const err = error as Error;
     log.error('[API Admin Articles DELETE Error]:', err);
-    return NextResponse.json({ success: false, error: err.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

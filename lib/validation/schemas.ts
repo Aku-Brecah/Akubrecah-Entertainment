@@ -69,3 +69,23 @@ export const recordDownloadSchema = z.object({
 export const generateReceiptSchema = z.object({
   downloadId: z.string().uuid().optional(),
 });
+
+/** POST /api/cyber/subscribe-web */
+export const cyberSubscribeWebSchema = z.object({
+  cafeName: z.string().trim().min(2, 'Cyber Cafe Name is required').max(120),
+  ownerName: z.string().trim().min(2, 'Owner Name is required').max(120),
+  whatsappPhone: z
+    .string()
+    .trim()
+    .min(9)
+    .max(20)
+    .regex(/^[0-9+\s()-]+$/, 'Invalid WhatsApp phone number format'),
+  paymentPhone: z
+    .string()
+    .trim()
+    .min(9)
+    .max(20)
+    .regex(/^[0-9+\s()-]+$/, 'Invalid M-Pesa payment number format'),
+  location: z.string().trim().max(120).optional(),
+  email: z.string().trim().email('Invalid email address').max(160).optional().or(z.literal('')),
+});

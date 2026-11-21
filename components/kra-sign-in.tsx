@@ -144,7 +144,6 @@ export function KRASignIn() {
         setError("Verification code accepted, but additional verification is needed.")
       }
     } catch (err: any) {
-      console.error("[KRASignIn] Verification error:", err)
       const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Invalid verification code. Please check and try again."
       setError(msg)
     } finally {

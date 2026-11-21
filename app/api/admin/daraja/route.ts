@@ -365,7 +365,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: err?.message || 'Admin Daraja diagnostic error.',
+        error: 'Admin Daraja diagnostic error.',
       },
       { status: 500 }
     );

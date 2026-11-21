@@ -349,7 +349,7 @@ export async function POST(req: NextRequest) {
         log.error('[KRA Nil Return Filing Error]:', filingErr.message);
         return NextResponse.json({
           success: false,
-          error: filingErr.message || 'Filing automation failed during returns submission.'
+          error: 'Filing automation failed during returns submission.'
         }, { status: 500 });
       } finally {
         await browser.close().catch(() => {});
@@ -375,7 +375,7 @@ export async function POST(req: NextRequest) {
     log.error('[KRA Nil Return Automation Error]:', error.message);
     return NextResponse.json({
       success: false,
-      error: error.message || 'Filing automation failed. Please try again.',
+      error: 'Filing automation failed. Please try again.',
     }, { status: 500 });
   }
 }

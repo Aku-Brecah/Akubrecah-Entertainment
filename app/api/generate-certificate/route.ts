@@ -51,12 +51,13 @@ export async function POST(req: NextRequest) {
 
     // 3. Server-side authorization: require a valid downloadId, verified admin access, or service secret (n8n/workers)
     // No hardcoded fallbacks — if the env vars are unset, service access fails closed.
-    // Secrets are compared timing-safe against each accepted credential.
+    // Secrets are compared timing-safe against each accepted header credential.
+    // SECURITY: EVOLUTION_API_KEY is an outbound WhatsApp integration key and is
+    // never accepted from request bodies; service callers must authenticate via
+    // headers (`x-service-secret` / `Authorization`) using N8N_DISPATCH_SECRET
+    // or EVOLUTION_WEBHOOK_SECRET.
     const acceptedServiceSecrets = [
       process.env.EVOLUTION_WEBHOOK_SECRET,
-      process.env.EVOLUTION_API_KEY,
-      // Dedicated scoped credential for n8n dispatch (rotate off the shared
-      // Evolution key onto this so n8n never holds the bot's master key).
       process.env.N8N_DISPATCH_SECRET,
     ].filter(Boolean) as string[];
     const providedHeaderSecret =
@@ -65,10 +66,10 @@ export async function POST(req: NextRequest) {
       req.headers.get('x-api-key') ||
       req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
     const { safeCompare } = await import('@/lib/admin-auth');
-    const isServiceAuthorized = acceptedServiceSecrets.length > 0 && (
-      (providedHeaderSecret && acceptedServiceSecrets.some((s) => safeCompare(providedHeaderSecret, s))) ||
-      (typeof body.serviceSecret === 'string' && acceptedServiceSecrets.some((s) => safeCompare(body.serviceSecret, s)))
-    );
+    const isServiceAuthorized =
+      acceptedServiceSecrets.length > 0 &&
+      Boolean(providedHeaderSecret) &&
+      acceptedServiceSecrets.some((s) => safeCompare(providedHeaderSecret!, s));
 
     const { verifyCertificateDownloadEligibility } = await import('@/lib/mpesa-redemption');
     const { isAdminUser } = await import('@/lib/subscription');

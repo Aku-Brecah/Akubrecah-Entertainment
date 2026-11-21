@@ -66,7 +66,6 @@ export function KRASignUp() {
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" })
       setVerifying(true)
     } catch (err: any) {
-      console.error("[KRASignUp] Error:", err)
       const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Sign up failed. Please check your details."
       setError(msg)
     } finally {
@@ -171,7 +170,6 @@ export function KRASignUp() {
       const details = [missing ? `Missing fields: ${missing}` : null, unverified ? `Unverified: ${unverified}` : null].filter(Boolean).join(". ")
       setError(details ? `Account created but additional details are required: ${details}` : "Verification was not completed. Please try signing in.")
     } catch (err: any) {
-      console.error("[KRASignUp Verify] Error:", err)
       const msg = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || "Invalid verification code."
       setError(msg)
     } finally {

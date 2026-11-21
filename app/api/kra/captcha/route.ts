@@ -7,10 +7,13 @@ import tls from 'tls';
 import url from 'url';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { createSystemLog } from '@/lib/prisma';
+import { createLocalCaptchaToken } from '@/lib/security/captcha-token';
+import { validateProxyUrl, MAX_UPSTREAM_RESPONSE_BYTES } from '@/lib/security/ssrf';
 
 export const maxDuration = 30;
 
-function createProxyAgent(proxyUrl: string): any {
+function createProxyAgent(rawProxyUrl: string): any {
+  const proxyUrl = validateProxyUrl(rawProxyUrl);
   if (!proxyUrl) return undefined;
 
   return new https.Agent({
@@ -81,18 +84,7 @@ function generateLocalArithmeticChallenge(): { captchaImage: string; sessionToke
   </svg>`;
 
   const captchaImage = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-  const secret = process.env.JWT_SECRET || process.env.ENCRYPTION_KEY || process.env.CLERK_SECRET_KEY || 'local-captcha-fallback-key';
-  const nonce = crypto.randomBytes(12).toString('hex');
-  const answerHash = crypto.createHmac('sha256', secret).update(`${nonce}:${answer}`).digest('hex');
-  const payload = {
-    type: 'local_math',
-    nonce,
-    answerHash,
-    exp: Date.now() + 15 * 60 * 1000,
-  };
-  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  const sig = crypto.createHmac('sha256', secret).update(payloadB64).digest('base64url');
-  const sessionToken = `local_${payloadB64}.${sig}`;
+  const sessionToken = createLocalCaptchaToken(answer);
 
   return { captchaImage, sessionToken };
 }
@@ -269,7 +261,15 @@ function fetchCaptchaImage(cookieString: string, randNum: number, proxyUrl: stri
         };
         const fallbackReq = https.get(fallbackOptions, (fbRes) => {
           const chunks: Buffer[] = [];
-          fbRes.on('data', (chunk: Buffer) => chunks.push(chunk));
+          let totalBytes = 0;
+          fbRes.on('data', (chunk: Buffer) => {
+            totalBytes += chunk.length;
+            if (totalBytes > MAX_UPSTREAM_RESPONSE_BYTES) {
+              fallbackReq.destroy(new Error('KRA fallback CAPTCHA response exceeded max size limit'));
+              return;
+            }
+            chunks.push(chunk);
+          });
           fbRes.on('end', () => resolve(Buffer.concat(chunks)));
         });
         fallbackReq.on('timeout', () => fallbackReq.destroy(new Error('KRA fallback CAPTCHA request timed out')));
@@ -277,7 +277,15 @@ function fetchCaptchaImage(cookieString: string, randNum: number, proxyUrl: stri
         return;
       }
       const chunks: Buffer[] = [];
-      res.on('data', (chunk: Buffer) => chunks.push(chunk));
+      let totalBytes = 0;
+      res.on('data', (chunk: Buffer) => {
+        totalBytes += chunk.length;
+        if (totalBytes > MAX_UPSTREAM_RESPONSE_BYTES) {
+          req.destroy(new Error('KRA CAPTCHA response exceeded max size limit'));
+          return;
+        }
+        chunks.push(chunk);
+      });
       res.on('end', () => resolve(Buffer.concat(chunks)));
     });
 

@@ -2,6 +2,17 @@ import React from 'react';
 import type { JSX } from 'react';
 
 /**
+ * Safely serializes an object to JSON-LD for embedding inside a <script> tag,
+ * escaping `<`, `>`, and `&` so dynamic strings cannot break out via `</script>`.
+ */
+export function safeJsonLdStringify(data: unknown): string {
+  return JSON.stringify(data)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+}
+
+/**
  * Site-wide Schema.org JSON-LD Structured Data
  * Provides authoritative identity signals for Google Knowledge Graph,
  * Google AI Overviews, Bing, and conversational AI crawlers.
@@ -84,11 +95,11 @@ export function SiteSchema(): JSX.Element {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(organizationSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(websiteSchema) }}
       />
     </>
   );
@@ -118,7 +129,7 @@ export function BreadcrumbSchema({ items }: { items: BreadcrumbItem[] }): JSX.El
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }
@@ -173,7 +184,7 @@ export function SoftwareSchema({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }
@@ -214,7 +225,7 @@ export function ServiceSchema({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }
@@ -288,7 +299,7 @@ export function ArticleSchema({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }
@@ -319,7 +330,7 @@ export function FaqSchema({ items }: { items: FaqItem[] }): JSX.Element {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }

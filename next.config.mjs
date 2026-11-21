@@ -13,6 +13,7 @@ const __dirname = path.dirname(__filename);
 const nextConfig = {
   devIndicators: false,
   poweredByHeader: false,
+  productionBrowserSourceMaps: false,
   // Allow isolated CI/AI verification builds without racing other builds on .next
   distDir: process.env.BUILD_DIST_DIR || '.next',
   turbopack: {
@@ -121,9 +122,23 @@ const nextConfig = {
             value: 'camera=(), microphone=(), geolocation=()',
           },
           {
-            // Introduced as Report-Only so violations surface (devtools/Sentry)
-            // without breaking the Clerk/Daraja allowlist; enforce by
-            // switching the key to `Content-Security-Policy` after tuning.
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+              "style-src 'self' 'unsafe-inline' https:",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' data: https:",
+              "connect-src 'self' https: wss:",
+              "frame-src 'self' https:",
+              "frame-ancestors 'self'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "object-src 'none'",
+            ].join('; '),
+          },
+          {
+            // Retained alongside enforcing CSP for telemetry compatibility
             key: 'Content-Security-Policy-Report-Only',
             value: [
               "default-src 'self'",
@@ -189,5 +204,6 @@ export default withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   widenClientFileUpload: true,
+  hideSourceMaps: true,
   disableLogger: true,
 });

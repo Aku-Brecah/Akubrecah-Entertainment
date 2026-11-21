@@ -58,13 +58,33 @@ export async function POST(req: NextRequest) {
     // 2. Validate access type server-side — never trust client
     if (isAdmin || downloadType === 'subscription') {
       let activeSubId: string | null = null;
+      let isCyberMonthlySub = false;
 
       if (!isAdmin) {
         const subStatus = await getUserSubscriptionStatus(userId);
+        if (subStatus.dailyQuotaExceeded) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Daily fair-use limit (100 certificates/day) reached for this Cyber Cafe Pass. Quota resets at midnight EAT.',
+            },
+            { status: 429 }
+          );
+        }
         if (!subStatus.isSubscribed || !subStatus.subscription) {
           return NextResponse.json({ success: false, error: 'No active subscription found.' }, { status: 403 });
         }
         activeSubId = subStatus.subscription.id;
+        isCyberMonthlySub = subStatus.subscription.planName === 'cyber_monthly';
+      }
+
+      if (isCyberMonthlySub && activeSubId) {
+        try {
+          const { incrementCyberCafeDownloadCount } = await import('@/lib/cyber-subscription');
+          await incrementCyberCafeDownloadCount(activeSubId);
+        } catch (quotaErr: any) {
+          log.warn('[record-download] Notice incrementing cyber cafe download counter:', quotaErr?.message);
+        }
       }
 
       // Record the subscription / admin download

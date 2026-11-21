@@ -55,3 +55,5 @@ next-env.d.ts
 scratch/
 .next-auditbuild
 .next-verify
+.agent/mcp_config.json
+.ag-kit-backups/

@@ -95,6 +95,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (defaultPassword && defaultPassword.length < 12) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "defaultPassword must be at least 12 characters long for security compliance.",
+        },
+        { status: 400 }
+      );
+    }
+
     if (!devSecretKey && !csvContent) {
       return NextResponse.json(
         {
@@ -315,7 +325,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     log.error("[User Migration Error]:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Internal server error during migration." },
+      { success: false, error: "Internal server error during migration." },
       { status: 500 }
     );
   }

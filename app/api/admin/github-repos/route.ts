@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     log.error('[API Admin GitHub Repos GET Error]:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to fetch repositories' },
+      { success: false, error: 'Failed to fetch repositories' },
       { status: 500 }
     );
   }
@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     log.error('[API Admin GitHub Repos POST Error]:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to update repository visibility' },
+      { success: false, error: 'Failed to update repository visibility' },
       { status: 500 }
     );
   }

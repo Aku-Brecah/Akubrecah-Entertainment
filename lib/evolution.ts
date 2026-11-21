@@ -38,12 +38,26 @@ export function getEvolutionApiUrl(): string {
 
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || process.env.EVOLUTION_WEBHOOK_SECRET || '';
 
+const SAFE_INSTANCE_NAME_REGEX = /^[A-Za-z0-9 _-]{1,64}$/;
+
 export function getEvolutionInstanceName(): string {
   const envVal = (process.env.EVOLUTION_INSTANCE_NAME || '').trim();
-  if (envVal) {
+  if (envVal && SAFE_INSTANCE_NAME_REGEX.test(envVal)) {
     return envVal;
   }
   return 'Akubrecah Entertainment';
+}
+
+/**
+ * Validates and URL-encodes an Evolution instance name to prevent path traversal
+ * or path-segment injection when an instance name is supplied from webhook payloads.
+ */
+export function resolveSafeEvolutionInstanceName(overrideInstance?: string): string {
+  const candidate = (overrideInstance || '').trim();
+  if (candidate && SAFE_INSTANCE_NAME_REGEX.test(candidate)) {
+    return encodeURIComponent(candidate);
+  }
+  return encodeURIComponent(getEvolutionInstanceName());
 }
 
 /**
@@ -97,7 +111,7 @@ export async function sendEvolutionTextMessage(
   overrideInstance?: string
 ): Promise<{ success: boolean; error?: string; targetUrl?: string }> {
   const baseUrl = getEvolutionApiUrl();
-  const instanceName = encodeURIComponent(overrideInstance || getEvolutionInstanceName());
+  const instanceName = resolveSafeEvolutionInstanceName(overrideInstance);
   const url = `${baseUrl.replace(/\/$/, '')}/message/sendText/${instanceName}`;
   try {
     const formattedPhone = getEvolutionDestinationNumber(phone);
@@ -149,7 +163,7 @@ export async function markEvolutionMessageRead({
 }): Promise<void> {
   try {
     const baseUrl = getEvolutionApiUrl();
-    const instanceName = encodeURIComponent(overrideInstance || getEvolutionInstanceName());
+    const instanceName = resolveSafeEvolutionInstanceName(overrideInstance);
     const url = `${baseUrl.replace(/\/$/, '')}/chat/markMessageAsRead/${instanceName}`;
     await fetch(url, {
       method: 'POST',
@@ -193,7 +207,7 @@ export async function sendEvolutionDocument({
     const baseUrl = getEvolutionApiUrl();
     const formattedPhone = getEvolutionDestinationNumber(phone);
     const base64Data = pdfBuffer.toString('base64');
-    const instanceName = encodeURIComponent(overrideInstance || getEvolutionInstanceName());
+    const instanceName = resolveSafeEvolutionInstanceName(overrideInstance);
     const url = `${baseUrl.replace(/\/$/, '')}/message/sendMedia/${instanceName}`;
 
     const response = await fetch(url, {
@@ -252,7 +266,7 @@ export async function sendEvolutionImage({
     const baseUrl = getEvolutionApiUrl();
     const formattedPhone = getEvolutionDestinationNumber(phone);
     const base64Data = imageBuffer.toString('base64');
-    const instanceName = encodeURIComponent(overrideInstance || getEvolutionInstanceName());
+    const instanceName = resolveSafeEvolutionInstanceName(overrideInstance);
     const url = `${baseUrl.replace(/\/$/, '')}/message/sendMedia/${instanceName}`;
 
     const response = await fetch(url, {

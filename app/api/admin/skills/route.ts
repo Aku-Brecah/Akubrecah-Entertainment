@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: true, categories });
   } catch (error: any) {
     log.error('[API Admin Skills GET Error]:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, skill });
   } catch (error: any) {
     log.error('[API Admin Skills POST Error]:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -77,6 +77,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true, message: 'Skill deleted successfully.' });
   } catch (error: any) {
     log.error('[API Admin Skills DELETE Error]:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -48,6 +48,7 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 import { checkRateLimit, extractClientIp } from '@/lib/rate-limit';
+import { validateCsrfRequest } from '@/lib/security/csrf';
 import {
   classifyHost,
   isSafeRedirectPath,
@@ -93,6 +94,25 @@ export default clerkMiddleware(async (auth, request) => {
   // 3. Block known vulnerability scanners
   if (BLOCKED_SCANNERS.some(p => p.test(userAgent))) {
     return new NextResponse('Forbidden', { status: 403 });
+  }
+
+  // 3b. CSRF protection for state-changing API requests (Origin & Sec-Fetch-Site verification)
+  if (pathname.startsWith('/api/')) {
+    const csrfCheck = validateCsrfRequest(request);
+    if (!csrfCheck.allowed) {
+      return new NextResponse(
+        JSON.stringify({
+          error: 'Forbidden: Cross-site request blocked by CSRF policy.',
+        }),
+        {
+          status: 403,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Content-Type-Options': 'nosniff',
+          },
+        }
+      );
+    }
   }
 
   // 4. Rate limiting for API routes with standard headers
@@ -254,6 +274,8 @@ export default clerkMiddleware(async (auth, request) => {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-XSS-Protection', '1; mode=block');
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
   // Accelerate public marketing and portal homepage on Edge CDN with stale-while-revalidate
   if (!userId && pathname === '/' && !isAdminSubdomain) {

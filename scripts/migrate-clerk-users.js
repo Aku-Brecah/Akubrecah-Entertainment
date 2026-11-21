@@ -132,9 +132,12 @@ async function migrate() {
       payload.password_hasher = user.password_hasher;
       console.log(`    -> Including hashed password (${user.password_hasher})`);
     } else {
-      // If no password hash, set a default password
-      payload.password = 'Password2026!';
-      console.log(`    -> Setting temporary default password 'Password2026!'`);
+      // Never use a static hardcoded default password. Use env MIGRATION_DEFAULT_PASSWORD
+      // or generate a high-entropy per-user random temporary password requiring reset.
+      const crypto = require('crypto');
+      const fallbackRandomPassword = `${crypto.randomBytes(16).toString('base64url')}!A9a`;
+      payload.password = process.env.MIGRATION_DEFAULT_PASSWORD || fallbackRandomPassword;
+      console.log(`    -> Setting temporary high-entropy password (env or CSPRNG generated)`);
     }
 
     try {

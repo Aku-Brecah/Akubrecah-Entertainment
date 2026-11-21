@@ -7,6 +7,7 @@ import {
   normalizePhoneNumber,
   isValidKenyanMpesaPhone,
 } from '@/lib/whatsapp/mpesa-dispatch';
+import { cyberSubscribeWebSchema, firstIssueMessage } from '@/lib/validation/schemas';
 
 export const maxDuration = 30;
 
@@ -25,22 +26,23 @@ export async function POST(req: NextRequest) {
     const userEmail = user?.emailAddresses?.[0]?.emailAddress || 'client@akubrecah.co.ke';
 
     const body = await req.json().catch(() => ({}));
+    const parsed = cyberSubscribeWebSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: firstIssueMessage(parsed.error),
+        },
+        { status: 400 }
+      );
+    }
+
     const {
       cafeName,
       ownerName,
       whatsappPhone,
       paymentPhone,
-    } = body;
-
-    if (!cafeName?.trim() || !ownerName?.trim() || !whatsappPhone?.trim() || !paymentPhone?.trim()) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Please provide Cyber Cafe Name, Owner Name, WhatsApp Number, and M-Pesa Payment Number.',
-        },
-        { status: 400 }
-      );
-    }
+    } = parsed.data;
 
     if (!isValidKenyanMpesaPhone(paymentPhone)) {
       return NextResponse.json(
@@ -149,7 +151,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     log.error('[api/cyber/subscribe-web] Error:', error.message);
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
+      { success: false, error: 'Failed to process Cyber Cafe subscription request.' },
       { status: 500 }
     );
   }

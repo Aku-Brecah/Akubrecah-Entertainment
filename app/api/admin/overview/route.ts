@@ -448,7 +448,7 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     log.error("[Admin Overview API Error]:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to load admin overview metrics" },
+      { success: false, error: "Failed to load admin overview metrics" },
       { status: 500 }
     );
   }

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { JSX } from 'react';
+import { safeJsonLdStringify } from './site-schema';
 
 export interface BreadcrumbItem {
   name: string;
@@ -29,7 +30,7 @@ export function BreadcrumbSchema({ items }: BreadcrumbSchemaProps): JSX.Element 
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(schema) }}
     />
   );
 }
