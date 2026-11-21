@@ -134,12 +134,12 @@
 			},
 			borderRadius: {
 				none: '0',
-				sm: '6px',
-				md: '10px',
-				lg: '16px',
-				xl: '24px',
-				'2xl': '32px',
-				'3xl': '40px',
+				sm: '4px',
+				md: '6px',
+				lg: '8px',
+				xl: '10px',
+				'2xl': '12px',
+				'3xl': '16px',
 				full: '9999px',
 				DEFAULT: 'var(--radius)',
 			},
@@ -155,13 +155,13 @@
 			},
 			fontSize: {
 				"label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500" }],
-				"display-lg": ["48px", { "lineHeight": "60px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+				"display-lg": ["44px", { "lineHeight": "52px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
 				"title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
 				"body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
 				"label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
 				"headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
 				"body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
-				"headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+				"headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
 				"body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
 				"headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
 			},
@@ -182,37 +182,10 @@
 						height: '0'
 					}
 				},
-				'blob': {
-					"0%": {
-						transform: "translate(0px, 0px) scale(1)",
-					},
-					"33%": {
-						transform: "translate(30px, -50px) scale(1.1)",
-					},
-					"66%": {
-						transform: "translate(-20px, 20px) scale(0.9)",
-					},
-					"100%": {
-						transform: "translate(0px, 0px) scale(1)",
-					},
-				},
-				'gradient': {
-					"0%, 100%": {
-						"background-size": "200% 200%",
-						"background-position": "left center",
-					},
-					"50%": {
-						"background-size": "200% 200%",
-						"background-position": "right center",
-					},
-				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'bounce-slow': 'bounce 2s infinite',
-				'blob': 'blob 7s infinite',
-				'gradient': 'gradient 8s linear infinite',
 			}
 		}
 	},

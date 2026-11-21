@@ -29,7 +29,7 @@ import {
   KeyRound,
   Lock,
   ExternalLink,
-  Sparkles,
+  Palette,
   Globe,
   Building2,
   Smartphone,
@@ -65,7 +65,7 @@ const navSections: NavSection[] = [
     items: [
       { href: "/admin/articles", label: "Articles & Field Notes", icon: BookOpen },
       { href: "/admin/projects", label: "Projects & Portfolio", icon: FolderGit2 },
-      { href: "/admin/brand", label: "Brand Book & Identity", icon: Sparkles },
+      { href: "/admin/brand", label: "Brand Book & Identity", icon: Palette },
       { href: "/admin/inquiries", label: "Messages & Inbox", icon: Mail },
       { href: "/admin/settings", label: "Website & SEO Settings", icon: Settings },
     ],
@@ -564,7 +564,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       } text-on-surface-variant hover:text-on-surface hover:bg-surface-container`}
                       title={isCollapsed ? `${link.label} (External Link)` : undefined}
                     >
-                      <Icon className="w-4 h-4 shrink-0 text-on-surface-variant group-hover:text-primary transition-transform group-hover:scale-110" />
+                      <Icon className="w-4 h-4 shrink-0 text-on-surface-variant group-hover:text-primary transition-colors" />
                       {!isCollapsed && (
                         <>
                           <span className="truncate whitespace-nowrap">{link.label}</span>
@@ -593,7 +593,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     }`}
                     title={isCollapsed ? link.label : undefined}
                   >
-                    <Icon className={`w-4 h-4 shrink-0 transition-transform ${isActive ? "text-white" : "group-hover:scale-110"}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : ""}`} />
 
                     {!isCollapsed && (
                       <span className="truncate whitespace-nowrap">{link.label}</span>
@@ -601,17 +601,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                     {link.href === "/admin/inquiries" && unreadInquiriesCount > 0 && !isCollapsed && (
                       <span
-                        className={`ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-black shadow-xs ${
+                        className={`ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold shadow-xs ${
                           isActive ? "bg-white text-primary" : "bg-primary text-white"
                         }`}
                       >
                         {unreadInquiriesCount}
                       </span>
-                    )}
-
-                    {/* Pulsing Active Indicator Dot */}
-                    {isActive && !isCollapsed && (link.href !== "/admin/inquiries" || unreadInquiriesCount === 0) && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-white ml-auto shrink-0 shadow-xs animate-pulse" />
                     )}
 
                     {/* Collapsed Tooltip */}
@@ -744,15 +739,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <span className="truncate">{link.label}</span>
                         {link.href === "/admin/inquiries" && unreadInquiriesCount > 0 && (
                           <span
-                            className={`ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-black shadow-xs ${
+                            className={`ml-auto px-1.5 py-0.5 rounded-full text-[10px] font-bold shadow-xs ${
                               isActive ? "bg-white text-primary" : "bg-primary text-white"
                             }`}
                           >
                             {unreadInquiriesCount}
                           </span>
-                        )}
-                        {isActive && (link.href !== "/admin/inquiries" || unreadInquiriesCount === 0) && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-white ml-auto shrink-0 shadow-xs animate-pulse" />
                         )}
                       </Link>
                     );
@@ -796,19 +788,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }`}
       >
         {/* Top Header */}
-        <header className="sticky top-0 z-20 h-16 bg-surface/95 backdrop-blur-md border-b border-outline-variant/80 flex items-center justify-between px-4 sm:px-6">
+        <header className="sticky top-0 z-20 h-16 bg-surface border-b border-outline-variant/80 flex items-center justify-between px-4 sm:px-6">
           {/* Mobile: Hamburger Menu + Logo */}
           <div className="flex items-center gap-3 md:hidden">
             <button
               onClick={() => setMobileDrawerOpen(true)}
-              className="p-2 rounded-xl bg-surface-container border border-outline-variant text-on-surface hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+              className="p-2 rounded-lg bg-surface-container border border-outline-variant text-on-surface hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
               aria-label="Open Navigation Drawer"
             >
               <Menu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-sm text-primary tracking-tight">Console</span>
-              <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 uppercase">
+              <span className="font-bold text-sm text-primary tracking-tight">Console</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 uppercase">
                 CMS + cPanel
               </span>
             </div>
@@ -819,7 +811,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="relative w-full">
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant" />
               <input
-                className="w-full bg-surface-container-lowest border border-outline-variant rounded-full py-2 pl-10 pr-4 text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-2 pl-10 pr-4 text-xs text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="Search CMS posts, telemetry, KRA records, logs, users..."
                 onClick={() => router.push('/admin/system-logs')}
                 readOnly
@@ -830,11 +822,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* Desktop Status Badges for CMS & cPanel */}
           <div className="hidden xl:flex items-center gap-2 ml-4">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
               CMS Engine
             </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               cPanel Active
             </span>
@@ -847,7 +839,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-2 sm:gap-3 ml-auto">
             <a
               href={portalHref}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant bg-surface-container hover:bg-surface-container-high transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-on-surface-variant bg-surface-container hover:bg-surface-container-high transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Client Portal</span>
@@ -855,12 +847,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             <Link
               href="/admin/inquiries"
-              className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-xl transition-colors relative"
+              className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors relative"
               title="Messages & Inbox"
             >
               <Mail className="w-4 h-4" />
               {unreadInquiriesCount > 0 && (
-                <span className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-primary text-white text-[9px] font-black leading-none animate-pulse">
+                <span className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full bg-primary text-white text-[9px] font-bold leading-none">
                   {unreadInquiriesCount}
                 </span>
               )}

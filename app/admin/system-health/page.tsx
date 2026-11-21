@@ -122,15 +122,15 @@ export default function SystemHealthPage() {
           <p className="text-on-surface-variant text-sm mt-1">Real-time live monitoring metrics connected to Neon and Clerk APIs.</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`flex items-center px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-            services.some(s => s.status === "Outage") ? "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300 animate-pulse" :
-            services.some(s => s.status === "Degraded") ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 animate-pulse" :
+          <span className={`flex items-center px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+            services.some(s => s.status === "Outage") ? "bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300" :
+            services.some(s => s.status === "Degraded") ? "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300" :
             "bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300"
           }`}>
             <span className={`w-2 h-2 rounded-full mr-2 ${
-              services.some(s => s.status === "Outage") ? "bg-red-600 animate-ping" :
+              services.some(s => s.status === "Outage") ? "bg-red-600 animate-pulse" :
               services.some(s => s.status === "Degraded") ? "bg-amber-500 animate-pulse" :
-              "bg-green-600 animate-pulse"
+              "bg-green-600"
             }`} />
             {services.some(s => s.status === "Outage") ? "Critical Outage Detected" :
              services.some(s => s.status === "Degraded") ? "Performance Degraded" :
@@ -159,12 +159,12 @@ export default function SystemHealthPage() {
             const icon = metricIcons[m.label] || "dns";
 
             return (
-              <div key={m.label} className="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant hover:-translate-y-1 transition-transform duration-300 shadow-soft">
+              <div key={m.label} className="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant shadow-soft">
                 <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center">
                     <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>{icon}</span>
                   </div>
-                  <span className="bg-surface-container-highest text-on-surface-variant text-[10px] uppercase font-bold px-2 py-0.5 rounded-lg">
+                  <span className="bg-surface-container-highest text-on-surface-variant text-[10px] uppercase font-semibold px-2 py-0.5 rounded-md">
                     Real-time
                   </span>
                 </div>
@@ -239,7 +239,7 @@ export default function SystemHealthPage() {
           <div className="px-5 py-4 border-b border-outline-variant bg-surface flex items-center justify-between">
             <h3 className="font-bold text-on-surface flex items-center gap-2">
               Live Health Logs
-              <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+              <span className="w-2 h-2 bg-primary rounded-full" />
             </h3>
             <button
               type="button"

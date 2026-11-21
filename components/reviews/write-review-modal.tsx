@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Star, CheckCircle2, MessageSquarePlus, Sparkles, X } from "lucide-react"
+import { Star, CheckCircle2, MessageSquarePlus } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -78,33 +78,29 @@ export function WriteReviewModal({ onReviewSubmitted }: WriteReviewModalProps) {
       <DialogTrigger asChild>
         <Button
           size="lg"
-          className="h-12 px-6 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm hover:bg-primary/90 shadow-md shadow-primary/20 flex items-center gap-2 group transition-all"
+          className="h-10 px-5 rounded-lg bg-primary text-white font-semibold text-xs hover:bg-primary/90 flex items-center gap-2"
         >
-          <MessageSquarePlus className="w-4 h-4 transition-transform group-hover:scale-110" />
+          <MessageSquarePlus className="w-4 h-4" />
           <span>Write a Review</span>
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-md sm:max-w-lg p-6 rounded-3xl bg-surface dark:bg-slate-900 border border-outline-variant shadow-2xl">
-        <DialogHeader className="space-y-1.5 text-left">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold w-fit">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Community Feedback</span>
-          </div>
-          <DialogTitle className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
+      <DialogContent className="max-w-md sm:max-w-lg p-6 rounded-xl bg-surface-container-lowest border border-outline-variant shadow-lg">
+        <DialogHeader className="space-y-1 text-left">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-on-surface tracking-tight">
             Share Your Experience
           </DialogTitle>
           <DialogDescription className="text-xs text-on-surface-variant">
-            Help fellow citizens, cyber cafe operators, and businesses discover our digital products and services.
+            Provide feedback on our compliance portal or software engineering services.
           </DialogDescription>
         </DialogHeader>
 
         {submitted ? (
-          <div className="py-8 flex flex-col items-center justify-center text-center space-y-3 animate-in fade-in zoom-in-95 duration-300">
-            <div className="w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8" />
+          <div className="py-8 flex flex-col items-center justify-center text-center space-y-2.5">
+            <div className="w-12 h-12 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h4 className="text-lg font-black text-on-surface">Draft Feedback Saved Locally</h4>
+            <h4 className="text-base font-bold text-on-surface">Draft Feedback Saved Locally</h4>
             <p className="text-xs text-on-surface-variant max-w-xs">
               Your feedback draft has been added to this session preview. To publish a public verified review, please post directly on Google Maps.
             </p>
@@ -113,10 +109,10 @@ export function WriteReviewModal({ onReviewSubmitted }: WriteReviewModalProps) {
           <form onSubmit={handleSubmit} className="space-y-4 pt-2">
             {/* Rating Stars Picker */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-on-surface block">
+              <label className="text-xs font-semibold text-on-surface block">
                 Overall Satisfaction Rating:
               </label>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
@@ -124,19 +120,19 @@ export function WriteReviewModal({ onReviewSubmitted }: WriteReviewModalProps) {
                     onClick={() => setRating(star)}
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
-                    className="p-1 text-amber-400 hover:scale-125 transition-transform focus:outline-none"
+                    className="p-1 text-amber-400 focus:outline-none"
                     aria-label={`Rate ${star} stars`}
                   >
                     <Star
-                      className={`w-7 h-7 transition-colors ${
+                      className={`w-6 h-6 transition-colors ${
                         (hoverRating || rating) >= star
                           ? "fill-amber-400 text-amber-400"
-                          : "text-zinc-300 dark:text-zinc-600"
+                          : "text-outline-variant"
                       }`}
                     />
                   </button>
                 ))}
-                <span className="text-xs font-mono font-bold text-on-surface-variant ml-2">
+                <span className="text-xs font-mono font-semibold text-on-surface-variant ml-2">
                   {rating}.0 / 5.0
                 </span>
               </div>

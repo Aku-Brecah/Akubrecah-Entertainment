@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import { getPublishedProjects } from '@/lib/cms';
 import { ProjectsExplorer } from '@/components/projects-explorer';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BreadcrumbSchema } from '@/components/seo/site-schema';
 
@@ -48,52 +48,50 @@ export default async function ProjectsPage() {
         ]}
       />
       {/* Hero Header */}
-      <div className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
-        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-5 relative z-10">
-          <nav className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
+      <div className="bg-surface-container-lowest border-b border-outline-variant">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 md:py-12 space-y-4">
+          <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
             <span>/</span>
-            <span className="text-on-surface font-semibold">Engineered Systems</span>
+            <span className="text-on-surface font-medium">Case Studies</span>
           </nav>
-          <div className="max-w-5xl space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-xs font-black text-primary uppercase tracking-widest shadow-xs">
-              <Sparkles className="w-3.5 h-3.5" />
-              Verified Production Architectures
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-on-surface tracking-tight leading-tight">
-              Selected Work:<br />
-              <span className="text-primary">Resilient Engineering at Sovereign Scale.</span>
+          <div className="max-w-4xl space-y-3">
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+              Production Systems &amp; Architecture Reviews
+            </span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-on-surface tracking-tight leading-tight">
+              Selected engineering work and deployed platforms.
             </h1>
-            <p className="text-base sm:text-lg text-on-surface-variant max-w-4xl leading-relaxed">
-              Explore our mission-critical web applications, statutory compliance portals, and enterprise engineering architectures designed for resilience across East Africa.
+            <p className="text-base sm:text-lg text-on-surface-variant max-w-3xl leading-relaxed">
+              Examine the technical requirements, system architecture, and production outcomes of our web applications, statutory compliance portals, and mobile platforms.
             </p>
           </div>
         </div>
       </div>
 
       {/* Main Grid Explorer */}
-      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-10">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 md:py-14 space-y-12">
         <ProjectsExplorer
           curatedProjects={curatedProjects}
         />
 
-        {/* Bottom CTA Banner (Obsidian Sovereign Theme) */}
-        <div className="p-8 sm:p-12 rounded-3xl bg-[#111315] text-white border border-stone-800 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-stone-700 bg-stone-900/80 mb-1">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-xs font-semibold text-stone-300 uppercase tracking-wider">Direct Engineering Consultation</span>
-            </div>
-            <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Have a mission-critical system to architect or scale?
-            </h3>
-            <p className="text-sm text-stone-300 leading-relaxed">
-              We engineer custom SaaS, GovTech portals, and M-Pesa fintech pipelines with guaranteed deliverables and sub-second performance.
+        {/* Bottom Consultation Bar */}
+        <div className="p-8 sm:p-10 rounded-xl bg-surface-container-lowest border border-outline-variant flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-1.5 max-w-xl">
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+              Architecture Consultation
+            </span>
+            <h2 className="text-xl sm:text-2xl font-bold text-on-surface tracking-tight">
+              Have a software system to architect or modernize?
+            </h2>
+            <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+              We build custom web platforms, GovTech portals, and Daraja M-Pesa payment pipelines with clear milestones and documented codebases.
             </p>
           </div>
-          <Button asChild size="lg" className="shrink-0 rounded-xl px-6 bg-primary text-white font-bold hover:bg-primary/90 shadow-sm flex items-center gap-2">
+          <Button asChild size="lg" className="shrink-0 h-10 rounded-lg px-6 bg-primary text-white font-semibold text-xs hover:bg-primary/90 flex items-center gap-2">
             <Link href="/contact">
-              Book Architecture Review <ArrowRight className="w-4 h-4" />
+              <span>Book Architecture Review</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </Button>
         </div>

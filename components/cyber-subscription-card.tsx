@@ -15,7 +15,6 @@ import {
   RotateCcw,
   ShieldCheck,
   Smartphone,
-  Sparkles,
   Zap,
   ArrowRight,
   ExternalLink,
@@ -410,30 +409,30 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
     }
 
     return (
-      <div className="w-full bg-gradient-to-r from-red-50 to-amber-50 dark:from-red-950/20 dark:to-zinc-900 border border-red-200 dark:border-red-900/40 rounded-2xl p-3.5 text-zinc-900 dark:text-zinc-100 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-red-600 text-white shrink-0">
+      <div className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl p-4 text-on-surface flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
             <Building2 className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-xs text-zinc-900 dark:text-zinc-100">Cyber Cafe Unlimited Monthly Plan</span>
-              <span className="px-2 py-0.2 rounded-full text-[10px] font-black uppercase bg-red-600 text-white">
+              <span className="font-bold text-xs text-on-surface">Cyber Cafe Monthly Pass</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-primary/10 text-primary border border-primary/20">
                 KES 500/mo
               </span>
             </div>
-            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5">
-              Unlimited downloads, instant ID lookups with 0 fees, and official Tax Invoices.
+            <p className="text-[11px] text-on-surface-variant mt-0.5">
+              Up to 50 daily downloads, instant ID lookups with zero per-retrieval fees, and official Tax Invoices.
             </p>
           </div>
         </div>
         <Button
           size="sm"
           onClick={() => setShowModal(true)}
-          className="h-8 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shrink-0 shadow-xs flex items-center gap-1.5"
+          className="h-8 px-3 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-semibold shrink-0 flex items-center gap-1.5"
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          Activate Plan
+          <span>Activate Plan</span>
+          <ArrowRight className="w-3.5 h-3.5" />
         </Button>
         {renderSubscribeModal()}
       </div>
@@ -442,47 +441,47 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
 
   // Full Dashboard card variant
   return (
-    <div className="w-full rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+    <div className="w-full rounded-xl bg-surface-container-lowest border border-outline-variant overflow-hidden">
       {/* Top Banner Header */}
-      <div className="p-5 sm:p-6 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-5 sm:p-6 border-b border-outline-variant bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="p-3 rounded-2xl bg-red-600 text-white shrink-0 shadow-sm">
-            <Building2 className="w-6 h-6" />
+          <div className="p-2.5 rounded-lg bg-primary text-white shrink-0">
+            <Building2 className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
-              <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-50">
+              <h3 className="font-bold text-base sm:text-lg text-on-surface">
                 {cafe ? cafe.cafeName : "Cyber Cafe Monthly Subscription"}
               </h3>
               {isActive ? (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-600 text-white">
+                <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-emerald-600 text-white">
                   Active
                 </span>
               ) : (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-surface-container text-on-surface-variant border border-outline-variant">
                   Not Subscribed
                 </span>
               )}
             </div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-              KES 500 / Month · Unlimited Instant KRA PIN lookups, zero per-certificate fees & WhatsApp integration
+            <p className="text-xs text-on-surface-variant mt-0.5">
+              KES 500 / Month · Up to 50 daily KRA PIN lookups, zero per-certificate fees &amp; WhatsApp integration
             </p>
           </div>
         </div>
 
         <Button
           onClick={() => setShowModal(true)}
-          className="h-10 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs shrink-0 flex items-center gap-2 self-start sm:self-auto"
+          className="h-10 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-semibold shrink-0 flex items-center gap-2 self-start sm:self-auto"
         >
           {isActive ? (
             <>
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-3.5 h-3.5" />
               <span>Renew Subscription</span>
             </>
           ) : (
             <>
-              <Sparkles className="w-4 h-4" />
               <span>Subscribe for KES 500</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </>
           )}
         </Button>
@@ -791,12 +790,9 @@ export function CyberSubscriptionCard({ compact = false }: { compact?: boolean }
 
           {/* STATE: STK SENT */}
           {mpesaStatus === "stk_sent" && (
-            <div className="py-5 px-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/30 text-center space-y-3">
-              <div className="relative mx-auto w-12 h-12">
-                <div className="absolute inset-0 rounded-full bg-emerald-500/25 animate-ping" />
-                <div className="relative w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center">
-                  <Smartphone className="w-6 h-6" />
-                </div>
+            <div className="py-5 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/30 text-center space-y-3">
+              <div className="mx-auto w-12 h-12 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+                <Smartphone className="w-6 h-6" />
               </div>
               <div>
                 <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-50">

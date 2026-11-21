@@ -3,8 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { 
   Github, Star, Eye, EyeOff, Search, RefreshCw, 
-  ExternalLink, CheckCircle2, AlertCircle, Sparkles,
-  Filter, Layers, ArrowUpRight
+  ExternalLink, AlertCircle
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { GITHUB_LANGUAGE_COLORS } from "@/lib/github-constants";
@@ -234,14 +233,14 @@ export function AdminGithubReposManager() {
   return (
     <div className="space-y-6">
       {/* Top Banner & Stats Overview */}
-      <div className="p-6 sm:p-7 rounded-3xl bg-surface-container border border-outline-variant shadow-soft space-y-6">
+      <div className="p-6 sm:p-7 rounded-xl bg-surface-container border border-outline-variant shadow-soft space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-black text-primary uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-primary/10 border border-primary/20 text-xs font-bold text-primary uppercase tracking-wider">
               <Github className="w-3.5 h-3.5" />
               Public GitHub Ecosystem CMS
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-on-surface tracking-tight">
               Control Repositories Displayed on Public Website
             </h2>
             <p className="text-xs text-on-surface-variant max-w-2xl leading-relaxed">
@@ -407,7 +406,7 @@ export function AdminGithubReposManager() {
             return (
               <div
                 key={repo.id}
-                className={`p-5 rounded-3xl border transition-all shadow-soft flex flex-col justify-between gap-4 ${
+                className={`p-5 rounded-xl border transition-colors flex flex-col justify-between gap-4 ${
                   repo.isVisible
                     ? "bg-surface-container border-outline-variant hover:border-primary/40"
                     : "bg-surface-container/50 border-outline-variant/50 opacity-70"

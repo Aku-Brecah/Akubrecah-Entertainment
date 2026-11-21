@@ -169,8 +169,8 @@ export default function AdminArticlesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
-            Articles & Field Notes
+          <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">
+            Articles &amp; Field Notes
           </h1>
           <p className="text-xs text-on-surface-variant mt-1">
             Author and publish technical tutorials, architectural insights, and engineering notes.
@@ -179,7 +179,7 @@ export default function AdminArticlesPage() {
 
         <button
           onClick={handleOpenCreate}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-all shadow-md self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           Write New Article
@@ -209,11 +209,11 @@ export default function AdminArticlesPage() {
 
       {/* Articles Feed */}
       {loading ? (
-        <div className="p-12 text-center text-xs text-on-surface-variant bg-surface-container rounded-3xl border border-outline-variant">
+        <div className="p-12 text-center text-xs text-on-surface-variant bg-surface-container rounded-xl border border-outline-variant">
           Loading technical articles...
         </div>
       ) : filteredArticles.length === 0 ? (
-        <div className="p-12 text-center text-xs text-on-surface-variant bg-surface-container rounded-3xl border border-outline-variant">
+        <div className="p-12 text-center text-xs text-on-surface-variant bg-surface-container rounded-xl border border-outline-variant">
           No articles found. Click &quot;Write New Article&quot; to publish your first post.
         </div>
       ) : (
@@ -221,11 +221,11 @@ export default function AdminArticlesPage() {
           {filteredArticles.map((a) => (
             <div
               key={a.id}
-              className="p-5 sm:p-6 rounded-3xl bg-surface-container border border-outline-variant hover:border-primary/40 transition-all shadow-soft flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+              className="p-5 sm:p-6 rounded-xl bg-surface-container border border-outline-variant hover:border-primary/40 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
             >
               <div className="space-y-2 flex-1 min-w-0">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
                     {a.category}
                   </span>
                   <span className="flex items-center gap-1 text-[11px] font-mono text-on-surface-variant">
@@ -244,7 +244,7 @@ export default function AdminArticlesPage() {
                   </button>
                 </div>
 
-                <h3 className="text-lg font-black text-on-surface tracking-tight">
+                <h3 className="text-lg font-bold text-on-surface tracking-tight">
                   {a.title}
                 </h3>
 

@@ -206,33 +206,32 @@ export function KRASignIn() {
   }
 
   return (
-    <div className="relative min-h-[92vh] flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-background overflow-hidden">
+    <div className="relative min-h-[92vh] flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8 bg-surface">
       <motion.div 
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
+        transition={{ duration: 0.25 }}
         className="relative w-full max-w-[430px] z-10"
       >
-        {/* Minimal GovTech Card */}
-        <div className="bg-card text-card-foreground border border-border shadow-2xl rounded-2xl p-6 sm:p-8 backdrop-blur-xl">
+        <div className="bg-surface-container-lowest text-on-surface border border-outline-variant rounded-xl p-6 sm:p-8">
           
           {/* Header Badge & Title */}
-          <div className="text-center space-y-3 mb-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold tracking-wide uppercase">
+          <div className="text-center space-y-2.5 mb-6">
+            <div className="inline-flex items-center gap-1.5 text-primary text-xs font-semibold tracking-wider uppercase">
               <ShieldCheck className="w-4 h-4 text-primary" />
               <span>Akubrecah Compliance Hub</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground font-sans">
-              Tax & Certificate Portal
+            <h1 className="text-2xl font-bold tracking-tight text-on-surface font-sans">
+              Tax &amp; Certificate Portal
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            <p className="text-xs text-on-surface-variant leading-relaxed">
               Sign in to retrieve compliance documents, verify filings, and manage subscriptions.
             </p>
 
             {/* Google Safe Browsing / Phishing Prevention Disclaimer */}
-            <div className="p-2.5 rounded-lg bg-muted/60 border border-border text-[11px] text-muted-foreground leading-normal text-left">
-              <span className="font-semibold text-foreground">Independent Service:</span> Akubrecah Technologies is an independent cyber services agency. We are not affiliated with the Kenya Revenue Authority (KRA). Official free services can be accessed directly at <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="text-primary underline">itax.kra.go.ke</a>.
+            <div className="p-2.5 rounded-lg bg-surface-container-low border border-outline-variant text-[11px] text-on-surface-variant leading-normal text-left">
+              <span className="font-semibold text-on-surface">Independent Service:</span> Akubrecah Technologies is an independent cyber services agency. We are not affiliated with the Kenya Revenue Authority (KRA). Official free services can be accessed directly at <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="text-primary underline">itax.kra.go.ke</a>.
             </div>
           </div>
 

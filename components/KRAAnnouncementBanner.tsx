@@ -24,21 +24,13 @@ export default function KRAAnnouncementBanner() {
   if (!isKra || !announcement || pathname?.startsWith('/admin') || pathname?.startsWith('/dashboard')) return null
 
   return (
-    <div role="alert" aria-live="polite" className="sticky top-0 z-[60] w-full bg-primary text-white border-b border-white/10 shadow-none">
-      <div className="flex items-center py-1 h-8">
-        <div className="flex-shrink-0 pl-4">
-          <AlertCircle className="h-4 w-4 text-white" />
-        </div>
-        
-        <div className="flex-1 overflow-hidden mx-4">
-          <div className="animate-marquee whitespace-nowrap inline-block">
-            <span className="text-xs font-bold uppercase tracking-widest px-8">
-              {announcement}
-            </span>
-            <span className="text-xs font-bold uppercase tracking-widest px-8">
-              {announcement}
-            </span>
-          </div>
+    <div role="region" aria-label="Service Notice" className="w-full bg-surface-container border-b border-outline-variant text-on-surface">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 min-w-0">
+          <AlertCircle className="h-3.5 w-3.5 text-primary shrink-0" />
+          <p className="text-on-surface-variant font-medium truncate sm:whitespace-normal">
+            {announcement}
+          </p>
         </div>
       </div>
     </div>

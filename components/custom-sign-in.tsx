@@ -216,50 +216,46 @@ export function CustomSignIn() {
   return (
     <div className="flex flex-col lg:flex-row w-full min-h-screen font-body-md text-on-surface bg-background overflow-hidden">
       {/* Left Hero Panel (Desktop) */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white flex-col justify-between p-12 lg:p-16 overflow-hidden border-r border-border/30">
-        <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:20px_20px] opacity-40 pointer-events-none" />
-
+      <div className="hidden lg:flex lg:w-1/2 relative bg-slate-950 text-white flex-col justify-between p-12 lg:p-16 overflow-hidden border-r border-slate-800">
         {/* Brand Logo */}
         <div className="relative z-10">
-          <Link href="/" className="inline-block transition-transform hover:scale-105">
-            <Logo width={180} height={54} className="h-10 w-auto brightness-200" />
+          <Link href="/" className="inline-block">
+            <Logo width={170} height={50} className="h-9 w-auto brightness-200" />
           </Link>
         </div>
 
         {/* Feature List & Headline */}
-        <div className="relative z-10 space-y-8 max-w-lg my-auto py-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-semibold">
+        <div className="relative z-10 space-y-6 max-w-lg my-auto py-8">
+          <div className="inline-flex items-center gap-2 text-primary text-xs font-semibold uppercase tracking-wider">
             <ShieldCheck className="w-4 h-4 text-primary" />
             <span>Akubrecah Technologies Client Portal</span>
           </div>
 
-          <div className="space-y-4">
-            <h1 className="text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-              Sign In to Your Akubrecah Account.
+          <div className="space-y-3">
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-white leading-tight">
+              Sign in to your Akubrecah account.
             </h1>
-            <p className="text-zinc-400 text-base leading-relaxed">
+            <p className="text-slate-400 text-sm leading-relaxed">
               Access your digital tools, cyber service orders, verified certificate downloads, and client dashboard.
             </p>
           </div>
 
-          <div className="space-y-3.5 pt-2">
+          <div className="space-y-3 pt-2">
             {[
               { text: "Fast & Secure Client Account Access", icon: Zap },
               { text: "Encrypted Document & Certificate Management", icon: CheckCircle2 },
               { text: "Compliant with Kenya Data Protection Act 2019", icon: Lock },
             ].map((feature, idx) => (
-              <div key={idx} className="flex items-center gap-3 text-sm text-zinc-300">
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
-                  <feature.icon className="w-3.5 h-3.5" />
-                </div>
+              <div key={idx} className="flex items-center gap-3 text-xs text-slate-300">
+                <feature.icon className="w-4 h-4 text-primary shrink-0" />
                 <span>{feature.text}</span>
               </div>
             ))}
           </div>
 
           {/* Third party non-government notice */}
-          <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs text-zinc-400 leading-relaxed">
-            <strong className="text-zinc-200">Notice:</strong> This is a private Akubrecah Technologies account portal. Do not enter your official Government KRA iTax passwords here. Official tax filing is available directly at{" "}
+          <div className="p-3.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-400 leading-relaxed">
+            <strong className="text-slate-200">Notice:</strong> This is a private Akubrecah Technologies account portal. Do not enter your official Government KRA iTax passwords here. Official tax filing is available directly at{" "}
             <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="text-primary underline">
               itax.kra.go.ke
             </a>.
@@ -267,7 +263,7 @@ export function CustomSignIn() {
         </div>
 
         {/* Footer info */}
-        <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-zinc-400">
+        <div className="relative z-10 pt-6 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
           <span>© {new Date().getFullYear()} Akubrecah Technologies. All rights reserved.</span>
           <div className="flex items-center gap-4">
             <Link href="/legal/privacy" className="hover:text-white transition-colors">Privacy</Link>
@@ -278,29 +274,29 @@ export function CustomSignIn() {
       </div>
 
       {/* Right Form Container */}
-      <div className="w-full lg:w-1/2 min-h-screen flex flex-col justify-center items-center p-4 sm:p-8 lg:p-12 relative bg-surface-container-lowest">
+      <div className="w-full lg:w-1/2 min-h-screen flex flex-col justify-center items-center p-4 sm:p-8 lg:p-12 relative bg-surface">
         {/* Mobile Logo */}
-        <div className="lg:hidden mb-8 text-center flex flex-col items-center">
+        <div className="lg:hidden mb-6 text-center flex flex-col items-center">
           <Link href="/">
-            <Logo width={160} height={48} className="mb-2" />
+            <Logo width={150} height={44} className="mb-2" />
           </Link>
         </div>
 
         <motion.div 
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="w-full max-w-md bg-card border border-border/80 rounded-2xl shadow-xl p-6 sm:p-8 backdrop-blur-xl"
+          transition={{ duration: 0.25 }}
+          className="w-full max-w-md bg-surface-container-lowest border border-outline-variant rounded-xl p-6 sm:p-8"
         >
           {/* Header */}
           <div className="mb-6 text-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-3">
-              <Fingerprint className="w-6 h-6" />
+            <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary mb-3">
+              <Fingerprint className="w-5 h-5" />
             </div>
-            <h2 className="text-2xl font-bold text-on-surface tracking-tight">Sign In to Akubrecah</h2>
-            <p className="text-sm text-on-surface-variant mt-1">Enter your Akubrecah account credentials to continue</p>
-            <div className="mt-3 p-2 rounded-lg bg-surface-container border border-outline-variant/60 text-[11px] text-on-surface-variant text-center font-medium">
-              Private client account • Not affiliated with Government KRA
+            <h2 className="text-xl font-bold text-on-surface tracking-tight">Sign In to Akubrecah</h2>
+            <p className="text-xs text-on-surface-variant mt-1">Enter your Akubrecah account credentials to continue</p>
+            <div className="mt-3 p-2 rounded-lg bg-surface-container-low border border-outline-variant text-[11px] text-on-surface-variant text-center font-medium">
+              Private client account · Not affiliated with Government KRA
             </div>
           </div>
 

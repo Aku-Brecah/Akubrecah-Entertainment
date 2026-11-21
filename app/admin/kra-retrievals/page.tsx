@@ -186,19 +186,19 @@ export default function KraRetrievalsAdminPage() {
     <div className="w-full max-w-none space-y-6 px-2 sm:px-4 py-4 sm:py-6">
 
       {/* Top Banner & Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-container-lowest p-6 rounded-3xl border border-outline-variant shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-2xl bg-primary/10 text-primary border border-primary/20">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-black text-on-surface tracking-tight">KRA Retrieval Intelligence</h1>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/25 px-2.5 py-0.5 rounded-full">
+                <h1 className="text-2xl font-bold text-on-surface tracking-tight">KRA Retrieval Intelligence</h1>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/25 px-2.5 py-0.5 rounded-md">
                   Admin Command Center
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 px-2.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 px-2.5 py-0.5 rounded-md">
                   Zero PDF Storage Policy
                 </span>
               </div>

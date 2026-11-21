@@ -4,9 +4,8 @@ import { notFound } from 'next/navigation';
 import { getProjectBySlug } from '@/lib/cms';
 import { getAllGithubRepos, getRepoReadme } from '@/lib/github';
 import { 
-  ArrowLeft, ExternalLink, CheckCircle2, ShieldCheck, 
-  Code2, Layers, Cpu, ArrowRight, Star, BookOpen, 
-  Terminal, Sparkles, FolderGit2
+  ExternalLink, CheckCircle2, ShieldCheck, 
+  ArrowRight, BookOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MarkdownContent } from '@/components/markdown-content';
@@ -130,34 +129,32 @@ export default async function ProjectDetailPage({ params }: Props) {
         ]}
       />
       {/* Header & Hero */}
-      <div className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
-        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 sm:py-10 space-y-5 relative z-10">
-          <nav className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
+      <div className="bg-surface-container-lowest border-b border-outline-variant">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 sm:py-12 space-y-4">
+          <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
             <span>/</span>
-            <Link href="/projects" className="hover:text-primary transition-colors">Engineered Systems</Link>
+            <Link href="/projects" className="hover:text-primary transition-colors">Case Studies</Link>
             <span>/</span>
-            <span className="text-on-surface font-semibold truncate max-w-[200px] sm:max-w-none">{project.title}</span>
+            <span className="text-on-surface font-medium truncate max-w-[200px] sm:max-w-none">{project.title}</span>
           </nav>
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/25">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 flex-wrap text-xs">
+              <span className="font-semibold text-primary uppercase tracking-wider">
                 {project.category}
               </span>
               {project.client && (
-                <span className="text-xs font-medium text-on-surface-variant">
-                  Client: <strong className="text-on-surface font-semibold">{project.client}</strong>
-                </span>
-              )}
-              {githubRepo && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Verified Production System
-                </span>
+                <>
+                  <span className="text-outline-variant">·</span>
+                  <span className="text-on-surface-variant">
+                    Client: <strong className="text-on-surface font-semibold">{project.client}</strong>
+                  </span>
+                </>
               )}
             </div>
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-on-surface tracking-tight leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-on-surface tracking-tight leading-tight">
               {project.title}
             </h1>
 
@@ -165,77 +162,55 @@ export default async function ProjectDetailPage({ params }: Props) {
               {project.summary}
             </p>
 
-            {/* Live Action Buttons */}
-            <div className="flex items-center gap-3 pt-4 flex-wrap">
-              {publicLiveUrl && (
-                <Button asChild size="sm" className="rounded-xl px-4 bg-primary text-white font-bold hover:bg-primary/90 flex items-center gap-1.5 shadow-xs">
+            {publicLiveUrl && (
+              <div className="flex items-center gap-3 pt-2 flex-wrap">
+                <Button asChild size="sm" className="h-9 rounded-lg px-4 bg-primary text-white font-semibold text-xs hover:bg-primary/90 flex items-center gap-1.5">
                   <a href={publicLiveUrl} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Open Live Deployment
+                    <span>Open Live Deployment</span>
                   </a>
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Main Body */}
-      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 sm:py-10 space-y-8">
-        {/* Metric Ribbons & Fast Facts */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-soft">
-            <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">
-              Architecture Domain
-            </span>
-            <div className="text-xl sm:text-2xl font-black text-on-surface mt-1 flex items-center gap-2">
-              <Code2 className="w-5 h-5 text-primary" />
-              <span>{project.category || 'GovTech'}</span>
-            </div>
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 sm:py-12 space-y-10">
+        {/* System Specification Metadata Sheet */}
+        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-6 p-6 rounded-xl bg-surface-container-lowest border border-outline-variant text-xs">
+          <div className="space-y-1">
+            <dt className="text-on-surface-variant">Architecture Domain</dt>
+            <dd className="text-sm font-semibold text-on-surface">{project.category || 'GovTech'}</dd>
           </div>
-
-          <div className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-soft">
-            <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">
-              Operational Status
-            </span>
-            <div className="text-xl sm:text-2xl font-black text-on-surface mt-1 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-emerald-500" />
-              <span className="text-emerald-600 dark:text-emerald-400">Live Production</span>
-            </div>
+          <div className="space-y-1">
+            <dt className="text-on-surface-variant">Deployment State</dt>
+            <dd className="text-sm font-semibold text-on-surface">Production</dd>
           </div>
-
-          <div className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-soft">
-            <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">
-              Reliability Tier
-            </span>
-            <div className="text-xl sm:text-2xl font-black text-on-surface mt-1 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-primary" />
-              <span>High Availability</span>
-            </div>
+          <div className="space-y-1">
+            <dt className="text-on-surface-variant">Client / Sponsor</dt>
+            <dd className="text-sm font-semibold text-on-surface">{project.client || 'Akubrecah Engineering'}</dd>
           </div>
-
-          <div className="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-soft">
-            <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">
-              Security Standard
-            </span>
-            <div className="text-xl sm:text-2xl font-black text-on-surface mt-1 font-mono text-emerald-600 dark:text-emerald-400">
-              Enterprise Strict
-            </div>
+          <div className="space-y-1">
+            <dt className="text-on-surface-variant">Primary Stack</dt>
+            <dd className="text-sm font-mono font-semibold text-on-surface truncate">
+              {sanitizedTechnologies.slice(0, 2).join(' · ') || 'TypeScript · Next.js'}
+            </dd>
           </div>
-        </div>
+        </dl>
 
-        {/* Technologies Grid */}
+        {/* Technologies List */}
         {sanitizedTechnologies && sanitizedTechnologies.length > 0 && (
-          <div className="p-6 sm:p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-4">
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
-              <Cpu className="w-4 h-4" />
-              <span>Architecture & Stack Capabilities</span>
-            </div>
+          <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
+              Technology Stack &amp; Infrastructure
+            </h2>
             <div className="flex flex-wrap gap-2">
               {sanitizedTechnologies.map((tech: string) => (
                 <span
                   key={tech}
-                  className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-surface-container text-on-surface border border-outline-variant/60"
+                  className="px-2.5 py-1 rounded text-xs font-mono font-medium bg-surface-container-low text-on-surface border border-outline-variant"
                 >
                   {tech}
                 </span>
@@ -246,67 +221,63 @@ export default async function ProjectDetailPage({ params }: Props) {
 
         {/* Featured Image if Present */}
         {project.featuredImage && (
-          <div className="rounded-3xl overflow-hidden border border-outline-variant shadow-soft bg-surface-container-lowest p-2">
+          <div className="rounded-xl overflow-hidden border border-outline-variant bg-surface-container-lowest">
             <img
               src={project.featuredImage}
               alt={project.title}
-              className="w-full max-h-[480px] object-cover rounded-2xl"
+              className="w-full max-h-[480px] object-cover"
             />
           </div>
         )}
 
         {/* In-Depth Real Engineering Documentation (README from GitHub) */}
         {readmeData.hasReadme ? (
-          <div className="p-6 sm:p-10 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-6">
-            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-4 flex-wrap gap-3">
+          <div className="p-6 sm:p-10 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-6">
+            <div className="flex items-center justify-between border-b border-outline-variant pb-4 flex-wrap gap-3">
               <div className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-primary" />
-                <h2 className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
-                  Detailed Engineering Specification & System Documentation
+                <BookOpen className="w-4 h-4 text-primary" />
+                <h2 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight">
+                  Engineering Specification &amp; System Documentation
                 </h2>
               </div>
             </div>
 
-            {/* Rich Markdown Reader */}
             <MarkdownContent content={readmeData.content} />
           </div>
         ) : (
-          /* Fallback structured case study sections */
-          <div className="space-y-12">
-            {/* Problem vs Solution */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="p-6 sm:p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-3">
-                <div className="text-xs font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">
-                  The Engineering Challenge
-                </div>
-                <h3 className="text-xl font-bold text-on-surface">Problem Statement</h3>
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-6 sm:p-8 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-2.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                  Problem Statement
+                </span>
+                <h3 className="text-lg font-bold text-on-surface">Operational Challenge</h3>
                 <p className="text-sm text-on-surface-variant leading-relaxed">
                   {project.problemStatement || 'Enterprise operational inefficiencies and unoptimized database access required modernization.'}
                 </p>
               </div>
 
-              <div className="p-6 sm:p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-3">
-                <div className="text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-                  The Architecture Solution
-                </div>
-                <h3 className="text-xl font-bold text-on-surface">Technical Strategy</h3>
+              <div className="p-6 sm:p-8 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-2.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                  Architecture Strategy
+                </span>
+                <h3 className="text-lg font-bold text-on-surface">Technical Solution</h3>
                 <p className="text-sm text-on-surface-variant leading-relaxed">
-                  {project.solutionArchitecture || 'Engineered a resilient decoupled microservice pattern with distributed caching and automated retries.'}
+                  {project.solutionArchitecture || 'Engineered a resilient decoupled service pattern with distributed caching and automated retries.'}
                 </p>
               </div>
             </div>
 
-            {/* Measurable Outcomes */}
             {project.measurableOutcomes && project.measurableOutcomes.length > 0 && (
-              <div className="p-6 sm:p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-4">
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+              <div className="p-6 sm:p-8 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-4">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Verified Production Outcomes</span>
+                  <span>Production Outcomes</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {project.measurableOutcomes.map((outcome: string, idx: number) => (
-                    <div key={idx} className="flex items-start gap-2.5 p-3 rounded-2xl bg-surface-container">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <div key={idx} className="flex items-start gap-2.5 p-3 rounded-lg bg-surface-container-low border border-outline-variant">
+                      <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                       <span className="text-xs sm:text-sm font-medium text-on-surface">{outcome}</span>
                     </div>
                   ))}
@@ -314,10 +285,9 @@ export default async function ProjectDetailPage({ params }: Props) {
               </div>
             )}
 
-            {/* Full Architectural Description */}
-            <div className="p-6 sm:p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-4">
-              <h3 className="text-xl font-black text-on-surface tracking-tight">Full System Overview</h3>
-              <div className="text-sm sm:text-base text-on-surface-variant leading-relaxed space-y-4 whitespace-pre-line">
+            <div className="p-6 sm:p-8 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-3">
+              <h3 className="text-lg font-bold text-on-surface tracking-tight">System Overview</h3>
+              <div className="text-sm text-on-surface-variant leading-relaxed space-y-4 whitespace-pre-line">
                 {project.description}
               </div>
             </div>
@@ -325,14 +295,15 @@ export default async function ProjectDetailPage({ params }: Props) {
         )}
 
         {/* Bottom CTA Card */}
-        <div className="p-8 sm:p-12 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="p-8 sm:p-10 rounded-xl bg-surface-container-lowest border border-outline-variant flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-1">
-            <h3 className="text-2xl font-black text-on-surface tracking-tight">Need a similar architecture engineered?</h3>
-            <p className="text-xs sm:text-sm text-on-surface-variant">We design and deliver robust digital systems tailored to your specific requirements.</p>
+            <h3 className="text-xl font-bold text-on-surface tracking-tight">Need a similar system engineered?</h3>
+            <p className="text-xs sm:text-sm text-on-surface-variant">We design and deliver production software systems tailored to your operational requirements.</p>
           </div>
-          <Button asChild size="lg" className="rounded-2xl px-6 bg-primary text-white font-bold hover:bg-primary/90 shadow-sm flex items-center gap-2">
+          <Button asChild size="lg" className="h-10 rounded-lg px-6 bg-primary text-white font-semibold text-xs hover:bg-primary/90 flex items-center gap-2">
             <Link href="/contact">
-              Start Your Project <ArrowRight className="w-4 h-4" />
+              <span>Start Your Project</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </Button>
         </div>

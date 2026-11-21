@@ -111,70 +111,62 @@ export default function AboutPage() {
         ]}
       />
 
-      {/* Page Hero - Matching Products Design */}
+      {/* Page Hero */}
       <div className="bg-surface-container-lowest border-b border-outline-variant">
-        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-5">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 md:py-12 space-y-4">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
             <span>/</span>
-            <span className="text-on-surface font-semibold">About Akubrecah</span>
+            <span className="text-on-surface font-medium">About Akubrecah</span>
           </nav>
-          <div className="max-w-5xl space-y-3">
-            <span className="text-xs font-black text-primary uppercase tracking-widest">Engineering Excellence · Nairobi, Kenya</span>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-on-surface tracking-tight leading-tight">
-              We Build Software<br />
-              <span className="text-primary">That Lasts & Scales.</span>
+          <div className="max-w-4xl space-y-3">
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">Company Profile · Nairobi, Kenya</span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-on-surface tracking-tight leading-tight">
+              Software engineering grounded in reliability and local operational context.
             </h1>
-            <p className="text-base sm:text-lg text-on-surface-variant max-w-4xl leading-relaxed">
-              Akubrecah Technologies is a premier software engineering firm headquartered in Nairobi. 
-              We architect high-impact web platforms, native mobile applications, cloud infrastructure, 
-              and mission-critical statutory automation systems that withstand real production load.
+            <p className="text-base sm:text-lg text-on-surface-variant max-w-3xl leading-relaxed">
+              Akubrecah Technologies is a software engineering firm headquartered in Nairobi. 
+              We architect web platforms, native mobile applications, cloud infrastructure, 
+              and statutory facilitation tools engineered for production workloads across East Africa.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-on-surface-variant pt-2">
-            <MapPin className="h-4 w-4 text-primary" />
-            <span>Nairobi, Kenya — Engineering for East Africa and Global Enterprises</span>
+          <div className="flex items-center gap-2 text-xs font-medium text-on-surface-variant pt-1">
+            <MapPin className="h-3.5 w-3.5 text-primary" />
+            <span>Nairobi, Kenya — Serving East African and regional enterprises</span>
           </div>
         </div>
       </div>
 
-      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-10">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 md:py-14 space-y-14">
 
-        {/* Core Philosophy Section - Matching Products 5-Column Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 items-start">
+        {/* Core Philosophy Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           
-          {/* Main Content (3 cols) */}
-          <div className="lg:col-span-3 space-y-6">
-            <div>
-              <span className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-                Engineering Conviction
-              </span>
-            </div>
+          {/* Main Content (7 cols) */}
+          <div className="lg:col-span-7 space-y-5">
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+              Engineering Practice
+            </span>
 
-            <div>
-              <h2 className="text-3xl sm:text-4xl font-black text-on-surface tracking-tight">
-                World-Class Standards. Local Market Depth.
+            <div className="space-y-3">
+              <h2 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">
+                Disciplined execution for systems where downtime and data loss are unacceptable.
               </h2>
-              <p className="text-sm font-bold mt-1 text-primary">
-                Zero shortcuts, zero compromises, and no technical debt by design.
-              </p>
-              <p className="text-sm text-on-surface-variant mt-3 leading-relaxed">
-                Founded on the conviction that East African businesses and institutions deserve engineering 
-                built to global top-tier benchmarks. From high-throughput M-Pesa payment gateways to resilient 
-                statutory compliance portals, our software is engineered for mission-critical reliability.
+              <p className="text-sm text-on-surface-variant leading-relaxed">
+                From Safaricom Daraja M-Pesa payment reconciliation to ephemeral tax document workflows, our systems are built around strict data contracts, predictable failure recovery, and maintainable architecture.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               {[
-                "Strict TypeScript & comprehensive type safety",
-                "Automated CI/CD pipelines & zero-downtime releases",
-                "Encrypted TLS transmission & OWASP hardening",
-                "High performance across all screen sizes",
-                "Resilient offline-first mobile sync capabilities",
-                "Clear documentation & enterprise code ownership",
+                "Strict TypeScript and schema validation across API boundaries",
+                "Automated CI/CD pipelines and zero-downtime deployments",
+                "Encrypted TLS transport and OWASP input hardening",
+                "Responsive, accessible interfaces across desktop and mobile",
+                "Offline-capable mobile state synchronization",
+                "Clear architectural documentation and client code ownership",
               ].map((feat) => (
-                <div key={feat} className="flex items-start gap-2.5 text-sm text-on-surface">
+                <div key={feat} className="flex items-start gap-2.5 text-xs sm:text-sm text-on-surface">
                   <span className="text-primary font-bold shrink-0 leading-tight">•</span>
                   <span>{feat}</span>
                 </div>
@@ -182,119 +174,104 @@ export default function AboutPage() {
             </div>
 
             <div className="pt-2">
-              <Button asChild className="h-12 px-7 rounded-xl bg-primary text-white font-bold text-sm flex items-center gap-2 group w-fit hover:bg-primary/90">
+              <Button asChild className="h-10 px-6 rounded-lg bg-primary text-white font-semibold text-xs flex items-center gap-2 w-fit hover:bg-primary/90">
                 <Link href="/contact">
-                  Work With Our Engineers <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  <span>Speak With Our Engineering Team</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </Button>
             </div>
           </div>
 
-          {/* Stats Card (2 cols) - Matching Products Live Card */}
-          <div className="lg:col-span-2">
-            <div className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-5 sticky top-24">
-              <h4 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Engineering Competencies</h4>
-              <div className="space-y-4">
+          {/* Specifications Table (5 cols) */}
+          <div className="lg:col-span-5">
+            <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Operational Standards</h3>
+              <dl className="divide-y divide-outline-variant text-xs">
                 {coreCompetencies.map((stat) => (
-                  <div key={stat.label} className="flex items-center justify-between p-4 rounded-2xl bg-surface-container">
-                    <span className="text-xs text-on-surface-variant font-semibold">{stat.label}</span>
-                    <span className="text-sm font-bold text-on-surface text-right">{stat.value}</span>
+                  <div key={stat.label} className="flex items-center justify-between py-3">
+                    <dt className="text-on-surface-variant">{stat.label}</dt>
+                    <dd className="font-semibold text-on-surface text-right">{stat.value}</dd>
                   </div>
                 ))}
-              </div>
-              <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-bold pt-1">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                Active Engineering Operations
-              </div>
+              </dl>
             </div>
           </div>
 
         </div>
 
-        {/* Guiding Principles - 4 Column / 2x2 Grid */}
-        <div className="space-y-8">
-          <div className="text-center space-y-2">
-            <span className="text-xs font-black text-primary uppercase tracking-widest">Our Foundation</span>
-            <h2 className="text-3xl font-black text-on-surface">Guiding Principles That Drive Every Line of Code</h2>
+        {/* Guiding Principles */}
+        <div className="space-y-6">
+          <div className="border-b border-outline-variant pb-4">
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">Operating Principles</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-on-surface mt-1">Standards That Govern Our Codebase</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {principles.map((p) => {
-              return (
-                <div key={p.num} className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant space-y-4 flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono font-black text-primary px-2 py-0.5 rounded bg-primary/10 border border-primary/20">{p.num}</span>
-                    </div>
-                    <h3 className="text-lg font-bold text-on-surface">{p.title}</h3>
-                    <p className="text-xs text-on-surface-variant leading-relaxed">{p.desc}</p>
-                  </div>
-                </div>
-              )
-            })}
+            {principles.map((p) => (
+              <div key={p.num} className="pt-4 border-t-2 border-outline-variant space-y-2">
+                <span className="text-xs font-mono font-semibold text-primary">{p.num}</span>
+                <h3 className="text-base font-bold text-on-surface">{p.title}</h3>
+                <p className="text-xs text-on-surface-variant leading-relaxed">{p.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Technical Depth - 3 Cards Highlight */}
-        <div className="space-y-8">
-          <div className="text-center space-y-2">
-            <span className="text-xs font-black text-primary uppercase tracking-widest">Technical Capabilities</span>
-            <h2 className="text-3xl font-black text-on-surface">Full-Stack Depth Across Every Layer</h2>
+        {/* Technical Depth */}
+        <div className="space-y-6">
+          <div className="border-b border-outline-variant pb-4">
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">Technical Stack</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-on-surface mt-1">Core Technologies by Practice Layer</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {stackCategories.map((item) => {
-              return (
-                <div key={item.title} className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant space-y-5 flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-bold text-on-surface">{item.title}</h3>
-                    <p className="text-xs text-on-surface-variant leading-relaxed">{item.desc}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 pt-2">
-                    {item.technologies.map((tech) => (
-                      <span key={tech} className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-surface-container text-on-surface-variant">
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
+            {stackCategories.map((item) => (
+              <div key={item.title} className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-4 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <h3 className="text-base font-bold text-on-surface">{item.title}</h3>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">{item.desc}</p>
                 </div>
-              )
-            })}
+                <div className="flex flex-wrap gap-1.5 pt-2 border-t border-outline-variant/60">
+                  {item.technologies.map((tech) => (
+                    <span key={tech} className="text-[11px] font-mono px-2 py-0.5 rounded bg-surface-container-low border border-outline-variant text-on-surface-variant">
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Proof of Work - In-House Products Highlights */}
-        <div className="space-y-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div className="space-y-2">
-              <span className="text-xs font-black text-primary uppercase tracking-widest">Demonstrated Precision</span>
-              <h2 className="text-3xl font-black text-on-surface">Our In-House GovTech Suite</h2>
-              <p className="text-sm text-on-surface-variant max-w-xl">
-                The best testament to our capabilities: high-concurrency compliance tools built and run completely in-house.
-              </p>
+        {/* In-House Products Highlights */}
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-outline-variant pb-4">
+            <div className="space-y-1">
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider">In-House Systems</span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-on-surface">Public Tools Operated by Akubrecah</h2>
             </div>
-            <Button asChild variant="outline" className="rounded-xl border-outline-variant text-on-surface font-bold text-xs flex items-center gap-2 w-fit">
-              <Link href="/products">
-                Explore All Products <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
+            <Link href="/products" className="text-xs font-semibold text-primary hover:underline flex items-center gap-1.5 w-fit">
+              <span>Explore all products</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {inHouseProducts.map((prod) => (
               <Link key={prod.title} href={prod.href} className="group block">
-                <div className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant hover:border-primary/40 transition-all duration-300 space-y-4 h-full flex flex-col justify-between shadow-soft">
-                  <div className="space-y-3">
+                <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant hover:border-primary/40 transition-colors space-y-4 h-full flex flex-col justify-between">
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-black uppercase tracking-wider text-primary px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
+                      <span className="text-xs font-semibold text-primary">
                         {prod.tag}
                       </span>
-                      <ArrowUpRight className="h-4 w-4 text-on-surface-variant group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                      <ArrowUpRight className="h-4 w-4 text-on-surface-variant group-hover:text-primary transition-colors" />
                     </div>
                     <h3 className="text-lg font-bold text-on-surface group-hover:text-primary transition-colors">{prod.title}</h3>
                     <p className="text-xs text-on-surface-variant leading-relaxed">{prod.desc}</p>
                   </div>
                   <div className="pt-3 border-t border-outline-variant flex items-center justify-between text-xs">
-                    <span className="font-bold text-on-surface">{prod.stat}</span>
-                    <span className="text-emerald-600 font-semibold">{prod.speed}</span>
+                    <span className="font-medium text-on-surface">{prod.stat}</span>
+                    <span className="font-mono text-on-surface-variant">{prod.speed}</span>
                   </div>
                 </div>
               </Link>
@@ -302,15 +279,18 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* CTA - Matching Products Style */}
-        <div className="p-10 sm:p-14 rounded-3xl bg-primary text-white text-center space-y-5">
-          <h2 className="text-3xl font-black">Ready to Build With Our Engineering Team?</h2>
-          <p className="text-white/80 text-sm max-w-lg mx-auto">
-            Whether launching a new venture, modernizing legacy enterprise systems, or automating statutory workflows — let&apos;s engineer something extraordinary together.
-          </p>
-          <Button asChild size="lg" className="h-12 px-8 rounded-xl bg-white text-primary font-bold text-sm flex items-center gap-2 mx-auto group w-fit hover:bg-white/90">
+        {/* Consultation Bar */}
+        <div className="p-8 sm:p-10 rounded-xl bg-surface-container-lowest border border-outline-variant flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-1.5 max-w-xl">
+            <h2 className="text-xl sm:text-2xl font-bold text-on-surface">Discuss a software project with our engineering team</h2>
+            <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+              Whether launching a new platform, modernizing internal operations, or integrating Kenyan payment and compliance workflows, we provide clear technical scoping and delivery.
+            </p>
+          </div>
+          <Button asChild size="lg" className="h-10 px-6 rounded-lg bg-primary text-white font-semibold text-xs flex items-center gap-2 shrink-0 hover:bg-primary/90">
             <Link href="/contact">
-              Start a Conversation <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <span>Start a Conversation</span>
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </Button>
         </div>

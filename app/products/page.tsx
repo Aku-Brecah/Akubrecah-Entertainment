@@ -123,107 +123,107 @@ export default function ProductsPage() {
 
       {/* Page Hero */}
       <div className="bg-surface-container-lowest border-b border-outline-variant">
-        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-5">
+        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 md:py-12 space-y-4">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
             <span>/</span>
-            <span className="text-on-surface font-semibold">In-House Products</span>
+            <span className="text-on-surface font-medium">In-House Products</span>
           </nav>
-          <div className="max-w-5xl space-y-3">
-            <span className="text-xs font-black text-primary uppercase tracking-widest">Government & Tax Technology</span>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-on-surface tracking-tight leading-tight">
-              Battle-Tested<br />
-              <span className="text-primary">Statutory Tools.</span>
+          <div className="max-w-4xl space-y-3">
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">Proprietary Platforms &amp; Statutory Tools</span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-on-surface tracking-tight leading-tight">
+              In-house software platforms and compliance utilities.
             </h1>
-            <p className="text-base sm:text-lg text-on-surface-variant max-w-4xl leading-relaxed">
-              Built and operated in-house, these products demonstrate the precision of our engineering. 
-              Designed for Kenyan taxpayers and businesses for instant, verified tax compliance.
+            <p className="text-base sm:text-lg text-on-surface-variant max-w-3xl leading-relaxed">
+              Built and operated by Akubrecah Technologies, these platforms serve Kenyan taxpayers, cyber cafe operators, and engineering teams with verified statutory lookups, API routing, and operational telemetry.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-10">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 md:py-14 space-y-12">
 
-        {/* Products */}
-        <div className="space-y-10">
+        {/* Products Specification Sheets */}
+        <div className="space-y-8">
           {products.map((product) => {
             return (
-              <div
+              <section
                 key={product.id}
                 id={product.id}
-                className="p-8 sm:p-10 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-6"
+                className="p-6 sm:p-8 rounded-xl bg-surface-container-lowest border border-outline-variant grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <span className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 inline-block mb-2">
-                      {product.tag}
-                    </span>
-                    <h2 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
-                      {product.title}
-                    </h2>
-                  </div>
-                  <p className="text-xs sm:text-sm font-bold text-primary">
+                <div className="lg:col-span-5 space-y-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-primary block">
+                    {product.tag}
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-bold text-on-surface tracking-tight">
+                    {product.title}
+                  </h2>
+                  <p className="text-xs font-medium text-on-surface-variant">
                     {product.subtitle}
                   </p>
+                  <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed pt-1">
+                    {product.description}
+                  </p>
+                  <div className="pt-3">
+                    <Button asChild className="h-10 px-5 rounded-lg bg-primary text-white font-semibold text-xs flex items-center gap-2 w-fit hover:bg-primary/90">
+                      <Link href={product.href}>
+                        <span>{product.ctaText}</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
 
-                <p className="text-sm text-on-surface-variant leading-relaxed max-w-4xl">
-                  {product.description}
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-4 border-t border-outline-variant/60">
-                  {product.features.map((feat) => (
-                    <div key={feat} className="flex items-start gap-2.5 text-xs sm:text-sm text-on-surface">
-                      <span className="text-primary font-bold shrink-0 leading-tight">•</span>
-                      <span>{feat}</span>
-                    </div>
-                  ))}
+                <div className="lg:col-span-7 bg-surface-container-low border border-outline-variant rounded-lg p-5 space-y-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant border-b border-outline-variant pb-2">
+                    Capabilities &amp; Architecture Specifications
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {product.features.map((feat) => (
+                      <div key={feat} className="flex items-start gap-2 text-xs text-on-surface">
+                        <span className="text-primary font-bold shrink-0 leading-tight">•</span>
+                        <span>{feat}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-
-                <div className="pt-2">
-                  <Button asChild className="h-11 px-7 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm flex items-center gap-2 group w-fit hover:bg-primary/90">
-                    <Link href={product.href}>
-                      {product.ctaText} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
+              </section>
             )
           })}
         </div>
 
         {/* Tech Highlights */}
-        <div className="space-y-8">
-          <div className="text-center space-y-2">
-            <span className="text-xs font-black text-primary uppercase tracking-widest">Engineering Discipline</span>
-            <h2 className="text-3xl font-black text-on-surface">Standards Behind Every Product</h2>
+        <div className="space-y-6">
+          <div className="border-b border-outline-variant pb-4">
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">Operational Standards</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-on-surface mt-1">Infrastructure Guarantees Behind Our Products</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {techHighlights.map((item) => {
-              return (
-                <div key={item.title} className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant space-y-4">
-                  <span className="text-xs font-mono font-black text-primary px-2 py-0.5 rounded bg-primary/10 border border-primary/20 w-fit inline-block">
-                    {item.step}
-                  </span>
-                  <h3 className="text-lg font-bold text-on-surface">{item.title}</h3>
-                  <p className="text-xs text-on-surface-variant leading-relaxed">{item.desc}</p>
-                </div>
-              )
-            })}
+            {techHighlights.map((item) => (
+              <div key={item.title} className="pt-4 border-t-2 border-outline-variant space-y-2">
+                <span className="text-xs font-mono font-semibold text-primary">
+                  {item.step}
+                </span>
+                <h3 className="text-base font-bold text-on-surface">{item.title}</h3>
+                <p className="text-xs text-on-surface-variant leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="p-10 sm:p-14 rounded-3xl bg-primary text-white text-center space-y-5">
-          <h2 className="text-3xl font-black">Need a Custom Version for Your Organization?</h2>
-          <p className="text-white/80 text-sm max-w-lg mx-auto">
-            We configure and deploy our software architecture for enterprise and institutional clients. 
-            Dedicated support and customized hosting options available.
-          </p>
-          <Button asChild size="lg" className="h-12 px-8 rounded-xl bg-white text-primary font-bold text-sm flex items-center gap-2 mx-auto group w-fit hover:bg-white/90">
+        {/* Enterprise Licensing / Deployment CTA */}
+        <div className="p-8 sm:p-10 rounded-xl bg-surface-container-lowest border border-outline-variant flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-1.5 max-w-xl">
+            <h2 className="text-xl sm:text-2xl font-bold text-on-surface">Need a dedicated deployment for your organization?</h2>
+            <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+              We configure and deploy dedicated instances of our gateway and compliance architecture for enterprise and institutional clients.
+            </p>
+          </div>
+          <Button asChild size="lg" className="h-10 px-6 rounded-lg bg-primary text-white font-semibold text-xs flex items-center gap-2 shrink-0 hover:bg-primary/90">
             <Link href="/contact">
-              Inquire About Deployment <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <span>Inquire About Deployment</span>
+              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </Button>
         </div>

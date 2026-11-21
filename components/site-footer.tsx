@@ -18,11 +18,11 @@ export function SiteFooter(): JSX.Element {
   ]
 
   return (
-    <footer className="w-full border-t border-outline-variant/60 bg-surface-container-lowest/80 backdrop-blur-md pt-8 pb-6 z-40 relative text-xs text-on-surface-variant" role="contentinfo">
+    <footer className="w-full border-t border-outline-variant bg-surface-container-lowest pt-10 pb-8 z-40 relative text-xs text-on-surface-variant" role="contentinfo">
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
         
         {/* Main Footer Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-10 border-b border-outline-variant/60">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-10 border-b border-outline-variant">
           
           {/* Col 1 & 2: Brand Information */}
           <div className="lg:col-span-2 space-y-4">
@@ -30,11 +30,10 @@ export function SiteFooter(): JSX.Element {
               <Logo width={150} height={42} />
             </Link>
             <p className="text-xs text-on-surface-variant leading-relaxed max-w-sm">
-              Akubrecah Entertainment is a full-cycle software engineering, GovTech compliance, and digital brand innovation house. 
-              We architect high-impact web platforms, native mobile ecosystems, cloud infrastructure, 
-              and mission-critical automated portals — proudly powering citizens, cyber cafes, and enterprises across East Africa.
+              Akubrecah Entertainment is a software engineering, statutory GovTech facilitation, and digital infrastructure firm headquartered in Nairobi. 
+              We build web platforms, native mobile applications, cloud architectures, and automated compliance tools for East African enterprises and citizens.
             </p>
-            <div className="flex items-center gap-4 text-xs font-semibold text-on-surface">
+            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-on-surface">
               <span className="flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5 text-primary" />
                 Nairobi, Kenya
@@ -45,9 +44,8 @@ export function SiteFooter(): JSX.Element {
               </span>
             </div>
 
-            {/* Find on Google & Maps */}
-            <div className="pt-2">
-              <span className="text-[11px] font-semibold text-on-surface block mb-1.5">
+            <div className="pt-1">
+              <span className="text-[11px] font-medium text-on-surface-variant block mb-1.5">
                 Verified on Google:
               </span>
               <GooglePreferredSourceButton />
@@ -56,23 +54,23 @@ export function SiteFooter(): JSX.Element {
 
           {/* Col 3: Engineering Services */}
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-on-surface uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-on-surface uppercase tracking-wider">
               Engineering Services
             </h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/services#web" className="hover:text-primary transition-colors block">
-                  Web Applications (Next.js/React)
+                  Web Applications (Next.js / React)
                 </Link>
               </li>
               <li>
                 <Link href="/services#mobile" className="hover:text-primary transition-colors block">
-                  Mobile Apps (iOS & Android)
+                  Mobile Apps (iOS &amp; Android)
                 </Link>
               </li>
               <li>
                 <Link href="/services#cloud" className="hover:text-primary transition-colors block">
-                  Cloud Infrastructure & DevOps
+                  Cloud Infrastructure &amp; DevOps
                 </Link>
               </li>
               <li>
@@ -90,28 +88,28 @@ export function SiteFooter(): JSX.Element {
 
           {/* Col 4: Enterprise Platforms & Tools */}
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-on-surface uppercase tracking-wider">
-              Platforms & Tools
+            <h3 className="text-xs font-semibold text-on-surface uppercase tracking-wider">
+              Platforms &amp; Tools
             </h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/products" className="hover:text-primary transition-colors block">
-                  API Gateway & Integrations
+                  API Gateway &amp; Integrations
                 </Link>
               </li>
               <li>
                 <Link href="/dashboard" className="hover:text-primary transition-colors block">
-                  Client & Engineering Console
+                  Client &amp; Engineering Console
                 </Link>
               </li>
               <li>
                 <Link href="/services#cloud" className="hover:text-primary transition-colors block">
-                  Cloud & Infrastructure Manager
+                  Cloud &amp; Infrastructure Manager
                 </Link>
               </li>
               <li>
                 <Link href="/estimator" className="hover:text-primary transition-colors block">
-                  Architecture & Scope Estimator
+                  Architecture &amp; Scope Estimator
                 </Link>
               </li>
             </ul>
@@ -119,7 +117,7 @@ export function SiteFooter(): JSX.Element {
 
           {/* Col 5: Company & Quick Links */}
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-on-surface uppercase tracking-wider">
+            <h3 className="text-xs font-semibold text-on-surface uppercase tracking-wider">
               Company
             </h3>
             <ul className="space-y-2">
@@ -130,16 +128,16 @@ export function SiteFooter(): JSX.Element {
               </li>
               <li>
                 <Link href="/projects" className="hover:text-primary transition-colors">
-                  Projects & Solutions
+                  Projects &amp; Case Studies
                 </Link>
               </li>
               <li>
                 <Link href="/articles" className="hover:text-primary transition-colors">
-                  Field Notes & Articles
+                  Field Notes &amp; Articles
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-primary transition-colors font-bold text-primary">
+                <Link href="/contact" className="hover:text-primary transition-colors font-semibold text-primary">
                   Start a Project &rarr;
                 </Link>
               </li>
@@ -150,7 +148,7 @@ export function SiteFooter(): JSX.Element {
 
         {/* Bottom Sub-bar */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[11px] text-on-surface-variant/80">
+          <p className="text-[11px] text-on-surface-variant">
             &copy; {currentYear} Akubrecah Entertainment. Independent software engineering &amp; cyber facilitation services. Not affiliated with KRA.
           </p>
 
@@ -180,8 +178,8 @@ export function SiteFooter(): JSX.Element {
         </div>
 
         {/* Micro Disclaimer */}
-        <div className="mt-4 pt-3 border-t border-outline-variant/40 text-center sm:text-left">
-          <p className="text-[10px] text-on-surface-variant/60 leading-tight">
+        <div className="mt-4 pt-3 border-t border-outline-variant/60 text-center sm:text-left">
+          <p className="text-[11px] text-on-surface-variant leading-relaxed">
             Akubrecah Entertainment operates independent software engineering solutions and third-party automated document retrieval facilitation. 
             Government services are also accessible directly and free of charge via official public portals such as <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">itax.kra.go.ke</a>.
           </p>

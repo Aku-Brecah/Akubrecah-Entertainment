@@ -78,15 +78,16 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-background">
-      <div className="w-full max-w-md bg-card text-card-foreground border border-border rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
-        <div className="space-y-2 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mx-auto">
-            <KeyRound className="w-6 h-6" />
+      <div className="w-full max-w-md bg-surface-container-lowest text-on-surface border border-outline-variant rounded-xl p-6 sm:p-8 space-y-6">
+        <div className="space-y-2 border-b border-outline-variant/60 pb-5">
+          <div className="flex items-center gap-2.5 text-primary">
+            <KeyRound className="w-5 h-5" />
+            <span className="text-xs font-semibold uppercase tracking-wider">Account Recovery</span>
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-on-surface">
             Reset Your Password
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
             {step === "request" && "Enter the email address associated with your account to receive a verification code."}
             {step === "reset" && `Enter the reset code sent to ${email} and choose a new strong password.`}
             {step === "done" && "Your password has been updated. Redirecting to your account..."}

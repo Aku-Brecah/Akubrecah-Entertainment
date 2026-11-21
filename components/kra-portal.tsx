@@ -23,7 +23,6 @@ import {
   Phone,
   Clock,
   Lock,
-  Sparkles,
   Check,
   CheckCircle2,
   X,
@@ -1148,10 +1147,10 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
   }
 
   // Ergonomic, high-contrast, auto-fitting input & button classes
-  const inputClass = "w-full bg-surface-container-lowest border border-outline-variant rounded-xl text-sm font-semibold text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 px-3.5 py-2 h-11 transition-all shadow-2xs"
-  const labelClass = "block text-xs font-bold text-on-surface-variant mb-1.5 uppercase tracking-wider"
-  const primaryButtonClass = "inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-xs sm:text-sm active:scale-[0.98] transition-all shadow-sm shadow-primary/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-  const secondaryButtonClass = "inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl bg-surface-container border border-outline-variant text-on-surface font-semibold text-xs sm:text-sm hover:bg-surface-container-high active:scale-[0.98] transition-all cursor-pointer"
+  const inputClass = "w-full bg-surface-container-lowest border border-outline-variant rounded-lg text-sm font-semibold text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 px-3.5 py-2 h-11 transition-colors"
+  const labelClass = "block text-xs font-semibold text-on-surface-variant mb-1.5 uppercase tracking-wider"
+  const primaryButtonClass = "inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[44px] rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold text-xs sm:text-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+  const secondaryButtonClass = "inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-lg bg-surface-container border border-outline-variant text-on-surface font-semibold text-xs sm:text-sm hover:bg-surface-container-high transition-colors cursor-pointer"
 
   const renderMpesaCheckoutPanel = (variant: "inline" | "modal") => {
     const phoneInputId = variant === "inline" ? "same-page-phone-input" : "modal-phone-input"
@@ -1544,18 +1543,15 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                 {/* STATE 3 & 4: STK SENT / WAITING FOR PIN */}
                 {(mpesaStatus === "stk_sent" || mpesaStatus === "waiting") && (
                   <div className="space-y-4 text-center py-2 my-auto">
-                    <div className="relative mx-auto w-14 h-14">
-                      <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
-                      <div
-                        className={cn(
-                          "relative w-14 h-14 rounded-full flex items-center justify-center",
-                          mpesaStatus === "stk_sent"
-                            ? "bg-emerald-600 text-white shadow-sm"
-                            : "bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-                        )}
-                      >
-                        <Smartphone className={cn("w-7 h-7", mpesaStatus === "waiting" && "animate-pulse")} />
-                      </div>
+                    <div
+                      className={cn(
+                        "mx-auto w-12 h-12 rounded-lg flex items-center justify-center",
+                        mpesaStatus === "stk_sent"
+                          ? "bg-emerald-600 text-white"
+                          : "bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                      )}
+                    >
+                      <Smartphone className="w-6 h-6" />
                     </div>
 
                     <div className="space-y-1.5">
@@ -2070,40 +2066,33 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                 <motion.div key="step1" variants={stepVariants} initial="hidden" animate="visible" exit="exit" className="space-y-4">
 
                   {idSearchStatus === "searching" ? (
-                    <div className="py-8 px-4 flex flex-col items-center justify-center text-center space-y-6">
-                      {/* High-Tech Statutory Radar Scanner HUD */}
-                      <div className="relative w-24 h-24 flex items-center justify-center">
-                        <div className="absolute inset-0 rounded-full bg-primary/10" />
-                        <div className="absolute inset-2 rounded-full border-2 border-dashed border-primary/40 animate-spin [animation-duration:8s]" />
-                        <div className="absolute inset-4 rounded-full bg-primary/15" />
-                        <div className="relative z-10 w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/30">
-                          <ShieldCheck className="w-6 h-6" />
-                        </div>
+                    <div className="py-8 px-4 flex flex-col items-center justify-center text-center space-y-5">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 animate-spin" />
                       </div>
 
                       <div className="space-y-1.5 max-w-sm">
-                        <h3 className="font-extrabold text-base sm:text-lg text-on-surface">
-                          Connecting to Tax Records Service
+                        <h3 className="font-bold text-base sm:text-lg text-on-surface">
+                          Verifying Taxpayer Record
                         </h3>
-                        <p className="text-xs text-on-surface-variant font-medium">
-                          Secure verification in progress. Querying taxpayer identity records...
+                        <p className="text-xs text-on-surface-variant">
+                          Querying taxpayer identity records...
                         </p>
                       </div>
 
-                      {/* Live Verification Step HUD */}
-                      <div className="w-full max-w-sm bg-surface-container-low border border-outline-variant/80 rounded-2xl p-4 text-left space-y-2.5">
+                      <div className="w-full max-w-sm bg-surface-container-low border border-outline-variant rounded-xl p-4 text-left space-y-2.5">
                         <div className="flex items-center gap-2.5 text-xs">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                          <span className="font-bold text-on-surface">Akubrecah Verification Gateway</span>
-                          <span className="ml-auto text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400">ONLINE</span>
+                          <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
+                          <span className="font-semibold text-on-surface">Verification Gateway</span>
+                          <span className="ml-auto text-[10px] font-mono font-semibold text-emerald-600 dark:text-emerald-400">CONNECTED</span>
                         </div>
                         <div className="flex items-center gap-2.5 text-xs">
                           <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />
-                          <span className="font-semibold text-on-surface">Matching National ID & PIN Registry...</span>
+                          <span className="font-medium text-on-surface">Matching National ID &amp; PIN Registry...</span>
                         </div>
                         <div className="flex items-center gap-2.5 text-xs text-on-surface-variant">
                           <span className="w-2 h-2 rounded-full bg-outline-variant shrink-0" />
-                          <span>Generating Cryptographic Compliance Certificate</span>
+                          <span>Preparing Compliance Certificate Summary</span>
                         </div>
                       </div>
                     </div>
@@ -2154,14 +2143,14 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
                       {/* Local Dev Mode indicator banner */}
                       {isLocalDev && !isSignedIn && (
-                        <div className="w-full max-w-md mx-auto p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-3 text-left shadow-2xs">
+                        <div className="w-full max-w-md mx-auto p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-3 text-left">
                           <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                            <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                            <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
                               Localhost Mode: Authentication Bypassed for Testing
                             </span>
                           </div>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-semibold">
                             DEV
                           </span>
                         </div>
@@ -2440,7 +2429,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                     <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant">
                       <div className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">Registration Status</div>
                       <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-emerald-600" />
                         <span className="text-emerald-700 dark:text-emerald-400 font-bold text-sm">Active</span>
                       </div>
                     </div>
@@ -2622,8 +2611,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                             <td className="py-3 font-semibold text-on-surface">Income Tax - Resident Individual</td>
                             <td className="py-3 text-on-surface-variant font-mono">{formData.registeredDate || "14/08/2016"}</td>
                             <td className="py-3 text-right">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-surface-container text-on-surface border border-outline-variant">
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-surface-container text-on-surface border border-outline-variant">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
                                 Compliant / Active
                               </span>
                             </td>
@@ -2699,7 +2688,7 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                       ) : (
                         <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-6 py-2.5 flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                            <span className="w-2 h-2 rounded-full bg-emerald-600" />
                             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
                               PAYMENT VERIFIED • 5-MINUTE WINDOW ACTIVE
                             </span>
@@ -2751,8 +2740,8 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                         {!isAdmin && !isSubscribed && !isRedemptionExpired && redemptionSecondsLeft !== null && (
                           <div className="bg-primary/10 border border-primary/25 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                             <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center text-primary shrink-0">
-                                <Clock className="w-5 h-5 animate-pulse" />
+                              <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center text-primary shrink-0">
+                                <Clock className="w-5 h-5" />
                               </div>
                               <div>
                                 <p className="text-xs font-bold text-on-surface">5-Minute Download Window Active</p>
@@ -2932,9 +2921,9 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
                               </div>
                               <p className="text-xs text-on-surface-variant mt-1">Verified and generated from KRA iTax database</p>
                             </div>
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-secondary-container text-on-secondary-fixed text-[11px] font-bold shrink-0">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                              Live Record
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-secondary-container text-on-secondary-fixed text-[11px] font-semibold shrink-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                              Verified Record
                             </span>
                           </div>
 
@@ -3333,10 +3322,9 @@ export function KRAPortal({ hideHeader = false }: { hideHeader?: boolean } = {})
 
       {/* ── Official KRA Payment & Checkout Gate Modal ── */}
       {showPaymentModal && accessInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md px-3 sm:px-4 py-4 sm:py-6 overflow-y-auto">
-          <div className="bg-surface border border-outline-variant/80 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden relative my-auto">
-            {/* Top KRA Red decorative brand strip */}
-            <div className="h-1.5 w-full bg-gradient-to-r from-primary-container via-primary to-primary-container" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-3 sm:px-4 py-4 sm:py-6 overflow-y-auto">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl w-full max-w-xl overflow-hidden relative my-auto">
+            <div className="h-1 w-full bg-primary" />
 
             <div className="p-4 sm:p-7 space-y-4 sm:space-y-5">
               {/* Modal Header */}

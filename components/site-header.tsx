@@ -124,12 +124,11 @@ const navData: NavItem[] = [
             title: "Architecture & Cost Estimator",
             desc: "Interactive scope, technology stack & timeline calculator",
             href: "/estimator",
-            badge: "Interactive",
           },
         ],
       },
     ],
-    footer: { label: "All Engineering Products →", href: "/products" },
+    footer: { label: "All Engineering Products", href: "/products" },
   },
   {
     label: "Solutions",
@@ -161,7 +160,7 @@ const navData: NavItem[] = [
         ],
       },
     ],
-    footer: { label: "All Solutions →", href: "/solutions" },
+    footer: { label: "All Solutions", href: "/solutions" },
   },
   {
     label: "Projects",
@@ -171,7 +170,6 @@ const navData: NavItem[] = [
   {
     label: "Retrieval",
     href: "/retrieval-portal",
-    badge: "KRA Live",
     groups: null,
   },
   {
@@ -201,15 +199,14 @@ function MegaMenu({
   if (!item.groups || !open) return null
   return (
     <div
-      className="absolute left-1/2 -translate-x-1/2 top-full pt-2 z-50 animate-in fade-in-20 slide-in-from-top-1 duration-150"
-      style={{ minWidth: 350 }}
+      className="absolute left-1/2 -translate-x-1/2 top-full pt-2 z-50"
+      style={{ minWidth: 340 }}
       role="menu"
     >
-      {/* Dropdown Container with Hover Bridge */}
-      <div className="bg-surface-container-lowest border border-outline-variant shadow-2xl shadow-black/10 rounded-2xl overflow-hidden backdrop-blur-xl">
+      <div className="bg-surface-container-lowest border border-outline-variant shadow-md rounded-xl overflow-hidden">
         {item.groups.map((group) => (
           <div key={group.heading} className="p-3">
-            <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant px-2.5 py-1 mb-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant px-2.5 py-1 mb-1">
               {group.heading}
             </p>
             <div className="space-y-0.5">
@@ -220,17 +217,12 @@ function MegaMenu({
                     href={sub.href}
                     role="menuitem"
                     onClick={onClose}
-                    className="block p-2.5 rounded-xl hover:bg-surface-container transition-colors group cursor-pointer"
+                    className="block p-2.5 rounded-lg hover:bg-surface-container transition-colors group cursor-pointer"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors truncate">
+                      <span className="text-xs font-semibold text-on-surface group-hover:text-primary transition-colors truncate">
                         {sub.title}
                       </span>
-                      {sub.badge && (
-                        <span className="shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                          {sub.badge}
-                        </span>
-                      )}
                     </div>
                     <p className="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">{sub.desc}</p>
                   </Link>
@@ -240,13 +232,12 @@ function MegaMenu({
           </div>
         ))}
 
-        {/* Footer CTA link */}
         {item.footer && (
-          <div className="border-t border-outline-variant/60 bg-surface-container/30 px-4 py-2.5">
+          <div className="border-t border-outline-variant bg-surface-container-low px-4 py-2.5">
             <Link
               href={item.footer.href}
               onClick={onClose}
-              className="flex items-center justify-between text-xs font-bold text-primary hover:underline"
+              className="flex items-center justify-between text-xs font-semibold text-primary hover:underline"
             >
               <span>{item.footer.label}</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -288,7 +279,6 @@ function DesktopNavItem({
     }, 160)
   }
 
-  // Close on outside click or Escape key
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -313,18 +303,13 @@ function DesktopNavItem({
     return (
       <Link
         href={item.href}
-        className={`px-3 py-1.5 text-xs font-semibold transition-all flex items-center gap-1.5 ${
+        className={`px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 ${
           isActive
-            ? "text-primary border-b-2 border-primary font-bold"
+            ? "text-primary font-semibold"
             : "text-on-surface-variant hover:text-on-surface"
         }`}
       >
         <span>{item.label}</span>
-        {item.badge && (
-          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
-            {item.badge}
-          </span>
-        )}
       </Link>
     )
   }
@@ -336,34 +321,28 @@ function DesktopNavItem({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Trigger container */}
       <div
-        className={`flex items-center rounded-xl transition-all ${
+        className={`flex items-center rounded-lg transition-colors ${
           isActive
-            ? "text-primary bg-primary/10 font-bold"
+            ? "text-primary font-semibold"
             : open
-            ? "text-primary bg-surface-container"
-            : "text-on-surface hover:text-primary hover:bg-surface-container"
+            ? "text-on-surface bg-surface-container"
+            : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low"
         }`}
       >
         <Link
           href={item.href}
-          className="pl-3 pr-1 py-2 text-xs font-semibold flex items-center gap-1.5"
+          className="pl-3 pr-1 py-1.5 text-xs font-medium flex items-center gap-1.5"
         >
           <span>{item.label}</span>
-          {item.badge && (
-            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
-              {item.badge}
-            </span>
-          )}
         </Link>
         <button
           onClick={(e) => {
             e.stopPropagation()
             setOpen((v) => !v)
           }}
-          className={`pr-2.5 pl-1 py-2 focus:outline-none transition-transform duration-200 cursor-pointer ${
-            open ? "rotate-180 text-primary" : "text-on-surface-variant hover:text-primary"
+          className={`pr-2.5 pl-1 py-1.5 focus:outline-none transition-transform duration-150 cursor-pointer ${
+            open ? "rotate-180 text-primary" : "text-on-surface-variant hover:text-on-surface"
           }`}
           aria-label={`Toggle ${item.label} menu`}
           aria-expanded={open}
@@ -394,53 +373,40 @@ function MobileNavSection({
       <Link
         href={item.href}
         onClick={onClose}
-        className="flex items-center justify-between min-h-[44px] px-3.5 py-3 rounded-2xl hover:bg-surface-container text-sm font-bold text-on-surface transition-colors"
+        className="flex items-center justify-between min-h-[44px] px-3.5 py-2.5 rounded-lg hover:bg-surface-container text-sm font-semibold text-on-surface transition-colors"
       >
-        <div className="flex items-center gap-2">
-          <span>{item.label}</span>
-          {item.badge && (
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
-              {item.badge}
-            </span>
-          )}
-        </div>
+        <span>{item.label}</span>
         <ChevronRight className="h-4 w-4 text-on-surface-variant" />
       </Link>
     )
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-outline-variant/60 bg-surface-container-lowest">
-      {/* Section header */}
+    <div className="rounded-lg overflow-hidden border border-outline-variant bg-surface-container-lowest">
       <div className="flex items-center justify-between min-h-[44px]">
         <Link
           href={item.href}
           onClick={onClose}
-          className="flex-1 px-4 py-3 text-sm font-bold text-on-surface flex items-center gap-2"
+          className="flex-1 px-3.5 py-2.5 text-sm font-semibold text-on-surface flex items-center gap-2"
         >
           <span>{item.label}</span>
-          {item.badge && (
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
-              {item.badge}
-            </span>
-          )}
         </Link>
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface-variant focus:outline-none"
+          className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface-variant focus:outline-none"
           aria-label={`Toggle ${item.label} submenu`}
         >
           <ChevronDown
-            className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-180 text-primary" : ""}`}
+            className={`h-4 w-4 transition-transform duration-150 ${expanded ? "rotate-180 text-primary" : ""}`}
           />
         </button>
       </div>
 
       {expanded && (
-        <div className="border-t border-outline-variant/60 bg-surface-container/30 px-3 py-2 space-y-1">
+        <div className="border-t border-outline-variant bg-surface-container-low px-3 py-2 space-y-1">
           {item.groups.map((group) => (
             <div key={group.heading} className="py-1">
-              <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant px-2 py-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant px-2 py-1">
                 {group.heading}
               </p>
               {group.items.map((sub) => {
@@ -449,18 +415,11 @@ function MobileNavSection({
                     key={sub.title}
                     href={sub.href}
                     onClick={onClose}
-                    className="block p-2.5 rounded-xl hover:bg-surface-container transition-colors group min-h-[44px]"
+                    className="block p-2 rounded-lg hover:bg-surface-container transition-colors group min-h-[44px]"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors">
-                        {sub.title}
-                      </span>
-                      {sub.badge && (
-                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                          {sub.badge}
-                        </span>
-                      )}
-                    </div>
+                    <span className="text-xs font-semibold text-on-surface group-hover:text-primary transition-colors block">
+                      {sub.title}
+                    </span>
                     <p className="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">{sub.desc}</p>
                   </Link>
                 )
@@ -500,7 +459,6 @@ export function SiteHeader() {
     setMobileMenuOpen(false)
   }, [pathname])
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? "hidden" : ""
     return () => { document.body.style.overflow = "" }
@@ -519,42 +477,35 @@ export function SiteHeader() {
   return (
     <>
       <header
-        className={`fixed top-0 w-full z-50 transition-all duration-200 ${
-          scrolled
-            ? "bg-surface-container-lowest/90 backdrop-blur-xl shadow-sm border-b border-outline-variant/80"
-            : "bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant"
+        className={`fixed top-0 w-full z-50 transition-colors duration-150 bg-surface-container-lowest border-b border-outline-variant ${
+          scrolled ? "shadow-xs" : ""
         } h-16`}
       >
-        <div className="w-full max-w-none mx-auto h-full px-3 sm:px-5 lg:px-6 flex items-center justify-between gap-3 xl:gap-4 flex-nowrap min-w-0">
+        <div className="w-full max-w-[1360px] mx-auto h-full px-4 sm:px-6 lg:px-10 xl:px-12 flex items-center justify-between gap-4 flex-nowrap min-w-0">
 
           {/* Brand */}
           {isKra ? (
-            <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-              <Logo width={130} height={38} className="h-8 w-auto transition-transform group-hover:scale-[1.02]" />
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs sm:text-sm font-black tracking-wide text-on-surface uppercase">
-                    Cyber Portal
-                  </span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
-                    Independent
-                  </span>
-                </div>
-                <span className="text-[10px] text-on-surface-variant font-medium">Akubrecah Assistance</span>
+            <Link href="/" className="flex items-center gap-2.5 shrink-0">
+              <Logo width={130} height={38} className="h-8 w-auto" />
+              <div className="flex flex-col border-l border-outline-variant pl-2.5">
+                <span className="text-xs font-semibold text-on-surface leading-tight">
+                  Cyber Portal
+                </span>
+                <span className="text-[10px] text-on-surface-variant leading-tight">Independent Facilitation</span>
               </div>
             </Link>
           ) : (
-            <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-              <Logo width={140} height={42} className="h-8 md:h-9 w-auto transition-transform group-hover:scale-[1.02]" />
-              <div className="hidden 2xl:flex flex-col border-l border-outline-variant pl-2.5 py-0.5">
-                <span className="text-[10px] font-black tracking-widest text-primary uppercase leading-tight">Technologies</span>
-                <span className="text-[9px] text-on-surface-variant font-medium leading-tight">Software Engineering</span>
+            <Link href="/" className="flex items-center gap-2.5 shrink-0">
+              <Logo width={140} height={42} className="h-8 md:h-9 w-auto" />
+              <div className="hidden xl:flex flex-col border-l border-outline-variant pl-2.5 py-0.5">
+                <span className="text-[11px] font-semibold text-on-surface leading-tight">Technologies</span>
+                <span className="text-[10px] text-on-surface-variant leading-tight">Software Engineering</span>
               </div>
             </Link>
           )}
 
-          {/* Desktop Nav — hierarchical (lg screens and above) */}
-          <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 shrink-0">
+          {/* Desktop Nav */}
+          <nav className="hidden lg:flex items-center gap-1 shrink-0" aria-label="Main navigation">
             {currentNav.map((item) => (
               <DesktopNavItem key={item.label} item={item} pathname={pathname} />
             ))}
@@ -570,13 +521,13 @@ export function SiteHeader() {
                   {isAdmin && (
                     <Link
                       href="/admin"
-                      className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all cursor-pointer shrink-0"
+                      className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-surface-container text-on-surface border border-outline-variant rounded-lg hover:border-primary/50 transition-colors cursor-pointer shrink-0"
                     >
-                      <Shield className="h-3 w-3" />
+                      <Shield className="h-3.5 w-3.5 text-primary" />
                       Admin
                     </Link>
                   )}
-                  <Button asChild size="sm" className="h-8.5 px-3 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
+                  <Button asChild size="sm" className="h-8.5 px-3 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
                     <Link href="/dashboard">
                       <LayoutDashboard className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Console</span>
@@ -584,35 +535,34 @@ export function SiteHeader() {
                   </Button>
                   <UserButton
                     appearance={{
-                      elements: { avatarBox: "w-8.5 h-8.5 rounded-full ring-2 ring-primary/20" },
+                      elements: { avatarBox: "w-8 h-8 rounded-full border border-outline-variant" },
                     }}
                   />
                 </div>
               ) : isLoaded && !isSignedIn ? (
                 <div className="hidden sm:flex items-center gap-3 flex-nowrap">
-                  <div className="hidden md:flex items-center gap-1.5 text-xs text-on-surface-variant font-medium">
-                    <Lock className="w-3.5 h-3.5 text-primary" />
+                  <div className="hidden md:flex items-center gap-1.5 text-xs text-on-surface-variant">
+                    <Lock className="w-3.5 h-3.5 text-on-surface-variant" />
                     <span>Encrypted Session</span>
                   </div>
-                  <Button asChild size="sm" className="h-9 px-4 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 shrink-0">
+                  <Button asChild size="sm" className="h-9 px-4 rounded-lg text-xs font-semibold bg-primary text-white hover:bg-primary/90 shrink-0">
                     <Link href="/sign-in">Sign In</Link>
                   </Button>
                 </div>
               ) : null
             ) : (
-              /* Public Agency Main Domain */
               isLoaded && isSignedIn ? (
                 <div className="flex items-center gap-2 flex-nowrap">
                   {isAdmin && (
                     <Link
                       href="/admin"
-                      className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all cursor-pointer shrink-0"
+                      className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-surface-container text-on-surface border border-outline-variant rounded-lg hover:border-primary/50 transition-colors cursor-pointer shrink-0"
                     >
-                      <Shield className="h-3 w-3" />
+                      <Shield className="h-3.5 w-3.5 text-primary" />
                       Admin
                     </Link>
                   )}
-                  <Button asChild size="sm" className="h-8.5 px-3 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
+                  <Button asChild size="sm" className="h-8.5 px-3 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
                     <Link href="/dashboard">
                       <LayoutDashboard className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Console</span>
@@ -620,16 +570,16 @@ export function SiteHeader() {
                   </Button>
                   <UserButton
                     appearance={{
-                      elements: { avatarBox: "w-8.5 h-8.5 rounded-full ring-2 ring-primary/20" },
+                      elements: { avatarBox: "w-8 h-8 rounded-full border border-outline-variant" },
                     }}
                   />
                 </div>
               ) : (
                 <div className="hidden sm:flex items-center gap-2 flex-nowrap">
-                  <Button asChild variant="ghost" size="sm" className="h-9 px-3 rounded-xl text-xs font-bold text-on-surface hover:text-primary shrink-0">
+                  <Button asChild variant="ghost" size="sm" className="h-9 px-3 rounded-lg text-xs font-semibold text-on-surface hover:text-primary shrink-0">
                     <Link href="/sign-in">Sign In</Link>
                   </Button>
-                  <Button asChild size="sm" className="h-9 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/95 shadow-sm flex items-center gap-1.5 shrink-0">
+                  <Button asChild size="sm" className="h-9 px-4 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
                     <Link href="/contact">
                       Start a Project <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
@@ -638,13 +588,13 @@ export function SiteHeader() {
               )
             )}
 
-            {/* Hamburger (visible on mobile and tablet < lg) */}
+            {/* Hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-on-surface hover:bg-surface-container transition-colors focus:outline-none cursor-pointer"
+              className="lg:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-on-surface hover:bg-surface-container transition-colors focus:outline-none cursor-pointer"
               aria-label="Toggle navigation"
             >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
@@ -653,55 +603,52 @@ export function SiteHeader() {
       {/* ── Mobile Drawer ── */}
       {mobileMenuOpen && (
         <>
-          {/* Backdrop */}
           <div
-            className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+            className="lg:hidden fixed inset-0 z-40 bg-black/40"
             onClick={() => setMobileMenuOpen(false)}
           />
 
-          {/* Slide-in panel */}
-          <div className="lg:hidden fixed inset-x-0 top-16 z-50 bg-surface-container-lowest max-h-[calc(100vh-4rem)] overflow-y-auto animate-in slide-in-from-top-2 duration-200 shadow-2xl border-b border-outline-variant">
-            <div className="p-4 space-y-3.5">
+          <div className="lg:hidden fixed inset-x-0 top-16 z-50 bg-surface-container-lowest max-h-[calc(100vh-4rem)] overflow-y-auto shadow-lg border-b border-outline-variant">
+            <div className="p-4 space-y-3">
 
-              {/* Auth quick row */}
               {isKra ? (
                 isLoaded && isSignedIn ? (
-                  <div className="p-3.5 rounded-2xl bg-surface-container flex items-center justify-between">
+                  <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-bold text-on-surface">{user?.fullName || "Welcome back"}</p>
+                      <p className="text-xs font-semibold text-on-surface">{user?.fullName || "Signed in"}</p>
                       <p className="text-[11px] text-on-surface-variant truncate max-w-[200px]">{user?.primaryEmailAddress?.emailAddress}</p>
                     </div>
-                    <Button asChild size="sm" className="h-8 px-3.5 rounded-xl text-xs bg-primary text-white font-bold">
+                    <Button asChild size="sm" className="h-8 px-3 rounded-lg text-xs bg-primary text-white font-semibold">
                       <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>Console</Link>
                     </Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
-                    <Button asChild variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-xl">
+                    <Button asChild variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-lg">
                       <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
                     </Button>
-                    <Button asChild size="sm" className="w-full h-10 text-xs font-bold bg-primary text-white rounded-xl">
+                    <Button asChild size="sm" className="w-full h-10 text-xs font-semibold bg-primary text-white rounded-lg">
                       <a href="https://akubrecah.com" onClick={() => setMobileMenuOpen(false)}>Agency Home</a>
                     </Button>
                   </div>
                 )
               ) : (
                 isLoaded && isSignedIn ? (
-                  <div className="p-3 rounded-2xl bg-surface-container flex items-center justify-between">
+                  <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-bold text-on-surface">{user?.fullName || "Welcome back"}</p>
+                      <p className="text-xs font-semibold text-on-surface">{user?.fullName || "Signed in"}</p>
                       <p className="text-[11px] text-on-surface-variant truncate max-w-[180px]">{user?.primaryEmailAddress?.emailAddress}</p>
                     </div>
-                    <Button asChild size="sm" className="h-8 px-3 rounded-xl text-xs bg-primary text-white font-bold">
+                    <Button asChild size="sm" className="h-8 px-3 rounded-lg text-xs bg-primary text-white font-semibold">
                       <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>Console</Link>
                     </Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
-                    <Button asChild variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-xl">
+                    <Button asChild variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-lg">
                       <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
                     </Button>
-                    <Button asChild size="sm" className="w-full h-10 text-xs font-bold bg-primary text-white rounded-xl flex items-center justify-center gap-1.5">
+                    <Button asChild size="sm" className="w-full h-10 text-xs font-semibold bg-primary text-white rounded-lg flex items-center justify-center gap-1.5">
                       <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
                         Start a Project <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
@@ -710,19 +657,17 @@ export function SiteHeader() {
                 )
               )}
 
-              {/* Hierarchical nav sections */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {currentNav.map((item) => (
                   <MobileNavSection key={item.label} item={item} onClose={() => setMobileMenuOpen(false)} />
                 ))}
               </div>
 
-              {/* Admin link */}
               {isLoaded && isSignedIn && isAdmin && (
                 <Link
                   href="/admin"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-3.5 py-3 rounded-2xl text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-xs font-semibold text-primary hover:bg-surface-container transition-colors"
                 >
                   <Shield className="h-4 w-4" /> Admin Console
                 </Link>
