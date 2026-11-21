@@ -252,6 +252,24 @@
   animation: floatBlob 6s ease-in-out infinite;
 }
 
+@keyframes authMarquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-auth-marquee {
+  animation: authMarquee 26s linear infinite;
+}
+
+.auth-input-focus:focus-within {
+  border-color: #ff7a59 !important;
+  box-shadow: 0 0 0 4px rgba(255, 122, 89, 0.18) !important;
+}
+
 .reveal-on-scroll {
   animation: revealOnScroll 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
