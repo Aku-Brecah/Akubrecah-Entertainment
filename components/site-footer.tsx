@@ -1,6 +1,5 @@
 import Link from "next/link"
 import type { JSX } from "react"
-import { Logo } from "@/components/logo"
 import { GooglePreferredSourceButton } from "@/components/google-preferred-source-button"
 import { Mail, MapPin } from "lucide-react"
 
@@ -18,34 +17,40 @@ export function SiteFooter(): JSX.Element {
   ]
 
   return (
-    <footer className="w-full border-t border-outline-variant bg-surface-container-lowest pt-10 pb-8 z-40 relative text-xs text-on-surface-variant" role="contentinfo">
-      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
-        
+    <footer className="w-full bg-[#FDFCF8] dark:bg-surface pt-8 pb-12 px-4 sm:px-6 z-40 relative text-xs text-[#78716C]" role="contentinfo">
+      <div className="w-full max-w-[1220px] mx-auto rounded-[2.5rem] bg-white dark:bg-surface-container-lowest border border-stone-100 dark:border-outline-variant shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] p-8 sm:p-12">
         {/* Main Footer Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-10 border-b border-outline-variant">
-          
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-10 border-b border-stone-100 dark:border-outline-variant">
           {/* Col 1 & 2: Brand Information */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-block hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
-              <Logo width={150} height={42} />
+            <Link href="/" className="inline-flex items-center gap-2.5 group" aria-label="Akubrecah Entertainment">
+              <span className="w-8 h-8 rounded-full bg-[#FFB7B2] flex items-center justify-center shadow-2xs">
+                <span className="w-2.5 h-2.5 rounded-full bg-white" />
+              </span>
+              <span className="text-lg font-medium text-[#292524] dark:text-on-surface tracking-tight">
+                Akubrecah
+              </span>
+              <span className="font-cursive text-2xl text-[#78716C] pl-1">
+                digital living room
+              </span>
             </Link>
-            <p className="text-xs text-on-surface-variant leading-relaxed max-w-sm">
-              Akubrecah Entertainment is a software engineering, statutory GovTech facilitation, and digital infrastructure firm headquartered in Nairobi. 
-              We build web platforms, native mobile applications, cloud architectures, and automated compliance tools for East African enterprises and citizens.
+            <p className="text-xs text-[#78716C] leading-relaxed max-w-sm">
+              Akubrecah Entertainment is a software engineering, statutory GovTech facilitation, and digital infrastructure studio headquartered in Nairobi.
+              We craft calm, tactile web platforms, native mobile apps, cloud architectures, and automated compliance tools.
             </p>
-            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-on-surface">
+            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-[#292524] dark:text-on-surface">
               <span className="flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 text-primary" />
+                <MapPin className="h-3.5 w-3.5 text-[#FFB7B2]" />
                 Nairobi, Kenya
               </span>
               <span className="flex items-center gap-1.5">
-                <Mail className="h-3.5 w-3.5 text-primary" />
+                <Mail className="h-3.5 w-3.5 text-[#FFB7B2]" />
                 engineering@akubrecah.com
               </span>
             </div>
 
             <div className="pt-1">
-              <span className="text-[11px] font-medium text-on-surface-variant block mb-1.5">
+              <span className="text-[11px] font-medium text-[#78716C] block mb-1.5">
                 Verified on Google:
               </span>
               <GooglePreferredSourceButton />
@@ -54,33 +59,33 @@ export function SiteFooter(): JSX.Element {
 
           {/* Col 3: Engineering Services */}
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-on-surface uppercase tracking-wider">
-              Engineering Services
+            <h3 className="text-xs font-medium text-[#292524] dark:text-on-surface">
+              Engineering services
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/services#web" className="hover:text-primary transition-colors block">
-                  Web Applications (Next.js / React)
+                <Link href="/services#web" className="hover:text-[#292524] transition-colors block">
+                  Web applications (Next.js / React)
                 </Link>
               </li>
               <li>
-                <Link href="/services#mobile" className="hover:text-primary transition-colors block">
-                  Mobile Apps (iOS &amp; Android)
+                <Link href="/services#mobile" className="hover:text-[#292524] transition-colors block">
+                  Mobile apps (iOS &amp; Android)
                 </Link>
               </li>
               <li>
-                <Link href="/services#cloud" className="hover:text-primary transition-colors block">
-                  Cloud Infrastructure &amp; DevOps
+                <Link href="/services#cloud" className="hover:text-[#292524] transition-colors block">
+                  Cloud infrastructure &amp; DevOps
                 </Link>
               </li>
               <li>
-                <Link href="/services#enterprise" className="hover:text-primary transition-colors block">
-                  Custom Enterprise Architecture
+                <Link href="/services#enterprise" className="hover:text-[#292524] transition-colors block">
+                  Custom enterprise architecture
                 </Link>
               </li>
               <li>
-                <Link href="/solutions" className="hover:text-primary transition-colors block">
-                  Industry Solutions
+                <Link href="/solutions" className="hover:text-[#292524] transition-colors block">
+                  Industry solutions
                 </Link>
               </li>
             </ul>
@@ -88,28 +93,28 @@ export function SiteFooter(): JSX.Element {
 
           {/* Col 4: Enterprise Platforms & Tools */}
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-on-surface uppercase tracking-wider">
-              Platforms &amp; Tools
+            <h3 className="text-xs font-medium text-[#292524] dark:text-on-surface">
+              Platforms &amp; tools
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/products" className="hover:text-primary transition-colors block">
-                  API Gateway &amp; Integrations
+                <Link href="/products" className="hover:text-[#292524] transition-colors block">
+                  API gateway &amp; integrations
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard" className="hover:text-primary transition-colors block">
-                  Client &amp; Engineering Console
+                <Link href="/dashboard" className="hover:text-[#292524] transition-colors block">
+                  Client &amp; engineering console
                 </Link>
               </li>
               <li>
-                <Link href="/services#cloud" className="hover:text-primary transition-colors block">
-                  Cloud &amp; Infrastructure Manager
+                <Link href="/services#cloud" className="hover:text-[#292524] transition-colors block">
+                  Cloud &amp; infrastructure manager
                 </Link>
               </li>
               <li>
-                <Link href="/estimator" className="hover:text-primary transition-colors block">
-                  Architecture &amp; Scope Estimator
+                <Link href="/estimator" className="hover:text-[#292524] transition-colors block">
+                  Architecture &amp; scope estimator
                 </Link>
               </li>
             </ul>
@@ -117,38 +122,37 @@ export function SiteFooter(): JSX.Element {
 
           {/* Col 5: Company & Quick Links */}
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-on-surface uppercase tracking-wider">
+            <h3 className="text-xs font-medium text-[#292524] dark:text-on-surface">
               Company
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/about" className="hover:text-primary transition-colors">
+                <Link href="/about" className="hover:text-[#292524] transition-colors">
                   About Akubrecah
                 </Link>
               </li>
               <li>
-                <Link href="/projects" className="hover:text-primary transition-colors">
-                  Projects &amp; Case Studies
+                <Link href="/projects" className="hover:text-[#292524] transition-colors">
+                  Projects &amp; case studies
                 </Link>
               </li>
               <li>
-                <Link href="/articles" className="hover:text-primary transition-colors">
-                  Field Notes &amp; Articles
+                <Link href="/articles" className="hover:text-[#292524] transition-colors">
+                  Field notes &amp; articles
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-primary transition-colors font-semibold text-primary">
-                  Start a Project &rarr;
+                <Link href="/contact" className="hover:text-[#292524] transition-colors font-medium text-[#292524]">
+                  Start a project &rarr;
                 </Link>
               </li>
             </ul>
           </div>
-
         </div>
 
         {/* Bottom Sub-bar */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[11px] text-on-surface-variant">
+          <p className="text-[11px] text-[#78716C]">
             &copy; {currentYear} Akubrecah Entertainment. Independent software engineering &amp; cyber facilitation services. Not affiliated with KRA.
           </p>
 
@@ -160,7 +164,7 @@ export function SiteFooter(): JSX.Element {
                   href={link.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[11px] hover:text-primary transition-colors underline-offset-4 hover:underline"
+                  className="text-[11px] hover:text-[#292524] transition-colors underline-offset-4 hover:underline"
                 >
                   {link.label}
                 </a>
@@ -168,7 +172,7 @@ export function SiteFooter(): JSX.Element {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-[11px] hover:text-primary transition-colors underline-offset-4 hover:underline"
+                  className="text-[11px] hover:text-[#292524] transition-colors underline-offset-4 hover:underline"
                 >
                   {link.label}
                 </Link>
@@ -178,13 +182,15 @@ export function SiteFooter(): JSX.Element {
         </div>
 
         {/* Micro Disclaimer */}
-        <div className="mt-4 pt-3 border-t border-outline-variant/60 text-center sm:text-left">
-          <p className="text-[11px] text-on-surface-variant leading-relaxed">
-            Akubrecah Entertainment operates independent software engineering solutions and third-party automated document retrieval facilitation. 
-            Government services are also accessible directly and free of charge via official public portals such as <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">itax.kra.go.ke</a>.
+        <div className="mt-4 pt-3 border-t border-stone-100 dark:border-outline-variant/60 text-center sm:text-left">
+          <p className="text-[11px] text-[#78716C] leading-relaxed">
+            Akubrecah Entertainment operates independent software engineering solutions and third-party automated document retrieval facilitation.
+            Government services are also accessible directly and free of charge via official public portals such as{" "}
+            <a href="https://itax.kra.go.ke" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#292524]">
+              itax.kra.go.ke
+            </a>.
           </p>
         </div>
-
       </div>
     </footer>
   )

@@ -1,128 +1,61 @@
 ---
-version: 1.2.0
-name: Akubrecah Entertainment - Architectural Editorial & Institutional Systems
-description: "Single source of truth design system for Akubrecah Entertainment, KRA statutory compliance portal, and enterprise digital systems."
-brand: "Akubrecah Entertainment (Design | Print | Brand | Tech)"
+title: "Akubrecah — 'Softly' Digital Wellness & Tactile Living Room Design System"
+version: "2.0.0"
+status: "Active Production Design Specification (Branch: design/softly-theme)"
+brand: "Akubrecah (Softly Digital Wellness Theme)"
 colors:
-  # Official Brand Book Colors
-  primary: "#BA1A1A"                 # Tuscan Red (Authority, Legal Precision, Action)
-  primary-hover: "#9C1414"           # Deep Tuscan Crimson
-  primary-muted: "#FDE8E8"           # Light red tint
-  primary-container: "#FFDAD6"       # Soft container background
-  on-primary: "#FFFFFF"              # Pure White contrast
-  on-primary-container: "#410002"    # High-contrast deep maroon
-  
-  # Solid Architectural Surfaces & Backdrops
-  surface: "#F8FAFC"                 # Crisp Slate Light Canvas
-  surface-card: "#FFFFFF"            # High-contrast white card
-  surface-card-subtle: "#F1F5F9"     # Subtle container fill
-  surface-dark: "#0C0D12"            # Deep Obsidian Canvas
-  surface-dark-card: "#12141C"       # Elevated Obsidian Card
-  surface-dark-elevated: "#171A24"   # Secondary elevated surface
-  neutral: "#0F172A"                 # Obsidian Black
-  neutral-muted: "#334155"           # Slate Gray
-  neutral-subtle: "#64748B"          # Muted Gray
-  border: "#E2E8F0"                  # Border Light
-  border-dark: "#262B38"             # Border Obsidian
-  
-  # Logo Accent Hues (Design | Print | Brand)
-  accent-design: "#BA1A1A"           # Tuscan Red ("Design")
-  accent-print: "#0284C7"            # Structured Technical Blue ("Print")
-  accent-brand: "#15803D"            # Institutional Emerald ("Brand")
-  
-  # Status Hues
-  success: "#15803D"
-  success-bg: "#DCFCE7"
-  warning: "#B45309"
-  warning-bg: "#FEF3C7"
-  error: "#BA1A1A"
-  error-bg: "#FEE2E2"
-
+  background: "#FDFCF8"
+  sage: "#E8EFE8"
+  lavender: "#EFEDF4"
+  coral: "#FFB7B2"
+  blob_rose: "#FFE4E1"
+  blob_lavender: "#E6E6FA"
+  dark_text: "#292524"
+  muted_text: "#78716C"
+  white: "#FFFFFF"
 typography:
-  fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-  headline-2xl: { fontSize: "44px", fontWeight: 700, lineHeight: 1.12, letterSpacing: "-0.025em" }
-  headline-xl: { fontSize: "34px", fontWeight: 700, lineHeight: 1.18, letterSpacing: "-0.02em" }
-  headline-lg: { fontSize: "26px", fontWeight: 600, lineHeight: 1.24, letterSpacing: "-0.015em" }
-  headline-md: { fontSize: "20px", fontWeight: 600, lineHeight: 1.32, letterSpacing: "-0.01em" }
-  body-lg: { fontSize: "16px", fontWeight: 400, lineHeight: 1.6 }
-  body-md: { fontSize: "14px", fontWeight: 400, lineHeight: 1.55 }
-  body-sm: { fontSize: "12px", fontWeight: 400, lineHeight: 1.45 }
-  label-md: { fontSize: "12px", fontWeight: 600, letterSpacing: "0.02em" }
-  label-sm: { fontSize: "11px", fontWeight: 600, letterSpacing: "0.02em" }
-
+  font_sans: "Outfit, system-ui, -apple-system, sans-serif"
+  font_cursive: "Reenie Beanie, cursive"
+  font_mono: "JetBrains Mono, ui-monospace, SFMono-Regular, monospace"
+  scale:
+    display_hero: "72px (4.5rem) / line-height 1.05 / letter-spacing -0.025em / weight 500"
+    h1: "48px (3rem) / line-height 1.1 / letter-spacing -0.025em / weight 500"
+    h2: "36px (2.25rem) / line-height 1.15 / letter-spacing -0.025em / weight 500"
+    h3: "22px (1.375rem) / line-height 1.3 / weight 500"
+    body_lg: "18px (1.125rem) / line-height 1.65 / weight 400"
+    body: "15px (0.9375rem) / line-height 1.65 / weight 400"
+    cursive_accent: "24px-84px / Reenie Beanie / weight 400"
 rounded:
-  sharp: "2px"
-  sm: "4px"
-  md: "6px"
-  lg: "8px"
-  xl: "10px"
-  xxl: "12px"
-  pill: "9999px"
-
-spacing:
-  xs: "4px"
-  sm: "8px"
+  sm: "12px"
   md: "16px"
   lg: "24px"
-  xl: "32px"
-  xxl: "48px"
-
-components:
-  card:
-    backgroundColor: "{colors.surface-card}"
-    rounded: "{rounded.xl}"
-    border: "1px solid {colors.border}"
-  input:
-    rounded: "{rounded.lg}"
-    border: "1px solid {colors.border}"
-    height: "42px"
-    fontSize: "14px"
-  button-primary:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.on-primary}"
-    rounded: "{rounded.lg}"
-    height: "42px"
+  xl: "32px (2rem)"
+  2xl: "40px (2.5rem)"
+  3xl: "48px (3rem)"
+  4xl: "64px (4rem)"
+  full: "9999px"
 ---
 
-# Akubrecah Entertainment - Brand Specification & Design System
+# DESIGN.md — 'Softly' Digital Wellness Visual System
 
-## Overview
-**Akubrecah Entertainment** delivers software engineering, statutory GovTech facilitation, and corporate brand infrastructure.
-Guided by an editorial, human-crafted engineering aesthetic, this specification enforces visual restraint, typographic clarity, and high-trust institutional ergonomics across all marketing, portal, and operations surfaces.
+## 1. Visual Philosophy & Aesthetic Essence
+The **Softly** theme transforms the entire application into a **"digital living room"**—minimalist, tactile, warm, and intentionally calm. It pairs **Digital Minimalism** with **Gen-Z Lifestyle** warmth while preserving 100% of Akubrecah's engineering and GovTech compliance functionality.
 
-## Brand Book Alignment & Color Hierarchy
-1. **Tuscan Red (`#BA1A1A`)**: Primary brand accent. Reserved for primary calls to action, active focus states, and key structural markers.
-2. **Obsidian (`#0F172A` / `#0C0D12`)**: Primary ink in light mode and primary canvas in dark mode.
-3. **Slate & Chalk (`#F8FAFC` / `#F1F5F9`)**: Neutral surface hierarchy providing subtle separation without glassmorphism or decorative gradients.
-4. **Pure White (`#FFFFFF`)**: Primary card and document surface in light mode.
-5. **Semantic Status Accents**:
-   - **Institutional Emerald (`#15803D`)**: Verified status, successful payments, and healthy service checks.
-   - **Amber (`#B45309`)**: Pending states and advisory notices.
-6. **Strict Purple Ban**: Violet, purple, indigo, and magenta hues are strictly forbidden across all touchpoints.
+## 2. Color System
+- **Primary Background (`#FDFCF8`)**: Warm alabaster paper tone that eliminates screen glare.
+- **Sage (`#E8EFE8`)**: Desaturated botanical pastel for secondary containers and phone screen previews.
+- **Lavender (`#EFEDF4`)**: Calm pastel tone for complementary cards and layered previews.
+- **Peach / Coral (`#FFB7B2`)**: Primary accent for pill buttons, circular brand dot indicators, and interactive highlights.
+- **Soft-Black Text (`#292524`)**: Warm dark stone for headings, body copy, and high-contrast pill CTAs.
+- **Muted Text (`#78716C`)**: Warm stone-500 for descriptions, timestamps, and secondary metadata.
 
-## Typography
-- Primary Typeface: **Inter** (weights: 400, 500, 600, 700).
-- **No `font-black` Overuse**: Headings rely on proportion, spacing, and 600–700 weight rather than heavy 900-weight all-caps blocks.
-- **Natural Case Hierarchy**: Headings use sentence or title case. Uppercase is reserved strictly for compact table headers, keyboard shortcuts, and short specification codes.
-- **Monospace Tabular Figures**: Used for KRA PINs, M-Pesa receipt codes, timestamps, and monetary figures.
+## 3. Typography
+- **Primary Sans (`Outfit`)**: Clean, rounded geometric sans-serif used across all headings, navigation (`14px Outfit Medium`), and interface controls. Headings use sentence-case and tight tracking (`-0.025em`).
+- **Expressive Cursive (`Reenie Beanie`)**: Handwritten cursive accent used for hero emphasis words, diary testimonial signatures (`24px stone-500` after a `32px` horizontal line), and editorial margin notes.
 
-## Layout & Interaction Principles
-1. **Editorial & Functional Structure**:
-   - Each page uses a layout suited to its content: asymmetric editorial grids for case studies and corporate overview, specification tables for services and products, high-density workbenches for GovTech portals, and clean operations tables for the admin console.
-2. **Restrained Radii & Solid Borders**:
-   - Cards and containers use crisp `8px`–`12px` corners (`rounded-lg` to `rounded-xl`) with `1px solid` semantic borders (`border-outline-variant`).
-   - Avoid oversized `32px`–`40px` pill containers or floating glassmorphic panels.
-3. **Purposeful Motion Only**:
-   - Transitions are fast (`150ms`–`200ms`) and limited to color, border, opacity, and accordion disclosure.
-   - No decorative blinking dots, no continuous marquee tickers, no floating background blobs, and no card hover elevation jumps (`-translate-y-1`).
-
-## Prohibitions
-- NO decorative blinking or pulsing dots beside headings, badges, or navigation links.
-- NO `Sparkles` or decorative icon spam beside every heading or badge.
-- NO decorative emoji usage across website UI, toasts, badges, or buttons.
-- NO fabricated stats, star ratings, review counts, or false certification claims.
-- NO gradient-clipped text headlines, neon glows, or background blur blobs.
-- NO fake macOS window traffic-light dots or radar scanner HUD animations.
-- NO purple/indigo SaaS colors.
-
-
+## 4. Visual Depth, Texture & Motion
+- **Global Grain Overlay**: Fixed viewport overlay (`z-index: 50`, `pointer-events: none`, `mix-blend-mode: overlay`, `opacity: 0.35`) powered by an SVG `feTurbulence` filter (`baseFrequency="0.65"`).
+- **Container Geometry**: `2rem` to `4rem` (`32px`–`64px`) border-radius on containers and cards, with `0 4px 20px -2px rgba(0,0,0,0.05)` soft shadows.
+- **Fluid Low-Velocity Motion**:
+  - `reveal-on-scroll`: `translateY(30px)` to `0`, `opacity: 0` to `1`, `duration: 0.8s`.
+  - Floating background blobs (`#FFE4E1` and `#E6E6FA` at `60%` opacity): `6s` infinite loop (`translateY(-10px)` to `translateY(10px)`).

@@ -48,21 +48,25 @@ export default async function ProjectsPage() {
         ]}
       />
       {/* Hero Header */}
-      <div className="bg-surface-container-lowest border-b border-outline-variant">
-        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 md:py-12 space-y-4">
+      <div className="relative overflow-hidden py-10 md:py-14">
+        <div aria-hidden="true" className="pointer-events-none absolute -top-12 left-1/4 w-80 h-80 rounded-full bg-[#FFE4E1] opacity-60 blur-[90px] animate-float-blob" />
+        <div aria-hidden="true" className="pointer-events-none absolute top-4 right-1/4 w-80 h-80 rounded-full bg-[#E6E6FA] opacity-60 blur-[90px] animate-float-blob [animation-delay:3s]" />
+        <div className="relative z-10 w-full max-w-[1220px] mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
-            <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+            <Link href="/" className="hover:text-on-surface transition-colors">Home</Link>
             <span>/</span>
             <span className="text-on-surface font-medium">Case Studies</span>
           </nav>
           <div className="max-w-4xl space-y-3">
-            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
-              Production Systems &amp; Architecture Reviews
+            <span className="font-cursive text-2xl sm:text-3xl text-[#78716C] block">
+              production systems &amp; architecture reviews
             </span>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-on-surface tracking-tight leading-tight">
-              Selected engineering work and deployed platforms.
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-medium text-on-surface tracking-[-0.025em] leading-[1.08]">
+              Selected engineering work and{" "}
+              <span className="font-cursive text-5xl sm:text-7xl font-normal">deployed</span>{" "}
+              platforms.
             </h1>
-            <p className="text-base sm:text-lg text-on-surface-variant max-w-3xl leading-relaxed">
+            <p className="text-base sm:text-lg text-on-surface-variant max-w-2xl leading-relaxed">
               Examine the technical requirements, system architecture, and production outcomes of our web applications, statutory compliance portals, and mobile platforms.
             </p>
           </div>

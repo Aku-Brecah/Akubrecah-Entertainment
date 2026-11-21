@@ -49,10 +49,12 @@ export default function EstimatorPage() {
       />
 
       {/* Hero Header */}
-      <section className="bg-surface-container-lowest border-b border-outline-variant">
-        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 md:py-12 space-y-4">
+      <section className="relative overflow-hidden py-10 md:py-14">
+        <div aria-hidden="true" className="pointer-events-none absolute -top-12 left-1/4 w-80 h-80 rounded-full bg-[#FFE4E1] opacity-60 blur-[90px] animate-float-blob" />
+        <div aria-hidden="true" className="pointer-events-none absolute top-4 right-1/4 w-80 h-80 rounded-full bg-[#E6E6FA] opacity-60 blur-[90px] animate-float-blob [animation-delay:3s]" />
+        <div className="relative z-10 w-full max-w-[1220px] mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-on-surface-variant">
-            <Link href="/" className="hover:text-primary transition-colors">
+            <Link href="/" className="hover:text-on-surface transition-colors">
               Home
             </Link>
             <span>/</span>
@@ -60,15 +62,16 @@ export default function EstimatorPage() {
           </nav>
 
           <div className="max-w-4xl space-y-3">
-            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
-              Project Scoping &amp; Turnaround Calculator
+            <span className="font-cursive text-2xl sm:text-3xl text-[#78716C] block">
+              project scoping &amp; turnaround calculator
             </span>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-on-surface tracking-tight leading-tight">
-              Scope your software architecture and delivery timeline.
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium text-on-surface tracking-[-0.025em] leading-[1.08]">
+              Scope your software architecture{" "}
+              <span className="font-cursive text-5xl sm:text-7xl font-normal">calmly</span>.
             </h1>
 
-            <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed max-w-3xl">
+            <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed max-w-2xl">
               Select your core engineering domain, deployment scale, and required integration modules to generate a recommended stack specification and projected turnaround estimate.
             </p>
           </div>

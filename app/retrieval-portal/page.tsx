@@ -53,25 +53,27 @@ function FlagshipPortalContent() {
     <div className="min-h-screen overflow-x-hidden bg-surface text-on-surface font-sans selection:bg-primary/20 selection:text-primary flex flex-col">
 
       {/* ============================================================== */}
-      {/* 1. ADAPTIVE RESPONSIVE GOVTECH TOP NAVIGATION BAR */}
+      {/* 1. ADAPTIVE RESPONSIVE SOFTLY TOP NAVIGATION BAR */}
       {/* ============================================================== */}
-      <header className="sticky top-0 z-50 w-full bg-surface-container-lowest border-b border-outline-variant">
-        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+      <header className="sticky top-3 z-50 w-full flex justify-center px-4">
+        <div className="w-full max-w-[1220px] rounded-full bg-white/70 dark:bg-stone-900/75 backdrop-blur-[20px] border border-stone-200/70 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
 
           {/* Brand Mark & Identity */}
           <Link href="/" className="flex items-center gap-2.5 sm:gap-3 transition-opacity hover:opacity-90 min-w-0">
-            <Logo width={120} height={34} className="h-7 sm:h-8 w-auto shrink-0" />
-            <div className="flex flex-col min-w-0 border-l border-outline-variant pl-2.5">
+            <span className="w-8 h-8 rounded-full bg-[#FFB7B2] flex items-center justify-center shrink-0 shadow-2xs">
+              <span className="w-2.5 h-2.5 rounded-full bg-white" />
+            </span>
+            <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs sm:text-sm font-bold tracking-tight text-on-surface truncate">
+                <span className="text-xs sm:text-sm font-medium tracking-tight text-on-surface truncate">
                   Akubrecah<span className="hidden sm:inline"> Cyber Portal</span>
                 </span>
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant border border-outline-variant shrink-0">
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#E8EFE8] text-[#292524] shrink-0">
                   Independent
                 </span>
               </div>
               <span className="text-[10px] text-on-surface-variant hidden md:inline">
-                Statutory Facilitation &amp; Document Retrieval
+                Statutory facilitation &amp; document retrieval
               </span>
             </div>
           </Link>
@@ -81,16 +83,16 @@ function FlagshipPortalContent() {
             <button
               type="button"
               onClick={() => handleModeChange("retrieval")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-white transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium bg-[#292524] text-[#FDFCF8] transition-colors"
             >
-              <FileCheck2 className="w-3.5 h-3.5 shrink-0" />
+              <FileCheck2 className="w-3.5 h-3.5 text-[#FFB7B2] shrink-0" />
               <span><span className="hidden sm:inline">Certificate </span>Retrieval</span>
             </button>
             {isLoaded && isSignedIn && (
               <UserButton
                 appearance={{
                   elements: {
-                    userButtonAvatarBox: "w-7 h-7 sm:w-8 sm:h-8 border border-outline-variant rounded-full",
+                    userButtonAvatarBox: "w-7 h-7 sm:w-8 sm:h-8 border border-stone-200 rounded-full",
                   },
                 }}
               />
@@ -103,19 +105,30 @@ function FlagshipPortalContent() {
       {/* ============================================================== */}
       {/* 2. FOCUSED HERO WORKSPACE */}
       {/* ============================================================== */}
-      <div className="flex-1 w-full max-w-[1360px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-12 py-4 sm:py-6 space-y-5 sm:space-y-6">
+      <div className="flex-1 w-full max-w-[1220px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8 relative">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-8 left-1/4 w-72 h-72 rounded-full bg-[#FFE4E1] opacity-60 blur-[85px] animate-float-blob"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-12 right-1/4 w-72 h-72 rounded-full bg-[#E6E6FA] opacity-60 blur-[85px] animate-float-blob [animation-delay:3s]"
+        />
 
         {/* Focused Hero Header */}
-        <div className="text-center space-y-1.5 max-w-3xl mx-auto px-1">
-          <div className="text-xs font-semibold text-primary uppercase tracking-wider">
-            Independent Cyber Facilitation Service
+        <div className="relative z-10 text-center space-y-2 max-w-3xl mx-auto px-1">
+          <div className="font-cursive text-2xl sm:text-3xl text-[#78716C]">
+            independent cyber facilitation space
           </div>
 
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-on-surface tracking-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-medium text-on-surface tracking-[-0.025em]">
             {mode === "retrieval" ? (
-              "KRA PIN Certificate Retrieval"
+              <>
+                KRA PIN certificate retrieval,{" "}
+                <span className="font-cursive text-4xl sm:text-6xl font-normal">softly</span>
+              </>
             ) : (
-              "Kenya P9 Tax Calculator & Filing Guide"
+              "Kenya P9 tax calculator & filing guide"
             )}
           </h1>
 

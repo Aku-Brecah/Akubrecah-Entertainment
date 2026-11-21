@@ -444,3 +444,21 @@
     - Removed gradient red-to-zinc and emerald-to-teal headers and giant watermark icons in `components/kra-pin-checker.tsx` and `components/cyber-subscription-card.tsx`.
     - Removed radial dot-grid overlays and glassmorphism from authentication screens (`custom-sign-in.tsx`, `custom-sign-up.tsx`, `kra-sign-in.tsx`, `kra-sign-up.tsx`) and refined `app/not-found.tsx` and `app/onboarding/page.tsx`.
     - Standardized typography, borders, and `rounded-xl` containers across all Legal Center pages (`/legal`, `/legal/disclaimer`, `/legal/privacy`, `/legal/terms`, `/legal/refund`, `/legal/aup`, `/legal/cookies`) and Admin Console views (`/admin`, `/admin/system-health`, `/admin/system-logs`, `/admin/brand`, `/admin/settings`, `/admin/articles`, `/admin/projects`, `/admin/inquiries`, `/admin/kra-retrievals`, `/admin/user-management`).
+
+## Feature 23: 'Softly' Digital Wellness & Tactile Living Room Theme Overhaul (Branch: `design/softly-theme`)
+- [x] **Task 73: Complete Site-Wide 'Softly' Visual & Layout Overhaul (Zero Functionality Changes)**
+  - [x] **Dedicated Git Branch (`design/softly-theme`):** Created and checked out `design/softly-theme` to isolate the full Softly visual design overhaul.
+  - [x] **Softly Color System, Typography & Analog Grain Overlay (`DESIGN.md`, `app/layout.tsx`, `app/globals.css`, `tailwind.config.ts`, `components/ui/grain-overlay.tsx`, `components/ui/page-background.tsx`):**
+    - Configured warm paper background `#FDFCF8`, Sage `#E8EFE8`, Lavender `#EFEDF4`, Peach/Coral `#FFB7B2` primary accent, dark stone `#292524` text, and muted stone `#78716C` text.
+    - Loaded Google Fonts `'Outfit'` (sans-serif, tight `-0.025em` tracking, sentence-case headings) and `'Reenie Beanie'` (expressive cursive accent).
+    - Built global `<GrainOverlay />` (`fixed inset-0 z-50 pointer-events-none opacity-[0.35] mix-blend-overlay` with SVG `feTurbulence` `baseFrequency="0.65"`).
+    - Configured `2rem`–`4rem` container border-radii, `0 4px 20px -2px rgba(0,0,0,0.05)` soft shadows, `reveal-on-scroll` (`0.8s`), and `6s` floating pastel blob animations (`#FFE4E1` and `#E6E6FA` at `60%` opacity).
+  - [x] **Floating Pill Navigation (`components/site-header.tsx`, `components/KRAAnnouncementBanner.tsx`):**
+    - Engineered floating pill navbar (`70%` white opacity, `20px` backdrop-blur, `100% - 32px` mobile width constraint) with circular Coral `#FFB7B2` + white dot logo, `14px Outfit Medium` links, and dark stone `#292524` pill CTA button while preserving all routes and Clerk auth controls.
+  - [x] **Mobile-First 'Softly' Landing Page & Interactive Components (`app/page.tsx`, `components/interactive/softly-faq-accordion.tsx`, `components/interactive/softly-waitlist-conversion.tsx`, `components/reviews/review-section.tsx`):**
+    - Center-aligned Hero with `#FFE4E1` & `#E6E6FA` blurred floating blobs, `72px Outfit` headline with `'Reenie Beanie'` cursive emphasis word, `500px` max-width sub-headline, and dual Coral `#FFB7B2` / white stone-bordered pill CTAs.
+    - Horizontal Scenario Scroll (`288x160px` white `rounded-3xl` cards, `14px stone-400` top-left timestamp, `20px stone-800` bottom text transitioning to `#FFB7B2` on hover).
+    - App Experience Preview with three-mockup cascading phone layout (`300x620px` opaque center phone with pulsing Coral `#FFB7B2` `'Breathe'` button; `280x580px` `80%` opacity left `+48px` Sage `#E8EFE8` and right `+96px` Lavender `#EFEDF4` phones).
+    - Diary Entry Testimonials in 2-column desktop / 1-column mobile grid with `+1`/`-1` degree note rotation, white background, and `32px` horizontal line + `'Reenie Beanie'` cursive signature in `24px stone-500`.
+    - Interactive FAQ Accordion (`bg-white`, `16px` rounded corners, `1px stone-100` border, `24px` header padding, `Plus` icon rotating `45` degrees, `duration-500 ease-in-out`).
+    - Waitlist & Project Conversion section with high-blur floating gradients, dark stone `#292524` rounded-square icon with coral dot, `rounded-full bg-stone-50` email input, and hover-scaling `#292524` submit button.

@@ -5,6 +5,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { TooltipProviderWrapper } from '@/components/providers/tooltip-provider'
 import { AdminLayoutWrapper } from "@/components/admin-layout-wrapper"
 import KRAAnnouncementBanner from '@/components/KRAAnnouncementBanner'
+import { GrainOverlay } from '@/components/ui/grain-overlay'
 import { Analytics } from "@vercel/analytics/next"
 
 import "./globals.css"
@@ -116,7 +117,7 @@ export default function RootLayout({
         {/* External Resources & Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Reenie+Beanie&display=swap" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://clerk.akubrecah.com" />
         <link rel="dns-prefetch" href="https://clerk.akubrecah.com" />
@@ -146,7 +147,8 @@ export default function RootLayout({
               >
                 Skip to main content
               </a>
-              <div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-x-clip bg-background">
+              <div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-x-clip bg-[#FDFCF8] dark:bg-background text-[#292524] dark:text-foreground">
+                <GrainOverlay />
                 <KRAAnnouncementBanner />
                 <AdminLayoutWrapper>
                   {children}

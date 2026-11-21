@@ -199,45 +199,48 @@ export default function ServicesPage() {
       <FaqSchema items={servicesFaqs} />
 
       {/* ============================= HERO SECTION ============================= */}
-      <section className="border-b border-outline-variant bg-surface-container-lowest py-10 md:py-12">
-        <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 space-y-4">
+      <section className="relative overflow-hidden py-10 md:py-14">
+        <div aria-hidden="true" className="pointer-events-none absolute -top-12 left-1/4 w-80 h-80 rounded-full bg-[#FFE4E1] opacity-60 blur-[90px] animate-float-blob" />
+        <div aria-hidden="true" className="pointer-events-none absolute top-4 right-1/4 w-80 h-80 rounded-full bg-[#E6E6FA] opacity-60 blur-[90px] animate-float-blob [animation-delay:3s]" />
+        <div className="relative z-10 max-w-[1220px] mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
-            <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+            <Link href="/" className="hover:text-on-surface transition-colors">Home</Link>
             <span>/</span>
             <span className="text-on-surface font-medium">Engineering Services</span>
           </nav>
 
           <div className="max-w-4xl space-y-3">
-            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
-              Technical Capabilities &amp; Delivery Practices
+            <span className="font-cursive text-2xl sm:text-3xl text-[#78716C] block">
+              technical capabilities &amp; delivery practices
             </span>
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-on-surface tracking-tight leading-tight">
-              Full-cycle software engineering across web, mobile, payments, and cloud.
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-medium text-on-surface tracking-[-0.025em] leading-[1.08]">
+              Full-cycle software engineering, crafted{" "}
+              <span className="font-cursive text-5xl sm:text-7xl font-normal">thoughtfully</span>.
             </h1>
 
-            <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed max-w-3xl">
+            <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed max-w-2xl">
               We design, build, and maintain production software systems for organizations in Kenya and East Africa—combining typed full-stack architectures with local payment and regulatory integrations.
             </p>
           </div>
 
           {/* Practice Quick-Jump Index */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-outline-variant text-xs">
-            <a href="#web" className="group block p-3 rounded-lg bg-surface-container-low border border-outline-variant hover:border-primary/50 transition-colors">
-              <span className="font-mono text-primary font-semibold">01</span>
-              <p className="font-semibold text-on-surface group-hover:text-primary mt-0.5">Web &amp; GovTech</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 text-xs">
+            <a href="#web" className="group block p-4 rounded-3xl bg-white border border-stone-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all">
+              <span className="text-stone-400">01</span>
+              <p className="font-medium text-base text-on-surface group-hover:text-[#FFB7B2] transition-colors mt-1">Web &amp; GovTech</p>
             </a>
-            <a href="#enterprise" className="group block p-3 rounded-lg bg-surface-container-low border border-outline-variant hover:border-primary/50 transition-colors">
-              <span className="font-mono text-primary font-semibold">02</span>
-              <p className="font-semibold text-on-surface group-hover:text-primary mt-0.5">Daraja &amp; Ledgers</p>
+            <a href="#enterprise" className="group block p-4 rounded-3xl bg-white border border-stone-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all">
+              <span className="text-stone-400">02</span>
+              <p className="font-medium text-base text-on-surface group-hover:text-[#FFB7B2] transition-colors mt-1">Daraja &amp; Ledgers</p>
             </a>
-            <a href="#mobile" className="group block p-3 rounded-lg bg-surface-container-low border border-outline-variant hover:border-primary/50 transition-colors">
-              <span className="font-mono text-primary font-semibold">03</span>
-              <p className="font-semibold text-on-surface group-hover:text-primary mt-0.5">Mobile Systems</p>
+            <a href="#mobile" className="group block p-4 rounded-3xl bg-white border border-stone-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all">
+              <span className="text-stone-400">03</span>
+              <p className="font-medium text-base text-on-surface group-hover:text-[#FFB7B2] transition-colors mt-1">Mobile Systems</p>
             </a>
-            <a href="#cloud" className="group block p-3 rounded-lg bg-surface-container-low border border-outline-variant hover:border-primary/50 transition-colors">
-              <span className="font-mono text-primary font-semibold">04</span>
-              <p className="font-semibold text-on-surface group-hover:text-primary mt-0.5">Cloud &amp; Pipelines</p>
+            <a href="#cloud" className="group block p-4 rounded-3xl bg-white border border-stone-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all">
+              <span className="text-stone-400">04</span>
+              <p className="font-medium text-base text-on-surface group-hover:text-[#FFB7B2] transition-colors mt-1">Cloud &amp; Pipelines</p>
             </a>
           </div>
         </div>
