@@ -38,7 +38,7 @@ ALTER TABLE IF EXISTS "inquiry_notes" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "inquiry_replies" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "system_logs" ENABLE ROW LEVEL SECURITY;
 
--- 2. Users table policies (owner can read/update own profile; admin/service has full access)
+-- 2. Users table policies ("clerkId", "id")
 DROP POLICY IF EXISTS "users_select_own_or_admin" ON "users";
 CREATE POLICY "users_select_own_or_admin" ON "users"
   FOR SELECT
@@ -75,12 +75,13 @@ CREATE POLICY "users_delete_admin_only" ON "users"
   FOR DELETE
   USING (public.is_admin_or_service_context());
 
--- 3. Subscriptions table policies (scoped to owning userId)
+-- 3. Subscriptions table policies ("userId", "clerkId")
 DROP POLICY IF EXISTS "subscriptions_select_own_or_admin" ON "subscriptions";
 CREATE POLICY "subscriptions_select_own_or_admin" ON "subscriptions"
   FOR SELECT
   USING (
     public.is_admin_or_service_context()
+    OR "clerkId" = COALESCE(current_setting('app.current_clerk_id', true), '')
     OR "userId"::text = COALESCE(current_setting('app.current_user_id', true), '')
   );
 
@@ -90,13 +91,13 @@ CREATE POLICY "subscriptions_mutate_admin_or_service" ON "subscriptions"
   USING (public.is_admin_or_service_context())
   WITH CHECK (public.is_admin_or_service_context());
 
--- 4. Certificate downloads policies (scoped to userId / clerkUserId)
+-- 4. Certificate downloads policies ("clerkId", "userId")
 DROP POLICY IF EXISTS "certificate_downloads_select_own_or_admin" ON "certificate_downloads";
 CREATE POLICY "certificate_downloads_select_own_or_admin" ON "certificate_downloads"
   FOR SELECT
   USING (
     public.is_admin_or_service_context()
-    OR "clerkUserId" = COALESCE(current_setting('app.current_clerk_id', true), '')
+    OR "clerkId" = COALESCE(current_setting('app.current_clerk_id', true), '')
     OR "userId"::text = COALESCE(current_setting('app.current_user_id', true), '')
   );
 
@@ -105,7 +106,7 @@ CREATE POLICY "certificate_downloads_insert_own_or_admin" ON "certificate_downlo
   FOR INSERT
   WITH CHECK (
     public.is_admin_or_service_context()
-    OR "clerkUserId" = COALESCE(current_setting('app.current_clerk_id', true), '')
+    OR "clerkId" = COALESCE(current_setting('app.current_clerk_id', true), '')
     OR "userId"::text = COALESCE(current_setting('app.current_user_id', true), '')
   );
 
@@ -114,13 +115,14 @@ CREATE POLICY "certificate_downloads_modify_admin_only" ON "certificate_download
   FOR DELETE
   USING (public.is_admin_or_service_context());
 
--- 5. M-Pesa Transactions policies (scoped to clerkUserId; mutations restricted to service/admin)
+-- 5. M-Pesa Transactions policies ("clerk_id", "user_id")
 DROP POLICY IF EXISTS "mpesa_transactions_select_own_or_admin" ON "mpesa_transactions";
 CREATE POLICY "mpesa_transactions_select_own_or_admin" ON "mpesa_transactions"
   FOR SELECT
   USING (
     public.is_admin_or_service_context()
-    OR "clerkUserId" = COALESCE(current_setting('app.current_clerk_id', true), '')
+    OR COALESCE("clerk_id"::text, '') = COALESCE(current_setting('app.current_clerk_id', true), '')
+    OR COALESCE("user_id"::text, '') = COALESCE(current_setting('app.current_user_id', true), '')
   );
 
 DROP POLICY IF EXISTS "mpesa_transactions_mutate_service_only" ON "mpesa_transactions";
@@ -129,13 +131,13 @@ CREATE POLICY "mpesa_transactions_mutate_service_only" ON "mpesa_transactions"
   USING (public.is_admin_or_service_context())
   WITH CHECK (public.is_admin_or_service_context());
 
--- 6. Cyber Cafes & Cyber Invoices policies (scoped to clerkUserId)
+-- 6. Cyber Cafes & Cyber Invoices policies ("clerkUserId", "cyberCafeId")
 DROP POLICY IF EXISTS "cyber_cafes_select_own_or_admin" ON "cyber_cafes";
 CREATE POLICY "cyber_cafes_select_own_or_admin" ON "cyber_cafes"
   FOR SELECT
   USING (
     public.is_admin_or_service_context()
-    OR "clerkUserId" = COALESCE(current_setting('app.current_clerk_id', true), '')
+    OR COALESCE("clerkUserId"::text, '') = COALESCE(current_setting('app.current_clerk_id', true), '')
   );
 
 DROP POLICY IF EXISTS "cyber_cafes_mutate_service_only" ON "cyber_cafes";
@@ -151,8 +153,8 @@ CREATE POLICY "cyber_invoices_select_own_or_admin" ON "cyber_invoices"
     public.is_admin_or_service_context()
     OR EXISTS (
       SELECT 1 FROM "cyber_cafes" cc
-      WHERE cc."id" = "cyber_invoices"."cyberCafeId"
-        AND cc."clerkUserId" = COALESCE(current_setting('app.current_clerk_id', true), '')
+      WHERE cc."id"::text = "cyber_invoices"."cyberCafeId"::text
+        AND COALESCE(cc."clerkUserId"::text, '') = COALESCE(current_setting('app.current_clerk_id', true), '')
     )
   );
 
@@ -162,13 +164,13 @@ CREATE POLICY "cyber_invoices_mutate_service_only" ON "cyber_invoices"
   USING (public.is_admin_or_service_context())
   WITH CHECK (public.is_admin_or_service_context());
 
--- 7. Sessions, Session Activities, User Activities, Inquiries, System Logs (Admin/Service isolation)
+-- 7. Sessions, Session Activities, User Activities, Inquiries, System Logs ("user_id")
 DROP POLICY IF EXISTS "sessions_select_own_or_admin" ON "sessions";
 CREATE POLICY "sessions_select_own_or_admin" ON "sessions"
   FOR SELECT
   USING (
     public.is_admin_or_service_context()
-    OR "userId"::text = COALESCE(current_setting('app.current_user_id', true), '')
+    OR COALESCE("user_id"::text, '') = COALESCE(current_setting('app.current_user_id', true), '')
   );
 
 DROP POLICY IF EXISTS "sessions_mutate_service_only" ON "sessions";
@@ -188,7 +190,7 @@ CREATE POLICY "user_activities_select_own_or_admin" ON "user_activities"
   FOR SELECT
   USING (
     public.is_admin_or_service_context()
-    OR "userId"::text = COALESCE(current_setting('app.current_user_id', true), '')
+    OR "user_id"::text = COALESCE(current_setting('app.current_user_id', true), '')
   );
 
 DROP POLICY IF EXISTS "user_activities_mutate_service_only" ON "user_activities";
