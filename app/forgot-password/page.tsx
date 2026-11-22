@@ -8,6 +8,7 @@ import { Mail, Lock, KeyRound, ArrowLeft, ArrowRight, Loader2, AlertCircle, Chec
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Logo } from "@/components/logo"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function ForgotPasswordPage() {
   const { isLoaded, signIn, setActive } = useSignIn()
@@ -93,9 +94,12 @@ export default function ForgotPasswordPage() {
           <Link href="/" className="inline-flex items-center hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
             <Logo width={128} height={36} className="h-8 w-auto" />
           </Link>
-          <span className="w-8 h-8 rounded-full bg-[#E8EFE8] flex items-center justify-center text-[#292524]">
-            <KeyRound className="w-4 h-4" />
-          </span>
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle />
+            <span className="w-8 h-8 rounded-full bg-[#E8EFE8] flex items-center justify-center text-[#292524]">
+              <KeyRound className="w-4 h-4" />
+            </span>
+          </div>
         </div>
 
         <div className="space-y-1.5 border-b border-stone-100 pb-5">

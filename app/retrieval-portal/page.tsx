@@ -20,6 +20,7 @@ import { KRAPortal } from "@/components/kra-portal"
 import { KRAFilingPortal } from "@/components/kra-filing-portal"
 import { GooglePreferredSourceButton } from "@/components/google-preferred-source-button"
 import { Logo } from "@/components/logo"
+import { ThemeToggle } from "@/components/theme-toggle"
 import Link from "next/link"
 
 type ServiceMode = "retrieval" | "filing"
@@ -71,8 +72,9 @@ function FlagshipPortalContent() {
             </div>
           </Link>
 
-          {/* Right Header: Active Mode Badge & Profile */}
+          {/* Right Header: Active Mode Badge, Theme Toggle & Profile */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <ThemeToggle />
             <button
               type="button"
               onClick={() => handleModeChange("retrieval")}
@@ -473,9 +475,14 @@ function FlagshipPortalContent() {
       {/* ============================================================== */}
       <footer className="mt-auto border-t border-outline-variant bg-surface-container-lowest py-5 sm:py-6 text-xs text-on-surface-variant">
         <div className="w-full max-w-none px-4 sm:px-6 lg:px-10 xl:px-12 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
-          <p className="text-[11px] text-on-surface-variant">
-            &copy; {new Date().getFullYear()} Akubrecah Entertainment. Independent third-party cyber assistance provider. Not affiliated with the Kenya Revenue Authority (KRA).
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
+            <Link href="/" className="inline-flex items-center hover:opacity-90 transition-opacity shrink-0" aria-label="Akubrecah Entertainment">
+              <Logo width={116} height={32} className="h-7 w-auto" />
+            </Link>
+            <p className="text-[11px] text-on-surface-variant">
+              &copy; {new Date().getFullYear()} Akubrecah Entertainment. Independent third-party cyber assistance provider. Not affiliated with the Kenya Revenue Authority (KRA).
+            </p>
+          </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[11px]">
             <GooglePreferredSourceButton siteDomain="akubrecah.com" />

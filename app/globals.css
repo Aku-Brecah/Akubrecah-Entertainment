@@ -1,5 +1,6 @@
 /* Tailwind CSS v4 — CSS-first; legacy theme/content/plugins kept via @config compat layer */
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 @config "../tailwind.config.ts";
 
 /* 'Softly' Digital Wellness & Tactile Living Room Design System */
@@ -77,6 +78,10 @@
   /* #78716C */
   --card: 0 0% 100%;
   --card-foreground: 12 6% 15%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 12 6% 15%;
+  --destructive: 4 49% 54%;
+  --destructive-foreground: 0 0% 100%;
   --border: 20 6% 90%;
   --input: 20 6% 90%;
   --ring: 4 100% 85%;
@@ -148,6 +153,10 @@
   --muted-foreground: 24 5% 64%;
   --card: 20 10% 10%;
   --card-foreground: 48 56% 98%;
+  --popover: 20 10% 11%;
+  --popover-foreground: 48 56% 98%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
   --border: 20 6% 20%;
   --input: 20 6% 20%;
   --ring: 4 100% 85%;
@@ -225,6 +234,120 @@
 
 .dark .text-primary {
   color: #FFB7B2;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Softly Dark Mode Surface & Typography Contrast Normalization
+   Ensures all Softly light-mode tokens remain crisp and WCAG-readable in .dark
+   ───────────────────────────────────────────────────────────────────────────── */
+.dark .bg-\[\#FDFCF8\] {
+  background-color: var(--surface) !important;
+}
+
+.dark .bg-white {
+  background-color: var(--surface-container-lowest) !important;
+}
+
+.dark .bg-white\/70,
+.dark .bg-white\/75,
+.dark .bg-white\/80,
+.dark .bg-white\/85,
+.dark .bg-white\/90,
+.dark .bg-white\/95 {
+  background-color: rgba(28, 25, 23, 0.84) !important;
+}
+
+.dark .bg-stone-50,
+.dark .bg-stone-50\/90,
+.dark .bg-stone-100,
+.dark .bg-stone-100\/60,
+.dark .bg-stone-100\/70 {
+  background-color: #242120 !important;
+}
+
+.dark .bg-\[\#E8EFE8\],
+.dark .bg-\[\#E8EFE8\]\/70,
+.dark .bg-\[\#E8EFE8\]\/75,
+.dark .bg-\[\#E8EFE8\]\/80,
+.dark .bg-\[\#E8EFE8\]\/85,
+.dark .bg-\[\#E8EFE8\]\/90 {
+  background-color: #252D27 !important;
+}
+
+.dark .bg-\[\#EFEDF4\],
+.dark .bg-\[\#EFEDF4\]\/70,
+.dark .bg-\[\#EFEDF4\]\/75,
+.dark .bg-\[\#EFEDF4\]\/80,
+.dark .bg-\[\#EFEDF4\]\/85,
+.dark .bg-\[\#EFEDF4\]\/90 {
+  background-color: #2A2633 !important;
+}
+
+.dark .bg-\[\#FFE4E1\],
+.dark .bg-\[\#FFE4E1\]\/70 {
+  background-color: rgba(255, 183, 178, 0.16) !important;
+}
+
+.dark .bg-\[\#E6E6FA\] {
+  background-color: rgba(196, 181, 253, 0.14) !important;
+}
+
+.dark .text-\[\#292524\],
+.dark .text-stone-800,
+.dark .text-stone-900 {
+  color: #FDFCF8 !important;
+}
+
+.dark .text-\[\#78716C\],
+.dark .text-stone-500,
+.dark .text-stone-600 {
+  color: #C7C2BC !important;
+}
+
+.dark .text-stone-400 {
+  color: #A8A29E !important;
+}
+
+.dark .border-stone-100,
+.dark .border-stone-200,
+.dark .border-stone-200\/60,
+.dark .border-stone-200\/70,
+.dark .border-stone-200\/80 {
+  border-color: #363230 !important;
+}
+
+/* High-contrast inverted dark-stone pill buttons in dark mode */
+.dark .bg-\[\#292524\] {
+  background-color: #FDFCF8 !important;
+  color: #292524 !important;
+}
+
+.dark .bg-\[\#292524\] .text-\[\#FDFCF8\],
+.dark .bg-\[\#292524\].text-\[\#FDFCF8\],
+.dark .bg-\[\#292524\] span:not(.bg-\[\#FFB7B2\]) {
+  color: #292524 !important;
+}
+
+/* Preserve dark stone ink on Coral #FFB7B2 primary buttons & badges in dark mode */
+.dark .bg-\[\#FFB7B2\],
+.dark .bg-\[\#FFB7B2\].text-\[\#292524\],
+.dark .bg-\[\#FFB7B2\] .text-\[\#292524\],
+.dark .bg-\[\#FFB7B2\] span,
+.dark .bg-\[\#FFB7B2\] svg {
+  color: #292524 !important;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #242120;
+  color: #FDFCF8;
+  border-color: #363230;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #A8A29E;
 }
 
 @layer utilities {

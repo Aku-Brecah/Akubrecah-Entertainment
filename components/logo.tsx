@@ -10,58 +10,65 @@ interface LogoProps {
 
 /**
  * Akubrecah Brand Logo component.
- * Renders the primary brand logo on the website (adapted for dark/light mode via CSS).
- * Renders immediately during SSR to ensure optimal First Contentful Paint (FCP) and zero CLS.
+ * Renders the primary brand logo on every page and swaps automatically
+ * between light (/akubrecah-logo.png) and dark (/akubrecah-logo-dark.png) themes.
  */
-export function Logo({ 
-  className, 
-  width = 130, 
+export function Logo({
+  className,
   height = 38,
   siteIconOnly = false,
 }: LogoProps) {
   if (siteIconOnly) {
     const size = Math.max(28, Math.min(height, 56))
     return (
-      <div 
-        className={cn("relative shrink-0 rounded-full overflow-hidden shadow-2xs border border-outline-variant/40 bg-white p-0.5", className)}
+      <span
+        className={cn(
+          "relative inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden shadow-2xs border border-stone-200/70 dark:border-stone-700 bg-white p-0.5 select-none",
+          className
+        )}
         style={{ width: size, height: size }}
       >
         <Image
           src="/logo-circle.png"
           alt="Akubrecah Site Icon"
-          width={size}
-          height={size}
+          width={288}
+          height={288}
           priority
-          className="object-cover rounded-full"
+          unoptimized
+          className="h-full w-full object-cover rounded-full"
         />
-      </div>
+      </span>
     )
   }
 
   const altText = "Akubrecah Entertainment"
+  const hasExplicitHeightClass = Boolean(className && /\bh-/.test(className))
 
   return (
-    <div className={cn("relative flex items-center justify-center shrink-0", className)} style={{ width, height }}>
+    <span
+      className={cn("inline-flex items-center shrink-0 select-none", className)}
+      style={!hasExplicitHeightClass ? { height } : undefined}
+    >
       {/* Light mode logo */}
       <Image
         src="/akubrecah-logo.png"
         alt={altText}
-        width={width}
-        height={height}
+        width={885}
+        height={282}
         priority
-        style={{ width: "auto", height: "auto" }}
-        className="object-contain dark:hidden"
+        unoptimized
+        className="h-full w-auto max-w-none object-contain dark:hidden"
       />
       {/* Dark mode logo */}
       <Image
         src="/akubrecah-logo-dark.png"
         alt={altText}
-        width={width}
-        height={height}
+        width={885}
+        height={282}
         priority
-        style={{ width: "auto", height: "auto" }}
-        className="object-contain hidden dark:block"
+        unoptimized
+        className="h-full w-auto max-w-none object-contain hidden dark:block"
       />
-    </div>
+    </span>
   )
 }

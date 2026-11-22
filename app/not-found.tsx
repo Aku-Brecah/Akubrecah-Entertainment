@@ -1,9 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { motion } from "motion/react"
 import { Home, ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { Logo } from "@/components/logo"
 
 export default function NotFound() {
   const router = useRouter()
@@ -11,6 +11,11 @@ export default function NotFound() {
   return (
     <div className="min-h-[80vh] bg-background text-on-background flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md bg-surface-container-lowest border border-outline-variant rounded-xl p-8 text-center space-y-5">
+        <div className="flex justify-center">
+          <Link href="/" className="inline-flex items-center hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
+            <Logo width={136} height={38} className="h-8 w-auto" />
+          </Link>
+        </div>
         <div className="space-y-2">
           <span className="text-xs font-mono font-semibold uppercase tracking-wider text-primary">
             HTTP 404 · Not Found

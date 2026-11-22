@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { isSafeRedirectPath } from "@/lib/edge/routing"
 import { Logo } from "@/components/logo"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export function CustomSignUp({ isKraPortal = false }: { isKraPortal?: boolean }) {
   const { isLoaded, signUp, setActive } = useSignUp()
@@ -269,8 +270,9 @@ export function CustomSignUp({ isKraPortal = false }: { isKraPortal?: boolean })
             </Link>
           </nav>
 
-          {/* RIGHT: Log in link + dark stone (#292524) pill CTA button */}
-          <div className="flex items-center gap-3">
+          {/* RIGHT: Theme toggle + Log in link + dark stone (#292524) pill CTA button */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle />
             <Link
               href="/sign-in"
               className="hidden sm:inline-block px-3 py-1.5 text-[14px] font-medium text-[#292524] hover:text-[#78716C] transition-colors"

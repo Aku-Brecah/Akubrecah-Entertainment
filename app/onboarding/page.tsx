@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, ArrowRight, User, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { Logo } from "@/components/logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { completeOnboardingAction } from "./actions";
 
 export default function OnboardingPage() {
@@ -42,6 +45,12 @@ export default function OnboardingPage() {
       <div className="w-full max-w-2xl bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
         {/* Header */}
         <div className="bg-surface-container-low border-b border-outline-variant p-6 sm:p-8">
+          <div className="flex items-center justify-between mb-4">
+            <Link href="/" className="inline-flex items-center hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
+              <Logo width={132} height={36} className="h-8 w-auto" />
+            </Link>
+            <ThemeToggle />
+          </div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary mb-1.5">
             <User className="w-4 h-4" />
             <span>Account Setup</span>

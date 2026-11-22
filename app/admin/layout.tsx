@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useUser, useClerk } from "@clerk/nextjs";
+import { Logo } from "@/components/logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   LayoutDashboard,
   Mail,
@@ -503,26 +505,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </button>
 
         {/* Brand / Logo */}
-        <div className={`mb-6 px-1 flex items-center gap-3 transition-all ${isCollapsed ? "justify-center" : ""}`}>
-          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 text-primary shadow-xs">
-            <Server className="w-5 h-5" />
-          </div>
-          {!isCollapsed && (
-            <div className="min-w-0">
+        <Link href="/admin" className={`mb-6 px-1 flex items-center gap-3 transition-all hover:opacity-90 ${isCollapsed ? "justify-center" : ""}`}>
+          {isCollapsed ? (
+            <Logo siteIconOnly height={36} />
+          ) : (
+            <div className="min-w-0 space-y-1">
+              <Logo width={132} height={36} className="h-8 w-auto" />
               <div className="flex items-center gap-1.5">
-                <h1 className="text-sm font-extrabold text-on-surface tracking-tight leading-tight truncate">
-                  Admin Console
-                </h1>
                 <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
                   CMS · cPanel
                 </span>
+                <p className="text-[10px] font-mono text-on-surface-variant truncate">
+                  admin.akubrecah.com
+                </p>
               </div>
-              <p className="text-[10px] font-mono text-on-surface-variant truncate">
-                admin.akubrecah.com
-              </p>
             </div>
           )}
-        </div>
+        </Link>
 
         {/* Navigation Links Grouped into CMS & cPanel */}
         <nav className="flex-1 overflow-y-auto space-y-4 pr-0.5">
@@ -798,12 +797,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-sm text-primary tracking-tight">Console</span>
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 uppercase">
-                CMS + cPanel
-              </span>
-            </div>
+            <Link href="/admin" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+              <Logo width={116} height={32} className="h-7 w-auto" />
+            </Link>
+            <ThemeToggle />
           </div>
 
           {/* Desktop: Quick Search — routes to the system logs viewer */}
