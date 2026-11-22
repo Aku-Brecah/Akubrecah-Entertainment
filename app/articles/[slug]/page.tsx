@@ -99,42 +99,43 @@ export default async function ArticleDetailPage({ params }: Props) {
         ]}
       />
       {/* Header & Hero */}
-      <div className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
-        <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-6 relative z-10">
-          <nav className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
+      <div className="bg-surface-container-lowest border-b border-outline-variant">
+        <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 space-y-4">
+          <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
             <span>/</span>
             <Link href="/articles" className="hover:text-primary transition-colors">Technical Writing</Link>
             <span>/</span>
-            <span className="text-on-surface font-semibold truncate max-w-[200px] sm:max-w-none">{article.title}</span>
+            <span className="text-on-surface font-medium truncate max-w-[200px] sm:max-w-none">{article.title}</span>
           </nav>
 
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2.5 text-xs text-on-surface-variant">
+              <span className="font-semibold text-primary">
                 {article.category}
               </span>
-              <span className="flex items-center gap-1 text-xs text-on-surface-variant font-mono">
+              <span>·</span>
+              <span className="flex items-center gap-1 font-mono">
                 <Clock className="w-3.5 h-3.5" />
                 {article.readingTimeMinutes} min read
               </span>
-              <span className="text-xs text-on-surface-variant">•</span>
-              <span className="flex items-center gap-1 text-xs text-on-surface-variant font-mono">
+              <span>·</span>
+              <span className="flex items-center gap-1 font-mono">
                 <Calendar className="w-3.5 h-3.5" />
                 {new Date(article.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
-              <span className="text-xs text-on-surface-variant">•</span>
-              <span className="flex items-center gap-1 text-xs text-on-surface-variant font-medium">
+              <span>·</span>
+              <span className="flex items-center gap-1 font-medium">
                 <User className="w-3.5 h-3.5" />
                 {article.authorName || 'Akubrecah'}
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-black text-on-surface tracking-tight leading-tight">
+            <h1 className="text-3xl sm:text-4xl font-bold text-on-surface tracking-tight leading-tight">
               {article.title}
             </h1>
 
-            <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed font-medium">
+            <p className="text-base text-on-surface-variant leading-relaxed">
               {article.excerpt}
             </p>
           </div>
@@ -142,31 +143,31 @@ export default async function ArticleDetailPage({ params }: Props) {
       </div>
 
       {/* Main Body */}
-      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8">
         {/* Featured Cover Image if Present */}
         {article.featuredImage && (
-          <div className="rounded-3xl overflow-hidden border border-outline-variant shadow-soft bg-surface-container-lowest p-2">
+          <div className="rounded-xl overflow-hidden border border-outline-variant bg-surface-container-lowest">
             <img
               src={article.featuredImage}
               alt={article.title}
-              className="w-full max-h-[460px] object-cover rounded-2xl"
+              className="w-full max-h-[440px] object-cover"
             />
           </div>
         )}
 
         {/* Rich Markdown Reader Component */}
-        <div className="p-6 sm:p-10 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft">
+        <div className="p-6 sm:p-10 rounded-xl bg-surface-container-lowest border border-outline-variant">
           <MarkdownContent content={article.content} />
         </div>
 
         {/* Google Preferred Source Follow Bar */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-surface-container border border-outline-variant/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+        <div className="p-4 sm:p-5 rounded-xl bg-surface-container-low border border-outline-variant flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="space-y-0.5">
-            <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-on-surface block">
               Follow Akubrecah on Google Search
             </span>
             <p className="text-[11px] text-on-surface-variant">
-              Get our engineering articles, tech insights, and compliance guides in your Google Top Stories & AI Overviews.
+              Receive our engineering articles and Kenyan compliance guides in your Google Search feed.
             </p>
           </div>
           <GooglePreferredSourceButton siteDomain="akubrecah.com" />
@@ -174,53 +175,44 @@ export default async function ArticleDetailPage({ params }: Props) {
 
         {/* Tags */}
         <div className="pt-6 border-t border-outline-variant flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Tag className="w-4 h-4 text-on-surface-variant" />
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Tag className="w-3.5 h-3.5 text-on-surface-variant mr-1" />
             {article.tags.map((tag: string) => (
-              <span key={tag} className="text-xs font-mono text-on-surface-variant bg-surface-container px-3 py-1 rounded-lg border border-outline-variant">
-                #{tag}
+              <span key={tag} className="text-[11px] font-mono text-on-surface-variant bg-surface-container-low px-2.5 py-0.5 rounded border border-outline-variant">
+                {tag}
               </span>
             ))}
           </div>
 
           <Link
             href="/articles"
-            className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Back to All Articles
+            <span>Back to All Articles</span>
           </Link>
         </div>
 
         {/* Author & CTA Card */}
-        <div className="p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft flex flex-col sm:flex-row items-center gap-6">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-black text-2xl shrink-0">
-            A
-          </div>
-          <div className="space-y-1.5 text-center sm:text-left flex-1">
-            <h4 className="text-base font-black text-on-surface">Akubrecah Software Architecture</h4>
-            <p className="text-xs text-on-surface-variant leading-relaxed">
-              Full-stack software engineering & systems architecture studio specializing in high-load web platforms, real-time mobility dispatch, and statutory compliance automation across Kenya.
+        <div className="p-6 sm:p-8 rounded-xl bg-surface-container-lowest border border-outline-variant flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div className="space-y-1 flex-1">
+            <h4 className="text-sm font-bold text-on-surface">Akubrecah Software Engineering</h4>
+            <p className="text-xs text-on-surface-variant leading-relaxed max-w-xl">
+              Software engineering and systems architecture team in Nairobi building web platforms, payment gateways, and statutory facilitation tools.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2.5 shrink-0 w-full sm:w-auto">
+          <div className="flex flex-wrap gap-2.5 shrink-0">
             <Link
               href="/retrieval-portal"
-              className="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors text-center shadow-xs"
+              className="px-4 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors"
             >
-              KRA PIN Retrieval Portal
+              KRA Retrieval Portal
             </Link>
             <Link
               href="/services"
-              className="px-5 py-2.5 rounded-xl bg-surface-container border border-outline-variant text-on-surface text-xs font-bold hover:border-primary/40 hover:text-primary transition-colors text-center"
+              className="px-4 py-2 rounded-lg bg-surface-container-low border border-outline-variant text-on-surface text-xs font-semibold hover:border-primary/40 transition-colors"
             >
-              GovTech Services
-            </Link>
-            <Link
-              href="/contact"
-              className="px-5 py-2.5 rounded-xl bg-surface-container border border-outline-variant text-on-surface text-xs font-bold hover:border-primary/40 hover:text-primary transition-colors text-center"
-            >
-              Work With Us
+              Engineering Services
             </Link>
           </div>
         </div>

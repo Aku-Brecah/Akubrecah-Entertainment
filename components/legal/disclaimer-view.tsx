@@ -121,47 +121,30 @@ export function DisclaimerView() {
       {/* ============================================================== */}
       {/* 1. INSTITUTIONAL HERO HEADER */}
       {/* ============================================================== */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative overflow-hidden rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-10 shadow-xs"
-      >
-        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="rounded-xl bg-surface-container-lowest border border-outline-variant p-6 sm:p-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
-            {/* Regulatory Badge Group */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wider uppercase bg-primary/10 text-primary border border-primary/20">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                Statutory Disclaimer
-              </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-surface-container dark:bg-slate-800 text-on-surface-variant border border-border">
-                <Scale className="w-3 h-3 text-muted-foreground" />
-                Republic of Kenya
-              </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                <CheckCircle2 className="w-3 h-3" />
-                KDPA 2019 Compliant
-              </span>
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Statutory Disclaimer · Republic of Kenya</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-foreground uppercase">
-              Statutory Independence & Service Disclaimer
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-on-surface">
+              Statutory Independence &amp; Service Disclaimer
             </h1>
 
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Mandatory legal disclosure regarding our third-party digital convenience service, public record data
-              sourcing, and strict legal independence from the Kenya Revenue Authority (KRA).
+            <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+              Mandatory legal disclosure regarding our third-party digital convenience service, public record data sourcing, and strict legal independence from the Kenya Revenue Authority (KRA).
             </p>
 
-            <div className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-muted-foreground font-medium">
+            <div className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-on-surface-variant">
               <span className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-primary" />
                 Last Revised: <strong>10 June 2026</strong>
               </span>
-              <span className="hidden sm:inline text-border">•</span>
-              <span>Document Version: <strong>2.4.0 (Statutory)</strong></span>
-              <span className="hidden sm:inline text-border">•</span>
+              <span className="hidden sm:inline text-outline-variant">•</span>
+              <span>Document Version: <strong>2.4.0</strong></span>
+              <span className="hidden sm:inline text-outline-variant">•</span>
               <span>Ref: <strong>AKU-DISC-KE</strong></span>
             </div>
           </div>
@@ -171,7 +154,7 @@ export function DisclaimerView() {
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-border bg-surface-container dark:bg-slate-800 text-foreground hover:bg-muted transition-all active:scale-95 shadow-2xs"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-outline-variant bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors"
               title="Print official disclaimer"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -180,7 +163,7 @@ export function DisclaimerView() {
             <button
               type="button"
               onClick={handleCopyLink}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-border bg-surface-container dark:bg-slate-800 text-foreground hover:bg-muted transition-all active:scale-95 shadow-2xs"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-outline-variant bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors"
               title="Copy link to clipboard"
             >
               {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5" />}
@@ -190,41 +173,33 @@ export function DisclaimerView() {
               href="https://itax.kra.go.ke"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-primary text-white hover:bg-primary/90 transition-all active:scale-95 shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
             >
               <Building2 className="w-3.5 h-3.5" />
               <span>Official KRA ↗</span>
             </a>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* ============================================================== */}
-      {/* 2. CRITICAL INDEPENDENCE NOTICE BANNER (SOVEREIGN RED) */}
+      {/* 2. CRITICAL INDEPENDENCE NOTICE BANNER */}
       {/* ============================================================== */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="rounded-3xl border-2 border-primary/30 bg-primary/5 dark:bg-primary/10 p-6 sm:p-8 space-y-5"
-      >
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-6 sm:p-8 space-y-5">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-primary text-white flex items-center justify-center shrink-0 shadow-sm">
-            <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6" />
+          <div className="w-10 h-10 rounded-lg bg-primary text-white flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5" />
           </div>
           <div className="space-y-1.5 flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-black uppercase tracking-widest text-primary">
-                Mandatory Legal Notice
-              </span>
-              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/20 text-primary">
-                Section 43 Consumer Protection Act
+              <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                Mandatory Legal Notice · Section 43 Consumer Protection Act
               </span>
             </div>
-            <h2 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-tight">
+            <h2 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight">
               Akubrecah is NOT the Kenya Revenue Authority (KRA)
             </h2>
-            <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed font-medium">
+            <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
               Akubrecah (<strong>akubrecah.com</strong>) is an <strong>independent commercial software service</strong>{" "}
               providing self-service compliance tools and document retrieval automation. We are{" "}
               <strong>not affiliated with, authorized by, sponsored by, or an agent of the Kenya Revenue Authority</strong>{" "}
@@ -233,7 +208,7 @@ export function DisclaimerView() {
                 href="https://itax.kra.go.ke"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary underline font-bold"
+                className="text-primary underline font-semibold"
               >
                 itax.kra.go.ke
               </a>.
@@ -303,7 +278,7 @@ export function DisclaimerView() {
             </ul>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* ============================================================== */}
       {/* 3. MAIN CONTENT: STICKY SIDEBAR + DETAILED SECTIONS */}
@@ -427,15 +402,15 @@ export function DisclaimerView() {
           {/* SECTION 1: INDEPENDENCE FROM KRA */}
           <article
             id="independence"
-            className="rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-8 space-y-4 shadow-xs"
+            className="rounded-xl bg-surface-container-lowest border border-outline-variant p-6 sm:p-8 space-y-4"
           >
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Section 01</span>
-              <span className="text-[10px] font-semibold text-muted-foreground">Legal Independence</span>
+            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Section 01</span>
+              <span className="text-xs font-medium text-on-surface-variant">Legal Independence</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight flex items-center gap-2">
               <Scale className="w-5 h-5 text-primary" />
-              1. Independence from KRA & Government Entities
+              1. Independence from KRA &amp; Government Entities
             </h3>
             <div className="text-xs sm:text-sm text-on-surface-variant leading-relaxed space-y-3 font-normal">
               <p>
@@ -449,14 +424,14 @@ export function DisclaimerView() {
                 possess no special, elevated, or administrative backdoors into KRA servers; our automation utilizes only
                 the same public-facing endpoints available to any citizen browsing via a web browser.
               </p>
-              <div className="p-3.5 rounded-xl bg-surface-container dark:bg-slate-800 border border-border text-xs text-muted-foreground">
-                <strong className="text-foreground">Official Direct Access:</strong> Any registered taxpayer may access
+              <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant text-xs text-on-surface-variant">
+                <strong className="text-on-surface">Official Direct Access:</strong> Any registered taxpayer may access
                 and download their KRA PIN certificate directly at no charge by visiting the official KRA portal at{" "}
                 <a
                   href="https://itax.kra.go.ke"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary underline font-bold"
+                  className="text-primary underline font-semibold"
                 >
                   itax.kra.go.ke
                 </a>.
@@ -467,15 +442,15 @@ export function DisclaimerView() {
           {/* SECTION 2: DATA SOURCING & ACCURACY */}
           <article
             id="accuracy"
-            className="rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-8 space-y-4 shadow-xs"
+            className="rounded-xl bg-surface-container-lowest border border-outline-variant p-6 sm:p-8 space-y-4"
           >
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Section 02</span>
-              <span className="text-[10px] font-semibold text-muted-foreground">Registry Synchronization</span>
+            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Section 02</span>
+              <span className="text-xs font-medium text-on-surface-variant">Registry Synchronization</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              2. Real-Time Data Sourcing & Accuracy Disclaimer
+              2. Real-Time Data Sourcing &amp; Accuracy Disclaimer
             </h3>
             <div className="text-xs sm:text-sm text-on-surface-variant leading-relaxed space-y-3">
               <p>
@@ -499,13 +474,13 @@ export function DisclaimerView() {
           {/* SECTION 3: NO LEGAL OR TAX ADVICE */}
           <article
             id="no-advice"
-            className="rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-8 space-y-4 shadow-xs"
+            className="rounded-xl bg-surface-container-lowest border border-outline-variant p-6 sm:p-8 space-y-4"
           >
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Section 03</span>
-              <span className="text-[10px] font-semibold text-muted-foreground">Advisory Boundaries</span>
+            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Section 03</span>
+              <span className="text-xs font-medium text-on-surface-variant">Advisory Boundaries</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight flex items-center gap-2">
               <XCircle className="w-5 h-5 text-amber-500" />
               3. No Legal, Financial, or Tax Advice
             </h3>
@@ -527,15 +502,15 @@ export function DisclaimerView() {
           {/* SECTION 4: SERVICE AVAILABILITY */}
           <article
             id="availability"
-            className="rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-8 space-y-4 shadow-xs"
+            className="rounded-xl bg-surface-container-lowest border border-outline-variant p-6 sm:p-8 space-y-4"
           >
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Section 04</span>
-              <span className="text-[10px] font-semibold text-muted-foreground">Uptime & Maintenance</span>
+            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Section 04</span>
+              <span className="text-xs font-medium text-on-surface-variant">Uptime &amp; Maintenance</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight flex items-center gap-2">
               <Clock className="w-5 h-5 text-primary" />
-              4. Service Availability & KRA Maintenance Outages
+              4. Service Availability &amp; KRA Maintenance Outages
             </h3>
             <div className="text-xs sm:text-sm text-on-surface-variant leading-relaxed space-y-3">
               <p>
@@ -555,15 +530,15 @@ export function DisclaimerView() {
           {/* SECTION 5: USER RESPONSIBILITY */}
           <article
             id="user-responsibility"
-            className="rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-8 space-y-4 shadow-xs"
+            className="rounded-xl bg-surface-container-lowest border border-outline-variant p-6 sm:p-8 space-y-4"
           >
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Section 05</span>
-              <span className="text-[10px] font-semibold text-muted-foreground">Accountability & Ethics</span>
+            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Section 05</span>
+              <span className="text-xs font-medium text-on-surface-variant">Accountability &amp; Ethics</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight flex items-center gap-2">
               <Shield className="w-5 h-5 text-primary" />
-              5. User Responsibility & Consensual Credential Ownership
+              5. User Responsibility &amp; Consensual Credential Ownership
             </h3>
             <div className="text-xs sm:text-sm text-on-surface-variant leading-relaxed space-y-3">
               <p>
@@ -594,37 +569,37 @@ export function DisclaimerView() {
           {/* SECTION 6: CONVENIENCE FEES */}
           <article
             id="convenience-fees"
-            className="rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-8 space-y-4 shadow-xs"
+            className="rounded-xl bg-surface-container-lowest border border-outline-variant p-6 sm:p-8 space-y-4"
           >
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Section 06</span>
-              <span className="text-[10px] font-semibold text-muted-foreground">Pricing Transparency</span>
+            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Section 06</span>
+              <span className="text-xs font-medium text-on-surface-variant">Pricing Transparency</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight flex items-center gap-2">
               <Info className="w-5 h-5 text-emerald-600" />
-              6. Convenience Fees & Free Official Alternatives
+              6. Convenience Fees &amp; Free Official Alternatives
             </h3>
             <div className="text-xs sm:text-sm text-on-surface-variant leading-relaxed space-y-3">
               <p>
                 Akubrecah maintains full commercial transparency regarding our fee schedule:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div className="p-4 rounded-2xl bg-surface-container dark:bg-slate-800 border border-border space-y-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Single Retrieval</span>
-                  <p className="text-lg font-black text-foreground">KES 20</p>
-                  <p className="text-[11px] text-muted-foreground">
+                <div className="p-4 rounded-xl bg-surface-container border border-outline-variant space-y-1.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Single Retrieval</span>
+                  <p className="text-lg font-bold text-on-surface">KES 20</p>
+                  <p className="text-xs text-on-surface-variant">
                     One-time automated retrieval via Safaricom Daraja M-Pesa with instant PDF download (or WhatsApp delivery when ordered on WhatsApp).
                   </p>
                 </div>
-                <div className="p-4 rounded-2xl bg-surface-container dark:bg-slate-800 border border-border space-y-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Cyber Cafe Plan</span>
-                  <p className="text-lg font-black text-foreground">KES 500 / month</p>
-                  <p className="text-[11px] text-muted-foreground">
+                <div className="p-4 rounded-xl bg-surface-container border border-outline-variant space-y-1.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600">Cyber Cafe Plan</span>
+                  <p className="text-lg font-bold text-on-surface">KES 500 / month</p>
+                  <p className="text-xs text-on-surface-variant">
                     Monthly pass for cyber cafe operators covering up to 50 retrievals per day with automated invoice records.
                   </p>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground pt-1">
+              <p className="text-xs text-on-surface-variant pt-1">
                 <strong>Important Notice:</strong> These fees are for Akubrecah&apos;s software automation, server hosting,
                 and technical delivery service only. They do NOT represent a tax fee charged by KRA. Any citizen who
                 wishes to download their certificate without a convenience fee can do so for free on KRA&apos;s official website.
@@ -635,13 +610,13 @@ export function DisclaimerView() {
           {/* SECTION 7: OFFICIAL PORTALS DIRECTORY */}
           <article
             id="external-links"
-            className="rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-8 space-y-4 shadow-xs"
+            className="rounded-xl bg-surface-container-lowest border border-outline-variant p-6 sm:p-8 space-y-4"
           >
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Section 07</span>
-              <span className="text-[10px] font-semibold text-muted-foreground">Authoritative Directory</span>
+            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Section 07</span>
+              <span className="text-xs font-medium text-on-surface-variant">Authoritative Directory</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight flex items-center gap-2">
               <ExternalLink className="w-5 h-5 text-primary" />
               7. Official Government Portals Directory
             </h3>
@@ -649,9 +624,9 @@ export function DisclaimerView() {
               For complete transparency, below is the official directory of government portals where tax and identity
               services can be accessed directly from the Republic of Kenya:
             </p>
-            <div className="overflow-x-auto rounded-2xl border border-border">
+            <div className="overflow-x-auto rounded-xl border border-outline-variant">
               <table className="w-full text-left text-xs">
-                <thead className="bg-surface-container dark:bg-slate-800 text-[10px] uppercase font-bold tracking-wider text-muted-foreground border-b border-border">
+                <thead className="bg-surface-container text-[11px] uppercase font-semibold tracking-wider text-on-surface-variant border-b border-outline-variant">
                   <tr>
                     <th className="p-3">Portal Name</th>
                     <th className="p-3">Official Link</th>
@@ -659,10 +634,10 @@ export function DisclaimerView() {
                     <th className="p-3">Direct Fee</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border text-on-surface-variant">
+                <tbody className="divide-y divide-outline-variant/60 text-on-surface-variant">
                   {OFFICIAL_PORTALS.map((portal) => (
-                    <tr key={portal.name} className="hover:bg-muted/40 transition-colors">
-                      <td className="p-3 font-bold text-foreground">{portal.name}</td>
+                    <tr key={portal.name} className="hover:bg-surface-container/50 transition-colors">
+                      <td className="p-3 font-semibold text-on-surface">{portal.name}</td>
                       <td className="p-3">
                         <a
                           href={portal.url}
@@ -674,9 +649,9 @@ export function DisclaimerView() {
                           <ExternalLink className="w-3 h-3 shrink-0" />
                         </a>
                       </td>
-                      <td className="p-3 text-[11px] text-muted-foreground">{portal.purpose}</td>
+                      <td className="p-3 text-xs text-on-surface-variant">{portal.purpose}</td>
                       <td className="p-3">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                           Free
                         </span>
                       </td>
@@ -690,53 +665,53 @@ export function DisclaimerView() {
           {/* SECTION 8: STATUTORY FRAMEWORK */}
           <article
             id="statutory-framework"
-            className="rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-8 space-y-4 shadow-xs"
+            className="rounded-xl bg-surface-container-lowest border border-outline-variant p-6 sm:p-8 space-y-4"
           >
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Section 08</span>
-              <span className="text-[10px] font-semibold text-muted-foreground">Kenyan Laws</span>
+            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Section 08</span>
+              <span className="text-xs font-medium text-on-surface-variant">Kenyan Laws</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight flex items-center gap-2">
               <Scale className="w-5 h-5 text-primary" />
-              8. Kenyan Statutory & Regulatory Compliance
+              8. Kenyan Statutory &amp; Regulatory Compliance
             </h3>
             <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
               Akubrecah operates in strict alignment with statutory laws enacted by the Parliament of Kenya:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3.5 rounded-xl border border-border bg-surface-container/60 dark:bg-slate-800/60 space-y-1">
-                <strong className="text-foreground flex items-center gap-1.5">
+              <div className="p-3.5 rounded-lg border border-outline-variant bg-surface-container/60 space-y-1">
+                <strong className="text-on-surface flex items-center gap-1.5">
                   <Shield className="w-3.5 h-3.5 text-primary" />
                   Data Protection Act 2019
                 </strong>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-on-surface-variant">
                   Enforces lawful processing, data minimization, transparency, and explicit user consent.
                 </p>
               </div>
-              <div className="p-3.5 rounded-xl border border-border bg-surface-container/60 dark:bg-slate-800/60 space-y-1">
-                <strong className="text-foreground flex items-center gap-1.5">
+              <div className="p-3.5 rounded-lg border border-outline-variant bg-surface-container/60 space-y-1">
+                <strong className="text-on-surface flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5 text-primary" />
                   Computer Misuse Act 2018
                 </strong>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-on-surface-variant">
                   Strictly prohibits unauthorized access, phishing, data interception, and fraudulent operations.
                 </p>
               </div>
-              <div className="p-3.5 rounded-xl border border-border bg-surface-container/60 dark:bg-slate-800/60 space-y-1">
-                <strong className="text-foreground flex items-center gap-1.5">
+              <div className="p-3.5 rounded-lg border border-outline-variant bg-surface-container/60 space-y-1">
+                <strong className="text-on-surface flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   Consumer Protection Act 2012
                 </strong>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-on-surface-variant">
                   Guarantees upfront pricing disclosure, delivery guarantees, and statutory dispute mechanisms.
                 </p>
               </div>
-              <div className="p-3.5 rounded-xl border border-border bg-surface-container/60 dark:bg-slate-800/60 space-y-1">
-                <strong className="text-foreground flex items-center gap-1.5">
+              <div className="p-3.5 rounded-lg border border-outline-variant bg-surface-container/60 space-y-1">
+                <strong className="text-on-surface flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-primary" />
                   Kenya ICT Act (Cap 411A)
                 </strong>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-on-surface-variant">
                   Regulates digital transactions, electronic records, and electronic signature recognition in Kenya.
                 </p>
               </div>
@@ -746,15 +721,15 @@ export function DisclaimerView() {
           {/* SECTION 9: CONTACT & ESCALATION */}
           <article
             id="contact"
-            className="rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-8 space-y-4 shadow-xs"
+            className="rounded-xl bg-surface-container-lowest border border-outline-variant p-6 sm:p-8 space-y-4"
           >
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Section 09</span>
-              <span className="text-[10px] font-semibold text-muted-foreground">Support & Legal</span>
+            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Section 09</span>
+              <span className="text-xs font-medium text-on-surface-variant">Support &amp; Legal</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight flex items-center gap-2">
               <Mail className="w-5 h-5 text-primary" />
-              9. Legal Inquiries & Escalation Directory
+              9. Legal Inquiries &amp; Escalation Directory
             </h3>
             <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
               If you have inquiries regarding this Statutory Disclaimer, wish to assert data rights under the Data
@@ -762,20 +737,20 @@ export function DisclaimerView() {
               our dedicated channels:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
-              <div className="p-4 rounded-2xl bg-surface-container dark:bg-slate-800 border border-border space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Legal Counsel</span>
-                <p className="font-bold text-foreground">legal@akubrecah.com</p>
-                <p className="text-[10px] text-muted-foreground">Statutory compliance & legal notices</p>
+              <div className="p-4 rounded-xl bg-surface-container border border-outline-variant space-y-1">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">Legal Counsel</span>
+                <p className="font-semibold text-on-surface">legal@akubrecah.com</p>
+                <p className="text-xs text-on-surface-variant">Statutory compliance &amp; legal notices</p>
               </div>
-              <div className="p-4 rounded-2xl bg-surface-container dark:bg-slate-800 border border-border space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Privacy Officer</span>
-                <p className="font-bold text-foreground">privacy@akubrecah.com</p>
-                <p className="text-[10px] text-muted-foreground">Data requests & KDPA compliance</p>
+              <div className="p-4 rounded-xl bg-surface-container border border-outline-variant space-y-1">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-600">Privacy Officer</span>
+                <p className="font-semibold text-on-surface">privacy@akubrecah.com</p>
+                <p className="text-xs text-on-surface-variant">Data requests &amp; KDPA compliance</p>
               </div>
-              <div className="p-4 rounded-2xl bg-surface-container dark:bg-slate-800 border border-border space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">Customer Support</span>
-                <p className="font-bold text-foreground">support@akubrecah.com</p>
-                <p className="text-[10px] text-muted-foreground">Retrieval help & billing questions</p>
+              <div className="p-4 rounded-xl bg-surface-container border border-outline-variant space-y-1">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-on-surface">Customer Support</span>
+                <p className="font-semibold text-on-surface">support@akubrecah.com</p>
+                <p className="text-xs text-on-surface-variant">Retrieval help &amp; billing questions</p>
               </div>
             </div>
           </article>
@@ -783,14 +758,14 @@ export function DisclaimerView() {
           {/* ============================================================== */}
           {/* 4. INTERACTIVE ACCORDION FAQ */}
           {/* ============================================================== */}
-          <section className="rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-8 space-y-5 shadow-xs">
+          <section className="rounded-xl bg-surface-container-lowest border border-outline-variant p-6 sm:p-8 space-y-5">
             <div className="flex items-center gap-2">
               <HelpCircle className="w-5 h-5 text-primary" />
-              <h3 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-tight">
+              <h3 className="text-lg sm:text-xl font-bold text-on-surface tracking-tight">
                 Frequently Addressed Questions
               </h3>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-on-surface-variant">
               Clear answers to the most common legal, statutory, and operational questions regarding our independent service.
             </p>
 
@@ -800,20 +775,20 @@ export function DisclaimerView() {
                 return (
                   <div
                     key={faq.q}
-                    className="rounded-2xl border border-border bg-surface-container/50 dark:bg-slate-800/50 overflow-hidden transition-all"
+                    className="rounded-xl border border-outline-variant bg-surface-container/40 overflow-hidden transition-colors"
                   >
                     <button
                       type="button"
                       onClick={() => setOpenFaq(isOpen ? null : index)}
-                      className="w-full text-left p-4 sm:p-5 flex items-center justify-between gap-3 font-bold text-xs sm:text-sm text-foreground hover:text-primary transition-colors"
+                      className="w-full text-left p-4 sm:p-5 flex items-center justify-between gap-3 font-semibold text-xs sm:text-sm text-on-surface hover:text-primary transition-colors"
                     >
                       <span>{faq.q}</span>
-                      <span className="text-lg font-black text-primary shrink-0">
+                      <span className="text-lg font-bold text-primary shrink-0">
                         {isOpen ? "−" : "+"}
                       </span>
                     </button>
                     {isOpen && (
-                      <div className="px-4 pb-4 sm:px-5 sm:pb-5 text-xs text-muted-foreground leading-relaxed border-t border-border/50 pt-3">
+                      <div className="px-4 pb-4 sm:px-5 sm:pb-5 text-xs text-on-surface-variant leading-relaxed border-t border-outline-variant/50 pt-3">
                         {faq.a}
                       </div>
                     )}
@@ -826,15 +801,15 @@ export function DisclaimerView() {
           {/* ============================================================== */}
           {/* 5. STATUTORY FOOTER ACKNOWLEDGMENT */}
           {/* ============================================================== */}
-          <div className="rounded-2xl bg-surface-card dark:bg-slate-900 border border-border p-5 text-center text-xs text-muted-foreground space-y-2">
-            <p className="font-semibold text-foreground">
+          <div className="rounded-xl bg-surface-container-lowest border border-outline-variant p-5 text-center text-xs text-on-surface-variant space-y-2">
+            <p className="font-semibold text-on-surface">
               Akubrecah Technologies Limited · Incorporated in Nairobi, Republic of Kenya
             </p>
-            <p className="text-[11px]">
+            <p className="text-xs">
               By continuing to use this website, you acknowledge that you have read, understood, and consented to this
               Statutory Disclaimer and our binding Terms of Service.
             </p>
-            <div className="pt-2 flex justify-center gap-4 text-xs font-bold text-primary">
+            <div className="pt-2 flex justify-center gap-4 text-xs font-semibold text-primary">
               <Link href="/retrieval-portal" className="hover:underline flex items-center gap-1">
                 Go to Certificate Retrieval <ArrowRight className="w-3 h-3" />
               </Link>

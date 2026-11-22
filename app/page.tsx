@@ -1,23 +1,19 @@
 import {
   ArrowRight,
   Calculator,
-  CheckCircle2,
+  Code2,
   ExternalLink,
-  Lock,
-  Scale,
-  Shield,
+  Layers,
   ShieldCheck,
   Smartphone,
-  Sparkles,
-  Terminal,
-  Wallet,
-  Zap,
 } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { getPublishedProjects, getPublishedArticles } from '@/lib/cms';
 import { filterPublicTechnologies, cleanPublicLiveUrl } from '@/lib/tech-filter';
+import { SoftlyFaqAccordion } from '@/components/interactive/softly-faq-accordion';
+import { SoftlyWaitlistConversion } from '@/components/interactive/softly-waitlist-conversion';
+import { ReviewSection } from '@/components/reviews/review-section';
 
 export const revalidate = 3600;
 
@@ -76,506 +72,674 @@ export default async function Home() {
   const projects = allProjects.slice(0, 3);
   const articles = allArticles.slice(0, 2);
 
-  const capabilities = [
+  const practiceCards = [
     {
-      label: 'GovTech & Compliance',
-      desc: 'Automated Tax Verification, Statutory Compliance Data Grid & Certificate Delivery',
-      href: '/solutions#govtech',
-      badge: 'Flagship',
-      icon: ShieldCheck,
-    },
-    {
-      label: 'Web Engineering',
-      desc: 'High-Scale Server-Rendered Platforms, APIs & Microservices (Next.js & React)',
+      timestamp: '01 · Web Platform Engineering',
+      text: 'Server-rendered Next.js apps, admin consoles, and typed PostgreSQL APIs.',
       href: '/services#web',
-      icon: Terminal,
     },
     {
-      label: 'Mobile Ecosystems',
-      desc: 'Native iOS & Android, React Native & Offline-First Sync Architectures',
+      timestamp: '02 · Mobile App Ecosystems',
+      text: 'Native iOS, Android, and React Native apps built with offline-first sync.',
       href: '/services#mobile',
-      icon: Smartphone,
     },
     {
-      label: 'Daraja M-Pesa & Fintech',
-      desc: 'Safaricom Daraja M-Pesa Express STK, Automated Ledgers & B2B/B2C Settlements',
+      timestamp: '03 · Cloud & DevOps Systems',
+      text: 'Microservices, CI/CD pipelines, container orchestration, and resilient scaling.',
+      href: '/services#cloud',
+    },
+    {
+      timestamp: '04 · Enterprise & Payment Rails',
+      text: 'Bespoke internal software, Safaricom Daraja STK Push, and C2B/B2C ledgers.',
       href: '/services#enterprise',
-      icon: Wallet,
+    },
+    {
+      timestamp: '05 · GovTech & Statutory Tools',
+      text: 'Automated tax record verification and zero-storage RAM PDF delivery.',
+      href: '/solutions#govtech',
+    },
+    {
+      timestamp: '06 · Architecture & Scoping',
+      text: 'Configure your stack, timeline, and budget in our interactive estimator.',
+      href: '/estimator',
+    },
+  ];
+
+  const deliveryLifecycle = [
+    {
+      step: '01',
+      label: 'System architecture',
+      desc: 'Data modeling, API contract definitions, threat modeling, and payment reconciliation workflows before a single line of code is written.',
+    },
+    {
+      step: '02',
+      label: 'Vertical slice implementation',
+      desc: 'End-to-end delivery across database schema, server validation, and responsive client interfaces in testable, shippable increments.',
+    },
+    {
+      step: '03',
+      label: 'Security & compliance audit',
+      desc: 'Rate-limit verification, OWASP input sanitization, HMAC webhook validation, and KDPA 2019 privacy checks across every endpoint.',
+    },
+    {
+      step: '04',
+      label: 'Production deployment',
+      desc: 'Zero-downtime CI/CD releases, automated health telemetry, structured incident logging, and long-term engineering support.',
+    },
+  ];
+
+  const diaryTestimonials = [
+    {
+      date: 'Tuesday · Product Engineering Sprint',
+      note: 'Working with Akubrecah on our Next.js web platform and automated payment rails felt intentional from day one. No bloated templates—just thoughtful software architecture that holds up under production load.',
+      author: 'Amina K., Fintech Founder',
+      rotation: '-rotate-1',
+    },
+    {
+      date: 'Thursday · Mobile Rollout',
+      note: 'They architected our React Native field application with offline-first synchronization and clean API contracts. Our operations team went from spreadsheet chaos to real-time visibility in six weeks.',
+      author: 'David N., Operations Director',
+      rotation: 'rotate-1',
+    },
+    {
+      date: 'Saturday · Cloud Migration',
+      note: 'Their DevOps and security audit uncovered bottlenecks we had missed for months. Zero-downtime deployments and clear documentation made handoff to our internal engineers effortless.',
+      author: 'Brian O., CTO & Principal Architect',
+      rotation: 'rotate-1',
+    },
+    {
+      date: 'Monday · GovTech Workspace',
+      note: 'We first discovered Akubrecah through their zero-storage KRA retrieval platform and immediately saw the engineering quality. They now maintain our enterprise customer portal and billing integrations.',
+      author: 'Wanjiku M., Managing Partner',
+      rotation: '-rotate-1',
+    },
+  ];
+
+  const faqItems = [
+    {
+      question: 'What types of software systems does Akubrecah Technologies build?',
+      answer:
+        'We are a full-cycle software engineering studio in Nairobi building server-rendered Next.js & TypeScript web platforms, native iOS/Android & React Native mobile applications, cloud/DevOps infrastructure, enterprise internal tools, Safaricom Daraja M-Pesa payment integrations, and automated GovTech compliance portals.',
+    },
+    {
+      question: 'How do I estimate the cost and timeline for a custom software project?',
+      answer:
+        'You can configure your platform type, core modules, integrations, and delivery timeline in our Interactive Scope Estimator (/estimator) for an instant baseline range, or book a direct technical consultation through our Contact desk.',
+    },
+    {
+      question: 'What does your engineering delivery process look like?',
+      answer:
+        'Every engagement follows four disciplined phases: System Architecture & data modeling, Vertical Slice Implementation with weekly working builds, OWASP & KDPA 2019 Security Auditing, and Zero-Downtime Production Deployment with observability.',
+    },
+    {
+      question: 'Do you also operate the KRA PIN Certificate Retrieval Portal?',
+      answer:
+        'Yes. The KRA PIN Certificate Retrieval & Statutory Facilitation Portal is one of our in-house production GovTech products demonstrating our zero-storage RAM PDF streaming and Daraja M-Pesa Express architecture. Akubrecah is an independent software company and is not affiliated with KRA.',
     },
   ];
 
   return (
-    <div className="relative w-full bg-background text-on-surface font-sans overflow-x-hidden">
-      <div className="relative z-10 w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 flex flex-col space-y-16 pb-16 pt-6 md:pt-10">
+    <div className="relative w-full bg-[#FDFCF8] dark:bg-surface text-[#292524] dark:text-on-surface font-sans overflow-hidden">
+      <div className="w-full max-w-[1160px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col space-y-24 sm:space-y-32 pb-24 pt-10 sm:pt-16">
 
-        {/* ============================= HERO SECTION ============================= */}
-        <section id="hero" className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16 pt-2">
-          {/* Left: Text & Action Center */}
-          <div className="flex-1 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-outline-variant/70 bg-surface-container-low">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
-                Full-Cycle Software Engineering · GovTech · Cloud
-              </span>
+        {/* ============================= 1. HERO SECTION ============================= */}
+        <section
+          id="hero"
+          className="relative flex flex-col items-center text-center pt-6 sm:pt-12 pb-6 reveal-on-scroll"
+        >
+          {/* Two large blurred background blobs (#FFE4E1 and #E6E6FA) at 60% opacity */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-12 left-1/2 -translate-x-[85%] w-[340px] sm:w-[480px] h-[340px] sm:h-[480px] rounded-full bg-[#FFE4E1] opacity-60 blur-[90px] animate-float-blob"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute top-8 left-1/2 -translate-x-[15%] w-[340px] sm:w-[480px] h-[340px] sm:h-[480px] rounded-full bg-[#E6E6FA] opacity-60 blur-[95px] animate-float-blob [animation-delay:3s]"
+          />
+
+          <div className="relative z-10 flex flex-col items-center space-y-7 max-w-4xl mx-auto">
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/80 border border-stone-200/80 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] text-xs font-medium text-[#78716C]">
+              <span className="w-2 h-2 rounded-full bg-[#FFB7B2]" />
+              <span>Nairobi, Kenya · Full-cycle software engineering &amp; digital systems</span>
             </div>
 
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-on-surface tracking-tight leading-[1.05]">
-              Engineering<br />
-              <span className="text-primary">Digital Products</span><br />
-              That Scale.
+            {/* 72px Outfit headline with handwritten Reenie Beanie cursive word inserted for emphasis */}
+            <h1 className="text-[46px] sm:text-[62px] lg:text-[72px] font-medium text-[#292524] dark:text-on-surface tracking-[-0.025em] leading-[1.06]">
+              Software systems engineered with{" "}
+              <span className="font-cursive text-[62px] sm:text-[82px] lg:text-[96px] font-normal text-[#292524] dark:text-[#FFB7B2] inline-block px-1 -rotate-2">
+                precision
+              </span>{" "}
+              for production load.
             </h1>
 
-            <p className="text-base sm:text-lg text-on-surface-variant max-w-xl leading-relaxed">
-              Full-cycle software engineering, mission-critical statutory compliance portals, and high-throughput fintech infrastructure.
-              From automated KRA PIN retrieval and Safaricom Daraja M-Pesa billing to enterprise cloud platforms and native mobile apps.
+            {/* Sub-headline max-width 560px */}
+            <p className="text-base sm:text-lg text-[#78716C] max-w-[560px] mx-auto leading-relaxed font-normal">
+              Akubrecah Technologies designs and ships web platforms, native iOS &amp; Android mobile apps, cloud infrastructure, payment integrations, and enterprise software across East Africa.
             </p>
 
-            {/* Action Center */}
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3 pt-2">
-              <Button
-                asChild
-                size="lg"
-                className="h-12 px-7 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 shadow-md shadow-primary/20 flex items-center gap-2 group transition-all"
+            {/* Dual CTA buttons: primary pill in Coral #FFB7B2 with soft shadow, secondary pill in white with 1px stone-200 border */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2 w-full sm:w-auto">
+              <Link
+                href="/services"
+                className="w-full sm:w-auto h-13 px-8 rounded-full bg-[#FFB7B2] text-[#292524] text-sm font-medium shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:brightness-95 transition-all flex items-center justify-center gap-2"
               >
-                <Link href="/services">
-                  <span>Explore Capabilities</span>
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
+                <span>Explore engineering services</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
 
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="h-12 px-6 rounded-xl border-outline-variant font-bold text-sm hover:bg-surface-container transition-all"
+              <Link
+                href="/estimator"
+                className="w-full sm:w-auto h-13 px-8 rounded-full bg-white border border-stone-200 text-[#292524] text-sm font-medium shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:bg-stone-50 transition-all flex items-center justify-center gap-2"
               >
-                <Link href="/projects">
-                  <span>View Case Studies</span>
-                </Link>
-              </Button>
-
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="h-12 px-6 rounded-xl border-outline-variant font-bold text-sm hover:bg-surface-container transition-all"
-              >
-                <Link href="/estimator">
-                  <Calculator className="h-4 w-4 mr-1 text-primary" />
-                  <span>Cost Estimator</span>
-                </Link>
-              </Button>
-
-              <Button
-                asChild
-                variant="ghost"
-                size="lg"
-                className="h-12 px-5 rounded-xl text-on-surface-variant hover:text-primary font-bold text-sm"
-              >
-                <Link href="/contact">
-                  <span>Schedule Consultation</span>
-                </Link>
-              </Button>
+                <Calculator className="w-4 h-4 text-[#78716C]" />
+                <span>Interactive scope estimator</span>
+              </Link>
             </div>
 
-            {/* Verified Operational Facts */}
-            <div className="pt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-on-surface-variant border-t border-outline-variant/60">
-              <span className="font-semibold text-on-surface">Headquartered in Nairobi, Kenya</span>
-              <span className="hidden sm:inline text-outline-variant">•</span>
-              <span className="flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5 text-primary" />
-                Zero-Disk Ephemeral Streaming
-              </span>
-              <span className="hidden sm:inline text-outline-variant">•</span>
-              <span>Statutory GovTech &amp; Safaricom Daraja M-Pesa</span>
-              <span className="hidden sm:inline text-outline-variant">•</span>
-              <span>Custom Enterprise Software</span>
+            <div className="pt-2 flex flex-wrap items-center justify-center gap-5 text-xs text-[#78716C]">
+              <Link href="/projects" className="hover:text-[#292524] transition-colors underline underline-offset-4">
+                Case studies ({allProjects.length || 3})
+              </Link>
+              <span>·</span>
+              <Link href="/solutions" className="hover:text-[#292524] transition-colors underline underline-offset-4">
+                Industry solutions
+              </Link>
+              <span>·</span>
+              <Link href="/retrieval-portal" className="hover:text-[#292524] transition-colors underline underline-offset-4">
+                Flagship KRA portal
+              </Link>
+              <span>·</span>
+              <Link href="/contact" className="hover:text-[#292524] transition-colors underline underline-offset-4">
+                Start a project
+              </Link>
             </div>
           </div>
+        </section>
 
-          {/* Right: Core Capability Matrix */}
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-xl">
-            {capabilities.map((cap) => {
-              const Icon = cap.icon;
-              return (
+        {/* ============================= 2. HORIZONTAL ENGINEERING PRACTICES SCROLL ============================= */}
+        <section className="space-y-6 reveal-on-scroll" aria-label="Core engineering practices">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 px-1">
+            <div>
+              <p className="font-cursive text-2xl sm:text-3xl text-[#78716C]">
+                what we build every day
+              </p>
+              <h2 className="text-2xl sm:text-3xl font-medium text-[#292524] dark:text-on-surface tracking-[-0.025em]">
+                Core engineering practices
+              </h2>
+            </div>
+            <Link
+              href="/services"
+              className="text-xs font-medium text-[#78716C] hover:text-[#292524] transition-colors"
+            >
+              Full service catalog &rarr;
+            </Link>
+          </div>
+
+          {/* Horizontal Scenario Scroll: Each card 288px width, 160px height, white bg, rounded-3xl (24px), top-left 14px stone-400, bottom 20px stone-800 changing to pastel accent on hover */}
+          <div className="flex items-stretch gap-5 overflow-x-auto pb-4 pt-1 px-1 scrollbar-none snap-x">
+            {practiceCards.map((card) => (
+              <Link
+                key={card.timestamp}
+                href={card.href}
+                className="w-[288px] h-[160px] shrink-0 bg-white rounded-3xl p-6 flex flex-col justify-between shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] border border-stone-100 group snap-start transition-transform duration-500 hover:-translate-y-1"
+              >
+                <span className="text-[14px] text-stone-400 font-normal">
+                  {card.timestamp}
+                </span>
+                <p className="text-[19px] leading-snug text-stone-800 font-normal group-hover:text-[#FFB7B2] transition-colors duration-300">
+                  {card.text}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* ============================= 3. SOFTWARE ENGINEERING SHOWCASE (3-MOCKUP STACKED LAYOUT) ============================= */}
+        <section className="space-y-12 reveal-on-scroll">
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <p className="font-cursive text-2xl sm:text-3xl text-[#78716C]">
+              engineered across every layer
+            </p>
+            <h2 className="text-3xl sm:text-5xl font-medium text-[#292524] dark:text-on-surface tracking-[-0.025em]">
+              Full-stack web, mobile, and cloud systems built to last
+            </h2>
+            <p className="text-sm sm:text-base text-[#78716C] leading-relaxed">
+              From consumer mobile apps and internal enterprise dashboards to high-throughput payment gateways and statutory portals—every layer is designed for reliability.
+            </p>
+          </div>
+
+          {/* Three-mockup stacked cascading layout */}
+          <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-7 pb-12 lg:pb-28 pt-2">
+            {/* Left Phone: 280x580px, 80% opacity, translated vertically +48px, Sage (#E8EFE8) screen background */}
+            <div className="w-[280px] h-[580px] opacity-80 lg:translate-y-[48px] rounded-[3rem] bg-[#E8EFE8] border-[6px] border-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] p-6 flex flex-col justify-between transition-all duration-500 hover:opacity-100">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-[#78716C]">01 · Web &amp; Cloud</span>
+                  <Code2 className="w-4 h-4 text-[#292524]" />
+                </div>
+                <div className="p-4 rounded-3xl bg-white/80 space-y-1.5">
+                  <span className="text-[11px] text-[#78716C]">Modern web stack</span>
+                  <p className="text-base font-medium text-[#292524]">Next.js, TypeScript &amp; Postgres</p>
+                  <p className="text-xs text-[#78716C]">Server-rendered apps &amp; typed REST/RPC APIs</p>
+                </div>
+                <div className="p-4 rounded-3xl bg-white/80 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-medium text-[#292524]">
+                    <Layers className="w-3.5 h-3.5 text-[#78716C]" />
+                    <span>Cloud &amp; CI/CD Pipelines</span>
+                  </div>
+                  <p className="text-xs text-[#78716C] leading-relaxed">
+                    Containerized deployments, automated telemetry, and zero-downtime releases built for enterprise traffic.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="p-3.5 rounded-2xl bg-white/70 flex items-center justify-between text-xs">
+                  <span className="text-[#78716C]">Architecture</span>
+                  <span className="font-medium text-[#292524]">Strict TypeScript</span>
+                </div>
                 <Link
-                  key={cap.label}
-                  href={cap.href}
-                  className="group p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant hover:border-primary/50 transition-all duration-200 flex flex-col justify-between shadow-xs"
+                  href="/services#web"
+                  className="w-full h-11 rounded-full bg-white text-[#292524] text-xs font-medium flex items-center justify-center gap-1.5 shadow-2xs hover:bg-stone-50 transition-colors"
                 >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="w-9 h-9 rounded-xl bg-surface-container-low border border-outline-variant flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                        <Icon className="h-4.5 w-4.5" />
-                      </div>
-                      {cap.badge && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                          {cap.badge}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <span className="font-bold text-sm text-on-surface group-hover:text-primary transition-colors">
-                        {cap.label}
-                      </span>
-                      <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
-                        {cap.desc}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="pt-4 flex items-center gap-1 text-xs font-bold text-primary group-hover:underline">
-                    <span>Explore practice</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
+                  <span>Web &amp; cloud services</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
+              </div>
+            </div>
+
+            {/* Center Phone: 300x620px, fully opaque, with Coral (#FFB7B2) primary action button */}
+            <div className="w-[300px] h-[620px] opacity-100 rounded-[3.25rem] bg-white border-[8px] border-[#FDFCF8] ring-1 ring-stone-200/80 shadow-[0_12px_36px_-4px_rgba(0,0,0,0.08)] p-7 flex flex-col justify-between relative z-10">
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-[#FFB7B2]" />
+                    <span className="text-xs font-medium text-[#292524]">Akubrecah Studio</span>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#E8EFE8] text-[11px] font-medium text-[#292524]">
+                    Nairobi
+                  </span>
+                </div>
+
+                <div className="text-center py-4 space-y-2">
+                  <p className="font-cursive text-3xl text-[#78716C]">from concept to production</p>
+                  <h3 className="text-2xl font-medium text-[#292524] tracking-[-0.02em]">
+                    Custom Software Delivery
+                  </h3>
+                  <p className="text-xs text-[#78716C] leading-relaxed">
+                    Dedicated engineering squads building web portals, mobile ecosystems, and automated business workflows.
+                  </p>
+                </div>
+
+                <div className="space-y-2.5">
+                  <div className="p-3.5 rounded-2xl bg-[#FDFCF8] border border-stone-100 flex items-center justify-between text-xs">
+                    <span className="text-[#78716C]">Delivery scope</span>
+                    <span className="font-medium text-[#292524]">Web · Mobile · APIs</span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-[#FDFCF8] border border-stone-100 flex items-center justify-between text-xs">
+                    <span className="text-[#78716C]">Security standard</span>
+                    <span className="font-medium text-[#292524]">OWASP &amp; KDPA 2019</span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-[#FDFCF8] border border-stone-100 flex items-center justify-between text-xs">
+                    <span className="text-[#78716C]">Project scoping</span>
+                    <span className="font-medium text-[#292524]">Live cost estimator</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coral (#FFB7B2) pulsing action button */}
+              <div className="space-y-3 pt-2">
+                <Link
+                  href="/contact"
+                  className="w-full h-14 rounded-full bg-[#FFB7B2] text-[#292524] font-medium text-sm shadow-[0_4px_20px_-2px_rgba(255,183,178,0.6)] animate-pulse hover:animate-none hover:brightness-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <span>Start a project with us</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <p className="text-[11px] text-center text-[#78716C]">
+                  Direct engineering consultation · Transparent milestones
+                </p>
+              </div>
+            </div>
+
+            {/* Right Phone: 280x580px, 80% opacity, translated vertically +96px, Lavender (#EFEDF4) screen background */}
+            <div className="w-[280px] h-[580px] opacity-80 lg:translate-y-[96px] rounded-[3rem] bg-[#EFEDF4] border-[6px] border-white shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] p-6 flex flex-col justify-between transition-all duration-500 hover:opacity-100">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-[#78716C]">03 · Mobile &amp; Fintech</span>
+                  <Smartphone className="w-4 h-4 text-[#292524]" />
+                </div>
+                <div className="p-4 rounded-3xl bg-white/80 space-y-1.5">
+                  <span className="text-[11px] text-[#78716C]">Mobile ecosystems</span>
+                  <p className="text-base font-medium text-[#292524]">iOS, Android &amp; React Native</p>
+                  <p className="text-xs text-[#78716C]">Offline-first apps with push notifications</p>
+                </div>
+                <div className="p-4 rounded-3xl bg-white/80 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-medium text-[#292524]">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#78716C]" />
+                    <span>Payment &amp; API Integrations</span>
+                  </div>
+                  <p className="text-xs text-[#78716C] leading-relaxed">
+                    Safaricom Daraja STK Push, C2B/B2C ledger reconciliation, WhatsApp automation, and custom webhooks.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="p-3.5 rounded-2xl bg-white/70 flex items-center justify-between text-xs">
+                  <span className="text-[#78716C]">Platforms</span>
+                  <span className="font-medium text-[#292524]">iOS · Android · Web</span>
+                </div>
+                <Link
+                  href="/services#mobile"
+                  className="w-full h-11 rounded-full bg-white text-[#292524] text-xs font-medium flex items-center justify-center gap-1.5 shadow-2xs hover:bg-stone-50 transition-colors"
+                >
+                  <span>Explore mobile &amp; APIs</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ============================= 4. DELIVERY LIFECYCLE (ENGINEERING METHODOLOGY) ============================= */}
+        <section className="space-y-8 reveal-on-scroll">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="space-y-1">
+              <p className="font-cursive text-2xl sm:text-3xl text-[#78716C]">
+                how we architect &amp; ship
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-medium text-[#292524] dark:text-on-surface tracking-[-0.025em]">
+                Disciplined delivery lifecycle
+              </h2>
+            </div>
+            <Link
+              href="/about"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white border border-stone-200 text-xs font-medium text-[#292524] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:bg-stone-50 transition-colors self-start md:self-auto"
+            >
+              <span>About our engineering standards</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {deliveryLifecycle.map((phase, idx) => {
+              const cardTones = ['bg-white', 'bg-[#E8EFE8]/70', 'bg-[#EFEDF4]/70', 'bg-white'];
+              return (
+                <div
+                  key={phase.step}
+                  className={`p-6 rounded-[2rem] ${cardTones[idx % cardTones.length]} border border-stone-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] space-y-3`}
+                >
+                  <span className="font-cursive text-3xl text-[#78716C] block leading-none">
+                    {phase.step}
+                  </span>
+                  <h3 className="text-lg font-medium text-[#292524] tracking-[-0.015em]">
+                    {phase.label}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#78716C] leading-relaxed">
+                    {phase.desc}
+                  </p>
+                </div>
               );
             })}
           </div>
         </section>
 
-        {/* ============================= FLAGSHIP PRODUCTION SYSTEM SPOTLIGHT ============================= */}
-        <section className="p-8 sm:p-10 lg:p-12 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-sm relative overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            <div className="lg:col-span-7 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase tracking-wider">
-                <Sparkles className="h-3.5 w-3.5" />
-                Live Production Platform · GovTech Flagship
-              </div>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-on-surface tracking-tight">
-                Akubrecah KRA PIN Certificate Retrieval &amp; Statutory Portal
-              </h2>
-              <p className="text-sm sm:text-base text-on-surface-variant leading-relaxed">
-                Our independent statutory compliance gateway handles live National ID &amp; PIN verification, volatile RAM PDF streaming, and Safaricom Daraja M-Pesa Express reconciliation. Engineered with zero-disk document persistence aligned with the Kenya Data Protection Act 2019.
+        {/* ============================= 5. CURATED CASE STUDIES & FIELD NOTES ============================= */}
+        <section id="featured-projects" className="space-y-8 reveal-on-scroll">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="space-y-1">
+              <p className="font-cursive text-2xl sm:text-3xl text-[#78716C]">
+                crafted with intention
               </p>
-              <div className="flex flex-wrap gap-2 pt-1">
-                <span className="px-3 py-1 rounded-md bg-surface-container-low text-xs font-mono font-semibold text-on-surface border border-outline-variant">
-                  Volatile RAM PDF Streaming
-                </span>
-                <span className="px-3 py-1 rounded-md bg-surface-container-low text-xs font-mono font-semibold text-on-surface border border-outline-variant">
-                  Zero-Disk Persistence
-                </span>
-                <span className="px-3 py-1 rounded-md bg-surface-container-low text-xs font-mono font-semibold text-on-surface border border-outline-variant">
-                  Instant M-Pesa STK (KES 20)
-                </span>
-                <span className="px-3 py-1 rounded-md bg-surface-container-low text-xs font-mono font-semibold text-on-surface border border-outline-variant">
-                  KDPA 2019 Aligned
-                </span>
+              <h2 className="text-3xl sm:text-4xl font-medium text-[#292524] dark:text-on-surface tracking-[-0.025em]">
+                Production systems &amp; case studies
+              </h2>
+            </div>
+            <Link
+              href="/projects"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white border border-stone-200 text-xs font-medium text-[#292524] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:bg-stone-50 transition-colors self-start md:self-auto"
+            >
+              <span>View all case studies</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {projects.length > 0 ? (
+              projects.map((proj, idx) => {
+                const bgTones = ['bg-white', 'bg-[#E8EFE8]/75', 'bg-[#EFEDF4]/75'];
+                const tone = bgTones[idx % bgTones.length];
+                return (
+                  <article
+                    key={proj.id}
+                    className={`p-7 rounded-[2.25rem] ${tone} border border-stone-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] flex flex-col justify-between group transition-transform duration-500 hover:-translate-y-1`}
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="px-3 py-1 rounded-full bg-white/90 text-[#292524] font-medium">
+                          {proj.category}
+                        </span>
+                        {cleanPublicLiveUrl(proj.slug, proj.liveUrl) && (
+                          <a
+                            href={cleanPublicLiveUrl(proj.slug, proj.liveUrl)!}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-[#78716C] hover:text-[#292524]"
+                            aria-label={`Open live system for ${proj.title}`}
+                          >
+                            <span>Live</span>
+                            <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                          </a>
+                        )}
+                      </div>
+
+                      <div>
+                        <h3 className="text-xl font-medium text-[#292524] tracking-[-0.02em]">
+                          <Link href={`/projects/${proj.slug}`}>
+                            {proj.title}
+                          </Link>
+                        </h3>
+                        <p className="text-xs sm:text-sm text-[#78716C] mt-2 line-clamp-3 leading-relaxed">
+                          {proj.summary}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {filterPublicTechnologies((proj as any).technologies || []).slice(0, 4).map((tech: string) => (
+                          <span
+                            key={tech}
+                            className="text-[11px] text-[#78716C] bg-white/80 px-2.5 py-0.5 rounded-full border border-stone-200/60"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pt-5 mt-6 border-t border-stone-200/50 flex items-center justify-between">
+                      <Link
+                        href={`/projects/${proj.slug}`}
+                        className="text-xs font-medium text-[#292524] flex items-center gap-1.5 group-hover:translate-x-0.5 transition-transform"
+                      >
+                        <span>Read case study</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })
+            ) : null}
+          </div>
+
+          {articles.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+              {articles.map((art) => (
+                <article
+                  key={art.id}
+                  className="p-7 rounded-[2rem] bg-white border border-stone-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] flex flex-col justify-between group"
+                >
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-2.5 text-xs text-[#78716C]">
+                      <span className="px-3 py-0.5 rounded-full bg-[#E8EFE8] text-[#292524] font-medium">
+                        {art.category}
+                      </span>
+                      <span>·</span>
+                      <span>{art.readingTimeMinutes} min read</span>
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-medium text-[#292524] tracking-[-0.015em]">
+                      <Link href={`/articles/${art.slug}`}>
+                        {art.title}
+                      </Link>
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#78716C] line-clamp-2 leading-relaxed">
+                      {art.excerpt}
+                    </p>
+                  </div>
+                  <div className="pt-4 mt-4 border-t border-stone-100">
+                    <Link
+                      href={`/articles/${art.slug}`}
+                      className="text-xs font-medium text-[#292524] flex items-center gap-1.5"
+                    >
+                      <span>Read field note</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* ============================= 6. IN-HOUSE FLAGSHIP GOVTECH PRODUCT SPOTLIGHT ============================= */}
+        <section className="p-7 sm:p-10 rounded-[2.5rem] bg-white border border-stone-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] reveal-on-scroll">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+            <div className="lg:col-span-7 space-y-4">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#E8EFE8] text-xs font-medium text-[#292524]">
+                <span className="w-2 h-2 rounded-full bg-[#FFB7B2]" />
+                <span>In-house production platform · GovTech</span>
               </div>
-              <div className="flex flex-wrap items-center gap-3 pt-3">
-                <Button
-                  asChild
-                  size="lg"
-                  className="h-11 px-6 rounded-xl bg-primary text-white font-bold text-xs hover:bg-primary/90 flex items-center gap-2 shadow-sm"
+              <h2 className="text-2xl sm:text-3xl font-medium text-[#292524] tracking-[-0.025em]">
+                KRA PIN Certificate Retrieval &amp; Statutory Facilitation Portal
+              </h2>
+              <p className="text-sm sm:text-base text-[#78716C] leading-relaxed">
+                Alongside client software engineering, we build and operate our own independent compliance facilitation platform—verifying taxpayer records by National ID or KRA PIN, streaming PDF certificates directly from volatile RAM, and reconciling M-Pesa Express payments with zero disk retention.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Link
+                  href="/retrieval-portal"
+                  className="h-11 px-6 rounded-full bg-[#FFB7B2] text-[#292524] text-xs font-medium shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:brightness-95 transition-all inline-flex items-center gap-2"
                 >
-                  <Link href="/retrieval-portal">
-                    <span>Launch Live Portal</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  size="lg"
-                  className="h-11 px-5 rounded-xl border-outline-variant font-bold text-xs hover:bg-surface-container"
+                  <span>Open retrieval portal</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+                <Link
+                  href="/pin-checker"
+                  className="h-11 px-5 rounded-full bg-white border border-stone-200 text-[#292524] text-xs font-medium hover:bg-stone-50 transition-colors inline-flex items-center"
                 >
-                  <Link href="/pin-checker">
-                    <span>Check PIN Format</span>
-                  </Link>
-                </Button>
+                  PIN obligation checker
+                </Link>
                 <Link
                   href="/projects/akubrecah-kra-certificate-portal"
-                  className="text-xs font-bold text-primary hover:underline flex items-center gap-1 ml-2"
+                  className="text-xs font-medium text-[#78716C] hover:text-[#292524] inline-flex items-center gap-1 ml-1 underline underline-offset-4"
                 >
-                  <span>Read Architecture Review</span>
+                  <span>Architecture case study</span>
                   <ExternalLink className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </div>
 
-            {/* Verification Proof Badge / Mock Summary Card */}
-            <div className="lg:col-span-5 bg-surface-container-low border border-outline-variant rounded-2xl p-6 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-outline-variant/60">
+            <div className="lg:col-span-5 bg-[#FDFCF8] border border-stone-100 rounded-[2rem] p-6 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-5 w-5 text-primary" />
-                  <span className="text-xs font-bold text-on-surface">Statutory Verification Proof</span>
+                  <ShieldCheck className="h-4 w-4 text-[#FFB7B2]" />
+                  <span className="text-xs font-medium text-[#292524]">System specification</span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
-                  Operational
-                </span>
+                <span className="text-[11px] font-mono text-[#78716C]">KDPA 2019 aligned</span>
               </div>
-              <div className="space-y-3 text-xs text-on-surface">
-                <div className="flex items-center justify-between py-1.5 border-b border-outline-variant/40">
-                  <span className="text-on-surface-variant">Taxpayer Identity Format</span>
-                  <span className="font-mono font-bold">National ID / KRA PIN</span>
+              <dl className="space-y-2.5 text-xs">
+                <div className="flex items-center justify-between py-1.5 border-b border-stone-100">
+                  <dt className="text-[#78716C]">Lookup parameters</dt>
+                  <dd className="font-mono font-medium text-[#292524]">National ID / KRA PIN</dd>
                 </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-outline-variant/40">
-                  <span className="text-on-surface-variant">Arithmetic Security Challenge</span>
-                  <span className="font-mono text-primary font-bold">Automated SVG HMAC</span>
+                <div className="flex items-center justify-between py-1.5 border-b border-stone-100">
+                  <dt className="text-[#78716C]">Challenge verification</dt>
+                  <dd className="font-mono font-medium text-[#292524]">Stateless HMAC SVG</dd>
                 </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-outline-variant/40">
-                  <span className="text-on-surface-variant">M-Pesa STK Guarantee</span>
-                  <span className="font-mono font-bold text-primary">KES 20</span>
+                <div className="flex items-center justify-between py-1.5 border-b border-stone-100">
+                  <dt className="text-[#78716C]">Single retrieval tariff</dt>
+                  <dd className="font-mono font-medium text-[#292524]">KES 20 (M-Pesa STK)</dd>
                 </div>
                 <div className="flex items-center justify-between py-1.5">
-                  <span className="text-on-surface-variant">Upstream Handshake</span>
-                  <span className="font-mono text-xs">Direct encrypted TLS</span>
+                  <dt className="text-[#78716C]">Document retention</dt>
+                  <dd className="font-mono font-medium text-[#292524]">0 bytes persisted</dd>
                 </div>
-              </div>
-              <div className="pt-2">
-                <Link
-                  href="/retrieval-portal"
-                  className="w-full py-2.5 px-4 rounded-xl bg-surface-container-lowest border border-outline-variant text-xs font-bold text-on-surface flex items-center justify-between hover:border-primary/50 transition-colors"
-                >
-                  <span>Retrieve KRA PIN Certificate</span>
-                  <ArrowRight className="h-3.5 w-3.5 text-primary" />
-                </Link>
-              </div>
+              </dl>
             </div>
           </div>
         </section>
 
-        {/* ============================= FEATURED PRODUCTION SYSTEMS ============================= */}
-        <section id="featured-projects" className="space-y-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div className="space-y-2">
-              <span className="text-xs font-black text-primary uppercase tracking-widest">
-                Engineering Case Studies
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-black text-on-surface tracking-tight">
-                Featured Production Systems
-              </h2>
-              <p className="text-sm text-on-surface-variant max-w-xl">
-                Real-world platforms architected for high concurrency, zero-data-loss compliance, and seamless payment flows across Kenya.
-              </p>
-            </div>
-            <Button asChild variant="outline" size="sm" className="h-10 px-5 rounded-xl font-bold text-xs gap-2 shrink-0">
-              <Link href="/projects">
-                Explore All Projects <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {projects.length > 0 ? (
-              projects.map((proj) => (
-                <div
-                  key={proj.id}
-                  className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant hover:border-primary/40 transition-all duration-300 shadow-soft hover:shadow-xl flex flex-col justify-between group"
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-black uppercase tracking-wider text-primary px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
-                        {proj.category}
-                      </span>
-                      {cleanPublicLiveUrl(proj.slug, proj.liveUrl) && (
-                        <a
-                          href={cleanPublicLiveUrl(proj.slug, proj.liveUrl)!}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline p-1"
-                          aria-label={`Open live system for ${proj.title}`}
-                          title={`Open live system for ${proj.title}`}
-                        >
-                          <span>Live System</span>
-                          <ExternalLink className="w-3 h-3" aria-hidden="true" />
-                        </a>
-                      )}
-                    </div>
-
-                    <div>
-                      <h3 className="text-xl font-black text-on-surface group-hover:text-primary transition-colors tracking-tight">
-                        <Link href={`/projects/${proj.slug}`}>
-                          {proj.title}
-                        </Link>
-                      </h3>
-                      <p className="text-xs text-on-surface-variant mt-2 line-clamp-3 leading-relaxed">
-                        {proj.summary}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5 pt-2">
-                      {filterPublicTechnologies((proj as any).technologies || []).slice(0, 4).map((tech: string) => (
-                        <span
-                          key={tech}
-                          className="text-[10px] font-mono text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md border border-outline-variant/60"
-                        >
-                          {tech}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-6 mt-6 border-t border-outline-variant/60 flex items-center justify-between">
-                    <Link
-                      href={`/projects/${proj.slug}`}
-                      className="text-xs font-bold text-primary group-hover:underline flex items-center gap-1.5"
-                    >
-                      Read Case Study <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="col-span-3 p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant text-center text-xs text-on-surface-variant">
-                No featured case studies published yet — check back soon.
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ============================= INTERACTIVE ARCHITECTURE ESTIMATOR BANNER ============================= */}
-        <section className="p-8 sm:p-10 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
-              <Calculator className="h-3.5 w-3.5" />
-              Interactive Scope &amp; Budget Estimator
-            </div>
-            <h3 className="text-2xl font-black text-on-surface tracking-tight">
-              Planning a digital platform, mobile app, or GovTech gateway?
-            </h3>
-            <p className="text-sm text-on-surface-variant leading-relaxed">
-              Use our interactive scope calculator to select frontend stacks, cloud databases, security parameters, and payment rails to receive an instant timeline and cost breakdown.
+        {/* ============================= 7. DIARY ENTRY TESTIMONIALS ============================= */}
+        <section className="space-y-10 reveal-on-scroll">
+          <div className="text-center max-w-xl mx-auto space-y-2">
+            <p className="font-cursive text-2xl sm:text-3xl text-[#78716C]">
+              notes from our partners
             </p>
-          </div>
-          <Button asChild size="lg" className="rounded-xl px-6 bg-primary text-white font-bold text-xs hover:bg-primary/90 shadow-sm shrink-0 flex items-center gap-2">
-            <Link href="/estimator">
-              <span>Calculate Project Scope</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </Button>
-        </section>
-
-        {/* ============================= TECHNICAL NOTES / ARTICLES ============================= */}
-        {articles.length > 0 && (
-          <section id="articles-teaser" className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div className="space-y-2">
-                <span className="text-xs font-black text-primary uppercase tracking-widest">
-                  Engineering Writing
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-black text-on-surface tracking-tight">
-                  Field Notes &amp; Production Insights
-                </h2>
-                <p className="text-sm text-on-surface-variant max-w-xl">
-                  Pragmatic architectural insights, payment engineering patterns, and lessons learned from live Kenyan systems.
-                </p>
-              </div>
-              <Button asChild variant="outline" size="sm" className="h-10 px-5 rounded-xl font-bold text-xs gap-2 shrink-0">
-                <Link href="/articles">
-                  All Articles <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {articles.map((art) => (
-                <div
-                  key={art.id}
-                  className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant hover:border-primary/40 transition-all shadow-soft group flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 text-xs text-on-surface-variant">
-                      <span className="font-bold text-primary px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
-                        {art.category}
-                      </span>
-                      <span className="font-mono">
-                        {art.readingTimeMinutes} min read
-                      </span>
-                    </div>
-
-                    <h3 className="text-xl font-black text-on-surface group-hover:text-primary transition-colors tracking-tight">
-                      <Link href={`/articles/${art.slug}`}>
-                        {art.title}
-                      </Link>
-                    </h3>
-
-                    <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
-                      {art.excerpt}
-                    </p>
-                  </div>
-
-                  <div className="pt-4 mt-4 border-t border-outline-variant/60">
-                    <Link
-                      href={`/articles/${art.slug}`}
-                      className="text-xs font-bold text-primary flex items-center gap-1.5 hover:underline"
-                    >
-                      Read Technical Article <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ============================= METHODOLOGY ============================= */}
-        <section className="space-y-8 text-center max-w-3xl mx-auto">
-          <div className="space-y-3">
-            <span className="text-xs font-black text-primary uppercase tracking-widest">
-              How We Work
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-on-surface">
-              Disciplined Engineering Methodology
+            <h2 className="text-3xl sm:text-5xl font-medium text-[#292524] dark:text-on-surface tracking-[-0.025em]">
+              Diary entries from teams we ship with
             </h2>
-            <p className="text-sm text-on-surface-variant leading-relaxed">
-              Every project runs through our proven 4-phase lifecycle — no shortcuts, zero data leaks, predictable delivery.
-            </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-0 items-center justify-center">
-            {[
-              { step: '01', label: 'Architect', desc: 'Topology & Tokens' },
-              { step: '02', label: 'Build', desc: 'Vertical Slices' },
-              { step: '03', label: 'Audit', desc: 'Security & QA' },
-              { step: '04', label: 'Deploy', desc: 'Edge CDN & Telemetry' },
-            ].map((phase, i) => (
-              <div key={phase.step} className="flex items-center">
-                <div className="px-5 py-3 rounded-2xl bg-surface-container-lowest border border-outline-variant text-center min-w-[120px]">
-                  <span className="text-xs font-mono font-black text-primary">{phase.step}</span>
-                  <p className="font-bold text-sm text-on-surface">{phase.label}</p>
-                  <p className="text-[10px] text-on-surface-variant">{phase.desc}</p>
+
+          {/* Two-column grid for desktop, single for mobile. Slight rotation (+1 or -1 deg), White bg, 32px horizontal line + Reenie Beanie cursive text in 24px stone-500 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-1">
+            {diaryTestimonials.map((entry) => (
+              <div
+                key={entry.author}
+                className={`bg-white rounded-[2rem] p-8 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] border border-stone-100 flex flex-col justify-between space-y-6 transition-transform duration-500 hover:rotate-0 ${entry.rotation}`}
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between text-xs text-stone-400">
+                    <span>{entry.date}</span>
+                    <span className="w-2 h-2 rounded-full bg-[#FFB7B2]" />
+                  </div>
+                  <p className="text-base sm:text-lg text-[#292524] leading-relaxed font-normal">
+                    &ldquo;{entry.note}&rdquo;
+                  </p>
                 </div>
-                {i < 3 && <div className="hidden sm:block w-6 h-0.5 bg-outline-variant" />}
+
+                {/* Signature style: 32px horizontal line followed by 'Reenie Beanie' cursive text in 24px stone-500 */}
+                <div className="flex items-center gap-3 pt-2">
+                  <span className="w-[32px] h-px bg-stone-400 inline-block shrink-0" />
+                  <span className="font-cursive text-[24px] text-stone-500 leading-none">
+                    {entry.author}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
-          <Button asChild variant="outline" size="sm" className="h-10 px-6 rounded-xl font-bold text-xs gap-2">
-            <Link href="/about">
-              Learn Our Methodology <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
+
+          {/* Live Google Business Profile Reviews Integration (when configured) */}
+          <ReviewSection />
         </section>
 
-        {/* ============================= FINAL CTA BAND ============================= */}
-        <section className="relative overflow-hidden p-10 sm:p-14 rounded-3xl bg-primary text-white space-y-6 text-center shadow-xl">
-          <div className="relative z-10 space-y-4">
-            <h2 className="text-3xl sm:text-5xl font-black leading-tight tracking-tight">
-              Ready to Build Your Next Digital System?
-            </h2>
-            <p className="text-white/90 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
-              Akubrecah Technologies provides end-to-end engineering, automated GovTech gateways, and creative brand design.
-              Let&apos;s build software that scales.
+        {/* ============================= 8. INTERACTIVE FAQ ACCORDION ============================= */}
+        <section className="max-w-3xl mx-auto w-full space-y-8 reveal-on-scroll">
+          <div className="text-center space-y-2">
+            <p className="font-cursive text-2xl sm:text-3xl text-[#78716C]">
+              unhurried answers
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center pt-2">
-              <Button
-                asChild
-                size="lg"
-                className="h-12 px-8 rounded-xl bg-white text-primary font-bold text-sm hover:bg-white/90 shadow-md shadow-black/10 flex items-center gap-2 group cursor-pointer"
-              >
-                <Link href="/contact">
-                  Start a Project <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                className="h-12 px-8 rounded-xl border border-white/40 bg-transparent text-white font-bold text-sm hover:bg-white/15 hover:text-white backdrop-blur-sm transition-colors flex items-center gap-2 cursor-pointer"
-              >
-                <Link href="/projects">
-                  View Case Studies
-                </Link>
-              </Button>
-            </div>
+            <h2 className="text-3xl sm:text-4xl font-medium text-[#292524] dark:text-on-surface tracking-[-0.025em]">
+              Frequently asked questions
+            </h2>
           </div>
+
+          <SoftlyFaqAccordion items={faqItems} />
+        </section>
+
+        {/* ============================= 9. PROJECT CONSULTATION & WAITLIST CONVERSION ============================= */}
+        <section className="reveal-on-scroll">
+          <SoftlyWaitlistConversion />
         </section>
 
       </div>

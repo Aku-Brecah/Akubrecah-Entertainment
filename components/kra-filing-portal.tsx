@@ -74,50 +74,50 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
   return (
     <div className="w-full max-w-none mx-auto space-y-5">
       {/* Top Header Navigation Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-card text-card-foreground p-4 rounded-2xl border border-border shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-surface-container-lowest text-on-surface p-4 rounded-xl border border-outline-variant">
         <Button
           onClick={onBackToSelection}
           variant="outline"
           size="sm"
-          className="border-border hover:bg-accent text-foreground font-bold text-xs rounded-xl flex items-center gap-1.5"
+          className="border-outline-variant hover:bg-surface-container text-on-surface font-semibold text-xs rounded-lg flex items-center gap-1.5"
         >
           <ArrowLeft className="w-4 h-4 text-primary" />
-          <span>Back to Services</span>
+          <span>Back to Retrieval</span>
         </Button>
 
         <div className="flex items-center gap-2">
           <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-          <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
-            Direct iTax Filing Coming Soon · Official Calculator Ready
+          <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+            Reference Tax Calculator &amp; Official iTax Guide
           </span>
         </div>
       </div>
 
       {/* Main Filing Container */}
-      <div className="bg-card text-card-foreground rounded-2xl sm:rounded-3xl border border-border shadow-xs p-4 sm:p-6 md:p-8 space-y-6">
+      <div className="bg-surface-container-lowest text-on-surface rounded-xl border border-outline-variant p-5 sm:p-6 md:p-8 space-y-6">
         {/* Title & Switcher */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-outline-variant">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
-              <Calculator className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-              Tax Computation Tool &amp; iTax Filing Guide
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
+              <Calculator className="w-3.5 h-3.5" />
+              <span>Tax Computation Tool &amp; iTax Filing Guide</span>
             </div>
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-foreground tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-on-surface tracking-tight">
               Kenya Income Tax Calculator &amp; Nil Returns Guide
             </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-on-surface-variant">
               Compute your annual PAYE / IT1 liability from your P9 form before filing directly on the official KRA iTax portal.
             </p>
           </div>
 
-          <div className="flex items-center bg-muted p-1 rounded-xl border border-border w-full sm:w-auto">
+          <div className="flex items-center bg-surface-container-low p-1 rounded-lg border border-outline-variant w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setActiveTab("income")}
-              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-md text-xs font-semibold transition-colors ${
                 activeTab === "income"
-                  ? "bg-background text-foreground shadow-xs border border-border"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-surface-container-lowest text-on-surface border border-outline-variant"
+                  : "text-on-surface-variant hover:text-on-surface"
               }`}
             >
               P9 Tax Calculator
@@ -125,10 +125,10 @@ export function KRAFilingPortal({ onBackToSelection }: KRAFilingPortalProps) {
             <button
               type="button"
               onClick={() => setActiveTab("nil")}
-              className={`flex-1 sm:flex-none px-3 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-md text-xs font-semibold transition-colors ${
                 activeTab === "nil"
-                  ? "bg-background text-foreground shadow-xs border border-border"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-surface-container-lowest text-on-surface border border-outline-variant"
+                  : "text-on-surface-variant hover:text-on-surface"
               }`}
             >
               Nil Returns Info

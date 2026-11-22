@@ -7,14 +7,11 @@ import {
   Copy,
   Check,
   Download,
-  Sparkles,
   ArrowRight,
   ShieldCheck,
   Type,
   Palette,
   Layers,
-  Sliders,
-  ExternalLink,
   ChevronRight
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -104,14 +101,13 @@ export default function BrandBookPage() {
 
         {/* Hero Banner */}
         <section className="space-y-6 text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container border border-outline-variant text-xs font-semibold">
-            <span className="flex h-2 w-2 rounded-full bg-primary" />
-            <span className="font-black text-red-700 dark:text-red-400">Akubrecah Entertainment</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-surface-container border border-outline-variant text-xs font-semibold">
+            <span className="font-bold text-primary">Akubrecah Entertainment</span>
             <span className="text-outline-muted">·</span>
-            <span>Brand Book & Design Spec</span>
+            <span>Brand Book &amp; Design Spec</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-black text-on-surface tracking-tight leading-[1.08]">
+          <h1 className="text-4xl sm:text-5xl font-bold text-on-surface tracking-tight leading-[1.1]">
             Corporate Modernism.<br />
             <span className="text-primary">
               Systemic Precision.
@@ -138,15 +134,15 @@ export default function BrandBookPage() {
         </section>
 
         {/* ===================== SECTION 1: BRAND OVERVIEW ===================== */}
-        <section className="p-8 sm:p-12 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-6">
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+        <section className="p-8 sm:p-10 rounded-xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-6">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
             <Layers className="w-4 h-4" />
             <span>01 Brand Overview</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div className="space-y-4">
-              <h2 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">
                 &ldquo;Engineering digital products that scale.&rdquo;
               </h2>
               <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
@@ -186,15 +182,15 @@ export default function BrandBookPage() {
 
         {/* ===================== SECTION 2: BRAND LOGO ===================== */}
         <section className="space-y-6">
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
-            <Sparkles className="w-4 h-4" />
-            <span>02 Brand Logo & Variants</span>
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
+            <ShieldCheck className="w-4 h-4" />
+            <span>02 Brand Logo &amp; Variants</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             {/* Light Variant */}
-            <div className="p-8 rounded-3xl bg-white border border-slate-200 text-slate-900 space-y-6 flex flex-col justify-between shadow-soft">
+            <div className="p-8 rounded-xl bg-white border border-slate-200 text-slate-900 space-y-6 flex flex-col justify-between shadow-soft">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   Primary Logo (Light Surface)
@@ -222,7 +218,7 @@ export default function BrandBookPage() {
             </div>
 
             {/* Dark Variant */}
-            <div className="p-8 rounded-3xl bg-slate-950 border border-slate-800 text-white space-y-6 flex flex-col justify-between shadow-soft">
+            <div className="p-8 rounded-xl bg-slate-950 border border-slate-800 text-white space-y-6 flex flex-col justify-between shadow-soft">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                   Monolithic Variant (Dark Surface)
@@ -270,11 +266,11 @@ export default function BrandBookPage() {
                 <div
                   key={color.name}
                   onClick={() => copyToClipboard(color.hex)}
-                  className="rounded-3xl bg-surface-container-lowest border border-outline-variant overflow-hidden shadow-soft hover:shadow-md transition-all cursor-pointer group"
+                  className="rounded-xl bg-surface-container-lowest border border-outline-variant overflow-hidden shadow-soft hover:border-primary/40 transition-colors cursor-pointer group"
                 >
                   {/* Swatch preview */}
                   <div
-                    className={`h-28 w-full p-4 flex flex-col justify-between transition-transform duration-300 group-hover:scale-[1.02] ${color.borderRequired ? "border-b border-outline-variant" : ""
+                    className={`h-28 w-full p-4 flex flex-col justify-between ${color.borderRequired ? "border-b border-outline-variant" : ""
                       }`}
                     style={{ backgroundColor: color.hex }}
                   >
@@ -321,14 +317,14 @@ export default function BrandBookPage() {
         </section>
 
         {/* ===================== SECTION 4: TYPOGRAPHY ===================== */}
-        <section className="p-8 sm:p-12 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-8">
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+        <section className="p-8 sm:p-10 rounded-xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-8">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
             <Type className="w-4 h-4" />
-            <span>04 Typography & Hierarchy (Inter)</span>
+            <span>04 Typography &amp; Hierarchy (Inter)</span>
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">
               Primary Typeface: Inter
             </h2>
             <p className="text-xs sm:text-sm text-on-surface-variant max-w-2xl leading-relaxed">
@@ -394,15 +390,15 @@ export default function BrandBookPage() {
         </section>
 
         {/* ===================== SECTION 5: BRAND VOICE & VALUES ===================== */}
-        <section className="p-8 sm:p-12 rounded-3xl bg-slate-950 text-white border border-slate-800 shadow-xl space-y-8 relative overflow-hidden">
+        <section className="p-8 sm:p-10 rounded-xl bg-slate-950 text-white border border-slate-800 space-y-8 relative overflow-hidden">
 
-          <div className="relative z-10 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary">
+          <div className="relative z-10 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
             <ShieldCheck className="w-4 h-4" />
-            <span>05 Brand Voice & Architectural Values</span>
+            <span>05 Brand Voice &amp; Architectural Values</span>
           </div>
 
           <div className="relative z-10 space-y-3">
-            <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight leading-tight">
               &ldquo;Engineering Rigor, Security by Default, Measurable Outcomes, Performance&rdquo;
             </h2>
           </div>

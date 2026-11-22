@@ -246,21 +246,20 @@ export default function ProfileClient({
     "w-full rounded-xl border border-outline-variant bg-surface px-4 py-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-sm";
 
   return (
-    <div className="px-3 sm:px-5 lg:px-6 py-5 sm:py-6 w-full max-w-none mx-auto">
+    <div className="px-4 sm:px-6 lg:px-10 xl:px-12 py-6 sm:py-8 w-full max-w-[1360px] mx-auto">
       {/* Profile Header */}
-      <section className="bg-surface-container-lowest rounded-2xl p-8 mb-6 shadow-soft flex flex-col md:flex-row items-center md:items-start gap-8 relative overflow-hidden border border-outline-variant">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -mr-8 -mt-8" />
+      <section className="bg-surface-container-lowest rounded-xl p-6 sm:p-8 mb-6 flex flex-col md:flex-row items-center md:items-start gap-6 relative border border-outline-variant">
         <div className="relative">
           {imageUrl ? (
             <Image
-              className="w-32 h-32 rounded-2xl object-cover shadow-lg border-4 border-surface-container"
+              className="w-24 h-24 rounded-xl object-cover border border-outline-variant"
               alt={fullName || "Taxpayer Profile"}
-              width={128}
-              height={128}
+              width={96}
+              height={96}
               src={imageUrl}
             />
           ) : (
-            <div className="w-32 h-32 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-3xl font-black shadow-lg border-4 border-surface-container">
+            <div className="w-24 h-24 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-2xl font-bold border border-outline-variant">
               {(fullName || email || "TX")
                 .split(" ")
                 .filter(Boolean)
@@ -275,23 +274,23 @@ export default function ProfileClient({
             onClick={() => openUserProfile()}
             title="Change photo"
             aria-label="Change profile photo"
-            className="absolute -bottom-2 -right-2 bg-primary text-white p-2 rounded-xl shadow-lg hover:scale-110 transition-transform cursor-pointer"
+            className="absolute -bottom-1.5 -right-1.5 bg-primary text-white p-1.5 rounded-lg hover:bg-primary/90 transition-colors cursor-pointer"
           >
-            <Camera className="w-4 h-4" />
+            <Camera className="w-3.5 h-3.5" />
           </button>
         </div>
         <div className="flex-1 text-center md:text-left">
-          <h2 className="text-3xl font-bold text-on-surface">{fullName || "Registered Taxpayer"}</h2>
-          <p className="text-on-surface-variant text-sm mt-1">
+          <h2 className="text-2xl font-bold text-on-surface">{fullName || "Registered Taxpayer"}</h2>
+          <p className="text-on-surface-variant text-xs sm:text-sm mt-1">
             {email ?? "No email on file"}
           </p>
-          <div className="mt-5 flex flex-wrap justify-center md:justify-start gap-3">
-            <span className="px-4 py-1.5 bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300 rounded-full text-sm font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-4 h-4" /> Active Account
+          <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-2.5">
+            <span className="px-3 py-1 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 rounded-md text-xs font-semibold flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Active Account
             </span>
             {completeness === 100 && (
-              <span className="px-4 py-1.5 bg-surface-container-high text-on-surface-variant rounded-full text-sm font-medium flex items-center gap-1">
-                <ShieldCheck className="w-4 h-4" /> Profile Complete
+              <span className="px-3 py-1 bg-surface-container-low text-on-surface-variant border border-outline-variant rounded-md text-xs font-medium flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5" /> Profile Complete
               </span>
             )}
           </div>
@@ -299,7 +298,7 @@ export default function ProfileClient({
       </section>
 
       {/* Profile Completeness Status */}
-      <section className="bg-surface-container-lowest rounded-2xl p-6 mb-6 shadow-soft border border-outline-variant">
+      <section className="bg-surface-container-lowest rounded-xl p-6 mb-6 border border-outline-variant">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
           <div>
             <h3 className="font-bold text-on-surface text-lg">Profile Completeness</h3>
@@ -372,75 +371,75 @@ export default function ProfileClient({
       {/* Info Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {/* Personal Information */}
-        <div className="bg-surface-container-lowest rounded-2xl shadow-soft border border-outline-variant overflow-hidden hover:-translate-y-1 transition-transform duration-300">
+        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
           <div className="px-6 py-4 bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
-            <h3 className="font-bold text-on-surface flex items-center gap-2">
-              <User className="w-5 h-5 text-primary" /> Personal Information
+            <h3 className="font-bold text-on-surface flex items-center gap-2 text-sm">
+              <User className="w-4 h-4 text-primary" /> Personal Information
             </h3>
             <button
               onClick={openPersonalModal}
-              className="text-primary text-sm font-bold flex items-center gap-1 hover:underline"
+              className="text-primary text-xs font-semibold flex items-center gap-1 hover:underline"
             >
-              <Pencil className="w-4 h-4" /> Edit
+              <Pencil className="w-3.5 h-3.5" /> Edit
             </button>
           </div>
           <div className="p-6 space-y-4">
             <div className="flex flex-col">
-              <span className="text-xs font-bold text-primary uppercase tracking-wider">Full Name</span>
-              <span className="text-on-surface font-medium">{fullName || "Not provided"}</span>
+              <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Full Name</span>
+              <span className="text-on-surface font-medium text-sm mt-0.5">{fullName || "Not provided"}</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-primary uppercase tracking-wider">Date of Birth</span>
-                <span className="text-on-surface font-medium">
+                <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Date of Birth</span>
+                <span className="text-on-surface font-medium text-sm mt-0.5">
                   {dob && !Number.isNaN(new Date(dob).getTime())
                     ? new Date(dob).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
                     : "Not provided"}
                 </span>
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-primary uppercase tracking-wider">Gender</span>
-                <span className="text-on-surface font-medium">{gender || "Not provided"}</span>
+                <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Gender</span>
+                <span className="text-on-surface font-medium text-sm mt-0.5">{gender || "Not provided"}</span>
               </div>
             </div>
             <div className="flex flex-col">
-              <span className="text-xs font-bold text-primary uppercase tracking-wider">Nationality</span>
-              <span className="text-on-surface font-medium">{nationality || "Not provided"}</span>
+              <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Nationality</span>
+              <span className="text-on-surface font-medium text-sm mt-0.5">{nationality || "Not provided"}</span>
             </div>
           </div>
         </div>
 
         {/* Contact Information */}
-        <div className="bg-surface-container-lowest rounded-2xl shadow-soft border border-outline-variant overflow-hidden hover:-translate-y-1 transition-transform duration-300">
+        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden">
           <div className="px-6 py-4 bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
-            <h3 className="font-bold text-on-surface flex items-center gap-2">
-              <AtSign className="w-5 h-5 text-primary" /> Contact Information
+            <h3 className="font-bold text-on-surface flex items-center gap-2 text-sm">
+              <AtSign className="w-4 h-4 text-primary" /> Contact Information
             </h3>
             <button
               onClick={openContactModal}
-              className="text-primary text-sm font-bold flex items-center gap-1 hover:underline"
+              className="text-primary text-xs font-semibold flex items-center gap-1 hover:underline"
             >
-              <Pencil className="w-4 h-4" /> Edit
+              <Pencil className="w-3.5 h-3.5" /> Edit
             </button>
           </div>
           <div className="p-6 space-y-4">
             <div className="flex items-start gap-3">
-              <AtSign className="w-5 h-5 text-primary mt-1" />
+              <AtSign className="w-4 h-4 text-primary mt-1" />
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-primary uppercase tracking-wider">Email Address</span>
+                <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Email Address</span>
                 {email
-                  ? <span className="text-on-surface font-medium">{email}</span>
-                  : <span className="text-amber-600 dark:text-amber-400 font-medium text-sm flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" /> Not provided</span>
+                  ? <span className="text-on-surface font-medium text-sm mt-0.5">{email}</span>
+                  : <span className="text-amber-600 dark:text-amber-400 font-medium text-xs flex items-center gap-1 mt-0.5"><AlertTriangle className="w-3.5 h-3.5" /> Not provided</span>
                 }
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <Smartphone className="w-5 h-5 text-primary mt-1" />
+              <Smartphone className="w-4 h-4 text-primary mt-1" />
               <div className="flex flex-col">
-                <span className="text-xs font-bold text-primary uppercase tracking-wider">Phone Number</span>
+                <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Phone Number</span>
                 {phone
-                  ? <span className="text-on-surface font-medium">{phone}</span>
-                  : <span className="text-amber-600 dark:text-amber-400 font-medium text-sm flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" /> Not provided</span>
+                  ? <span className="text-on-surface font-medium text-sm mt-0.5">{phone}</span>
+                  : <span className="text-amber-600 dark:text-amber-400 font-medium text-xs flex items-center gap-1 mt-0.5"><AlertTriangle className="w-3.5 h-3.5" /> Not provided</span>
                 }
               </div>
             </div>
@@ -448,7 +447,7 @@ export default function ProfileClient({
         </div>
 
         {/* Account Security */}
-        <div className="bg-surface-container-lowest rounded-2xl shadow-soft border border-outline-variant overflow-hidden hover:-translate-y-1 transition-transform duration-300 sm:col-span-2">
+        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden sm:col-span-2">
           <div className="px-6 py-4 bg-surface-container-low border-b border-outline-variant">
             <h3 className="font-bold text-on-surface flex items-center gap-2">
               <Shield className="w-5 h-5 text-primary" /> Account Security

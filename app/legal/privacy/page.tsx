@@ -12,16 +12,16 @@ export default function PrivacyPolicyPage() {
   const lastUpdated = "10 June 2026"
 
   return (
-    <div className="w-full mx-auto rounded-3xl bg-surface-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 p-6 sm:p-8 shadow-xs space-y-8">
+    <div className="w-full mx-auto rounded-xl bg-surface-container-lowest border border-outline-variant p-6 sm:p-8 space-y-8">
       {/* Header */}
-      <div className="space-y-3 border-b border-border/60 pb-6">
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Legal Document</p>
-        <h1 className="text-2xl font-black uppercase tracking-tight text-foreground">Privacy Policy</h1>
-        <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
+      <div className="space-y-2.5 border-b border-outline-variant/60 pb-6">
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Legal Document</p>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-on-surface">Privacy Policy</h1>
+        <p className="text-xs text-on-surface-variant">
           Last Updated: {lastUpdated} &nbsp;·&nbsp; Effective Date: {lastUpdated}
         </p>
-        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 mt-4">
-          <p className="text-[11px] text-primary font-bold uppercase tracking-wide">
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-3.5 mt-4">
+          <p className="text-xs text-primary font-semibold leading-relaxed">
             This policy is governed by the Kenya Data Protection Act, 2019 (No. 24 of 2019) and the Data Protection (General) Regulations, 2021.
           </p>
         </div>
@@ -196,11 +196,11 @@ export default function PrivacyPolicyPage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-4">
-      <h2 className="text-[13px] font-black uppercase tracking-[0.15em] text-foreground border-l-2 border-primary pl-4">
+    <section className="space-y-3">
+      <h2 className="text-sm sm:text-base font-bold text-on-surface border-l-2 border-primary pl-3.5">
         {title}
       </h2>
-      <div className="space-y-3 text-[12px] text-muted-foreground leading-relaxed pl-4 [&_strong]:text-foreground [&_strong]:font-bold [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1.5 [&_em]:text-muted-foreground/70">
+      <div className="space-y-2.5 text-xs sm:text-sm text-on-surface-variant leading-relaxed pl-3.5 [&_strong]:text-on-surface [&_strong]:font-semibold [&_a]:text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1.5 [&_em]:text-on-surface-variant/80">
         {children}
       </div>
     </section>

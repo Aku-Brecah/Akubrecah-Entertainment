@@ -1,7 +1,7 @@
 import React from "react"
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Cpu, Sparkles, ArrowRight, ShieldCheck, Zap, Layers, MessageSquare } from "lucide-react"
+import { ArrowRight, MessageSquare } from "lucide-react"
 import { BreadcrumbSchema } from "@/components/seo/site-schema"
 import { ProjectEstimator } from "@/components/interactive/project-estimator"
 import { Button } from "@/components/ui/button"
@@ -49,68 +49,64 @@ export default function EstimatorPage() {
       />
 
       {/* Hero Header */}
-      <section className="bg-surface-container-lowest border-b border-outline-variant relative overflow-hidden">
-        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-5 relative z-10">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
-            <Link href="/" className="hover:text-primary transition-colors">
+      <section className="relative overflow-hidden py-10 md:py-14">
+        <div aria-hidden="true" className="pointer-events-none absolute -top-12 left-1/4 w-80 h-80 rounded-full bg-[#FFE4E1] opacity-60 blur-[90px] animate-float-blob" />
+        <div aria-hidden="true" className="pointer-events-none absolute top-4 right-1/4 w-80 h-80 rounded-full bg-[#E6E6FA] opacity-60 blur-[90px] animate-float-blob [animation-delay:3s]" />
+        <div className="relative z-10 w-full max-w-[1220px] mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-on-surface-variant">
+            <Link href="/" className="hover:text-on-surface transition-colors">
               Home
             </Link>
             <span>/</span>
-            <span className="text-on-surface font-semibold">Architecture Estimator</span>
+            <span className="text-on-surface font-medium">Architecture Estimator</span>
           </nav>
 
-          <div className="max-w-5xl space-y-3">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary shadow-2xs">
-              <Cpu className="w-3.5 h-3.5" />
-              <span>Interactive Architecture Sandbox</span>
-            </div>
+          <div className="max-w-4xl space-y-3">
+            <span className="font-cursive text-2xl sm:text-3xl text-[#78716C] block">
+              project scoping &amp; turnaround calculator
+            </span>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-on-surface tracking-tight leading-[1.08]">
-              Scope &amp; Architect Your{" "}
-              <span className="text-primary">
-                Digital Platform
-              </span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium text-on-surface tracking-[-0.025em] leading-[1.08]">
+              Scope your software architecture{" "}
+              <span className="font-cursive text-5xl sm:text-7xl font-normal">calmly</span>.
             </h1>
 
-            <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed max-w-4xl">
-              Configure your service requirements, scale tier, payment gateways, and security compliance. 
-              Get instant architectural blueprints, recommended technology stacks, and turnaround timelines.
+            <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed max-w-2xl">
+              Select your core engineering domain, deployment scale, and required integration modules to generate a recommended stack specification and projected turnaround estimate.
             </p>
           </div>
         </div>
       </section>
 
       {/* Main Sandbox Section */}
-      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-10">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 md:py-14 space-y-12">
         <ProjectEstimator />
 
         {/* Discovery & Consultation Banner */}
-        <section className="rounded-3xl p-8 sm:p-12 bg-surface-container-lowest border border-outline-variant shadow-soft flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Direct Lead Architect Review</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
-              Need a Custom Enterprise Solution or SLA?
+        <section className="rounded-xl p-8 sm:p-10 bg-surface-container-lowest border border-outline-variant flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-1.5 max-w-2xl">
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+              Custom Enterprise Scoping
+            </span>
+            <h2 className="text-xl sm:text-2xl font-bold text-on-surface tracking-tight">
+              Need a custom multi-tenant architecture or dedicated SLA?
             </h2>
-            <p className="text-sm text-on-surface-variant leading-relaxed">
-              For complex multi-tenant platforms, custom GovTech integrations, fiscal thermal ETR systems, 
-              or legacy system migrations, our senior engineering team provides tailored scoping workshops.
+            <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+              For bespoke platforms, custom statutory integrations, thermal POS systems, or legacy database migrations, our engineering team provides detailed technical scoping workshops.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full md:w-auto">
-            <Button asChild size="lg" className="h-12 px-6 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 shadow-md shadow-primary/20 flex items-center gap-2">
+          <div className="flex flex-wrap gap-3 shrink-0">
+            <Button asChild size="lg" className="h-10 px-5 rounded-lg bg-primary text-white font-semibold text-xs hover:bg-primary/90 flex items-center gap-2">
               <Link href="/contact">
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="w-3.5 h-3.5" />
                 <span>Book Technical Discovery</span>
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="h-12 px-6 rounded-xl border-outline-variant font-bold text-sm hover:bg-surface-container flex items-center gap-2">
+            <Button asChild variant="outline" size="lg" className="h-10 px-5 rounded-lg border-outline-variant font-semibold text-xs hover:bg-surface-container flex items-center gap-2">
               <Link href="/projects">
-                <span>Explore Case Studies</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>View Case Studies</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </Button>
           </div>

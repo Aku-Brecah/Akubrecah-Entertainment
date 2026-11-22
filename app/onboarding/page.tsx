@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, ArrowRight, User, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { Logo } from "@/components/logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { completeOnboardingAction } from "./actions";
 
 export default function OnboardingPage() {
@@ -38,16 +41,23 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-surface-container-lowest flex items-center justify-center p-4 sm:p-8">
-      <div className="w-full max-w-2xl bg-surface-container-lowest border border-outline-variant shadow-soft rounded-2xl overflow-hidden">
+    <div className="min-h-screen w-full bg-surface flex items-center justify-center p-4 sm:p-8">
+      <div className="w-full max-w-2xl bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
         {/* Header */}
-        <div className="bg-surface-container-low border-b border-outline-variant p-8 text-center">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <User className="w-8 h-8 text-primary" />
+        <div className="bg-surface-container-low border-b border-outline-variant p-6 sm:p-8">
+          <div className="flex items-center justify-between mb-4">
+            <Link href="/" className="inline-flex items-center hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
+              <Logo width={132} height={36} className="h-8 w-auto" />
+            </Link>
+            <ThemeToggle />
           </div>
-          <h1 className="text-3xl font-bold text-on-surface mb-2 font-headline">Complete Your Profile</h1>
-          <p className="text-on-surface-variant max-w-md mx-auto">
-            Please provide your basic information to finish setting up your account.
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary mb-1.5">
+            <User className="w-4 h-4" />
+            <span>Account Setup</span>
+          </div>
+          <h1 className="text-2xl font-bold text-on-surface">Complete Your Profile</h1>
+          <p className="text-xs sm:text-sm text-on-surface-variant mt-1">
+            Provide your basic contact and identity details to finish setting up your account.
           </p>
         </div>
 

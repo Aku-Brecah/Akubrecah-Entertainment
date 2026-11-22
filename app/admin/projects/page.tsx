@@ -260,8 +260,8 @@ function AdminProjectsContent() {
           {/* Top Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
-                Projects & Case Studies
+              <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">
+                Projects &amp; Case Studies
               </h1>
               <p className="text-xs text-on-surface-variant mt-1">
                 Manage your engineering case studies, live demo links, architecture deep-dives, and tech stacks.
@@ -270,7 +270,7 @@ function AdminProjectsContent() {
 
             <button
               onClick={handleOpenCreate}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-all shadow-md self-start sm:self-auto"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors self-start sm:self-auto"
             >
               <Plus className="w-4 h-4" />
               Add New Project
@@ -300,11 +300,11 @@ function AdminProjectsContent() {
 
       {/* Projects List */}
       {loading ? (
-        <div className="p-12 text-center text-xs text-on-surface-variant bg-surface-container rounded-3xl border border-outline-variant">
+        <div className="p-12 text-center text-xs text-on-surface-variant bg-surface-container rounded-xl border border-outline-variant">
           Loading portfolio projects...
         </div>
       ) : filteredProjects.length === 0 ? (
-        <div className="p-12 text-center text-xs text-on-surface-variant bg-surface-container rounded-3xl border border-outline-variant">
+        <div className="p-12 text-center text-xs text-on-surface-variant bg-surface-container rounded-xl border border-outline-variant">
           No projects found. Click &quot;Add New Project&quot; to create one.
         </div>
       ) : (
@@ -312,16 +312,16 @@ function AdminProjectsContent() {
           {filteredProjects.map((p) => (
             <div
               key={p.id}
-              className="p-5 sm:p-6 rounded-3xl bg-surface-container border border-outline-variant hover:border-primary/40 transition-all shadow-soft flex flex-col justify-between gap-4"
+              className="p-5 sm:p-6 rounded-xl bg-surface-container border border-outline-variant hover:border-primary/40 transition-colors flex flex-col justify-between gap-4"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
                       {p.category}
                     </span>
                     {p.isFeatured && (
-                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center gap-1">
                         <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" /> Featured
                       </span>
                     )}

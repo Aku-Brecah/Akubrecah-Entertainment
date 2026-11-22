@@ -510,11 +510,11 @@ export default function AdminInquiriesPage() {
                       <div className="flex items-center gap-2 min-w-0">
                         {/* Unread dot */}
                         {!item.isRead ? (
-                          <span className="w-2 h-2 rounded-full bg-primary shrink-0 animate-pulse" title="Unread" />
+                          <span className="w-2 h-2 rounded-full bg-primary shrink-0" title="Unread" />
                         ) : (
                           <span className="w-2 h-2 rounded-full bg-transparent shrink-0" />
                         )}
-                        <h4 className={`text-xs truncate ${!item.isRead ? "font-black text-on-surface" : "font-semibold text-on-surface/90"}`}>
+                        <h4 className={`text-xs truncate ${!item.isRead ? "font-bold text-on-surface" : "font-semibold text-on-surface/90"}`}>
                           {item.name}
                         </h4>
                       </div>

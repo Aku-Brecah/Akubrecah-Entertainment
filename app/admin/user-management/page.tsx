@@ -357,8 +357,8 @@ export default function UserManagementPage() {
                     </td>
                     <td className="py-4 px-6">
                       {u.status === "Active" ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300 text-xs font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300 text-xs font-semibold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-600" />
                           Active
                         </span>
                       ) : (

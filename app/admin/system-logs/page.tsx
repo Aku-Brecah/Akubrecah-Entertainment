@@ -148,13 +148,10 @@ export default function SystemLogsPage() {
           {/* Terminal Title Bar */}
           <div className="bg-slate-900 dark:bg-zinc-900 border-b border-zinc-800 px-5 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-red-500/80" />
-              <span className="w-3 h-3 rounded-full bg-yellow-500/80" />
-              <span className="w-3 h-3 rounded-full bg-green-500/80" />
-              <span className="text-zinc-400 text-xs font-mono ml-2 tracking-wide">root@kra-portal:~ (logs-worker)</span>
+              <span className="text-zinc-400 text-xs font-mono tracking-wide">root@kra-portal:~ (logs-worker)</span>
             </div>
-            <div className="flex items-center gap-2 text-zinc-500 text-xs font-mono">
-              <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <div className="flex items-center gap-2 text-zinc-400 text-xs font-mono">
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
               ACTIVE
             </div>
           </div>
@@ -268,7 +265,7 @@ export default function SystemLogsPage() {
                 <span className="font-bold text-on-surface">{logs.filter(l => l.level === "warning").length}</span>
               </div>
               <div className="flex justify-between items-center text-xs">
-                <span className="text-on-surface-variant flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"/>Errors</span>
+                <span className="text-on-surface-variant flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500"/>Errors</span>
                 <span className="font-bold text-red-600 dark:text-red-400">{logs.filter(l => l.level === "error").length}</span>
               </div>
               <div className="border-t border-outline-variant pt-2.5 mt-1 flex justify-between items-center text-xs font-bold text-on-surface">

@@ -69,7 +69,8 @@ export default function ContactPage() {
     const params = new URLSearchParams(window.location.search);
     const service = (params.get('service') || params.get('solution') || '').toLowerCase();
     const scale = (params.get('scale') || '').toLowerCase();
-    if (!service && !scale) return;
+    const emailParam = (params.get('email') || '').trim();
+    if (!service && !scale && !emailParam) return;
 
     const serviceMap: Record<string, string> = {
       web: 'Web Application / Scalable SaaS',
@@ -94,6 +95,7 @@ export default function ContactPage() {
 
     setForm((prev) => ({
       ...prev,
+      email: emailParam || prev.email,
       projectType: mappedService || prev.projectType,
       budget: mappedBudget || prev.budget,
       message:
@@ -137,94 +139,88 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-background text-on-background">
 
-      {/* Page Hero - Matching Products Design */}
-      <div className="bg-surface-container-lowest border-b border-outline-variant">
-        <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-5">
+      {/* Page Hero */}
+      <div className="relative overflow-hidden py-10 md:py-14">
+        <div aria-hidden="true" className="pointer-events-none absolute -top-12 left-1/4 w-80 h-80 rounded-full bg-[#FFE4E1] opacity-60 blur-[90px] animate-float-blob" />
+        <div aria-hidden="true" className="pointer-events-none absolute top-4 right-1/4 w-80 h-80 rounded-full bg-[#E6E6FA] opacity-60 blur-[90px] animate-float-blob [animation-delay:3s]" />
+        <div className="relative z-10 w-full max-w-[1220px] mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
           <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
-            <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+            <Link href="/" className="hover:text-on-surface transition-colors">Home</Link>
             <span>/</span>
-            <span className="text-on-surface font-semibold">Contact & Engagement</span>
+            <span className="text-on-surface font-medium">Contact &amp; Engagement</span>
           </nav>
-          <div className="max-w-5xl space-y-3">
-            <span className="text-xs font-black text-primary uppercase tracking-widest">Start a Project</span>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-on-surface tracking-tight leading-tight">
-              Let&apos;s Build<br />
-              <span className="text-primary">Something Exceptional.</span>
+          <div className="max-w-4xl space-y-3">
+            <span className="font-cursive text-2xl sm:text-3xl text-[#78716C] block">project scoping &amp; support</span>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-medium text-on-surface tracking-[-0.025em] leading-[1.08]">
+              Start a conversation in our{" "}
+              <span className="font-cursive text-5xl sm:text-7xl font-normal">digital living room</span>.
             </h1>
-            <p className="text-base sm:text-lg text-on-surface-variant max-w-4xl leading-relaxed">
-              Have an upcoming product launch, enterprise modernization need, or statutory integration? 
-              Our principal engineers review every brief and reply within 24 hours with actionable technical guidance.
+            <p className="text-base sm:text-lg text-on-surface-variant max-w-2xl leading-relaxed">
+              Submit your requirements for web platforms, mobile applications, payment integrations, or statutory compliance tools. Our engineers review every inquiry and respond within one business day.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-8 md:py-10 space-y-10">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 py-10 md:py-14 space-y-12">
 
         {/* Main Contact Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
 
-          {/* Left Column: Contact Info & Value Prop (2 cols) */}
-          <div className="lg:col-span-2 space-y-8">
+          {/* Left Column: Contact Info & Value Prop (5 cols) */}
+          <div className="lg:col-span-5 space-y-6">
 
             {/* Office & Direct Info Card */}
-            <div className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-6">
-              <h4 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Engineering Headquarters</h4>
+            <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-5">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Direct Contact Channels</h2>
               
-              <div className="space-y-4">
+              <div className="divide-y divide-outline-variant text-xs">
                 {[
-                  { icon: MapPin, label: "Location", value: "Nairobi, Kenya\nEast Africa Tech Hub" },
-                  { icon: Mail, label: "Email", value: "engineering@akubrecah.com", isLink: true, href: "mailto:engineering@akubrecah.com" },
-                  { icon: Clock, label: "Office Hours", value: "Monday – Friday: 08:00 – 18:00 EAT\n24/7 Monitoring for Enterprise SLAs" },
-                  { icon: MessageSquare, label: "Discovery Consultation", value: "Free 30-min architecture scoping call with our lead engineers" },
+                  { icon: MapPin, label: "Headquarters", value: "Nairobi, Kenya" },
+                  { icon: Mail, label: "Engineering Desk", value: "engineering@akubrecah.com", isLink: true, href: "mailto:engineering@akubrecah.com" },
+                  { icon: Clock, label: "Operating Hours", value: "Monday – Friday, 08:00 – 18:00 EAT" },
+                  { icon: MessageSquare, label: "Architecture Review", value: "30-minute technical scoping session" },
                 ].map(({ icon: Icon, label, value, isLink, href }) => (
-                  <div key={label} className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-surface-container">
-                    <div className="p-2 rounded-xl bg-primary/10 text-primary shrink-0 mt-0.5">
-                      <Icon className="h-4 w-4" />
-                    </div>
+                  <div key={label} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                    <Icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant block">{label}</span>
+                      <span className="text-[11px] font-medium text-on-surface-variant block">{label}</span>
                       {isLink && href ? (
-                        <a href={href} className="text-xs sm:text-sm font-bold text-primary hover:underline mt-0.5 block">
+                        <a href={href} className="text-xs font-semibold text-primary hover:underline mt-0.5 block">
                           {value}
                         </a>
                       ) : (
-                        <p className="text-xs font-bold text-on-surface whitespace-pre-line mt-0.5">{value}</p>
+                        <p className="text-xs font-semibold text-on-surface mt-0.5">{value}</p>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
-
-              <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-bold pt-1">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                Engineering Availability: Open for New Projects
-              </div>
             </div>
 
             {/* What Happens Next Card */}
-            <div className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-4">
-              <h4 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">What to Expect</h4>
+            <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-4">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Engagement Process</h2>
               <div className="space-y-3">
                 {[
-                  { num: "01", text: "We review your brief within 24 hours" },
-                  { num: "02", text: "Senior engineer coordinates a technical discovery call" },
-                  { num: "03", text: "We deliver an architecture plan, timeline & cost estimate" },
-                  { num: "04", text: "Sprint kickoff with clear milestones and access credentials" },
+                  { num: "01", text: "Technical review of your project brief within 24 hours" },
+                  { num: "02", text: "Discovery call to clarify architecture and integration scope" },
+                  { num: "03", text: "Itemized engineering proposal with timeline and deliverables" },
+                  { num: "04", text: "Sprint kickoff with repository and staging environment setup" },
                 ].map((step) => (
-                  <div key={step.num} className="flex items-center gap-3 text-xs text-on-surface">
-                    <span className="font-mono font-bold text-primary px-2 py-0.5 rounded-md bg-primary/10 text-[11px] shrink-0">
+                  <div key={step.num} className="flex items-start gap-3 text-xs text-on-surface">
+                    <span className="font-mono font-semibold text-primary shrink-0">
                       {step.num}
                     </span>
-                    <span>{step.text}</span>
+                    <span className="text-on-surface-variant">{step.text}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Quick Link to In-House Tools */}
-            <div className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-4">
-              <h4 className="text-xs font-black uppercase tracking-widest text-on-surface-variant">Looking For Our Live Tools?</h4>
+            <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Self-Service Portals</h2>
               <div className="space-y-2">
                 {[
                   { name: "KRA Certificate Retrieval Portal", href: "/retrieval-portal" },
@@ -233,10 +229,10 @@ export default function ContactPage() {
                   <Link
                     key={tool.name}
                     href={tool.href}
-                    className="flex items-center justify-between p-3 rounded-xl bg-surface-container hover:bg-primary/10 hover:text-primary transition-colors text-xs font-bold text-on-surface group"
+                    className="flex items-center justify-between p-3 rounded-lg bg-surface-container-low border border-outline-variant hover:border-primary/40 transition-colors text-xs font-semibold text-on-surface group"
                   >
                     <span>{tool.name}</span>
-                    <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="h-3.5 w-3.5 text-primary" />
                   </Link>
                 ))}
               </div>
@@ -244,21 +240,21 @@ export default function ContactPage() {
 
           </div>
 
-          {/* Right Column: Brief Form (3 cols) */}
-          <div className="lg:col-span-3">
+          {/* Right Column: Brief Form (7 cols) */}
+          <div className="lg:col-span-7">
             {formState === "success" ? (
-              <div className="p-10 sm:p-14 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft text-center space-y-6">
-                <div className="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="h-8 w-8" />
+              <div className="p-10 rounded-xl bg-surface-container-lowest border border-outline-variant text-center space-y-5">
+                <div className="w-12 h-12 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="h-6 w-6" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-black text-on-surface">Brief Received Successfully!</h3>
-                  <p className="text-sm text-on-surface-variant max-w-md mx-auto leading-relaxed">
-                    Thank you for reaching out. Our engineering team is currently reviewing your project details and will be in touch within 24 business hours.
+                  <h3 className="text-xl font-bold text-on-surface">Project Brief Received</h3>
+                  <p className="text-xs sm:text-sm text-on-surface-variant max-w-md mx-auto leading-relaxed">
+                    Thank you for contacting Akubrecah Technologies. Our engineering team has received your inquiry and will respond within 24 business hours.
                   </p>
                 </div>
                 <Button
-                  className="h-11 px-7 rounded-xl bg-primary text-white font-bold text-xs"
+                  className="h-10 px-6 rounded-lg bg-primary text-white font-semibold text-xs"
                   onClick={() => {
                     setFormState("idle")
                     setForm({ name: "", email: "", company: "", phone: "", projectType: "", subject: "", budget: "", message: "", _gotcha: "" })
@@ -268,11 +264,11 @@ export default function ContactPage() {
                 </Button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="p-8 sm:p-10 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft space-y-6">
-                <div>
-                  <h2 className="text-2xl font-black text-on-surface">Submit Project Brief</h2>
+              <form onSubmit={handleSubmit} className="p-6 sm:p-8 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-5">
+                <div className="border-b border-outline-variant pb-4">
+                  <h2 className="text-xl font-bold text-on-surface">Submit Project Brief</h2>
                   <p className="text-xs text-on-surface-variant mt-1">
-                    Provide as much context as possible to help us prepare a relevant architectural proposal.
+                    Outline your technical requirements, timeline, and target integrations.
                   </p>
                 </div>
 
@@ -284,7 +280,7 @@ export default function ContactPage() {
                     { id: "phone", label: "Phone Number", placeholder: "+254 7XX XXX XXX", type: "tel", required: false },
                   ].map((field) => (
                     <div key={field.id} className="space-y-1.5">
-                      <label htmlFor={field.id} className="text-xs font-bold text-on-surface">
+                      <label htmlFor={field.id} className="text-xs font-semibold text-on-surface">
                         {field.label}
                       </label>
                       <Input
@@ -295,7 +291,7 @@ export default function ContactPage() {
                         onChange={handleChange}
                         required={field.required}
                         placeholder={field.placeholder}
-                        className="h-11 rounded-xl border border-outline-variant bg-surface-container text-xs text-on-surface focus-visible:ring-primary"
+                        className="h-10 rounded-lg border border-outline-variant bg-surface-container-low text-xs text-on-surface focus-visible:ring-primary"
                       />
                     </div>
                   ))}
@@ -303,7 +299,7 @@ export default function ContactPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label htmlFor="projectType" className="text-xs font-bold text-on-surface">
+                    <label htmlFor="projectType" className="text-xs font-semibold text-on-surface">
                       Project Category *
                     </label>
                     <select
@@ -312,7 +308,7 @@ export default function ContactPage() {
                       value={form.projectType}
                       onChange={handleChange}
                       required
-                      className="w-full h-11 px-3 border border-outline-variant bg-surface-container rounded-xl text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full h-10 px-3 border border-outline-variant bg-surface-container-low rounded-lg text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     >
                       <option value="" disabled>Select category...</option>
                       {projectTypes.map((type) => (
@@ -322,7 +318,7 @@ export default function ContactPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label htmlFor="budget" className="text-xs font-bold text-on-surface">
+                    <label htmlFor="budget" className="text-xs font-semibold text-on-surface">
                       Estimated Budget
                     </label>
                     <select
@@ -330,7 +326,7 @@ export default function ContactPage() {
                       name="budget"
                       value={form.budget}
                       onChange={handleChange}
-                      className="w-full h-11 px-3 border border-outline-variant bg-surface-container rounded-xl text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full h-10 px-3 border border-outline-variant bg-surface-container-low rounded-lg text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     >
                       <option value="" disabled>Select budget bracket...</option>
                       {budgetRanges.map((range) => (
@@ -353,7 +349,7 @@ export default function ContactPage() {
                 />
 
                 <div className="space-y-1.5">
-                  <label htmlFor="subject" className="text-xs font-bold text-on-surface">
+                  <label htmlFor="subject" className="text-xs font-semibold text-on-surface">
                     Inquiry Subject / Topic
                   </label>
                   <Input
@@ -362,14 +358,14 @@ export default function ContactPage() {
                     type="text"
                     value={form.subject}
                     onChange={handleChange}
-                    placeholder="e.g. Enterprise Payment Integration & Tax Portal Deployment"
-                    className="h-11 rounded-xl border border-outline-variant bg-surface-container text-xs text-on-surface focus-visible:ring-primary"
+                    placeholder="e.g. Payment Gateway Integration & Portal Deployment"
+                    className="h-10 rounded-lg border border-outline-variant bg-surface-container-low text-xs text-on-surface focus-visible:ring-primary"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="message" className="text-xs font-bold text-on-surface">
-                    Project Brief & Objective *
+                  <label htmlFor="message" className="text-xs font-semibold text-on-surface">
+                    Project Brief &amp; Objectives *
                   </label>
                   <Textarea
                     id="message"
@@ -378,14 +374,14 @@ export default function ContactPage() {
                     onChange={handleChange}
                     required
                     rows={6}
-                    placeholder="Tell us about your project: What are the core goals? Who are the target users? Any required integrations (M-Pesa, KRA, AWS, CRM)? What is your preferred launch timeline?"
-                    className="rounded-xl border border-outline-variant bg-surface-container text-xs text-on-surface resize-none focus-visible:ring-primary leading-relaxed"
+                    placeholder="Describe the core objectives, target users, required integrations (M-Pesa, KRA, ERP), and target timeline."
+                    className="rounded-lg border border-outline-variant bg-surface-container-low text-xs text-on-surface resize-none focus-visible:ring-primary leading-relaxed"
                   />
                 </div>
 
                 {formState === "error" && errorMessage && (
-                  <div role="alert" className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold flex items-start gap-2.5">
-                    <span className="font-bold shrink-0">[!]</span>
+                  <div role="alert" className="p-3.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-medium flex items-start gap-2">
+                    <span className="font-bold shrink-0">[Error]</span>
                     <span>{errorMessage}</span>
                   </div>
                 )}
@@ -394,22 +390,23 @@ export default function ContactPage() {
                   type="submit"
                   size="lg"
                   disabled={formState === "submitting"}
-                  className="w-full h-12 rounded-xl bg-primary text-white font-bold text-sm flex items-center justify-center gap-2 group disabled:opacity-70"
+                  className="w-full h-11 rounded-lg bg-primary text-white font-semibold text-xs flex items-center justify-center gap-2 disabled:opacity-70"
                 >
                   {formState === "submitting" ? (
                     <>
                       <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                      Submitting Brief...
+                      <span>Submitting Brief...</span>
                     </>
                   ) : (
                     <>
-                      Submit Project Brief <Send className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      <span>Submit Project Brief</span>
+                      <Send className="h-3.5 w-3.5" />
                     </>
                   )}
                 </Button>
 
                 <p className="text-[11px] text-on-surface-variant text-center">
-                  Protected by mutual non-disclosure. We respect your confidentiality and never share client data.
+                  All submissions are treated as confidential under our standard mutual non-disclosure terms.
                 </p>
               </form>
             )}
@@ -417,25 +414,15 @@ export default function ContactPage() {
 
         </div>
 
-        {/* Highlights Section - Matching Products Highlights */}
-        <div className="space-y-8">
-          <div className="text-center space-y-2">
-            <span className="text-xs font-black text-primary uppercase tracking-widest">Our Commitment</span>
-            <h2 className="text-3xl font-black text-on-surface">Why Forward-Thinking Teams Partner With Us</h2>
-          </div>
+        {/* Highlights Section */}
+        <div className="space-y-6 pt-4 border-t border-outline-variant">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {engagementHighlights.map((item) => {
-              const Icon = item.icon
-              return (
-                <div key={item.title} className="p-7 rounded-3xl bg-surface-container-lowest border border-outline-variant space-y-4 shadow-soft">
-                  <div className="p-3 rounded-xl bg-primary/10 text-primary w-fit">
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-lg font-bold text-on-surface">{item.title}</h3>
-                  <p className="text-xs text-on-surface-variant leading-relaxed">{item.desc}</p>
-                </div>
-              )
-            })}
+            {engagementHighlights.map((item) => (
+              <div key={item.title} className="space-y-1.5">
+                <h3 className="text-sm font-bold text-on-surface">{item.title}</h3>
+                <p className="text-xs text-on-surface-variant leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
 

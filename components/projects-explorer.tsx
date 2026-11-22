@@ -15,67 +15,67 @@ export function ProjectsExplorer({
   curatedProjects,
 }: ProjectsExplorerProps) {
   return (
-    <div className="space-y-8 font-sans">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-outline-variant/60 pb-5">
+    <div className="space-y-6 font-sans">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-outline-variant pb-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
-            Flagship Case Studies & Architectures
+          <h2 className="text-xl sm:text-2xl font-bold text-on-surface tracking-tight">
+            Case Studies &amp; System Architectures
           </h2>
           <p className="text-xs text-on-surface-variant mt-1">
-            Proven enterprise software implementations, GovTech portals, and high-throughput systems
+            Documented software implementations, statutory portals, and production systems
           </p>
         </div>
-        <span className="px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-          {curatedProjects.length} Verified Systems
+        <span className="text-xs font-mono text-on-surface-variant">
+          {curatedProjects.length} documented systems
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {curatedProjects.map((project) => {
           const publicTechs = filterPublicTechnologies(project.technologies);
           const liveUrl = cleanPublicLiveUrl(project.slug, project.liveUrl);
 
           return (
-            <div
+            <article
               key={project.id}
-              className="bg-surface-container-lowest rounded-3xl border border-outline-variant hover:border-primary/40 p-6 sm:p-8 flex flex-col justify-between transition-all duration-300 shadow-soft group relative overflow-hidden"
+              className="bg-surface-container-lowest rounded-xl border border-outline-variant hover:border-primary/40 p-6 sm:p-7 flex flex-col justify-between transition-colors group"
             >
-              <div className="space-y-5">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap text-xs">
+                  <span className="font-semibold text-primary">
                     {project.category}
                   </span>
                   {project.isFeatured && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      Featured Architecture
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-on-surface-variant">
+                      <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+                      Featured Case Study
                     </span>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-black text-on-surface group-hover:text-primary transition-colors tracking-tight">
+                  <h3 className="text-xl font-bold text-on-surface group-hover:text-primary transition-colors tracking-tight">
                     <Link href={`/projects/${project.slug}`}>
                       {project.title}
                     </Link>
                   </h3>
-                  <p className="text-sm text-on-surface-variant leading-relaxed line-clamp-3">
+                  <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed line-clamp-3">
                     {project.summary}
                   </p>
                 </div>
 
-                {/* Technologies - Clean Solution Capabilities */}
-                <div className="flex flex-wrap gap-1.5 pt-2">
+                {/* Technologies */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {publicTechs.slice(0, 5).map((tech: string) => (
                     <span
                       key={tech}
-                      className="px-2.5 py-1 rounded-lg text-xs font-mono font-medium bg-surface-container text-on-surface-variant border border-outline-variant/60"
+                      className="px-2 py-0.5 rounded text-[11px] font-mono bg-surface-container-low text-on-surface-variant border border-outline-variant"
                     >
                       {tech}
                     </span>
                   ))}
                   {publicTechs.length > 5 && (
-                    <span className="px-2 py-1 rounded-lg text-xs font-mono text-on-surface-variant">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-mono text-on-surface-variant">
                       +{publicTechs.length - 5}
                     </span>
                   )}
@@ -83,10 +83,10 @@ export function ProjectsExplorer({
 
                 {/* Measurable Outcomes */}
                 {project.measurableOutcomes && project.measurableOutcomes.length > 0 && (
-                  <div className="pt-2 space-y-1.5 border-t border-outline-variant/40">
+                  <div className="pt-3 space-y-1.5 border-t border-outline-variant/60">
                     {project.measurableOutcomes.slice(0, 2).map((outcome: string, oIdx: number) => (
-                      <div key={oIdx} className="flex items-center gap-2 text-xs text-on-surface font-medium">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <div key={oIdx} className="flex items-center gap-2 text-xs text-on-surface">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
                         <span>{outcome}</span>
                       </div>
                     ))}
@@ -95,30 +95,29 @@ export function ProjectsExplorer({
               </div>
 
               {/* Actions Footer */}
-              <div className="mt-8 pt-5 border-t border-outline-variant flex items-center justify-between gap-3">
+              <div className="mt-6 pt-4 border-t border-outline-variant flex items-center justify-between gap-3">
                 <Link
                   href={`/projects/${project.slug}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-black text-primary hover:text-primary/80 transition-colors uppercase tracking-wider"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-on-surface group-hover:text-primary transition-colors"
                 >
-                  Deep Case Study <ArrowRight className="w-3.5 h-3.5" />
+                  <span>Read case study</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
 
-                <div className="flex items-center gap-2">
-                  {liveUrl && (
-                    <a
-                      href={liveUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-white border border-primary/20 transition-all text-xs font-bold"
-                      title="Open Live Production System"
-                    >
-                      <span>Live System</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                </div>
+                {liveUrl && (
+                  <a
+                    href={liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                    title="Open Live Production System"
+                  >
+                    <span>Live deployment</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
               </div>
-            </div>
+            </article>
           );
         })}
       </div>

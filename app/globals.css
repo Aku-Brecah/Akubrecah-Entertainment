@@ -1,11 +1,15 @@
 /* Tailwind CSS v4 — CSS-first; legacy theme/content/plugins kept via @config compat layer */
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 @config "../tailwind.config.ts";
 
-/* KRA Red Design System - GovTech Crisp Prestige Theme */
+/* Original Akubrecah Crimson Red & Crisp Slate Design System (with Softly layout & typography) */
 :root {
-  --font-inter: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  /* Clean GovTech Crisp Tokens Light Mode */
+  --font-outfit: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-inter: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-reenie: 'Reenie Beanie', cursive;
+
+  /* Original Crisp Light Mode Tokens */
   --secondary-fixed-dim: #cbd5e1;
   --on-surface-variant: #334155;
   --on-secondary: #ffffff;
@@ -57,7 +61,8 @@
 
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
-  --primary: 358 70% 37%; /* KRA Crimson Red */
+  --primary: 358 70% 37%;
+  /* Original Akubrecah Crimson Red (#ba1a1a) */
   --primary-foreground: 0 0% 100%;
   --secondary: 210 40% 96.1%;
   --secondary-foreground: 222.2 47.4% 11.2%;
@@ -67,15 +72,19 @@
   --muted-foreground: 215.4 16.3% 40%;
   --card: 0 0% 100%;
   --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --destructive: 358 70% 37%;
+  --destructive-foreground: 0 0% 100%;
   --border: 214.3 31.8% 90%;
   --input: 214.3 31.8% 90%;
   --ring: 358 70% 37%;
-  --radius: 0.75rem; /* Ergonomic 12px default */
+  --radius: 2rem;
   scroll-behavior: smooth;
 }
 
 .dark {
-  /* GovTech High-Contrast Dark Mode */
+  /* Original High-Contrast Obsidian Dark Mode Tokens */
   --secondary-fixed-dim: #334155;
   --on-surface-variant: #cbd5e1;
   --on-secondary: #ffffff;
@@ -137,120 +146,354 @@
   --muted-foreground: 215 20.2% 70%;
   --card: 224 71% 5%;
   --card-foreground: 210 40% 98%;
+  --popover: 224 45% 8%;
+  --popover-foreground: 210 40% 98%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
   --border: 217.2 32.6% 17.5%;
   --input: 217.2 32.6% 22%;
   --ring: 358 70% 45%;
 }
 
 @layer base {
-  * { @apply border-border; }
+  * {
+    @apply border-border;
+  }
+
   body {
     @apply bg-surface text-on-surface;
-    font-size: 14px;
-    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-family: var(--font-outfit);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    line-height: 1.5;
+    line-height: 1.6;
   }
-  input, textarea, select {
-    @apply rounded-lg border border-input bg-background text-foreground px-4 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground;
-    color: hsl(var(--foreground));
+
+  input,
+  textarea,
+  select {
+    @apply rounded-full border border-input bg-surface-container-lowest text-on-surface px-4 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/70;
+    color: var(--on-surface);
   }
+
+  textarea {
+    @apply rounded-3xl;
+  }
+
   select option {
     background-color: hsl(var(--card));
     color: hsl(var(--card-foreground));
   }
-  button { @apply rounded-lg transition-all active:scale-[0.98]; }
-  h1 { @apply text-4xl font-bold tracking-tight text-on-surface; }
-  h2 { @apply text-2xl font-bold tracking-tight text-on-surface; }
-  h3 { @apply text-xl font-semibold tracking-tight text-on-surface; }
-  h4 { @apply text-sm font-semibold tracking-wider uppercase text-muted-foreground; }
+
+  button {
+    @apply rounded-full transition-all duration-300;
+  }
+
+  h1 {
+    @apply text-4xl md:text-6xl font-medium tracking-[-0.025em] text-on-surface;
+    font-family: var(--font-outfit);
+  }
+
+  h2 {
+    @apply text-2xl md:text-4xl font-medium tracking-[-0.025em] text-on-surface;
+    font-family: var(--font-outfit);
+  }
+
+  h3 {
+    @apply text-lg md:text-xl font-medium tracking-[-0.015em] text-on-surface;
+    font-family: var(--font-outfit);
+  }
+
+  h4 {
+    @apply text-xs font-medium tracking-wide text-on-surface-variant;
+    font-family: var(--font-outfit);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Original Akubrecah Crimson Red & Slate Palette Mapping (Light & Dark Modes)
+   Maps Softly utility classes onto the original brand color system cleanly.
+   ───────────────────────────────────────────────────────────────────────────── */
+.bg-primary {
+  background-color: #ba1a1a !important;
+  color: #ffffff !important;
+}
+
+.bg-primary:hover {
+  background-color: #991b1b !important;
+}
+
+.dark .bg-primary:hover {
+  background-color: #dc2626 !important;
+}
+
+.text-primary {
+  color: #ba1a1a;
+}
+
+.dark .text-primary {
+  color: #f87171;
+}
+
+/* Surface & Card Remap */
+.bg-\[\#FDFCF8\] {
+  background-color: var(--surface) !important;
+}
+
+.dark .bg-white {
+  background-color: var(--surface-container-lowest) !important;
+}
+
+.bg-white\/70,
+.bg-white\/75,
+.bg-white\/80,
+.bg-white\/85,
+.bg-white\/90,
+.bg-white\/95 {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dark .bg-white\/70,
+.dark .bg-white\/75,
+.dark .bg-white\/80,
+.dark .bg-white\/85,
+.dark .bg-white\/90,
+.dark .bg-white\/95 {
+  background-color: rgba(18, 20, 28, 0.88) !important;
+}
+
+.bg-stone-50,
+.bg-stone-50\/90,
+.bg-stone-100,
+.bg-stone-100\/60,
+.bg-stone-100\/70 {
+  background-color: var(--surface-container-low) !important;
+}
+
+.bg-\[\#E8EFE8\],
+.bg-\[\#E8EFE8\]\/70,
+.bg-\[\#E8EFE8\]\/75,
+.bg-\[\#E8EFE8\]\/80,
+.bg-\[\#E8EFE8\]\/85,
+.bg-\[\#E8EFE8\]\/90 {
+  background-color: var(--surface-container) !important;
+}
+
+.bg-\[\#EFEDF4\],
+.bg-\[\#EFEDF4\]\/70,
+.bg-\[\#EFEDF4\]\/75,
+.bg-\[\#EFEDF4\]\/80,
+.bg-\[\#EFEDF4\]\/85,
+.bg-\[\#EFEDF4\]\/90 {
+  background-color: var(--surface-container-low) !important;
+}
+
+/* Subtle Brand Red & Slate Ambient Blobs */
+.bg-\[\#FFE4E1\],
+.bg-\[\#FFE4E1\]\/70 {
+  background-color: rgba(186, 26, 26, 0.08) !important;
+}
+
+.dark .bg-\[\#FFE4E1\],
+.dark .bg-\[\#FFE4E1\]\/70 {
+  background-color: rgba(186, 26, 26, 0.16) !important;
+}
+
+.bg-\[\#E6E6FA\] {
+  background-color: rgba(15, 23, 42, 0.06) !important;
+}
+
+.dark .bg-\[\#E6E6FA\] {
+  background-color: rgba(148, 163, 184, 0.1) !important;
+}
+
+/* Typography & Border Remap */
+.text-\[\#292524\],
+.text-stone-800,
+.text-stone-900 {
+  color: var(--on-surface) !important;
+}
+
+.text-\[\#78716C\],
+.text-stone-500,
+.text-stone-600 {
+  color: var(--on-surface-variant) !important;
+}
+
+.text-stone-400 {
+  color: var(--outline) !important;
+}
+
+.border-stone-100,
+.border-stone-200,
+.border-stone-200\/60,
+.border-stone-200\/70,
+.border-stone-200\/80 {
+  border-color: var(--outline-variant) !important;
+}
+
+/* Primary Action Accent: Original Akubrecah Crimson Red (#ba1a1a) with Crisp White Text */
+.bg-\[\#FFB7B2\] {
+  background-color: #ba1a1a !important;
+  color: #ffffff !important;
+}
+
+.bg-\[\#FFB7B2\] span,
+.bg-\[\#FFB7B2\] svg,
+.bg-\[\#FFB7B2\].text-\[\#292524\],
+.bg-\[\#FFB7B2\] .text-\[\#292524\] {
+  color: #ffffff !important;
+}
+
+.text-\[\#FFB7B2\] {
+  color: #ba1a1a !important;
+}
+
+.dark .text-\[\#FFB7B2\] {
+  color: #f87171 !important;
+}
+
+/* Dark Slate Pill CTA Buttons */
+.bg-\[\#292524\] {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+.bg-\[\#292524\] span:not(.bg-\[\#FFB7B2\]),
+.bg-\[\#292524\].text-\[\#FDFCF8\],
+.bg-\[\#292524\] .text-\[\#FDFCF8\] {
+  color: #ffffff !important;
+}
+
+.dark .bg-\[\#292524\] {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.dark .bg-\[\#292524\] span:not(.bg-\[\#FFB7B2\]),
+.dark .bg-\[\#292524\].text-\[\#FDFCF8\],
+.dark .bg-\[\#292524\] .text-\[\#FDFCF8\] {
+  color: #0f172a !important;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #171a24;
+  color: #f8fafc;
+  border-color: #262b38;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8;
 }
 
 @layer utilities {
+  .font-cursive {
+    font-family: var(--font-reenie);
+  }
+
   .glass {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.04)] dark:bg-black/60 dark:border-white/10 dark:shadow-none;
+    @apply bg-white/75 dark:bg-surface-container-lowest/80 backdrop-blur-[20px] border border-stone-200/60 dark:border-outline-variant;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   }
+
   .glass-card {
-    @apply bg-white/80 backdrop-blur-lg border border-gray-200/50 shadow-sm dark:bg-gray-900/80 dark:border-white/10;
+    @apply bg-white dark:bg-surface-container-lowest border border-stone-100 dark:border-outline-variant rounded-[2rem];
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   }
+
   .glass-panel {
-    @apply bg-white/90 backdrop-blur-2xl border border-gray-100 shadow-xl dark:bg-gray-950/90 dark:border-white/10;
+    @apply bg-white/85 dark:bg-surface-container-lowest backdrop-blur-[20px] border border-stone-100 dark:border-outline-variant rounded-[2.5rem];
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   }
+
   .precision-outline {
-    @apply border-2 border-gray-200 rounded-lg transition-all focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 dark:border-gray-800;
+    @apply border border-outline-variant rounded-full transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20;
   }
-  .mask-marquee {
-    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-  }
+
   .shadow-soft {
-    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 10px -2px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   }
+
   .shadow-primary {
-    box-shadow: 0 10px 15px -3px rgba(125, 0, 14, 0.2), 0 4px 6px -2px rgba(125, 0, 14, 0.1);
+    box-shadow: 0 4px 20px -2px rgba(255, 183, 178, 0.35);
+  }
+}
+
+@keyframes floatBlob {
+
+  0%,
+  100% {
+    transform: translateY(-10px);
   }
 
-  /* ─── Keyframes ─── */
-  @keyframes blob {
-    0%   { transform: translate(0px,0px) scale(1); }
-    33%  { transform: translate(30px,-50px) scale(1.1); }
-    66%  { transform: translate(-20px,20px) scale(0.9); }
-    100% { transform: translate(0px,0px) scale(1); }
+  50% {
+    transform: translateY(10px);
   }
-  .animate-blob { animation: blob 7s infinite; }
+}
 
-  @keyframes float {
-    0%,100% { transform: translateY(0px) scale(1); }
-    50%     { transform: translateY(-15px) scale(1.02); }
+@keyframes revealOnScroll {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
   }
-  .animate-float       { animation: float 8s ease-in-out infinite; }
-  .animate-float-slow  { animation: float 12s ease-in-out infinite; }
-  .animate-float-delay { animation: float 8s ease-in-out 3s infinite; }
 
-  @keyframes shimmer {
-    0%   { transform: translateX(-100%) skewX(-12deg); opacity: 0; }
-    50%  { opacity: 0.04; }
-    100% { transform: translateX(200%) skewX(-12deg); opacity: 0; }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
   }
-  .animate-shimmer { animation: shimmer 4s ease-in-out infinite; }
+}
 
-  @keyframes pulse-ring {
-    0%  { transform: scale(0.95); opacity: 0.5; }
-    70% { transform: scale(1.2); opacity: 0; }
-    100%{ transform: scale(1.2); opacity: 0; }
-  }
-  .animate-pulse-ring { animation: pulse-ring 2s ease-out infinite; }
+.animate-float-blob {
+  animation: floatBlob 6s ease-in-out infinite;
+}
 
-  @keyframes scan-line {
-    0%   { top: 0%;   opacity: 0.2; }
-    100% { top: 100%; opacity: 0;   }
+@keyframes authMarquee {
+  0% {
+    transform: translateX(0%);
   }
-  .animate-scan { animation: scan-line 3s linear infinite; }
 
-  @keyframes marquee {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+  100% {
+    transform: translateX(-50%);
   }
-  .animate-marquee { animation: marquee 40s linear infinite; }
+}
 
-  @keyframes fade-up {
-    from { opacity: 0; transform: translateY(15px); }
-    to   { opacity: 1; transform: translateY(0);    }
-  }
-  .animate-fade-up { animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-auth-marquee {
+  animation: authMarquee 26s linear infinite;
+}
+
+.auth-input-focus:focus-within {
+  border-color: #ba1a1a !important;
+  box-shadow: 0 0 0 4px rgba(186, 26, 26, 0.16) !important;
+}
+
+.reveal-on-scroll {
+  animation: revealOnScroll 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Custom Scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--border));
-  @apply rounded-full;
+  @apply rounded-sm;
 }
-::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
 
 .btn-primary {
-  @apply bg-primary text-white font-medium shadow-sm transition-all hover:bg-primary/90 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0;
+  @apply bg-primary text-white font-medium shadow-xs transition-colors hover:bg-primary/90;
 }
 
 /* Material Symbols Outlined Fallback Protection against FOUC text blowouts */
@@ -278,13 +521,17 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
 
 /* ─── Reduced Motion — Accessibility ─── */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -298,33 +545,37 @@
   line-height: 1.75;
   font-size: 0.95rem;
 }
+
 .markdown-reader h1 {
-  font-size: 2rem;
-  font-weight: 900;
+  font-size: 1.875rem;
+  font-weight: 700;
   color: var(--on-surface);
-  margin-top: 2.5rem;
+  margin-top: 2.25rem;
   margin-bottom: 1rem;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
   border-bottom: 1px solid var(--outline-variant);
   padding-bottom: 0.75rem;
 }
+
 .markdown-reader h2 {
-  font-size: 1.5rem;
-  font-weight: 900;
+  font-size: 1.375rem;
+  font-weight: 700;
   color: var(--on-surface);
   margin-top: 2rem;
   margin-bottom: 0.75rem;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.015em;
   border-bottom: 1px solid var(--outline-variant);
   padding-bottom: 0.5rem;
 }
+
 .markdown-reader h3 {
-  font-size: 1.25rem;
-  font-weight: 800;
+  font-size: 1.15rem;
+  font-weight: 600;
   color: var(--on-surface);
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
 }
+
 .markdown-reader h4 {
   font-size: 1.05rem;
   font-weight: 700;
@@ -332,21 +583,25 @@
   margin-top: 1rem;
   margin-bottom: 0.5rem;
 }
+
 .markdown-reader p {
   margin-top: 0.75rem;
   margin-bottom: 0.75rem;
   color: var(--on-surface-variant);
   line-height: 1.7;
 }
+
 .markdown-reader a {
   color: var(--primary);
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
 .markdown-reader a:hover {
   opacity: 0.85;
 }
+
 .markdown-reader pre {
   padding: 1.25rem;
   border-radius: 1rem;
@@ -358,6 +613,7 @@
   border: 1px solid var(--outline-variant);
   margin: 1.25rem 0;
 }
+
 .markdown-reader code:not(pre code) {
   padding: 0.2rem 0.4rem;
   border-radius: 0.375rem;
@@ -368,6 +624,7 @@
   font-weight: 600;
   border: 1px solid var(--outline-variant);
 }
+
 .markdown-reader table {
   width: 100%;
   border-collapse: collapse;
@@ -377,11 +634,13 @@
   border: 1px solid var(--outline-variant);
   display: block;
 }
+
 @media (min-width: 640px) {
   .markdown-reader table {
     display: table;
   }
 }
+
 .markdown-reader th {
   background-color: var(--surface-container);
   text-align: left;
@@ -393,15 +652,18 @@
   color: var(--on-surface);
   border-bottom: 1px solid var(--outline-variant);
 }
+
 .markdown-reader td {
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
   color: var(--on-surface-variant);
   border-bottom: 1px solid var(--outline-variant);
 }
+
 .markdown-reader tr:nth-child(even) td {
   background-color: rgba(0, 0, 0, 0.02);
 }
+
 .markdown-reader img {
   max-width: 100%;
   height: auto;
@@ -411,6 +673,7 @@
   margin: 1.5rem auto;
   display: block;
 }
+
 .markdown-reader blockquote {
   border-left: 4px solid var(--primary);
   padding-left: 1rem;
@@ -423,6 +686,7 @@
   border-top-right-radius: 0.75rem;
   border-bottom-right-radius: 0.75rem;
 }
+
 .markdown-reader ul {
   list-style-type: disc;
   list-style-position: inside;
@@ -430,6 +694,7 @@
   color: var(--on-surface-variant);
   padding-left: 0.5rem;
 }
+
 .markdown-reader ol {
   list-style-type: decimal;
   list-style-position: inside;
@@ -437,11 +702,13 @@
   color: var(--on-surface-variant);
   padding-left: 0.5rem;
 }
+
 .markdown-reader hr {
   border: none;
   border-top: 1px solid var(--outline-variant);
   margin: 2rem 0;
 }
+
 .markdown-reader .github-alert {
   padding: 1rem;
   border-radius: 1rem;
@@ -450,6 +717,7 @@
   font-size: 0.875rem;
   line-height: 1.6;
 }
+
 .markdown-reader .alert-title {
   font-weight: 700;
   font-size: 0.75rem;
@@ -457,18 +725,22 @@
   letter-spacing: 0.05em;
   margin-bottom: 0.25rem;
 }
+
 .markdown-reader .alert-note {
   border-color: rgba(59, 130, 246, 0.3);
   background-color: rgba(59, 130, 246, 0.05);
 }
+
 .markdown-reader .alert-tip {
   border-color: rgba(16, 185, 129, 0.3);
   background-color: rgba(16, 185, 129, 0.05);
 }
+
 .markdown-reader .alert-important {
   border-color: rgba(245, 158, 11, 0.3);
   background-color: rgba(245, 158, 11, 0.05);
 }
+
 .markdown-reader .alert-warning {
   border-color: rgba(239, 68, 68, 0.3);
   background-color: rgba(239, 68, 68, 0.05);

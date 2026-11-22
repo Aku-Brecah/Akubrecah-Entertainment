@@ -20,8 +20,6 @@ import {
   Fingerprint,
   Mail,
   Phone,
-  Sparkles,
-  Lock,
   CheckCircle2,
   Download
 } from "lucide-react"
@@ -206,47 +204,44 @@ export function KraPinChecker() {
       ) : (
         <>
           {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-red-600/90 via-red-700 to-zinc-900 p-4 sm:p-5 text-white shadow-md">
-        <div className="relative z-10 space-y-1.5">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[10px] font-semibold uppercase tracking-wider text-red-100">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            Akubrecah Live Verification Gateway & DWR Engine
+      <div className="rounded-xl bg-surface-container-lowest border border-outline-variant p-5">
+        <div className="space-y-1.5">
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>KRA Verification Gateway &amp; DWR Engine</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-            KRA PIN & Taxpayer Status Checker
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-on-surface">
+            KRA PIN &amp; Taxpayer Status Checker
           </h1>
-          <p className="text-xs text-zinc-200 max-w-2xl">
-            Real-time tax obligation validation, identity verification, and taxpayer registration check directly connected to the Kenya Revenue Authority portal.
+          <p className="text-xs text-on-surface-variant max-w-2xl">
+            Query tax obligation status, identity registration, and station details via KRA PIN or Kenyan National ID.
           </p>
-        </div>
-        <div className="absolute -right-6 -bottom-6 opacity-10 pointer-events-none">
-          <ShieldCheck className="w-48 h-48 text-white" />
         </div>
       </div>
 
       {/* Input Card with Tabs & Engine Switcher */}
-      <Card className="border border-outline-variant dark:border-zinc-800 bg-surface dark:bg-zinc-900 shadow-md">
+      <Card className="border border-outline-variant bg-surface-container-lowest">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <CardTitle className="text-lg font-bold flex items-center gap-2">
-                <Search className="w-5 h-5 text-primary" />
-                Taxpayer Verification Query
+              <CardTitle className="text-base font-bold flex items-center gap-2 text-on-surface">
+                <Search className="w-4 h-4 text-primary" />
+                <span>Taxpayer Verification Query</span>
               </CardTitle>
-              <CardDescription>
-                Choose your lookup method and verification engine to query verified KRA records.
+              <CardDescription className="text-xs text-on-surface-variant mt-0.5">
+                Choose your lookup method and verification transport engine.
               </CardDescription>
             </div>
 
             {/* Engine Selection Toggle */}
-            <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-outline-variant/60">
+            <div className="flex items-center gap-1 p-1 bg-surface-container-low rounded-lg border border-outline-variant">
               <button
                 type="button"
                 onClick={() => setEngineMode("auto")}
-                className={`py-1 px-2.5 text-xs font-semibold rounded transition-all ${
+                className={`py-1 px-2.5 text-xs font-semibold rounded transition-colors ${
                   engineMode === "auto"
-                    ? "bg-white dark:bg-zinc-900 text-primary shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-surface-container-lowest text-primary border border-outline-variant"
+                    : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 Auto
@@ -254,10 +249,10 @@ export function KraPinChecker() {
               <button
                 type="button"
                 onClick={() => setEngineMode("api")}
-                className={`py-1 px-2.5 text-xs font-semibold rounded transition-all ${
+                className={`py-1 px-2.5 text-xs font-semibold rounded transition-colors ${
                   engineMode === "api"
-                    ? "bg-red-600 text-white shadow-sm font-bold"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-primary text-white"
+                    : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 Direct API
@@ -265,10 +260,10 @@ export function KraPinChecker() {
               <button
                 type="button"
                 onClick={() => setEngineMode("dwr")}
-                className={`py-1 px-2.5 text-xs font-semibold rounded transition-all ${
+                className={`py-1 px-2.5 text-xs font-semibold rounded transition-colors ${
                   engineMode === "dwr"
-                    ? "bg-emerald-600 text-white shadow-sm font-bold"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-primary text-white"
+                    : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
                 Web Remoting
@@ -405,29 +400,29 @@ export function KraPinChecker() {
             exit={{ opacity: 0, scale: 0.98, y: 10 }}
             className="space-y-3"
           >
-            <Card className="border border-emerald-500/30 bg-surface dark:bg-zinc-900 shadow-xl overflow-hidden print:border-none print:shadow-none">
+            <Card className="border border-outline-variant bg-surface-container-lowest overflow-hidden print:border-none print:shadow-none">
               {/* Card Top Strip */}
-              <div className="bg-gradient-to-r from-emerald-600 to-teal-700 px-4 py-2.5 text-white flex flex-wrap items-center justify-between gap-2">
+              <div className="bg-surface-container-low border-b border-outline-variant px-4 py-3 text-on-surface flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-sm shrink-0">
-                    <UserCheck className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
+                    <UserCheck className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
                     <h2 className="text-base font-bold tracking-tight truncate">{result.taxpayerName}</h2>
-                    <p className="text-[11px] text-emerald-100 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" /> Verified Taxpayer Record
+                    <p className="text-[11px] text-on-surface-variant">
+                      Verified Taxpayer Record
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <Badge className="bg-white text-emerald-800 font-bold px-2 py-0.5 text-[10px] uppercase tracking-wider">
+                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 font-semibold px-2 py-0.5 text-[10px] uppercase tracking-wider">
                     {result.status || "ACTIVE"}
                   </Badge>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handlePrint}
-                    className="bg-white/10 hover:bg-white/20 text-white border-white/20 print:hidden text-xs h-7 px-2.5 cursor-pointer"
+                    className="print:hidden text-xs h-7 px-2.5 cursor-pointer"
                   >
                     <Printer className="w-3 h-3 mr-1" />
                     Print

@@ -77,20 +77,20 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen flex flex-col bg-background text-on-surface font-sans antialiased">
       {/* =========================================================
-          DEDICATED PORTAL HEADER (Distraction-Free)
+          DEDICATED PORTAL HEADER
           ========================================================= */}
-      <header className="sticky top-0 z-40 h-16 bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant shadow-xs">
-        <div className="w-full max-w-none mx-auto h-full px-3 sm:px-5 lg:px-6 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-40 h-16 bg-surface-container-lowest border-b border-outline-variant">
+        <div className="w-full max-w-[1360px] mx-auto h-full px-4 sm:px-6 lg:px-10 xl:px-12 flex items-center justify-between gap-4">
           
-          {/* Brand + Portal Badge */}
+          {/* Brand + Portal Label */}
           <div className="flex items-center gap-3 shrink-0">
-            <Link href="/dashboard" className="flex items-center gap-2.5 group">
-              <Logo width={120} height={34} className="h-7 sm:h-8 w-auto transition-transform group-hover:scale-[1.02]" />
+            <Link href="/dashboard" className="flex items-center gap-2.5">
+              <Logo width={120} height={34} className="h-7 sm:h-8 w-auto" />
             </Link>
             <div className="hidden sm:flex items-center">
               <span className="h-4 w-px bg-outline-variant mx-2" />
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
-                Taxpayer Portal
+              <span className="text-xs font-semibold text-on-surface-variant">
+                Taxpayer Console
               </span>
             </div>
           </div>
@@ -108,16 +108,16 @@ export default function DashboardLayout({
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     isActive
-                      ? "bg-primary text-white font-bold shadow-xs"
+                      ? "bg-primary text-white font-semibold"
                       : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
                   }`}
                 >
                   <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : "text-primary"}`} />
                   <span>{item.label}</span>
                   {item.badge && !isActive && (
-                    <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-primary/15 text-primary border border-primary/20">
+                    <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant border border-outline-variant">
                       {item.badge}
                     </span>
                   )}

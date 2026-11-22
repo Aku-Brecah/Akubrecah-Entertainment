@@ -87,198 +87,182 @@ export function ProjectEstimator() {
   const whatsappUrl = `https://wa.me/254791497858?text=${prefilledText}`
 
   return (
-    <section id="project-estimator" className="space-y-8">
-      {/* Title */}
-      <div className="space-y-3 text-center max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary">
-          <span>Interactive Architecture Sandbox</span>
+    <section id="project-estimator" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+      {/* Left: Configuration Steps (7 cols) */}
+      <div className="lg:col-span-7 space-y-6 p-6 sm:p-8 rounded-xl bg-surface-container-lowest border border-outline-variant">
+
+        {/* Step 1: Service Type */}
+        <div className="space-y-3" role="group" aria-labelledby="estimator-step-1">
+          <h2 id="estimator-step-1" className="text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-2">
+            <span className="font-mono text-primary">01</span>
+            <span>Select Core Engineering Domain</span>
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {SERVICES.map((srv) => {
+              const isSelected = selectedService === srv.id
+              return (
+                <button
+                  key={srv.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => setSelectedService(srv.id)}
+                  className={`p-4 rounded-lg text-left transition-colors cursor-pointer border ${isSelected
+                      ? "bg-primary/5 border-primary"
+                      : "bg-surface-container-low border-outline-variant hover:border-primary/40"
+                    }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-on-surface">{srv.label}</span>
+                    {isSelected && (
+                      <span className="text-[10px] font-mono font-semibold text-primary">Selected</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-on-surface-variant mt-1.5 line-clamp-2 leading-relaxed">
+                    {srv.tagline}
+                  </p>
+                </button>
+              )
+            })}
+          </div>
         </div>
-        <h2 className="text-3xl sm:text-4xl font-black text-on-surface tracking-tight">
-          Scope Your Digital Solution in Seconds
-        </h2>
-        <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-          Configure your service requirements, scale, and enterprise capabilities. Get immediate architecture blueprints and turnaround estimates.
-        </p>
+
+        {/* Step 2: Deployment Scale */}
+        <div className="space-y-3 pt-2 border-t border-outline-variant" role="group" aria-labelledby="estimator-step-2">
+          <h2 id="estimator-step-2" className="text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-2">
+            <span className="font-mono text-primary">02</span>
+            <span>Deployment Scale &amp; Concurrency</span>
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            {SCALES.map((scale) => {
+              const isSelected = selectedScale === scale.id
+              return (
+                <button
+                  key={scale.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => setSelectedScale(scale.id)}
+                  className={`p-3 rounded-lg text-left transition-colors cursor-pointer border ${isSelected
+                      ? "bg-primary text-white border-primary"
+                      : "bg-surface-container-low border-outline-variant text-on-surface hover:border-primary/40"
+                    }`}
+                >
+                  <p className="text-xs font-semibold leading-tight">{scale.label}</p>
+                  <p className={`text-[11px] mt-1 ${isSelected ? "text-white/85" : "text-on-surface-variant"}`}>
+                    {scale.desc}
+                  </p>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Step 3: Add-on Capabilities */}
+        <div className="space-y-3 pt-2 border-t border-outline-variant" role="group" aria-labelledby="estimator-step-3">
+          <h2 id="estimator-step-3" className="text-xs font-semibold uppercase tracking-wider text-on-surface flex items-center gap-2">
+            <span className="font-mono text-primary">03</span>
+            <span>Additional Integration Modules</span>
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {ADDONS.map((addon) => {
+              const isChecked = selectedAddons.includes(addon.id)
+              return (
+                <button
+                  key={addon.id}
+                  type="button"
+                  aria-pressed={isChecked}
+                  onClick={() => toggleAddon(addon.id)}
+                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer border ${isChecked
+                      ? "bg-primary/10 text-primary border-primary/40 font-semibold"
+                      : "bg-surface-container-low border-outline-variant text-on-surface-variant hover:text-on-surface hover:border-primary/30"
+                    }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${isChecked ? "bg-primary" : "bg-outline"}`} />
+                  <span>{addon.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Main Interactive Container */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* Right: Live Architecture Specification & Turnaround (5 cols) */}
+      <div className="lg:col-span-5 p-6 sm:p-8 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-6">
 
-        {/* Left: Configuration Steps (7 cols) */}
-        <div className="lg:col-span-7 space-y-6 p-6 sm:p-8 rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft">
+        {/* Card Header */}
+        <div className="flex items-center justify-between border-b border-outline-variant pb-4">
+          <span className="text-xs font-semibold uppercase tracking-wider text-on-surface">
+            Specification Summary
+          </span>
+          <span className="text-xs font-mono text-primary font-semibold">
+            {activeService.label}
+          </span>
+        </div>
 
-          {/* Step 1: Service Type */}
-          <div className="space-y-3" role="group" aria-labelledby="estimator-step-1">
-            <h3 id="estimator-step-1" className="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-mono">1</span>
-              Select Core Engineering Domain:
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {SERVICES.map((srv) => {
-                const isSelected = selectedService === srv.id
-                return (
-                  <button
-                    key={srv.id}
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => setSelectedService(srv.id)}
-                    className={`p-4 rounded-2xl text-left transition-all cursor-pointer border ${isSelected
-                        ? "bg-primary/5 dark:bg-primary/10 border-primary ring-2 ring-primary/20 shadow-xs"
-                        : "bg-surface-container/40 dark:bg-slate-800/50 border-outline-variant hover:border-primary/40"
-                      }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-on-surface">{srv.label}</span>
-                      {isSelected && (
-                        <span className="text-[10px] font-mono font-bold text-primary px-1.5 py-0.5 rounded bg-primary/10">Active</span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-on-surface-variant mt-2 line-clamp-2 leading-relaxed">
-                      {srv.tagline}
-                    </p>
-                  </button>
-                )
-              })}
-            </div>
+        {/* Estimated Turnaround Time */}
+        <div className="p-4 rounded-lg bg-surface-container-low border border-outline-variant space-y-1.5">
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs text-on-surface-variant font-medium">
+              Estimated Delivery Timeline
+            </span>
+            <span className="text-2xl font-bold text-on-surface font-mono">
+              ~{totalEstimatedDays} business days
+            </span>
           </div>
+          <p className="text-[11px] text-on-surface-variant leading-relaxed">
+            Incremental sprint delivery across architecture, implementation, security review, and production deployment.
+          </p>
+        </div>
 
-          {/* Step 2: Deployment Scale */}
-          <div className="space-y-3" role="group" aria-labelledby="estimator-step-2">
-            <h3 id="estimator-step-2" className="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-mono">2</span>
-              Deployment Scale &amp; Concurrency:
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              {SCALES.map((scale) => {
-                const isSelected = selectedScale === scale.id
-                return (
-                  <button
-                    key={scale.id}
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => setSelectedScale(scale.id)}
-                    className={`p-3 rounded-xl text-center transition-all cursor-pointer border ${isSelected
-                        ? "bg-primary text-white border-primary shadow-xs"
-                        : "bg-surface-container/40 dark:bg-slate-800/50 border-outline-variant text-on-surface hover:border-primary/40"
-                      }`}
-                  >
-                    <p className="text-xs font-bold leading-tight">{scale.label}</p>
-                    <p className={`text-[10px] mt-1 ${isSelected ? "text-white/80" : "text-on-surface-variant"}`}>
-                      {scale.desc}
-                    </p>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Step 3: Add-on Capabilities */}
-          <div className="space-y-3" role="group" aria-labelledby="estimator-step-3">
-            <h3 id="estimator-step-3" className="text-xs font-black uppercase tracking-wider text-on-surface flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-mono">3</span>
-              Select Enterprise Capabilities:
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {ADDONS.map((addon) => {
-                const isChecked = selectedAddons.includes(addon.id)
-                return (
-                  <button
-                    key={addon.id}
-                    type="button"
-                    aria-pressed={isChecked}
-                    onClick={() => toggleAddon(addon.id)}
-                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${isChecked
-                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
-                        : "bg-surface-container/40 dark:bg-slate-800/50 border-outline-variant text-on-surface-variant hover:text-on-surface hover:border-primary/30"
-                      }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${isChecked ? "bg-emerald-500" : "bg-outline-variant"}`} />
-                    <span>{addon.label}</span>
-                  </button>
-                )
-              })}
-            </div>
+        {/* Recommended Tech Stack */}
+        <div className="space-y-2.5">
+          <span className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant block">
+            Included Architecture Modules
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {activeService.baseStack.map((tech) => (
+              <span
+                key={tech}
+                className="text-[11px] font-mono px-2.5 py-1 rounded bg-surface-container-low text-on-surface border border-outline-variant"
+              >
+                {tech}
+              </span>
+            ))}
+            {selectedAddons.map((addonId) => {
+              const a = ADDONS.find((item) => item.id === addonId)
+              return a ? (
+                <span
+                  key={addonId}
+                  className="text-[11px] font-mono px-2.5 py-1 rounded bg-primary/10 text-primary border border-primary/25 font-medium"
+                >
+                  + {a.shortLabel}
+                </span>
+              ) : null
+            })}
           </div>
         </div>
 
-        {/* Right: Live Architecture Blueprint & Turnaround (5 cols) */}
-        <div className="lg:col-span-5 p-6 sm:p-8 rounded-3xl bg-slate-950 text-white border border-slate-800 shadow-xl space-y-6">
+        {/* Action CTAs */}
+        <div className="pt-2 space-y-2.5">
+          <Button
+            asChild
+            size="lg"
+            className="w-full h-11 rounded-lg bg-primary text-white font-semibold text-xs hover:bg-primary/90 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Link href={`/contact?service=${selectedService}&scale=${selectedScale}`}>
+              <span>Request Formal Proposal for This Scope</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </Button>
 
-          {/* Card Header */}
-          <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
-            <span className="text-xs font-black uppercase tracking-widest text-slate-300">
-              System Blueprint
-            </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              Validated Architecture
-            </span>
-          </div>
-
-          {/* Estimated Turnaround Time */}
-          <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-400">
-                Projected Turnaround:
-              </span>
-              <span className="text-2xl font-black text-white font-mono">
-                ~{totalEstimatedDays} Days
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Sprint-based delivery following the 4-phase engineering methodology (Architect → Build → Audit → Deploy).
-            </p>
-          </div>
-
-          {/* Recommended Tech Stack Pills */}
-          <div className="space-y-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
-              Recommended Stack & Modules:
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {activeService.baseStack.map((tech) => (
-                <span
-                  key={tech}
-                  className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-white/10 text-slate-200 border border-white/10"
-                >
-                  {tech}
-                </span>
-              ))}
-              {selectedAddons.map((addonId) => {
-                const a = ADDONS.find((item) => item.id === addonId)
-                return a ? (
-                  <span
-                    key={addonId}
-                    className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                  >
-                    + {a.shortLabel}
-                  </span>
-                ) : null
-              })}
-            </div>
-          </div>
-
-          {/* Action CTAs */}
-          <div className="pt-2 space-y-3">
-            <Button
-              asChild
-              size="lg"
-              className="w-full h-12 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm hover:bg-primary/90 shadow-md shadow-primary/30 flex items-center justify-center gap-2 group cursor-pointer"
-            >
-              <Link href={`/contact?service=${selectedService}&scale=${selectedScale}`}>
-                <span>Lock In Scope & Request Blueprint</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
-
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full h-11 px-4 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
-            >
-              <span>Discuss Config via WhatsApp</span>
-            </a>
-          </div>
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="w-full h-10 px-4 rounded-lg border border-outline-variant bg-surface-container-low hover:bg-surface-container text-on-surface font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          >
+            <span>Discuss Specification via WhatsApp</span>
+          </a>
         </div>
       </div>
     </section>

@@ -1,11 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
-import { Logo } from "@/components/logo"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { Logo } from "@/components/logo"
 import { UserButton, useUser } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,12 +15,8 @@ import {
   Shield,
   ArrowRight,
   ChevronRight,
-  Lock,
 } from "lucide-react"
 
-/* ──────────────────────────────────────────────────────────────
-   NAV TYPES & DATA  (parent pages + child sub-routes inside them)
-────────────────────────────────────────────────────────────── */
 interface NavSubItem {
   title: string
   desc: string
@@ -101,7 +96,7 @@ const navData: NavItem[] = [
         ],
       },
     ],
-    footer: { label: "All Services →", href: "/services" },
+    footer: { label: "All services →", href: "/services" },
   },
   {
     label: "Products",
@@ -124,12 +119,11 @@ const navData: NavItem[] = [
             title: "Architecture & Cost Estimator",
             desc: "Interactive scope, technology stack & timeline calculator",
             href: "/estimator",
-            badge: "Interactive",
           },
         ],
       },
     ],
-    footer: { label: "All Engineering Products →", href: "/products" },
+    footer: { label: "All engineering products", href: "/products" },
   },
   {
     label: "Solutions",
@@ -161,7 +155,7 @@ const navData: NavItem[] = [
         ],
       },
     ],
-    footer: { label: "All Solutions →", href: "/solutions" },
+    footer: { label: "All solutions", href: "/solutions" },
   },
   {
     label: "Projects",
@@ -171,7 +165,6 @@ const navData: NavItem[] = [
   {
     label: "Retrieval",
     href: "/retrieval-portal",
-    badge: "KRA Live",
     groups: null,
   },
   {
@@ -186,9 +179,6 @@ const navData: NavItem[] = [
   },
 ]
 
-/* ──────────────────────────────────────────────────────────────
-   DESKTOP MEGA DROPDOWN PANEL
-────────────────────────────────────────────────────────────── */
 function MegaMenu({
   item,
   open,
@@ -201,52 +191,43 @@ function MegaMenu({
   if (!item.groups || !open) return null
   return (
     <div
-      className="absolute left-1/2 -translate-x-1/2 top-full pt-2 z-50 animate-in fade-in-20 slide-in-from-top-1 duration-150"
-      style={{ minWidth: 350 }}
+      className="absolute left-1/2 -translate-x-1/2 top-full pt-3 z-50"
+      style={{ minWidth: 340 }}
       role="menu"
     >
-      {/* Dropdown Container with Hover Bridge */}
-      <div className="bg-surface-container-lowest border border-outline-variant shadow-2xl shadow-black/10 rounded-2xl overflow-hidden backdrop-blur-xl">
+      <div className="bg-white/95 dark:bg-stone-900/95 backdrop-blur-[20px] border border-stone-200/70 dark:border-stone-800 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] rounded-[2rem] overflow-hidden p-2">
         {item.groups.map((group) => (
           <div key={group.heading} className="p-3">
-            <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant px-2.5 py-1 mb-1">
+            <p className="text-xs font-medium text-[#78716C] px-3 py-1 mb-1">
               {group.heading}
             </p>
-            <div className="space-y-0.5">
-              {group.items.map((sub) => {
-                return (
-                  <Link
-                    key={sub.title}
-                    href={sub.href}
-                    role="menuitem"
-                    onClick={onClose}
-                    className="block p-2.5 rounded-xl hover:bg-surface-container transition-colors group cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors truncate">
-                        {sub.title}
-                      </span>
-                      {sub.badge && (
-                        <span className="shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                          {sub.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">{sub.desc}</p>
-                  </Link>
-                )
-              })}
+            <div className="space-y-1">
+              {group.items.map((sub) => (
+                <Link
+                  key={sub.title}
+                  href={sub.href}
+                  role="menuitem"
+                  onClick={onClose}
+                  className="block p-3 rounded-2xl hover:bg-[#E8EFE8]/70 dark:hover:bg-stone-800 transition-colors group cursor-pointer"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-[#292524] dark:text-stone-100 group-hover:text-[#292524] transition-colors truncate">
+                      {sub.title}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#78716C] line-clamp-1 mt-0.5">{sub.desc}</p>
+                </Link>
+              ))}
             </div>
           </div>
         ))}
 
-        {/* Footer CTA link */}
         {item.footer && (
-          <div className="border-t border-outline-variant/60 bg-surface-container/30 px-4 py-2.5">
+          <div className="border-t border-stone-100 dark:border-stone-800 bg-[#FDFCF8] dark:bg-stone-900 rounded-b-[1.5rem] px-5 py-3">
             <Link
               href={item.footer.href}
               onClick={onClose}
-              className="flex items-center justify-between text-xs font-bold text-primary hover:underline"
+              className="flex items-center justify-between text-xs font-medium text-[#292524] dark:text-stone-200 hover:text-[#78716C]"
             >
               <span>{item.footer.label}</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -258,9 +239,6 @@ function MegaMenu({
   )
 }
 
-/* ──────────────────────────────────────────────────────────────
-   DESKTOP NAV ITEM (hover-bridge + click trigger)
-────────────────────────────────────────────────────────────── */
 function DesktopNavItem({
   item,
   pathname,
@@ -288,7 +266,6 @@ function DesktopNavItem({
     }, 160)
   }
 
-  // Close on outside click or Escape key
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -313,18 +290,12 @@ function DesktopNavItem({
     return (
       <Link
         href={item.href}
-        className={`px-3 py-1.5 text-xs font-semibold transition-all flex items-center gap-1.5 ${
-          isActive
-            ? "text-primary border-b-2 border-primary font-bold"
-            : "text-on-surface-variant hover:text-on-surface"
-        }`}
+        className={`px-3 py-1.5 rounded-full text-[14px] font-medium transition-colors flex items-center gap-1.5 ${isActive
+          ? "bg-[#E8EFE8] text-[#292524]"
+          : "text-[#292524] dark:text-stone-200 hover:text-[#78716C] hover:bg-stone-100/60 dark:hover:bg-stone-800/50"
+          }`}
       >
         <span>{item.label}</span>
-        {item.badge && (
-          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
-            {item.badge}
-          </span>
-        )}
       </Link>
     )
   }
@@ -336,35 +307,27 @@ function DesktopNavItem({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Trigger container */}
       <div
-        className={`flex items-center rounded-xl transition-all ${
-          isActive
-            ? "text-primary bg-primary/10 font-bold"
-            : open
-            ? "text-primary bg-surface-container"
-            : "text-on-surface hover:text-primary hover:bg-surface-container"
-        }`}
+        className={`flex items-center rounded-full transition-colors ${isActive
+          ? "bg-[#E8EFE8] text-[#292524]"
+          : open
+            ? "text-[#292524] bg-stone-100/80 dark:bg-stone-800"
+            : "text-[#292524] dark:text-stone-200 hover:text-[#78716C] hover:bg-stone-100/60 dark:hover:bg-stone-800/50"
+          }`}
       >
         <Link
           href={item.href}
-          className="pl-3 pr-1 py-2 text-xs font-semibold flex items-center gap-1.5"
+          className="pl-3 pr-1 py-1.5 text-[14px] font-medium flex items-center gap-1.5"
         >
           <span>{item.label}</span>
-          {item.badge && (
-            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
-              {item.badge}
-            </span>
-          )}
         </Link>
         <button
           onClick={(e) => {
             e.stopPropagation()
             setOpen((v) => !v)
           }}
-          className={`pr-2.5 pl-1 py-2 focus:outline-none transition-transform duration-200 cursor-pointer ${
-            open ? "rotate-180 text-primary" : "text-on-surface-variant hover:text-primary"
-          }`}
+          className={`pr-2.5 pl-1 py-1.5 focus:outline-none transition-transform duration-200 cursor-pointer ${open ? "rotate-180 text-[#292524]" : "text-[#78716C] hover:text-[#292524]"
+            }`}
           aria-label={`Toggle ${item.label} menu`}
           aria-expanded={open}
         >
@@ -377,9 +340,6 @@ function DesktopNavItem({
   )
 }
 
-/* ──────────────────────────────────────────────────────────────
-   MOBILE ACCORDION SECTION
-────────────────────────────────────────────────────────────── */
 function MobileNavSection({
   item,
   onClose,
@@ -394,77 +354,55 @@ function MobileNavSection({
       <Link
         href={item.href}
         onClick={onClose}
-        className="flex items-center justify-between min-h-[44px] px-3.5 py-3 rounded-2xl hover:bg-surface-container text-sm font-bold text-on-surface transition-colors"
+        className="flex items-center justify-between min-h-[44px] px-4 py-2.5 rounded-full hover:bg-[#E8EFE8]/60 text-[14px] font-medium text-[#292524] dark:text-stone-100 transition-colors"
       >
-        <div className="flex items-center gap-2">
-          <span>{item.label}</span>
-          {item.badge && (
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
-              {item.badge}
-            </span>
-          )}
-        </div>
-        <ChevronRight className="h-4 w-4 text-on-surface-variant" />
+        <span>{item.label}</span>
+        <ChevronRight className="h-4 w-4 text-[#78716C]" />
       </Link>
     )
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden border border-outline-variant/60 bg-surface-container-lowest">
-      {/* Section header */}
+    <div className="rounded-[1.5rem] overflow-hidden border border-stone-200/70 dark:border-stone-800 bg-white dark:bg-stone-900">
       <div className="flex items-center justify-between min-h-[44px]">
         <Link
           href={item.href}
           onClick={onClose}
-          className="flex-1 px-4 py-3 text-sm font-bold text-on-surface flex items-center gap-2"
+          className="flex-1 px-4 py-2.5 text-[14px] font-medium text-[#292524] dark:text-stone-100 flex items-center gap-2"
         >
           <span>{item.label}</span>
-          {item.badge && (
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
-              {item.badge}
-            </span>
-          )}
         </Link>
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface-variant focus:outline-none"
+          className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#78716C] focus:outline-none"
           aria-label={`Toggle ${item.label} submenu`}
         >
           <ChevronDown
-            className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-180 text-primary" : ""}`}
+            className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-180 text-[#292524]" : ""}`}
           />
         </button>
       </div>
 
       {expanded && (
-        <div className="border-t border-outline-variant/60 bg-surface-container/30 px-3 py-2 space-y-1">
+        <div className="border-t border-stone-100 dark:border-stone-800 bg-[#FDFCF8] dark:bg-stone-950 px-3 py-2 space-y-1">
           {item.groups.map((group) => (
             <div key={group.heading} className="py-1">
-              <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant px-2 py-1">
+              <p className="text-xs font-medium text-[#78716C] px-2 py-1">
                 {group.heading}
               </p>
-              {group.items.map((sub) => {
-                return (
-                  <Link
-                    key={sub.title}
-                    href={sub.href}
-                    onClick={onClose}
-                    className="block p-2.5 rounded-xl hover:bg-surface-container transition-colors group min-h-[44px]"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-on-surface group-hover:text-primary transition-colors">
-                        {sub.title}
-                      </span>
-                      {sub.badge && (
-                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                          {sub.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">{sub.desc}</p>
-                  </Link>
-                )
-              })}
+              {group.items.map((sub) => (
+                <Link
+                  key={sub.title}
+                  href={sub.href}
+                  onClick={onClose}
+                  className="block p-2.5 rounded-2xl hover:bg-[#E8EFE8]/60 transition-colors group min-h-[44px]"
+                >
+                  <span className="text-xs font-medium text-[#292524] dark:text-stone-100 block">
+                    {sub.title}
+                  </span>
+                  <p className="text-[11px] text-[#78716C] line-clamp-1 mt-0.5">{sub.desc}</p>
+                </Link>
+              ))}
             </div>
           ))}
         </div>
@@ -473,9 +411,6 @@ function MobileNavSection({
   )
 }
 
-/* ──────────────────────────────────────────────────────────────
-   SITE HEADER
-────────────────────────────────────────────────────────────── */
 export function SiteHeader() {
   const pathname = usePathname()
   const { isLoaded, isSignedIn, user } = useUser()
@@ -500,7 +435,6 @@ export function SiteHeader() {
     setMobileMenuOpen(false)
   }, [pathname])
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? "hidden" : ""
     return () => { document.body.style.overflow = "" }
@@ -508,7 +442,7 @@ export function SiteHeader() {
 
   const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase()
   const userRole = user?.publicMetadata?.role as string
-  const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || '').toLowerCase()
+  const configAdminEmail = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || "").toLowerCase()
   const isAdmin =
     Boolean(configAdminEmail && userEmail === configAdminEmail) ||
     userRole === "Super Admin" ||
@@ -518,217 +452,143 @@ export function SiteHeader() {
 
   return (
     <>
-      <header
-        className={`fixed top-0 w-full z-50 transition-all duration-200 ${
-          scrolled
-            ? "bg-surface-container-lowest/90 backdrop-blur-xl shadow-sm border-b border-outline-variant/80"
-            : "bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant"
-        } h-16`}
-      >
-        <div className="w-full max-w-none mx-auto h-full px-3 sm:px-5 lg:px-6 flex items-center justify-between gap-3 xl:gap-4 flex-nowrap min-w-0">
+      {/* Floating Pill-Shaped Nav Bar: 70% white opacity, 20px backdrop-blur, constrained to 100% - 32px on mobile */}
+      <header className="sticky top-3 sm:top-4 z-40 w-full flex justify-center pointer-events-none px-4">
+        <div
+          className={`pointer-events-auto w-full max-w-[1220px] h-14 sm:h-16 rounded-full bg-white/70 dark:bg-stone-900/75 backdrop-blur-[20px] border border-stone-200/70 dark:border-stone-800 px-4 sm:px-6 flex items-center justify-between gap-3 transition-shadow duration-300 ${scrolled
+            ? "shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]"
+            : "shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]"
+            }`}
+        >
+          {/* Akubrecah Brand Logo */}
+          <Link href="/" className="flex items-center gap-2 shrink-0 group hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
+            <Logo width={132} height={38} className="h-8 sm:h-9 w-auto" />
+            {isKra && (
+              <span className="hidden sm:inline text-xs text-[#78716C] font-normal">
+                · Cyber portal
+              </span>
+            )}
+          </Link>
 
-          {/* Brand */}
-          {isKra ? (
-            <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-              <Logo width={130} height={38} className="h-8 w-auto transition-transform group-hover:scale-[1.02]" />
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs sm:text-sm font-black tracking-wide text-on-surface uppercase">
-                    Cyber Portal
-                  </span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/25">
-                    Independent
-                  </span>
-                </div>
-                <span className="text-[10px] text-on-surface-variant font-medium">Akubrecah Assistance</span>
-              </div>
-            </Link>
-          ) : (
-            <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-              <Logo width={140} height={42} className="h-8 md:h-9 w-auto transition-transform group-hover:scale-[1.02]" />
-              <div className="hidden 2xl:flex flex-col border-l border-outline-variant pl-2.5 py-0.5">
-                <span className="text-[10px] font-black tracking-widest text-primary uppercase leading-tight">Technologies</span>
-                <span className="text-[9px] text-on-surface-variant font-medium leading-tight">Software Engineering</span>
-              </div>
-            </Link>
-          )}
-
-          {/* Desktop Nav — hierarchical (lg screens and above) */}
-          <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 shrink-0">
+          {/* Desktop Navigation Links in 14px Outfit Medium */}
+          <nav className="hidden lg:flex items-center gap-0.5 shrink-0" aria-label="Main navigation">
             {currentNav.map((item) => (
               <DesktopNavItem key={item.label} item={item} pathname={pathname} />
             ))}
           </nav>
 
-          {/* Right: Auth + Theme + Hamburger */}
+          {/* Right Actions: Dark Stone (#292524) Pill CTA Button + Auth + Theme */}
           <div className="flex items-center gap-2 shrink-0 flex-nowrap">
             <ThemeToggle />
 
-            {isKra ? (
-              isLoaded && isSignedIn ? (
-                <div className="flex items-center gap-2 flex-nowrap">
-                  {isAdmin && (
-                    <Link
-                      href="/admin"
-                      className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all cursor-pointer shrink-0"
-                    >
-                      <Shield className="h-3 w-3" />
-                      Admin
-                    </Link>
-                  )}
-                  <Button asChild size="sm" className="h-8.5 px-3 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
-                    <Link href="/dashboard">
-                      <LayoutDashboard className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Console</span>
-                    </Link>
-                  </Button>
-                  <UserButton
-                    appearance={{
-                      elements: { avatarBox: "w-8.5 h-8.5 rounded-full ring-2 ring-primary/20" },
-                    }}
-                  />
-                </div>
-              ) : isLoaded && !isSignedIn ? (
-                <div className="hidden sm:flex items-center gap-3 flex-nowrap">
-                  <div className="hidden md:flex items-center gap-1.5 text-xs text-on-surface-variant font-medium">
-                    <Lock className="w-3.5 h-3.5 text-primary" />
-                    <span>Encrypted Session</span>
-                  </div>
-                  <Button asChild size="sm" className="h-9 px-4 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90 shrink-0">
-                    <Link href="/sign-in">Sign In</Link>
-                  </Button>
-                </div>
-              ) : null
+            {isLoaded && isSignedIn ? (
+              <div className="flex items-center gap-2 flex-nowrap">
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-[#E8EFE8] text-[#292524] rounded-full hover:brightness-95 transition-all cursor-pointer shrink-0"
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    Admin
+                  </Link>
+                )}
+                <Link
+                  href="/dashboard"
+                  className="h-9 px-4 rounded-full bg-[#292524] text-[#FDFCF8] text-[14px] font-medium hover:bg-[#292524]/90 transition-all inline-flex items-center gap-1.5 shrink-0 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08)]"
+                >
+                  <LayoutDashboard className="h-3.5 w-3.5 text-[#FFB7B2]" />
+                  <span className="hidden sm:inline">Console</span>
+                </Link>
+                <UserButton
+                  appearance={{
+                    elements: { avatarBox: "w-8 h-8 rounded-full border border-stone-200" },
+                  }}
+                />
+              </div>
             ) : (
-              /* Public Agency Main Domain */
-              isLoaded && isSignedIn ? (
-                <div className="flex items-center gap-2 flex-nowrap">
-                  {isAdmin && (
-                    <Link
-                      href="/admin"
-                      className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all cursor-pointer shrink-0"
-                    >
-                      <Shield className="h-3 w-3" />
-                      Admin
-                    </Link>
-                  )}
-                  <Button asChild size="sm" className="h-8.5 px-3 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary/90 flex items-center gap-1.5 shrink-0">
-                    <Link href="/dashboard">
-                      <LayoutDashboard className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Console</span>
-                    </Link>
-                  </Button>
-                  <UserButton
-                    appearance={{
-                      elements: { avatarBox: "w-8.5 h-8.5 rounded-full ring-2 ring-primary/20" },
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="hidden sm:flex items-center gap-2 flex-nowrap">
-                  <Button asChild variant="ghost" size="sm" className="h-9 px-3 rounded-xl text-xs font-bold text-on-surface hover:text-primary shrink-0">
-                    <Link href="/sign-in">Sign In</Link>
-                  </Button>
-                  <Button asChild size="sm" className="h-9 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/95 shadow-sm flex items-center gap-1.5 shrink-0">
-                    <Link href="/contact">
-                      Start a Project <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </Button>
-                </div>
-              )
+              <div className="hidden sm:flex items-center gap-2 flex-nowrap">
+                <Link
+                  href="/sign-in"
+                  className="px-3.5 py-1.5 rounded-full text-[14px] font-medium text-[#292524] dark:text-stone-200 hover:text-[#78716C] transition-colors shrink-0"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href={isKra ? "/retrieval-portal" : "/contact"}
+                  className="h-10 px-5 rounded-full bg-[#292524] text-[#FDFCF8] text-[14px] font-medium hover:scale-[1.02] transition-all inline-flex items-center gap-1.5 shrink-0 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08)]"
+                >
+                  <span>{isKra ? "Retrieve PIN" : "Start a project"}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFB7B2]" />
+                </Link>
+              </div>
             )}
 
-            {/* Hamburger (visible on mobile and tablet < lg) */}
+            {/* Mobile Hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-on-surface hover:bg-surface-container transition-colors focus:outline-none cursor-pointer"
+              className="lg:hidden p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full text-[#292524] dark:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors focus:outline-none cursor-pointer"
               aria-label="Toggle navigation"
             >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
       </header>
 
-      {/* ── Mobile Drawer ── */}
+      {/* Mobile Floating Sheet Drawer */}
       {mobileMenuOpen && (
         <>
-          {/* Backdrop */}
           <div
-            className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+            className="lg:hidden fixed inset-0 z-40 bg-[#292524]/25 backdrop-blur-xs"
             onClick={() => setMobileMenuOpen(false)}
           />
 
-          {/* Slide-in panel */}
-          <div className="lg:hidden fixed inset-x-0 top-16 z-50 bg-surface-container-lowest max-h-[calc(100vh-4rem)] overflow-y-auto animate-in slide-in-from-top-2 duration-200 shadow-2xl border-b border-outline-variant">
-            <div className="p-4 space-y-3.5">
-
-              {/* Auth quick row */}
-              {isKra ? (
-                isLoaded && isSignedIn ? (
-                  <div className="p-3.5 rounded-2xl bg-surface-container flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold text-on-surface">{user?.fullName || "Welcome back"}</p>
-                      <p className="text-[11px] text-on-surface-variant truncate max-w-[200px]">{user?.primaryEmailAddress?.emailAddress}</p>
-                    </div>
-                    <Button asChild size="sm" className="h-8 px-3.5 rounded-xl text-xs bg-primary text-white font-bold">
-                      <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>Console</Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button asChild variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-xl">
-                      <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
-                    </Button>
-                    <Button asChild size="sm" className="w-full h-10 text-xs font-bold bg-primary text-white rounded-xl">
-                      <a href="https://akubrecah.com" onClick={() => setMobileMenuOpen(false)}>Agency Home</a>
-                    </Button>
-                  </div>
-                )
-              ) : (
-                isLoaded && isSignedIn ? (
-                  <div className="p-3 rounded-2xl bg-surface-container flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold text-on-surface">{user?.fullName || "Welcome back"}</p>
-                      <p className="text-[11px] text-on-surface-variant truncate max-w-[180px]">{user?.primaryEmailAddress?.emailAddress}</p>
-                    </div>
-                    <Button asChild size="sm" className="h-8 px-3 rounded-xl text-xs bg-primary text-white font-bold">
-                      <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>Console</Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button asChild variant="outline" size="sm" className="w-full h-10 text-xs font-semibold rounded-xl">
-                      <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
-                    </Button>
-                    <Button asChild size="sm" className="w-full h-10 text-xs font-bold bg-primary text-white rounded-xl flex items-center justify-center gap-1.5">
-                      <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
-                        Start a Project <ArrowRight className="h-3.5 w-3.5" />
-                      </Link>
-                    </Button>
-                  </div>
-                )
-              )}
-
-              {/* Hierarchical nav sections */}
-              <div className="space-y-2">
-                {currentNav.map((item) => (
-                  <MobileNavSection key={item.label} item={item} onClose={() => setMobileMenuOpen(false)} />
-                ))}
+          <div className="lg:hidden fixed inset-x-4 top-20 z-50 rounded-[2rem] bg-white/95 dark:bg-stone-900/95 backdrop-blur-[20px] max-h-[calc(100vh-6rem)] overflow-y-auto shadow-[0_12px_40px_-4px_rgba(0,0,0,0.1)] border border-stone-200/80 dark:border-stone-800 p-5 space-y-4">
+            {isLoaded && isSignedIn ? (
+              <div className="p-3.5 rounded-2xl bg-[#E8EFE8]/70 dark:bg-stone-800 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-[#292524] dark:text-stone-100">{user?.fullName || "Signed in"}</p>
+                  <p className="text-[11px] text-[#78716C] truncate max-w-[180px]">{user?.primaryEmailAddress?.emailAddress}</p>
+                </div>
+                <Button asChild size="sm" className="h-8 px-4 rounded-full text-xs bg-[#292524] text-[#FDFCF8]">
+                  <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>Console</Link>
+                </Button>
               </div>
-
-              {/* Admin link */}
-              {isLoaded && isSignedIn && isAdmin && (
+            ) : (
+              <div className="grid grid-cols-2 gap-2.5">
                 <Link
-                  href="/admin"
+                  href="/sign-in"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-3.5 py-3 rounded-2xl text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
+                  className="w-full h-11 rounded-full border border-stone-200 bg-white text-[#292524] text-[14px] font-medium flex items-center justify-center"
                 >
-                  <Shield className="h-4 w-4" /> Admin Console
+                  Sign in
                 </Link>
-              )}
+                <Link
+                  href="/contact"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full h-11 rounded-full bg-[#292524] text-[#FDFCF8] text-[14px] font-medium flex items-center justify-center gap-1.5"
+                >
+                  <span>Start project</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFB7B2]" />
+                </Link>
+              </div>
+            )}
 
+            <div className="space-y-1.5">
+              {currentNav.map((item) => (
+                <MobileNavSection key={item.label} item={item} onClose={() => setMobileMenuOpen(false)} />
+              ))}
             </div>
+
+            {isLoaded && isSignedIn && isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-medium bg-[#EFEDF4] text-[#292524] transition-colors"
+              >
+                <Shield className="h-4 w-4" /> Admin Console
+              </Link>
+            )}
           </div>
         </>
       )}

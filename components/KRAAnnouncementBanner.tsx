@@ -1,44 +1,42 @@
 "use client"
 
-import { AlertCircle } from "lucide-react"
-import { useState, useEffect } from "react"
-import { usePathname } from "next/navigation"
+import React, { useState } from "react"
+import Link from "next/link"
+import { ArrowRight, X } from "lucide-react"
 
 export default function KRAAnnouncementBanner() {
-  const pathname = usePathname()
-  const [announcement, setAnnouncement] = useState<string | null>(null)
+  const [isVisible, setIsVisible] = useState(true)
 
-  const [isKra, setIsKra] = useState(false)
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const host = window.location.hostname.toLowerCase()
-      setIsKra(host.startsWith("kra.") || host.includes("kra.akubrecah.com"))
-    }
-    // Set active third-party compliance facilitation announcement notice
-    setAnnouncement(
-      "Cyber Café Assistance Notice: Instant KRA PIN certificate retrieval & compliance facilitation. Official free government portal: itax.kra.go.ke."
-    )
-  }, [])
-
-  if (!isKra || !announcement || pathname?.startsWith('/admin') || pathname?.startsWith('/dashboard')) return null
+  if (!isVisible) return null
 
   return (
-    <div role="alert" aria-live="polite" className="sticky top-0 z-[60] w-full bg-primary text-white border-b border-white/10 shadow-none">
-      <div className="flex items-center py-1 h-8">
-        <div className="flex-shrink-0 pl-4">
-          <AlertCircle className="h-4 w-4 text-white" />
+    <div className="relative z-40 w-full bg-surface-container text-on-surface border-b border-outline-variant">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-10 flex items-center justify-between gap-4 text-xs">
+        <div className="flex items-center gap-2.5 min-w-0 truncate">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-lowest text-on-surface font-medium text-[11px] shrink-0 border border-outline-variant shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-primary" />
+            Statutory season
+          </span>
+          <span className="text-on-surface-variant truncate">
+            KRA PIN certificate retrieval &amp; nil returns filing workspace is active.
+          </span>
         </div>
-        
-        <div className="flex-1 overflow-hidden mx-4">
-          <div className="animate-marquee whitespace-nowrap inline-block">
-            <span className="text-xs font-bold uppercase tracking-widest px-8">
-              {announcement}
-            </span>
-            <span className="text-xs font-bold uppercase tracking-widest px-8">
-              {announcement}
-            </span>
-          </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <Link
+            href="/retrieval-portal"
+            className="inline-flex items-center gap-1 font-medium text-primary hover:underline underline-offset-4 transition-colors whitespace-nowrap"
+          >
+            <span>Open workspace</span>
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+          <button
+            onClick={() => setIsVisible(false)}
+            className="p-1 text-on-surface-variant hover:text-on-surface rounded-full transition-colors cursor-pointer"
+            aria-label="Dismiss announcement"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </div>

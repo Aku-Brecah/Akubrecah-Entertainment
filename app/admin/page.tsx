@@ -23,7 +23,6 @@ import {
   Layers,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   Zap,
   CreditCard,
   Building2,
@@ -652,10 +651,10 @@ export default function AdminOverviewPage() {
   ];
 
   const renderPlatformArchitectureBanner = () => (
-    <div className="rounded-3xl bg-surface-container-lowest border border-emerald-500/25 p-4 sm:p-5 shadow-xs space-y-3">
+    <div className="rounded-xl bg-surface-container-lowest border border-emerald-500/25 p-4 sm:p-5 shadow-xs space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
             <ShieldCheck className="w-3.5 h-3.5" />
             Platform Architecture &amp; Active Gateway Status
           </span>
@@ -668,7 +667,7 @@ export default function AdminOverviewPage() {
         {platformArchitecturePillars.map((item) => (
           <div
             key={item.label}
-            className="p-3.5 rounded-2xl bg-surface-container/60 border border-outline-variant/60 space-y-1"
+            className="p-3.5 rounded-lg bg-surface-container/60 border border-outline-variant/60 space-y-1"
           >
             <span className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant block">
               {item.label}
@@ -691,8 +690,7 @@ export default function AdminOverviewPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-outline-variant/60 relative z-10">
         <div className="space-y-1">
           <div className="flex items-center flex-wrap gap-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-xs font-black text-primary uppercase tracking-widest shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/25 text-xs font-bold text-primary uppercase tracking-wider">
               Official Portal Administration
             </div>
             <span className="text-xs font-mono text-on-surface-variant flex items-center gap-1">
@@ -701,8 +699,8 @@ export default function AdminOverviewPage() {
             </span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-black text-on-surface tracking-tight leading-tight">
-            Executive Command & <span className="text-primary">Gateway Intelligence</span>
+          <h1 className="text-3xl sm:text-4xl font-bold text-on-surface tracking-tight leading-tight">
+            Executive Command &amp; <span className="text-primary">Gateway Intelligence</span>
           </h1>
           <p className="text-xs sm:text-sm text-on-surface-variant max-w-3xl leading-relaxed">
             Real-time financial reconciliation matching Safaricom Daraja M-Pesa Express transactions, user click telemetry,
@@ -946,8 +944,8 @@ export default function AdminOverviewPage() {
                     <h2 className="text-base font-bold text-on-surface">
                       Live On-Demand Certificate Generator
                     </h2>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       Live Gateway
                     </span>
                   </div>
@@ -1172,7 +1170,7 @@ export default function AdminOverviewPage() {
               {!quickResult && !quickLookupLoading && (
                 <div className="pt-1 flex flex-wrap items-center justify-between gap-2 text-[11px] text-on-surface-variant border-t border-outline-variant/40">
                   <span className="flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <ShieldCheck className="w-3.5 h-3.5 text-primary" />
                     <span>Lookup by 11-char KRA PIN (<span className="font-mono font-bold text-on-surface">A012345678Z</span>) or 6–9 digit National ID</span>
                   </span>
                   <span className="text-[10px] text-on-surface-variant/70">

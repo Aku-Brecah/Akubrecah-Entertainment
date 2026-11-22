@@ -20,8 +20,8 @@ import {
 
 const LEGAL_NAV = [
   { label: "Overview", href: "/legal", icon: Shield },
-  { label: "Disclaimer", href: "/legal/disclaimer", icon: AlertTriangle, badge: "Important" },
-  { label: "Privacy Policy", href: "/legal/privacy", icon: Lock, badge: "KDPA" },
+  { label: "Disclaimer", href: "/legal/disclaimer", icon: AlertTriangle },
+  { label: "Privacy Policy", href: "/legal/privacy", icon: Lock },
   { label: "Terms of Service", href: "/legal/terms", icon: FileText },
   { label: "Refund Policy", href: "/legal/refund", icon: RotateCcw },
   { label: "Acceptable Use", href: "/legal/aup", icon: Ban },
@@ -90,7 +90,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
         {/* HORIZONTAL POLICY SELECTOR TABS */}
         {/* ============================================================== */}
         <div className="overflow-x-auto scrollbar-none pb-1">
-          <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 rounded-2xl bg-surface-container/60 dark:bg-slate-900/60 border border-border min-w-max">
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-surface-container-low border border-outline-variant min-w-max">
             {LEGAL_NAV.map((tab) => {
               const Icon = tab.icon
               const isActive = pathname === tab.href
@@ -98,25 +98,14 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
                 <Link
                   key={tab.href}
                   href={tab.href}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                     isActive
-                      ? "bg-primary text-white shadow-xs"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                      ? "bg-primary text-white"
+                      : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5 shrink-0" />
                   <span>{tab.label}</span>
-                  {tab.badge && (
-                    <span
-                      className={`text-[9px] px-1.5 py-0.2 rounded-full font-black uppercase tracking-wider ${
-                        isActive
-                          ? "bg-white/20 text-white"
-                          : "bg-primary/10 text-primary border border-primary/20"
-                      }`}
-                    >
-                      {tab.badge}
-                    </span>
-                  )}
                 </Link>
               )
             })}

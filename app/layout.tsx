@@ -5,6 +5,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { TooltipProviderWrapper } from '@/components/providers/tooltip-provider'
 import { AdminLayoutWrapper } from "@/components/admin-layout-wrapper"
 import KRAAnnouncementBanner from '@/components/KRAAnnouncementBanner'
+import { GrainOverlay } from '@/components/ui/grain-overlay'
 import { Analytics } from "@vercel/analytics/next"
 
 import "./globals.css"
@@ -105,7 +106,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const isVercel = Boolean(
-    process.env.VERCEL || 
+    process.env.VERCEL ||
     process.env.NEXT_PUBLIC_VERCEL_ENV
   );
 
@@ -116,13 +117,13 @@ export default function RootLayout({
         {/* External Resources & Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Reenie+Beanie&display=swap" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://clerk.akubrecah.com" />
         <link rel="dns-prefetch" href="https://clerk.akubrecah.com" />
       </head>
       <body className="font-sans" data-theme="default" suppressHydrationWarning={true}>
-        <ClerkProvider 
+        <ClerkProvider
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
           signInUrl="/sign-in"
           signUpUrl="/sign-up"
@@ -136,7 +137,8 @@ export default function RootLayout({
           <ThemeProvider
             attribute="class"
             defaultTheme="light"
-            enableSystem={false}
+            enableSystem={true}
+            disableTransitionOnChange
           >
             <TooltipProviderWrapper>
               {/* Accessibility: skip navigation for keyboard users */}
@@ -146,7 +148,8 @@ export default function RootLayout({
               >
                 Skip to main content
               </a>
-              <div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-x-clip bg-background">
+              <div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-x-clip bg-surface text-on-surface">
+                <GrainOverlay />
                 <KRAAnnouncementBanner />
                 <AdminLayoutWrapper>
                   {children}

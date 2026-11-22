@@ -5,9 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import {
   FileCheck2,
-  FileSpreadsheet,
   ShieldCheck,
-  Sparkles,
   ChevronDown,
   FileText,
   HelpCircle,
@@ -22,6 +20,7 @@ import { KRAPortal } from "@/components/kra-portal"
 import { KRAFilingPortal } from "@/components/kra-filing-portal"
 import { GooglePreferredSourceButton } from "@/components/google-preferred-source-button"
 import { Logo } from "@/components/logo"
+import { ThemeToggle } from "@/components/theme-toggle"
 import Link from "next/link"
 
 type ServiceMode = "retrieval" | "filing"
@@ -55,44 +54,40 @@ function FlagshipPortalContent() {
     <div className="min-h-screen overflow-x-hidden bg-surface text-on-surface font-sans selection:bg-primary/20 selection:text-primary flex flex-col">
 
       {/* ============================================================== */}
-      {/* 1. ADAPTIVE RESPONSIVE GOVTECH TOP NAVIGATION BAR */}
+      {/* 1. ADAPTIVE RESPONSIVE SOFTLY TOP NAVIGATION BAR */}
       {/* ============================================================== */}
-      <header className="sticky top-0 z-50 w-full bg-surface-container-lowest/95 backdrop-blur-md border-b border-outline-variant/80 shadow-2xs">
-        <div className="w-full max-w-none px-3 sm:px-6 lg:px-10 xl:px-12 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+      <header className="sticky top-3 z-50 w-full flex justify-center px-4">
+        <div className="w-full max-w-[1220px] rounded-full bg-white/70 dark:bg-stone-900/75 backdrop-blur-[20px] border border-stone-200/70 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
 
           {/* Brand Mark & Identity */}
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 group transition-opacity hover:opacity-90 min-w-0">
-            <Logo width={120} height={34} className="h-7 sm:h-8 w-auto shrink-0 transition-transform group-hover:scale-[1.02]" />
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1 sm:gap-1.5">
-                <span className="text-xs sm:text-sm font-black tracking-tight text-on-surface uppercase truncate">
-                  Akubrecah<span className="hidden sm:inline"> Cyber Portal</span>
-                </span>
-                <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
-                  Independent
-                </span>
-              </div>
-              <span className="text-[10px] text-on-surface-variant font-medium hidden md:inline">
-                Akubrecah Technologies · Cyber Services & Document Retrieval
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 transition-opacity hover:opacity-90 shrink-0" aria-label="Akubrecah Entertainment">
+            <Logo height={34} />
+            <div className="hidden sm:flex items-center gap-2 border-l border-stone-200/80 dark:border-stone-700 pl-2.5">
+              <span className="text-xs font-medium tracking-tight text-on-surface whitespace-nowrap">
+                Cyber Portal
+              </span>
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#E8EFE8] text-[#292524] shrink-0">
+                Independent
               </span>
             </div>
           </Link>
 
-          {/* Right Header: Active Mode Badge & Profile */}
+          {/* Right Header: Active Mode Badge, Theme Toggle & Profile */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <ThemeToggle />
             <button
               type="button"
               onClick={() => handleModeChange("retrieval")}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold bg-primary text-white shadow-xs transition-all"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium bg-[#292524] text-[#FDFCF8] transition-colors"
             >
-              <FileCheck2 className="w-3.5 h-3.5 shrink-0" />
+              <FileCheck2 className="w-3.5 h-3.5 text-[#FFB7B2] shrink-0" />
               <span><span className="hidden sm:inline">Certificate </span>Retrieval</span>
             </button>
             {isLoaded && isSignedIn && (
               <UserButton
                 appearance={{
                   elements: {
-                    userButtonAvatarBox: "w-7 h-7 sm:w-8 sm:h-8 border border-outline-variant rounded-full",
+                    userButtonAvatarBox: "w-7 h-7 sm:w-8 sm:h-8 border border-stone-200 rounded-full",
                   },
                 }}
               />
@@ -103,26 +98,37 @@ function FlagshipPortalContent() {
       </header>
 
       {/* ============================================================== */}
-      {/* 2. FOCUSED HERO WORKSPACE (ZERO SCROLL ACROSS ALL DEVICES) */}
+      {/* 2. FOCUSED HERO WORKSPACE */}
       {/* ============================================================== */}
-      <div className="flex-1 w-full max-w-[1360px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-12 py-3 sm:py-5 space-y-4 sm:space-y-6">
+      <div className="flex-1 w-full max-w-[1220px] mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8 relative">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-8 left-1/4 w-72 h-72 rounded-full bg-[#FFE4E1] opacity-60 blur-[85px] animate-float-blob"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute top-12 right-1/4 w-72 h-72 rounded-full bg-[#E6E6FA] opacity-60 blur-[85px] animate-float-blob [animation-delay:3s]"
+        />
 
         {/* Focused Hero Header */}
-        <div className="text-center space-y-2 max-w-3xl mx-auto px-1 mb-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>Independent Cyber Facilitation Service</span>
+        <div className="relative z-10 text-center space-y-2.5 max-w-3xl mx-auto px-1">
+          <div className="flex justify-center pb-1">
+            <Link href="/" className="inline-flex items-center hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
+              <Logo height={44} />
+            </Link>
+          </div>
+          <div className="font-cursive text-2xl sm:text-3xl text-[#78716C]">
+            independent cyber facilitation space
           </div>
 
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-medium text-on-surface tracking-[-0.025em]">
             {mode === "retrieval" ? (
               <>
-                Fast KRA <span className="text-primary">Certificate Retrieval</span>
+                KRA PIN certificate retrieval,{" "}
+                <span className="font-cursive text-4xl sm:text-6xl font-normal">softly</span>
               </>
             ) : (
-              <>
-                Kenya P9 Tax Calculator &amp; <span className="text-primary">Filing Guide</span>
-              </>
+              "Kenya P9 tax calculator & filing guide"
             )}
           </h1>
 
@@ -133,15 +139,15 @@ function FlagshipPortalContent() {
           </p>
         </div>
 
-        {/* PRIMARY ENGINE: FRONT AND CENTER (IMMEDIATELY VISIBLE ON MOBILE & DESKTOP) */}
+        {/* PRIMARY ENGINE: FRONT AND CENTER */}
         <div className="w-full">
           <AnimatePresence mode="wait">
             {mode === "retrieval" ? (
               <motion.div
                 key="retrieval-engine"
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
+                exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.15 }}
               >
                 <KRAPortal hideHeader={true} />
@@ -149,9 +155,9 @@ function FlagshipPortalContent() {
             ) : (
               <motion.div
                 key="filing-engine"
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
+                exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.15 }}
               >
                 <KRAFilingPortal onBackToSelection={() => handleModeChange("retrieval")} />
@@ -160,228 +166,213 @@ function FlagshipPortalContent() {
           </AnimatePresence>
         </div>
 
-        {/* Trust Badges & System Features Grid from Stitch Design */}
-        <section aria-label="System Features" className="w-full max-w-4xl mx-auto space-y-4 pt-1 sm:pt-2">
+        {/* System Guarantees Grid */}
+        <section aria-label="System Features" className="w-full max-w-4xl mx-auto pt-2">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Feature 1 */}
-            <div className="bg-surface-container-lowest border border-outline-variant/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center text-on-surface mb-3 border border-outline-variant/60">
-                  <FileText className="w-5 h-5 text-primary" />
+                <div className="flex items-center gap-2 text-xs font-semibold text-primary mb-2">
+                  <FileText className="w-4 h-4" />
+                  <span>PDF Generation</span>
                 </div>
-                <h3 className="text-sm font-bold text-on-surface">Instant PDF delivery</h3>
+                <h3 className="text-sm font-bold text-on-surface">Formatted Certificate Output</h3>
                 <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
-                  Instant generation and automated download to your device with verifiable KRA QR code.
+                  Direct browser download of your verified taxpayer details and KRA QR verification reference.
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-outline-variant/50 flex items-center gap-1.5 text-[11px] font-semibold text-primary">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Ready in seconds</span>
+              <div className="mt-4 pt-3 border-t border-outline-variant flex items-center gap-1.5 text-[11px] font-medium text-on-surface-variant">
+                <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                <span>On-demand generation</span>
               </div>
             </div>
 
-            {/* Feature 2 */}
-            <div className="bg-surface-container-lowest border border-outline-variant/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center text-on-surface mb-3 border border-outline-variant/60">
-                  <Smartphone className="w-5 h-5 text-primary" />
+                <div className="flex items-center gap-2 text-xs font-semibold text-primary mb-2">
+                  <Smartphone className="w-4 h-4" />
+                  <span>M-Pesa Checkout</span>
                 </div>
-                <h3 className="text-sm font-bold text-on-surface">M-Pesa KES 20 payment</h3>
+                <h3 className="text-sm font-bold text-on-surface">KES 20 Single Retrieval</h3>
                 <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
-                  Instant automated Safaricom Daraja STK Push micro-billing with instant M-Pesa verification and manual Till fallback.
+                  Safaricom Daraja STK Push prompt on your handset with automatic receipt reconciliation and manual Till fallback.
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-outline-variant/50 flex items-center gap-1.5 text-[11px] font-semibold text-primary">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Micro-billing active</span>
+              <div className="mt-4 pt-3 border-t border-outline-variant flex items-center gap-1.5 text-[11px] font-medium text-on-surface-variant">
+                <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                <span>Automated Daraja reconciliation</span>
               </div>
             </div>
 
-            {/* Feature 3 */}
-            <div className="bg-surface-container-lowest border border-outline-variant/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center text-on-surface mb-3 border border-outline-variant/60">
-                  <ShieldCheck className="w-5 h-5 text-primary" />
+                <div className="flex items-center gap-2 text-xs font-semibold text-primary mb-2">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Data Handling</span>
                 </div>
-                <h3 className="text-sm font-bold text-on-surface">Zero document storage</h3>
+                <h3 className="text-sm font-bold text-on-surface">Zero Document Storage</h3>
                 <p className="text-xs text-on-surface-variant mt-1.5 leading-relaxed">
-                  In-memory ephemeral RAM streaming. Your generated PDF is never cached or stored on server disk.
+                  In-memory ephemeral RAM streaming. Generated PDFs are never cached or persisted on server disk.
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-outline-variant/50 flex items-center gap-1.5 text-[11px] font-semibold text-primary">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>KDPA 2019 Compliant</span>
+              <div className="mt-4 pt-3 border-t border-outline-variant flex items-center gap-1.5 text-[11px] font-medium text-on-surface-variant">
+                <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                <span>KDPA 2019 aligned</span>
               </div>
             </div>
           </div>
         </section>
 
         {/* HOW IT WORKS SECTION */}
-        <section aria-labelledby="how-it-works-heading" className="w-full pt-1 sm:pt-2">
-          <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-surface-container-lowest border border-outline-variant shadow-soft flex flex-col space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-outline-variant/60 pb-3">
+        <section aria-labelledby="how-it-works-heading" className="w-full pt-1">
+          <div className="p-5 sm:p-6 rounded-xl bg-surface-container-lowest border border-outline-variant flex flex-col space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-outline-variant pb-3">
               <div>
-                <span className="text-[10px] font-bold text-primary uppercase tracking-widest block">
-                  Simple 3-Step Process
+                <span className="text-[11px] font-semibold text-primary uppercase tracking-wider block">
+                  Retrieval Workflow
                 </span>
-                <h2 id="how-it-works-heading" className="text-sm sm:text-base font-black text-on-surface tracking-tight">
-                  How Fast KRA Retrieval Works
+                <h2 id="how-it-works-heading" className="text-sm sm:text-base font-bold text-on-surface tracking-tight">
+                  How KRA PIN Certificate Retrieval Works
                 </h2>
               </div>
-              <span className="text-[11px] font-bold text-primary px-3 py-1 rounded-full bg-primary/10 self-start sm:self-auto">
-                Instant Online Process · KES 20
+              <span className="text-xs font-mono text-on-surface-variant">
+                Standard Tariff: KES 20.00
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/70 flex flex-col gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-lg bg-surface-container-low border border-outline-variant flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-black text-primary px-2 py-0.5 rounded-md bg-primary/10 text-xs">
+                  <span className="font-mono font-semibold text-primary text-xs">
                     01
                   </span>
-                  <span className="text-xs font-bold text-on-surface">Enter ID or PIN</span>
+                  <span className="text-xs font-bold text-on-surface">Enter National ID or PIN</span>
                 </div>
-                <p className="text-[11px] text-on-surface-variant leading-relaxed">
-                  Reverse National ID lookup means you don&apos;t even need your PIN or iTax password to retrieve your certificate.
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Reverse National ID lookup locates your registered taxpayer record even if you have forgotten your PIN or iTax password.
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/70 flex flex-col gap-2">
+              <div className="p-4 rounded-lg bg-surface-container-low border border-outline-variant flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-black text-primary px-2 py-0.5 rounded-md bg-primary/10 text-xs">
+                  <span className="font-mono font-semibold text-primary text-xs">
                     02
                   </span>
-                  <span className="text-xs font-bold text-on-surface">Automated Registry Lookup</span>
+                  <span className="text-xs font-bold text-on-surface">Verify Masked Record</span>
                 </div>
-                <p className="text-[11px] text-on-surface-variant leading-relaxed">
-                  Instant handshake queries the statutory registry to confirm official names, tax station, and registration date.
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Confirm your registered taxpayer name, tax station, and active status before initiating payment.
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/70 flex flex-col gap-2">
+              <div className="p-4 rounded-lg bg-surface-container-low border border-outline-variant flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-black text-primary px-2 py-0.5 rounded-md bg-primary/10 text-xs">
+                  <span className="font-mono font-semibold text-primary text-xs">
                     03
                   </span>
-                  <span className="text-xs font-bold text-on-surface">KES 20 M-Pesa Download</span>
+                  <span className="text-xs font-bold text-on-surface">Complete KES 20 M-Pesa Payment</span>
                 </div>
-                <p className="text-[11px] text-on-surface-variant leading-relaxed">
-                  Pay the standard KES 20 download fee via M-Pesa to download your cryptographically signed, tamper-proof PDF.
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Authorize the KES 20 M-Pesa prompt to stream your formatted PDF certificate directly to your device.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* PAYMENT & DELIVERY OPTIONS SHOWCASE (REPLACES CYBER PLAN) */}
-        <section aria-labelledby="payment-options-heading" className="w-full space-y-4">
+        {/* PAYMENT & DELIVERY OPTIONS SHOWCASE */}
+        <section aria-labelledby="payment-options-heading" className="w-full space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 px-1">
             <div>
-              <span className="text-[11px] font-black text-primary uppercase tracking-widest block">
-                Flexible Checkout · KES 20.00 Per Certificate
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider block">
+                Payment Options
               </span>
-              <h2 id="payment-options-heading" className="text-base sm:text-lg font-black text-on-surface tracking-tight">
-                Two Ways to Pay &amp; Unlock Instantly
+              <h2 id="payment-options-heading" className="text-base sm:text-lg font-bold text-on-surface tracking-tight">
+                Two Ways to Complete KES 20.00 Checkout
               </h2>
             </div>
-            <span className="text-[11px] font-medium text-on-surface-variant">
-              Instant confirmation via STK Push or Manual Till verification
+            <span className="text-xs text-on-surface-variant">
+              Automated STK Push or Manual Till receipt verification
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-soft flex flex-col gap-3">
+            <div className="p-5 rounded-xl bg-surface-container-lowest border border-outline-variant flex flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                  <Smartphone className="w-4.5 h-4.5" />
+                <div className="flex items-center gap-2 text-xs font-semibold text-on-surface">
+                  <Smartphone className="w-4 h-4 text-primary" />
+                  <span>Option 1 · M-Pesa Express (STK Push)</span>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/12 text-emerald-700 dark:text-emerald-300">
-                  Option 1 · Fastest
+                <span className="text-[11px] font-mono text-primary font-semibold">
+                  Recommended
                 </span>
               </div>
-              <div className="space-y-1">
-                <h3 className="text-sm font-bold text-on-surface">
-                  Instant M-Pesa STK Prompt
-                </h3>
-                <p className="text-xs text-on-surface-variant leading-relaxed">
-                  Enter your M-Pesa phone number to receive a direct KES 20.00 PIN prompt on your handset and unlock your PDF automatically within seconds.
-                </p>
-              </div>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Enter your M-Pesa phone number to receive a direct KES 20.00 PIN prompt on your handset and unlock your PDF automatically once confirmed.
+              </p>
             </div>
 
-            <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-soft flex flex-col gap-3">
+            <div className="p-5 rounded-xl bg-surface-container-lowest border border-outline-variant flex flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/12 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
-                  <Receipt className="w-4.5 h-4.5" />
+                <div className="flex items-center gap-2 text-xs font-semibold text-on-surface">
+                  <Receipt className="w-4 h-4 text-primary" />
+                  <span>Option 2 · Manual Till &amp; Receipt Code</span>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/12 text-amber-700 dark:text-amber-300">
-                  Option 2 · Fallback
+                <span className="text-[11px] font-mono text-on-surface-variant">
+                  Fallback
                 </span>
               </div>
-              <div className="space-y-1">
-                <h3 className="text-sm font-bold text-on-surface">
-                  Manual Till Fallback &amp; Code Verification
-                </h3>
-                <p className="text-xs text-on-surface-variant leading-relaxed">
-                  Did the STK prompt delay? Switch to Manual Payment, pay KES 20.00 via Lipa na M-Pesa Buy Goods Till, and paste your SMS or 10-character code.
-                </p>
-              </div>
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                If the handset prompt is delayed, switch to Manual Payment, pay KES 20.00 via Lipa na M-Pesa Buy Goods Till, and paste your M-Pesa SMS or 10-character transaction code.
+              </p>
             </div>
           </div>
         </section>
 
         {/* ============================================================== */}
-        {/* 3. CRAWLABLE STATUTORY GUIDE & TAXPAYER FAQ ACCORDION (SEO/GOOGLE) */}
+        {/* 3. CRAWLABLE STATUTORY GUIDE & TAXPAYER FAQ ACCORDION */}
         {/* ============================================================== */}
-        <section aria-labelledby="statutory-guide-heading" className="space-y-6 pt-6 sm:pt-10 border-t border-outline-variant/60">
+        <section aria-labelledby="statutory-guide-heading" className="space-y-6 pt-6 sm:pt-8 border-t border-outline-variant">
 
-          <div className="space-y-2 text-center max-w-4xl mx-auto">
-            <span className="text-[11px] font-black text-primary uppercase tracking-widest">
-              Statutory Knowledge Base & Verification Standard
+          <div className="space-y-1.5 max-w-3xl">
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+              Taxpayer Reference &amp; Compliance Notes
             </span>
-            <h2 id="statutory-guide-heading" className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
-              Complete Guide to KRA PIN Retrieval & Nil Returns Filing
+            <h2 id="statutory-guide-heading" className="text-xl sm:text-2xl font-bold text-on-surface tracking-tight">
+              Guide to KRA PIN Retrieval &amp; Nil Returns Preparation
             </h2>
             <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-              Official compliance procedures, reverse identity lookups, and legal data protection guarantees for Kenyan taxpayers and cyber cafe operators.
+              Compliance procedures, reverse identity lookups, and data protection standards for Kenyan taxpayers and cyber cafe operators.
             </p>
           </div>
 
-          {/* 3-Step Information Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-            <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-2xs space-y-2.5">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-mono font-bold text-xs">
-                01
-              </div>
-              <h3 className="text-xs sm:text-sm font-bold text-on-surface">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-5 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-2">
+              <span className="font-mono font-semibold text-primary text-xs">01</span>
+              <h3 className="text-sm font-bold text-on-surface">
                 Reverse National ID Query
               </h3>
-              <p className="text-[11px] sm:text-xs text-on-surface-variant leading-relaxed">
-                Forgot your PIN, registered email, or iTax password? Enter your 7 or 8-digit Kenyan National ID number. Our automated gateway matches your statutory taxpayer record in real time.
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Forgot your PIN, registered email, or iTax password? Enter your 7 or 8-digit Kenyan National ID number to locate your statutory taxpayer record.
               </p>
             </div>
 
-            <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-2xs space-y-2.5">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-mono font-bold text-xs">
-                02
-              </div>
-              <h3 className="text-xs sm:text-sm font-bold text-on-surface">
-                Authentic QR Verification
+            <div className="p-5 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-2">
+              <span className="font-mono font-semibold text-primary text-xs">02</span>
+              <h3 className="text-sm font-bold text-on-surface">
+                QR Verification Stamp
               </h3>
-              <p className="text-[11px] sm:text-xs text-on-surface-variant leading-relaxed">
-                Downloaded certificates feature the official high-resolution QR verification code, official station designation, and taxpayer names recognized by Kenyan banks, employers, and government institutions.
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Generated certificates include your verified KRA PIN, tax station designation, registration date, and QR verification link.
               </p>
             </div>
 
-            <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/80 shadow-2xs space-y-2.5">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-mono font-bold text-xs">
-                03
-              </div>
-              <h3 className="text-xs sm:text-sm font-bold text-on-surface">
-                KDPA 2019 Privacy First
+            <div className="p-5 rounded-xl bg-surface-container-lowest border border-outline-variant space-y-2">
+              <span className="font-mono font-semibold text-primary text-xs">03</span>
+              <h3 className="text-sm font-bold text-on-surface">
+                KDPA 2019 Privacy Controls
               </h3>
-              <p className="text-[11px] sm:text-xs text-on-surface-variant leading-relaxed">
-                Built strictly within the Kenya Data Protection Act 2019 framework. 256-bit TLS bank encryption with zero data retention. Your sensitive taxpayer credentials are never stored or logged.
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                Engineered in alignment with the Kenya Data Protection Act 2019 using encrypted TLS transport and volatile memory streaming with zero document retention.
               </p>
             </div>
           </div>
@@ -390,24 +381,24 @@ function FlagshipPortalContent() {
           <div className="space-y-3 pt-2">
             <div className="flex items-center gap-2">
               <HelpCircle className="w-4 h-4 text-primary" />
-              <h3 className="text-sm sm:text-base font-black text-on-surface">
+              <h3 className="text-sm sm:text-base font-bold text-on-surface">
                 Frequently Asked Questions (FAQs)
               </h3>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {[
                 {
                   q: "How can I retrieve my KRA PIN certificate using only my National ID?",
-                  a: "Enter your 7 or 8-digit Kenyan National ID number into the search box above. The system queries statutory taxpayer databases to verify your registered profile and renders your official certificate immediately with an authentic QR verification stamp.",
+                  a: "Enter your 7 or 8-digit Kenyan National ID number into the search box above. The system queries statutory taxpayer databases to verify your registered profile and renders your certificate with a QR verification stamp.",
                 },
                 {
                   q: "Can I retrieve my certificate if I forgot my iTax password and email address?",
-                  a: "Yes. Traditional iTax logins require your password, security question answer, and access to your registered email. The Akubrecah retrieval system uses reverse identity lookup with your National ID number, allowing you to bypass forgotten passwords.",
+                  a: "Yes. Traditional iTax logins require your password, security question answer, and access to your registered email. The Akubrecah retrieval system uses reverse identity lookup with your National ID number, allowing you to retrieve your PIN details without logging into iTax.",
                 },
                 {
                   q: "How much does it cost to retrieve and download the certificate?",
-                  a: "Identity lookup and masked preview verification are free. Downloading the high-resolution PDF certificate is KES 20 per retrieval via M-Pesa (or unlimited downloads up to 50/day with the KES 500/month Cyber Cafe pass).",
+                  a: "Identity lookup and masked preview verification are free. Downloading the PDF certificate costs KES 20 per retrieval via M-Pesa (or up to 50 retrievals/day with the KES 500/month Cyber Cafe pass).",
                 },
                 {
                   q: "How fast is the certificate delivered?",
@@ -432,16 +423,16 @@ function FlagshipPortalContent() {
               ].map((faq, index) => (
                 <details
                   key={index}
-                  className="group rounded-2xl bg-surface-container-lowest border border-outline-variant/70 p-4 transition-colors hover:border-primary/40 open:border-primary/50 shadow-2xs"
+                  className="group rounded-xl bg-surface-container-lowest border border-outline-variant p-4 transition-colors hover:border-primary/40 open:border-primary/50"
                 >
-                  <summary className="flex items-center justify-between font-bold text-xs sm:text-sm text-on-surface cursor-pointer select-none list-none">
+                  <summary className="flex items-center justify-between font-semibold text-xs sm:text-sm text-on-surface cursor-pointer select-none list-none">
                     <span className="flex items-center gap-2 pr-2">
                       <span className="text-primary font-mono text-xs">Q{index + 1}.</span>
                       <span>{faq.q}</span>
                     </span>
-                    <ChevronDown className="w-4 h-4 text-on-surface-variant shrink-0 group-open:rotate-180 transition-transform duration-200" />
+                    <ChevronDown className="w-4 h-4 text-on-surface-variant shrink-0 group-open:rotate-180 transition-transform duration-150" />
                   </summary>
-                  <div className="mt-3 text-xs sm:text-[13px] text-on-surface-variant leading-relaxed border-t border-outline-variant/40 pt-3">
+                  <div className="mt-3 text-xs sm:text-[13px] text-on-surface-variant leading-relaxed border-t border-outline-variant pt-3">
                     {faq.a}
                   </div>
                 </details>
@@ -450,32 +441,32 @@ function FlagshipPortalContent() {
           </div>
 
           {/* Cross-linking Statutory & Engineering Deep Links */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-surface-container border border-outline-variant/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="p-4 sm:p-5 rounded-xl bg-surface-container-low border border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 text-on-surface">
               <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-              <span className="font-semibold">Explore Engineering Case Studies & Developer Articles:</span>
+              <span className="font-semibold">Related Guides &amp; Documentation:</span>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/articles/kra-pin-retrieval-online-using-id-number-itax-login-guide"
-                className="text-primary font-bold hover:underline flex items-center gap-1"
+                className="text-primary font-semibold hover:underline flex items-center gap-1"
               >
-                <span>KRA PIN & iTax Login Guide</span>
+                <span>KRA PIN &amp; iTax Login Guide</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
-              <span className="text-outline-muted">·</span>
-              <Link href="/articles" className="text-primary font-bold hover:underline flex items-center gap-1">
+              <span className="text-outline-variant">·</span>
+              <Link href="/articles" className="text-primary font-semibold hover:underline flex items-center gap-1">
                 <span>Technical Articles</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
-              <span className="text-outline-muted">·</span>
-              <Link href="/services" className="text-primary font-bold hover:underline flex items-center gap-1">
+              <span className="text-outline-variant">·</span>
+              <Link href="/services" className="text-primary font-semibold hover:underline flex items-center gap-1">
                 <span>GovTech Services</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
-              <span className="text-outline-muted">·</span>
+              <span className="text-outline-variant">·</span>
               <Link href="/legal/privacy" className="text-on-surface-variant hover:text-primary transition-colors">
-                <span>Privacy & KDPA</span>
+                <span>Privacy &amp; KDPA</span>
               </Link>
             </div>
           </div>
@@ -487,11 +478,16 @@ function FlagshipPortalContent() {
       {/* ============================================================== */}
       {/* 3. MINIMAL GOVTECH FOOTER */}
       {/* ============================================================== */}
-      <footer className="mt-auto border-t border-outline-variant/60 bg-surface-container-lowest/80 py-5 sm:py-6 text-xs text-on-surface-variant">
+      <footer className="mt-auto border-t border-outline-variant bg-surface-container-lowest py-5 sm:py-6 text-xs text-on-surface-variant">
         <div className="w-full max-w-none px-4 sm:px-6 lg:px-10 xl:px-12 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
-          <p className="text-[11px] text-on-surface-variant">
-            &copy; {new Date().getFullYear()} Akubrecah Entertainment. Independent third-party cyber assistance provider. Not affiliated with the Kenya Revenue Authority (KRA).
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
+            <Link href="/" className="inline-flex items-center hover:opacity-90 transition-opacity shrink-0" aria-label="Akubrecah Entertainment">
+              <Logo width={116} height={32} className="h-7 w-auto" />
+            </Link>
+            <p className="text-[11px] text-on-surface-variant">
+              &copy; {new Date().getFullYear()} Akubrecah Entertainment. Independent third-party cyber assistance provider. Not affiliated with the Kenya Revenue Authority (KRA).
+            </p>
+          </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[11px]">
             <GooglePreferredSourceButton siteDomain="akubrecah.com" />

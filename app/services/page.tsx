@@ -1,13 +1,6 @@
 import {
   ArrowRight,
-  Bus,
   CheckCircle2,
-  CreditCard,
-  Landmark,
-  Lock,
-  ShieldCheck,
-  Sparkles,
-  Zap,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -55,9 +48,9 @@ export const metadata: Metadata = {
 
 const servicesFaqs = [
   {
-    question: "What core sovereign & enterprise platforms does Akubrecah engineer?",
+    question: "What core software engineering services does Akubrecah provide?",
     answer:
-      "We engineer four flagship systems: automated sovereign tax verification gateways (KRA iTax), high-concurrency Safaricom Daraja M-Pesa STK ledger engines, real-time Nairobi transit fleet telematics, and automated video transcoding & localization studios.",
+      "We deliver four core engineering practices: full-stack web applications and statutory portals (Next.js/TypeScript), Safaricom Daraja M-Pesa payment and ledger systems, cross-platform mobile applications with offline sync, and automated cloud/media processing pipelines.",
   },
   {
     question: "How does Akubrecah align with the Kenya Data Protection Act 2019?",
@@ -65,21 +58,20 @@ const servicesFaqs = [
       "Our GovTech gateways utilize in-memory ephemeral parsing pipelines that stream generated PDFs directly from RAM. Citizen tax documents are never saved to persistent disk storage and sensitive identifiers are masked prior to settlement.",
   },
   {
-    question: "Can these solutions integrate into existing core banking and ERP architectures?",
+    question: "Can these systems integrate into existing banking and ERP architectures?",
     answer:
-      "Yes. All four platforms offer REST/gRPC API handshakes, webhook listeners with dead-letter queue isolation, and automated cryptographic ledger reconciliations compatible with standard banking and enterprise ERPs.",
+      "Yes. All systems offer typed REST/webhook handshakes, dead-letter queue isolation, and automated ledger reconciliations compatible with standard banking and enterprise ERPs.",
   },
 ];
 
-const solutionCards = [
+const servicePractices = [
   {
     id: "govtech",
     anchorAlias: "web",
-    categoryPill: "GOVTECH & WEB PLATFORMS",
-    icon: Landmark,
-    title: "Automated Sovereign Tax Verification & KRA Gateway",
+    practiceCode: "Practice 01 · Web & Statutory Engineering",
+    title: "Web Platforms & Statutory Compliance Gateways",
     description:
-      "Resilient web platform and statutory document retrieval architecture. Automated KRA PIN lookup, Kenya P9 tax calculation, and ephemeral PDF streaming with zero unencrypted document persistence.",
+      "Server-rendered web applications, internal administrative consoles, and statutory document retrieval architecture. Includes automated KRA PIN verification, Kenya P9 tax calculation, and volatile RAM PDF streaming.",
     chips: [
       "Volatile RAM PDF streaming",
       "Zero-disk privacy engine",
@@ -91,22 +83,19 @@ const solutionCards = [
       "Privacy-by-design data minimization aligned with the Kenya Data Protection Act 2019.",
     ],
     stack: ["Next.js", "TypeScript", "Volatile Memory Streams", "Node.js", "PostgreSQL"],
-    ctaText: "Explore GovTech Engine",
+    ctaText: "Inspect Retrieval Portal",
     ctaHref: "/retrieval-portal",
-    mockupTitle: "kra.akubrecah.com / verification-console",
+    caption: "Figure 1.1 — KRA Tax Verification & Ephemeral Document Streaming Console",
     mockupImage: "/images/solutions/govtech-gateway.jpg",
     mockupAlt: "KRA Tax Compliance & Verification Interface",
-    isReversed: false,
-    isDarkMockup: false,
   },
   {
     id: "fintech",
     anchorAlias: "enterprise",
-    categoryPill: "FINTECH & ENTERPRISE SETTLEMENT",
-    icon: CreditCard,
-    title: "High-Concurrency Daraja M-Pesa STK & Ledger Reconciliation",
+    practiceCode: "Practice 02 · Enterprise & Payment Systems",
+    title: "Daraja M-Pesa STK Billing & Ledger Reconciliation",
     description:
-      "Resilient financial transaction engine designed to handle mobile money traffic reliably. Instant STK push triggers, idempotent callback verification, and automated ledger reconciliation.",
+      "Financial transaction engines engineered to process mobile money callbacks deterministically. Covers STK push dispatch, fail-closed webhook token verification, and atomic receipt redemption.",
     chips: [
       "Idempotent callback verification",
       "Safaricom Daraja STK Push",
@@ -118,22 +107,19 @@ const solutionCards = [
       "Automatic STK Query reconciliation when callbacks are delayed.",
     ],
     stack: ["Safaricom Daraja API", "Upstash Redis", "TypeScript", "PostgreSQL", "Docker"],
-    ctaText: "Review Fintech Architecture",
+    ctaText: "Discuss Payment Architecture",
     ctaHref: "/contact?solution=fintech",
-    mockupTitle: "M-PESA ENTERPRISE GATEWAY • RECON ENGINE",
+    caption: "Figure 1.2 — Daraja M-Pesa Express STK Callback & Reconciliation Pipeline",
     mockupImage: "/images/solutions/mpesa-reconciliation.jpg",
     mockupAlt: "M-Pesa STK Push Pipeline and Reconciliation Dashboard",
-    isReversed: true,
-    isDarkMockup: true,
   },
   {
     id: "transit",
     anchorAlias: "mobile",
-    categoryPill: "MOBILE & TRANSIT TELEMATICS",
-    icon: Bus,
-    title: "Real-Time Fleet Telematics & Mobile Ecosystems",
+    practiceCode: "Practice 03 · Mobile Application Ecosystems",
+    title: "Native & Cross-Platform Mobile Engineering",
     description:
-      "Cross-platform mobile and geolocation architecture built for East African mobility corridors. Consolidates GPS telemetry, mobile money fare workflows, and adaptive dispatch schedules.",
+      "iOS, Android, and React Native applications built for field operations and East African mobility corridors. Consolidates live GPS telemetry, offline-tolerant state synchronization, and mobile money checkout.",
     chips: [
       "Offline-first mobile sync",
       "Live WebSocket geolocation",
@@ -145,22 +131,19 @@ const solutionCards = [
       "Dynamic dispatch tooling tailored for urban Nairobi transit corridors.",
     ],
     stack: ["React Native / Expo", "WebSocket Gateways", "GeoJSON", "Google Maps", "PostgreSQL"],
-    ctaText: "Inspect Fleet Platform",
+    ctaText: "Read Mobile Case Study",
     ctaHref: "/projects/swiftboda-ride",
-    mockupTitle: "NAIROBI METRO TELEMETRY DISPATCH",
+    caption: "Figure 1.3 — Real-Time Fleet Telemetry & Dispatch Application",
     mockupImage: "/images/solutions/nairobi-fleet-telematics.jpg",
     mockupAlt: "Nairobi Metro Fleet Telemetry and Dispatch Interface",
-    isReversed: false,
-    isDarkMockup: true,
   },
   {
     id: "media",
     anchorAlias: "cloud",
-    categoryPill: "CLOUD INFRASTRUCTURE & MEDIA AI",
-    icon: Sparkles,
-    title: "Cloud Pipelines, DevOps & Media Localization Automation",
+    practiceCode: "Practice 04 · Cloud Infrastructure & Media Workers",
+    title: "Cloud DevOps & Automated Media Processing Pipelines",
     description:
-      "Automated cloud processing pipelines orchestrating audio transcription, English/Swahili localization, subtitle burning, containerized deployment, and multi-format media streaming.",
+      "Containerized worker fleets and CI/CD pipelines orchestrating background jobs, audio transcription, English/Swahili subtitle localization, and multi-bitrate media transcoding.",
     chips: [
       "Containerized cloud workers",
       "English & Swahili NLP",
@@ -172,13 +155,11 @@ const solutionCards = [
       "Multi-bitrate H.264/WebM transcoding optimized for bandwidth-constrained networks.",
     ],
     stack: ["Docker", "FFmpeg Filtergraphs", "Faster-Whisper", "Python", "CI/CD Pipelines"],
-    ctaText: "View Media AI Specs",
+    ctaText: "View Pipeline Case Study",
     ctaHref: "/projects/AutoChop",
-    mockupTitle: "AETHERFLOW AI PIPELINE RUNNER",
+    caption: "Figure 1.4 — Containerized Video Transcoding & Subtitle Alignment Worker",
     mockupImage: "/images/solutions/aetherflow-video-pipeline.jpg",
     mockupAlt: "Aetherflow Video AI Transcoding and Localization Interface",
-    isReversed: true,
-    isDarkMockup: true,
   },
 ];
 
@@ -186,17 +167,17 @@ const engineeringHighlights = [
   {
     step: "01",
     title: "OWASP-Hardened Standards",
-    desc: "Vulnerability assessments, zero-trust network policies, rate-limiting, and automated SAST/DAST scans on every pull request.",
+    desc: "Input validation, rate limiting, zero-secret source control, and strict authorization checks enforced across every server route.",
   },
   {
     step: "02",
     title: "Clean Code & Architecture",
-    desc: "Domain-driven design, single-responsibility modules, strict typing, and comprehensive test coverage across every vertical slice.",
+    desc: "Domain-driven boundaries, single-responsibility services, strict TypeScript typing, and automated test coverage per vertical slice.",
   },
   {
     step: "03",
     title: "Telemetry & Observability",
-    desc: "Integrated real-time error tracking, distributed tracing, and automated health checks ensure immediate visibility into system vitals.",
+    desc: "Structured audit logging, upstream latency tracking, and automated health checks across database, auth, and payment dependencies.",
   },
 ];
 
@@ -205,8 +186,8 @@ export default function ServicesPage() {
     <div className="min-h-screen bg-background text-on-surface">
       <ServiceSchema
         name="Engineering Services & Architecture Solutions"
-        description="High-assurance digital platforms, compliance engines, and automated clearing pipelines built specifically for East Africa's regulatory, banking, and real-time transit landscape."
-        serviceType="Sovereign Enterprise Architecture & GovTech Platforms"
+        description="Full-cycle software engineering services: Next.js & React web applications, native iOS & Android mobile systems, AWS/GCP cloud DevOps, and automated GovTech statutory integration."
+        serviceType="Software Engineering & Enterprise Architecture"
         url="https://akubrecah.com/services"
       />
       <BreadcrumbSchema
@@ -218,264 +199,177 @@ export default function ServicesPage() {
       <FaqSchema items={servicesFaqs} />
 
       {/* ============================= HERO SECTION ============================= */}
-      <section className="border-b border-outline-variant/60 bg-surface-container-lowest py-12 md:py-16">
-        <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
-          <div className="max-w-4xl space-y-4">
-            {/* Institutional Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-container rounded-full border border-outline-variant">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-[10px] sm:text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                ENGINEERED FOR SOVEREIGN SCALE &amp; MISSION-CRITICAL UPTIME
-              </span>
-            </div>
+      <section className="relative overflow-hidden py-10 md:py-14">
+        <div aria-hidden="true" className="pointer-events-none absolute -top-12 left-1/4 w-80 h-80 rounded-full bg-[#FFE4E1] opacity-60 blur-[90px] animate-float-blob" />
+        <div aria-hidden="true" className="pointer-events-none absolute top-4 right-1/4 w-80 h-80 rounded-full bg-[#E6E6FA] opacity-60 blur-[90px] animate-float-blob [animation-delay:3s]" />
+        <div className="relative z-10 max-w-[1220px] mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
+          <nav className="flex items-center gap-2 text-xs text-on-surface-variant">
+            <Link href="/" className="hover:text-on-surface transition-colors">Home</Link>
+            <span>/</span>
+            <span className="text-on-surface font-medium">Engineering Services</span>
+          </nav>
 
-            {/* Main Headline */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-on-surface tracking-tight leading-tight">
-              Industry Solutions:{" "}
-              <span className="text-primary">
-                Sovereign &amp; Enterprise Infrastructure
-              </span>
+          <div className="max-w-4xl space-y-3">
+            <span className="font-cursive text-2xl sm:text-3xl text-[#78716C] block">
+              technical capabilities &amp; delivery practices
+            </span>
+
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-medium text-on-surface tracking-[-0.025em] leading-[1.08]">
+              Full-cycle software engineering, crafted{" "}
+              <span className="font-cursive text-5xl sm:text-7xl font-normal">thoughtfully</span>.
             </h1>
 
-            {/* Subtext */}
-            <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed max-w-3xl">
-              High-assurance digital platforms, compliance engines, and automated clearing pipelines built specifically for East Africa&apos;s regulatory, banking, and real-time transit landscape.
+            <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed max-w-2xl">
+              We design, build, and maintain production software systems for organizations in Kenya and East Africa—combining typed full-stack architectures with local payment and regulatory integrations.
             </p>
+          </div>
 
-            {/* Engineering Architecture Guarantees Bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-6 border-t border-outline-variant/60">
-              <div className="border-l-2 border-primary pl-4 space-y-0.5">
-                <div className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
-                  Zero-Disk
-                </div>
-                <div className="text-xs text-on-surface-variant font-medium">
-                  Ephemeral PDF Streams
-                </div>
-              </div>
-              <div className="border-l-2 border-primary pl-4 space-y-0.5">
-                <div className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
-                  Idempotent
-                </div>
-                <div className="text-xs text-on-surface-variant font-medium">
-                  Daraja STK Reconciliation
-                </div>
-              </div>
-              <div className="border-l-2 border-primary pl-4 space-y-0.5">
-                <div className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
-                  TLS &amp; AES-256
-                </div>
-                <div className="text-xs text-on-surface-variant font-medium">
-                  Encrypted Data Transit
-                </div>
-              </div>
-              <div className="border-l-2 border-primary pl-4 space-y-0.5">
-                <div className="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
-                  KDPA 2019
-                </div>
-                <div className="text-xs text-on-surface-variant font-medium">
-                  Privacy-by-Design
-                </div>
-              </div>
-            </div>
+          {/* Practice Quick-Jump Index */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 text-xs">
+            <a href="#web" className="group block p-4 rounded-3xl bg-white border border-stone-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all">
+              <span className="text-stone-400">01</span>
+              <p className="font-medium text-base text-on-surface group-hover:text-[#FFB7B2] transition-colors mt-1">Web &amp; GovTech</p>
+            </a>
+            <a href="#enterprise" className="group block p-4 rounded-3xl bg-white border border-stone-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all">
+              <span className="text-stone-400">02</span>
+              <p className="font-medium text-base text-on-surface group-hover:text-[#FFB7B2] transition-colors mt-1">Daraja &amp; Ledgers</p>
+            </a>
+            <a href="#mobile" className="group block p-4 rounded-3xl bg-white border border-stone-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all">
+              <span className="text-stone-400">03</span>
+              <p className="font-medium text-base text-on-surface group-hover:text-[#FFB7B2] transition-colors mt-1">Mobile Systems</p>
+            </a>
+            <a href="#cloud" className="group block p-4 rounded-3xl bg-white border border-stone-100 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 transition-all">
+              <span className="text-stone-400">04</span>
+              <p className="font-medium text-base text-on-surface group-hover:text-[#FFB7B2] transition-colors mt-1">Cloud &amp; Pipelines</p>
+            </a>
           </div>
         </div>
       </section>
 
-      {/* ============================= SOLUTION CARDS ============================= */}
-      <div className="py-12 md:py-16 space-y-12 md:space-y-16">
-        {solutionCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <section
-              key={card.id}
-              id={card.id}
-              className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 scroll-mt-24"
-            >
-              <div id={card.anchorAlias} className="scroll-mt-24 bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 sm:p-8 lg:p-10 shadow-sm">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-                  {/* Text Column */}
-                  <div
-                    className={`lg:col-span-6 space-y-5 ${
-                      card.isReversed ? "order-1 lg:order-2" : "order-1"
-                    }`}
-                  >
-                    {/* Category Pill */}
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-container rounded-lg border border-outline-variant">
-                      <Icon className="h-4 w-4 text-primary" />
-                      <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">
-                        {card.categoryPill}
-                      </span>
-                    </div>
-
-                    {/* Title */}
-                    <h2 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight leading-snug">
+      {/* ============================= ENGINEERING PRACTICE SPECIFICATIONS ============================= */}
+      <div className="py-10 md:py-14 space-y-10">
+        {servicePractices.map((card) => (
+          <section
+            key={card.id}
+            id={card.id}
+            className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 scroll-mt-24"
+          >
+            <div id={card.anchorAlias} className="scroll-mt-24 bg-surface-container-lowest border border-outline-variant rounded-xl p-6 sm:p-8 lg:p-10">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+                {/* Specification Column */}
+                <div className="lg:col-span-7 space-y-5">
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-mono font-semibold text-primary uppercase tracking-wider block">
+                      {card.practiceCode}
+                    </span>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight leading-snug">
                       {card.title}
                     </h2>
+                  </div>
 
-                    {/* Description */}
-                    <p className="text-sm text-on-surface-variant leading-relaxed">
-                      {card.description}
-                    </p>
+                  <p className="text-sm text-on-surface-variant leading-relaxed">
+                    {card.description}
+                  </p>
 
-                    {/* Metric Chips */}
-                    <div className="flex flex-wrap gap-2 py-1">
-                      {card.chips.map((chip) => (
+                  <div className="flex flex-wrap gap-2">
+                    {card.chips.map((chip) => (
+                      <span
+                        key={chip}
+                        className="inline-flex items-center px-2.5 py-1 rounded bg-surface-container-low text-xs font-medium text-on-surface border border-outline-variant"
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Key Engineering Deliverables (tested in tests/messages.test.ts) */}
+                  <div className="space-y-2 pt-2 border-t border-outline-variant/60">
+                    <span className="text-xs font-semibold text-on-surface uppercase tracking-wider block">
+                      Key Engineering Deliverables
+                    </span>
+                    <ul className="space-y-2 text-xs sm:text-sm text-on-surface-variant">
+                      {card.outcomes.map((bullet) => (
+                        <li key={bullet} className="flex items-start gap-2.5">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                          <span>{bullet}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Technology Stack (tested in tests/messages.test.ts) */}
+                  <div className="space-y-2 pt-2 border-t border-outline-variant/60">
+                    <span className="text-xs font-semibold text-on-surface uppercase tracking-wider block">
+                      Technology Stack
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {card.stack.map((tech) => (
                         <span
-                          key={chip}
-                          className="inline-flex items-center px-3 py-1 rounded-md bg-surface-container-low text-xs font-semibold text-on-surface border border-outline-variant"
+                          key={tech}
+                          className="text-xs font-mono px-2.5 py-0.5 rounded bg-surface-container-low text-on-surface-variant border border-outline-variant"
                         >
-                          {chip}
+                          {tech}
                         </span>
                       ))}
                     </div>
-
-                    {/* Bullet Outcomes: Key Engineering Deliverables */}
-                    <div className="space-y-2">
-                      <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">
-                        Key Engineering Deliverables
-                      </span>
-                      <ul className="space-y-2.5 text-xs sm:text-sm text-on-surface">
-                        {card.outcomes.map((bullet) => (
-                          <li key={bullet} className="flex items-start gap-2.5">
-                            <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                            <span>{bullet}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Technology Stack */}
-                    <div className="space-y-2 pt-2 border-t border-outline-variant/60">
-                      <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">
-                        Technology Stack
-                      </span>
-                      <div className="flex flex-wrap gap-2">
-                        {card.stack.map((tech) => (
-                          <span
-                            key={tech}
-                            className="text-xs font-semibold px-2.5 py-0.5 rounded-lg bg-surface-container text-on-surface border border-outline-variant"
-                          >
-                            {tech}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Action Button */}
-                    <div className="pt-2">
-                      <Button
-                        asChild
-                        size="lg"
-                        className="h-11 px-6 rounded-lg bg-primary text-white font-bold text-xs hover:bg-primary/90 flex items-center gap-2 group transition-all"
-                      >
-                        <Link href={card.ctaHref}>
-                          <span>{card.ctaText}</span>
-                          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                      </Button>
-                    </div>
                   </div>
 
-                  {/* Window Mockup Frame */}
-                  <div
-                    className={`lg:col-span-6 ${
-                      card.isReversed
-                        ? "order-2 lg:order-1"
-                        : "order-2"
-                    }`}
-                  >
-                    <div
-                      className={`rounded-2xl border p-2 shadow-sm ${
-                        card.isDarkMockup
-                          ? "border-stone-800 bg-[#0c1017]"
-                          : "border-outline-variant bg-surface-container-low"
-                      }`}
+                  <div className="pt-2">
+                    <Button
+                      asChild
+                      size="lg"
+                      className="h-10 px-5 rounded-lg bg-primary text-white font-semibold text-xs hover:bg-primary/90 flex items-center gap-2 w-fit"
                     >
-                      <div
-                        className={`flex items-center justify-between px-3.5 py-2 border-b rounded-t-xl ${
-                          card.isDarkMockup
-                            ? "border-stone-800 bg-[#131924]"
-                            : "border-outline-variant bg-surface-container-lowest"
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <div
-                            className={`w-2.5 h-2.5 rounded-full ${
-                              card.isDarkMockup
-                                ? "bg-stone-700"
-                                : "bg-outline-variant"
-                            }`}
-                          />
-                          <div
-                            className={`w-2.5 h-2.5 rounded-full ${
-                              card.isDarkMockup
-                                ? "bg-stone-700"
-                                : "bg-outline-variant"
-                            }`}
-                          />
-                          <div
-                            className={`w-2.5 h-2.5 rounded-full ${
-                              card.isDarkMockup
-                                ? "bg-stone-700"
-                                : "bg-outline-variant"
-                            }`}
-                          />
-                        </div>
-                        <div
-                          className={`text-[10px] font-mono ${
-                            card.isDarkMockup
-                              ? "text-stone-400"
-                              : "text-on-surface-variant"
-                          }`}
-                        >
-                          {card.mockupTitle}
-                        </div>
-                      </div>
-                      <div
-                        className={`overflow-hidden rounded-b-xl relative aspect-[16/10] ${
-                          card.isDarkMockup
-                            ? "bg-stone-950"
-                            : "bg-surface-container"
-                        }`}
-                      >
-                        <Image
-                          src={card.mockupImage}
-                          alt={card.mockupAlt}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 1024px) 100vw, 50vw"
-                        />
-                      </div>
-                    </div>
+                      <Link href={card.ctaHref}>
+                        <span>{card.ctaText}</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
                   </div>
                 </div>
+
+                {/* Clean Architectural Figure Frame (no fake macOS dots) */}
+                <figure className="lg:col-span-5 rounded-lg border border-outline-variant bg-surface-container-low overflow-hidden">
+                  <div className="relative aspect-[16/10] bg-surface-container">
+                    <Image
+                      src={card.mockupImage}
+                      alt={card.mockupAlt}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 1024px) 100vw, 42vw"
+                    />
+                  </div>
+                  <figcaption className="px-4 py-2.5 border-t border-outline-variant text-[11px] font-mono text-on-surface-variant bg-surface-container-lowest">
+                    {card.caption}
+                  </figcaption>
+                </figure>
               </div>
-            </section>
-          );
-        })}
+            </div>
+          </section>
+        ))}
       </div>
 
       {/* ============================= QUALITY ASSURANCE STANDARDS ============================= */}
-      <section className="py-12 border-t border-outline-variant/60 bg-surface-container-lowest">
+      <section className="py-12 border-t border-outline-variant bg-surface-container-lowest">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 space-y-8">
-          <div className="text-center space-y-2 max-w-2xl mx-auto">
-            <span className="text-xs font-black text-primary uppercase tracking-widest">
+          <div className="border-b border-outline-variant pb-4">
+            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
               Quality Assurance
             </span>
-            <h2 className="text-3xl font-black text-on-surface">
-              Engineering Standards Built Into Every Sprint
+            <h2 className="text-2xl sm:text-3xl font-bold text-on-surface mt-1">
+              Verification Standards Applied to Every Engagement
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {engineeringHighlights.map((item) => (
               <div
                 key={item.title}
-                className="p-7 rounded-2xl bg-surface-container-low border border-outline-variant space-y-4 shadow-xs"
+                className="pt-4 border-t-2 border-outline-variant space-y-2"
               >
-                <span className="text-xs font-mono font-black text-primary px-2.5 py-0.5 rounded-lg bg-primary/10 border border-primary/20 w-fit inline-block">
+                <span className="text-xs font-mono font-semibold text-primary">
                   {item.step}
                 </span>
-                <h3 className="text-lg font-bold text-on-surface">{item.title}</h3>
+                <h3 className="text-base font-bold text-on-surface">{item.title}</h3>
                 <p className="text-xs text-on-surface-variant leading-relaxed">{item.desc}</p>
               </div>
             ))}
@@ -483,48 +377,34 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* ============================= BOTTOM CTA BAND (Obsidian Sovereign Theme) ============================= */}
-      <section className="bg-[#111315] text-white py-16 lg:py-20 border-t border-stone-800">
-        <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12 text-center space-y-6">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-            Deploy Sovereign Infrastructure with Akubrecah
-          </h2>
-          <p className="text-base sm:text-lg text-stone-300 max-w-2xl mx-auto leading-relaxed">
-            Partner with East Africa&apos;s leading GovTech and systems engineering team to build resilient, compliant software.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <Button
-              asChild
-              size="lg"
-              className="h-12 px-7 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
-            >
-              <Link href="/contact">Schedule Technical Consultation</Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="h-12 px-7 rounded-lg border-stone-700 bg-transparent text-white font-bold text-sm hover:bg-stone-800 transition-colors"
-            >
-              <Link href="/products">Explore Developer APIs</Link>
-            </Button>
-          </div>
-
-          {/* Trust Seals */}
-          <div className="pt-8 border-t border-stone-800/80 flex flex-wrap items-center justify-center gap-6 text-xs text-stone-400 font-medium">
-            <div className="flex items-center gap-1.5">
-              <Lock className="h-4 w-4 text-primary" />
-              <span>Encrypted TLS Handshake</span>
+      {/* ============================= CONSULTATION CTA ============================= */}
+      <section className="py-12 border-t border-outline-variant bg-surface">
+        <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-12">
+          <div className="p-8 sm:p-10 rounded-xl bg-surface-container-lowest border border-outline-variant flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-1.5 max-w-2xl">
+              <h2 className="text-xl sm:text-2xl font-bold text-on-surface tracking-tight">
+                Scope an engineering engagement with our team
+              </h2>
+              <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+                Share your system requirements or evaluate timelines and deliverables using our project scope estimator.
+              </p>
             </div>
-            <span className="w-1 h-1 rounded-full bg-stone-700" />
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              <span>KDPA 2019 Privacy-by-Design</span>
-            </div>
-            <span className="w-1 h-1 rounded-full bg-stone-700" />
-            <div className="flex items-center gap-1.5">
-              <Zap className="h-4 w-4 text-primary" />
-              <span>Automated Health Monitoring</span>
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <Button
+                asChild
+                size="lg"
+                className="h-10 px-6 rounded-lg bg-primary text-white font-semibold text-xs hover:bg-primary/90"
+              >
+                <Link href="/contact">Schedule Technical Consultation</Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="h-10 px-5 rounded-lg border-outline-variant font-semibold text-xs hover:bg-surface-container"
+              >
+                <Link href="/estimator">Interactive Cost Estimator</Link>
+              </Button>
             </div>
           </div>
         </div>

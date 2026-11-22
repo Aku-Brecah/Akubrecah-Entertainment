@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   Settings, Save, Globe, Mail, Phone, MapPin, 
-  CheckCircle2, AlertCircle, Shield, Sparkles 
+  CheckCircle2, AlertCircle, Shield
 } from "lucide-react";
 
 export default function AdminSettingsPage() {
@@ -84,8 +84,8 @@ export default function AdminSettingsPage() {
     <div className="w-full max-w-4xl space-y-6 pb-12">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-black text-on-surface tracking-tight">
-          Website Settings & Identity
+        <h1 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">
+          Website Settings &amp; Identity
         </h1>
         <p className="text-xs text-on-surface-variant mt-1">
           Configure site identity, hero messaging, contact endpoints, and social channels.
@@ -94,7 +94,7 @@ export default function AdminSettingsPage() {
 
       {statusMessage && (
         <div
-          className={`p-4 rounded-2xl text-xs font-bold flex items-center gap-2.5 ${
+          className={`p-4 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
             statusMessage.type === "success"
               ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
               : "bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400"
@@ -106,16 +106,16 @@ export default function AdminSettingsPage() {
       )}
 
       {loading ? (
-        <div className="p-12 text-center text-xs text-on-surface-variant bg-surface-container rounded-3xl border border-outline-variant">
+        <div className="p-12 text-center text-xs text-on-surface-variant bg-surface-container rounded-xl border border-outline-variant">
           Loading site configurations...
         </div>
       ) : (
         <form onSubmit={handleSave} className="space-y-6">
           {/* Card: Brand & Identity */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-surface-container border border-outline-variant space-y-4 shadow-soft">
+          <div className="p-6 sm:p-7 rounded-xl bg-surface-container border border-outline-variant space-y-4 shadow-soft">
             <div className="flex items-center gap-2.5 text-primary border-b border-outline-variant/60 pb-3">
               <Globe className="w-4 h-4" />
-              <h2 className="text-sm font-black uppercase tracking-wider text-on-surface">Brand & Portal Identity</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-on-surface">Brand &amp; Portal Identity</h2>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -182,10 +182,10 @@ export default function AdminSettingsPage() {
           </div>
 
           {/* Card: Hero Section */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-surface-container border border-outline-variant space-y-4 shadow-soft">
+          <div className="p-6 sm:p-7 rounded-xl bg-surface-container border border-outline-variant space-y-4 shadow-soft">
             <div className="flex items-center gap-2.5 text-primary border-b border-outline-variant/60 pb-3">
-              <Sparkles className="w-4 h-4" />
-              <h2 className="text-sm font-black uppercase tracking-wider text-on-surface">Homepage Hero Positioning</h2>
+              <Settings className="w-4 h-4" />
+              <h2 className="text-sm font-bold uppercase tracking-wider text-on-surface">Homepage Hero Positioning</h2>
             </div>
 
             <div className="space-y-4 text-xs">
@@ -227,10 +227,10 @@ export default function AdminSettingsPage() {
           </div>
 
           {/* Card: External Integrations & Bot */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-surface-container border border-outline-variant space-y-4 shadow-soft">
+          <div className="p-6 sm:p-7 rounded-xl bg-surface-container border border-outline-variant space-y-4 shadow-soft">
             <div className="flex items-center gap-2.5 text-primary border-b border-outline-variant/60 pb-3">
               <Shield className="w-4 h-4" />
-              <h2 className="text-sm font-black uppercase tracking-wider text-on-surface">Automation & Social Integrations</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-on-surface">Automation &amp; Social Integrations</h2>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -282,10 +282,10 @@ export default function AdminSettingsPage() {
           </div>
 
           {/* Card: Google Reviews & Google Business Profile */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-surface-container border border-outline-variant space-y-4 shadow-soft">
+          <div className="p-6 sm:p-7 rounded-xl bg-surface-container border border-outline-variant space-y-4 shadow-soft">
             <div className="flex items-center gap-2.5 text-primary border-b border-outline-variant/60 pb-3">
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              <h2 className="text-sm font-black uppercase tracking-wider text-on-surface">Live Google Reviews & Google Business</h2>
+              <MapPin className="w-4 h-4 text-primary" />
+              <h2 className="text-sm font-bold uppercase tracking-wider text-on-surface">Live Google Reviews &amp; Google Business</h2>
             </div>
             <p className="text-xs text-on-surface-variant">
               The public website reviews section syndicates genuine reviews directly from Google Business Profile. Configure your Google Place ID or direct Google Maps links below.
