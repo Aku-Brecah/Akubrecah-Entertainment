@@ -43,17 +43,17 @@ export function SoftlyWaitlistConversion() {
 
         <div className="space-y-3">
           <p className="font-cursive text-2xl sm:text-3xl text-[#78716C]">
-            step into a calmer digital workspace
+            project scoping &amp; technical consultation
           </p>
           <h2 className="text-3xl sm:text-5xl font-medium text-[#292524] tracking-[-0.025em] leading-[1.12]">
-            Ready to build or retrieve{" "}
+            Planning a custom platform or mobile app{" "}
             <span className="font-cursive text-4xl sm:text-6xl font-normal text-[#292524] px-1">
-              softly
+              with us
             </span>
             ?
           </h2>
           <p className="text-sm sm:text-base text-[#78716C] max-w-md mx-auto leading-relaxed">
-            Join our engineering consultation waitlist or launch the KRA compliance workspace immediately. Calm, transparent, and built for humans.
+            Share your email to schedule a direct engineering consultation in Nairobi, or configure your technical requirements in our live scope estimator.
           </p>
         </div>
 
@@ -90,17 +90,17 @@ export function SoftlyWaitlistConversion() {
 
         <div className="pt-3 flex flex-wrap items-center justify-center gap-4 text-xs text-[#78716C]">
           <Link
-            href="/retrieval-portal"
-            className="underline underline-offset-4 hover:text-[#292524] transition-colors"
-          >
-            Open KRA Certificate Portal
-          </Link>
-          <span>·</span>
-          <Link
             href="/estimator"
             className="underline underline-offset-4 hover:text-[#292524] transition-colors"
           >
-            Interactive Project Estimator
+            Interactive Scope Estimator
+          </Link>
+          <span>·</span>
+          <Link
+            href="/services"
+            className="underline underline-offset-4 hover:text-[#292524] transition-colors"
+          >
+            Engineering Services
           </Link>
           <span>·</span>
           <Link
@@ -108,6 +108,13 @@ export function SoftlyWaitlistConversion() {
             className="underline underline-offset-4 hover:text-[#292524] transition-colors"
           >
             Direct Inquiry Form
+          </Link>
+          <span>·</span>
+          <Link
+            href="/retrieval-portal"
+            className="underline underline-offset-4 hover:text-[#292524] transition-colors"
+          >
+            KRA Retrieval Portal
           </Link>
         </div>
       </div>
