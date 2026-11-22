@@ -148,7 +148,7 @@ export default function RootLayout({
               >
                 Skip to main content
               </a>
-              <div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-x-clip bg-[#FDFCF8] dark:bg-background text-[#292524] dark:text-foreground">
+              <div className="relative flex min-h-screen w-full min-w-0 flex-col overflow-x-clip bg-surface text-on-surface">
                 <GrainOverlay />
                 <KRAAnnouncementBanner />
                 <AdminLayoutWrapper>

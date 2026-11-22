@@ -9,15 +9,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-[#FFB7B2] text-[#292524] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:brightness-95",
+        default: "bg-primary text-primary-foreground shadow-[0_4px_20px_-2px_rgba(186,26,26,0.22)] hover:bg-primary/90",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-[#292524] dark:text-[#FDFCF8] shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:bg-stone-50 dark:hover:bg-stone-800",
+          "border border-outline-variant bg-surface-container-lowest text-on-surface shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] hover:bg-surface-container",
         secondary:
-          "bg-[#E8EFE8] dark:bg-[#252D27] text-[#292524] dark:text-[#FDFCF8] hover:bg-[#E8EFE8]/80 dark:hover:bg-[#2E3830]",
-        ghost: "text-[#292524] dark:text-[#FDFCF8] hover:bg-[#E8EFE8]/60 dark:hover:bg-stone-800 hover:text-[#292524] dark:hover:text-[#FDFCF8]",
-        link: "text-[#292524] dark:text-[#FDFCF8] underline-offset-4 hover:underline",
+          "bg-surface-container text-on-surface hover:bg-surface-container-high",
+        ghost: "text-on-surface hover:bg-surface-container hover:text-on-surface",
+        link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
         default: "h-11 px-6 py-2.5",

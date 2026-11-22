@@ -3,163 +3,156 @@
 @custom-variant dark (&:where(.dark, .dark *));
 @config "../tailwind.config.ts";
 
-/* 'Softly' Digital Wellness & Tactile Living Room Design System */
+/* Original Akubrecah Crimson Red & Crisp Slate Design System (with Softly layout & typography) */
 :root {
   --font-outfit: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-inter: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-reenie: 'Reenie Beanie', cursive;
 
-  /* Softly Pastel & Warm Stone Tokens (Light Mode Default) */
-  --secondary-fixed-dim: #E8EFE8;
-  --on-surface-variant: #78716C;
-  --on-secondary: #292524;
-  --tertiary-fixed: #EFEDF4;
-  --on-primary-container: #292524;
-  --surface-variant: #E8EFE8;
-  --success-green: #2F6F4E;
-  --inverse-surface: #292524;
-  --error-container: #FFE4E1;
-  --primary-fixed: #FFE4E1;
-  --surface-container-high: #EFEDF4;
-  --primary-container: #FFB7B2;
-  --surface-container-highest: #E8EFE8;
-  --on-secondary-container: #292524;
-  --primary-fixed-dim: #FFB7B2;
-  --on-tertiary-container: #292524;
-  --error: #C25953;
-  --on-tertiary: #292524;
-  --on-tertiary-fixed: #292524;
-  --surface-dim: #F4F1EA;
-  --on-primary-fixed: #292524;
-  --outline-muted: #F5F5F4;
-  --on-tertiary-fixed-variant: #78716C;
-  --surface-bright: #FDFCF8;
-  --outline-variant: #E7E5E4;
-  --tertiary-container: #EFEDF4;
-  --on-primary-fixed-variant: #292524;
-  --inverse-primary: #FFB7B2;
-  --success-bg: #E8EFE8;
-  --on-error: #FFFFFF;
-  --outline: #A8A29E;
-  --on-primary: #292524;
-  --tertiary: #292524;
-  --on-secondary-fixed: #292524;
-  --secondary-fixed: #E8EFE8;
-  --surface-container-low: #F8F6F0;
-  --surface-tint: #FFB7B2;
-  --surface-container: #E8EFE8;
-  --on-background: #292524;
-  --surface-container-lowest: #FFFFFF;
-  --surface-card: #FFFFFF;
-  --primary-hover: #F5A39D;
-  --on-surface: #292524;
-  --surface: #FDFCF8;
-  --on-error-container: #7F1D1D;
-  --secondary-container: #E8EFE8;
-  --on-secondary-fixed-variant: #78716C;
-  --inverse-on-surface: #FDFCF8;
+  /* Original Crisp Light Mode Tokens */
+  --secondary-fixed-dim: #cbd5e1;
+  --on-surface-variant: #334155;
+  --on-secondary: #ffffff;
+  --tertiary-fixed: #e2e8f0;
+  --on-primary-container: #ffffff;
+  --surface-variant: #f1f5f9;
+  --success-green: #15803d;
+  --inverse-surface: #0f172a;
+  --error-container: #fee2e2;
+  --primary-fixed: #fee2e2;
+  --surface-container-high: #e2e8f0;
+  --primary-container: #ba1a1a;
+  --surface-container-highest: #cbd5e1;
+  --on-secondary-container: #1e293b;
+  --primary-fixed-dim: #fca5a5;
+  --on-tertiary-container: #1e293b;
+  --error: #ba1a1a;
+  --on-tertiary: #ffffff;
+  --on-tertiary-fixed: #0f172a;
+  --surface-dim: #f1f5f9;
+  --on-primary-fixed: #450a0a;
+  --outline-muted: #e2e8f0;
+  --on-tertiary-fixed-variant: #475569;
+  --surface-bright: #ffffff;
+  --outline-variant: #e2e8f0;
+  --tertiary-container: #f1f5f9;
+  --on-primary-fixed-variant: #991b1b;
+  --inverse-primary: #fca5a5;
+  --success-bg: #dcfce7;
+  --on-error: #ffffff;
+  --outline: #94a3b8;
+  --on-primary: #ffffff;
+  --tertiary: #0f172a;
+  --on-secondary-fixed: #0f172a;
+  --secondary-fixed: #f1f5f9;
+  --surface-container-low: #f8fafc;
+  --surface-tint: #ba1a1a;
+  --surface-container: #f1f5f9;
+  --on-background: #0f172a;
+  --surface-container-lowest: #ffffff;
+  --surface-card: #ffffff;
+  --primary-hover: #991b1b;
+  --on-surface: #0f172a;
+  --surface: #f8fafc;
+  --on-error-container: #7f1d1d;
+  --secondary-container: #e2e8f0;
+  --on-secondary-fixed-variant: #334155;
+  --inverse-on-surface: #f8fafc;
 
-  --background: 48 56% 98%;
-  /* #FDFCF8 */
-  --foreground: 12 6% 15%;
-  /* #292524 */
-  --primary: 4 100% 85%;
-  /* #FFB7B2 Peach/Coral */
-  --primary-foreground: 12 6% 15%;
-  /* #292524 Dark Stone */
-  --secondary: 120 17% 92%;
-  /* #E8EFE8 Sage */
-  --secondary-foreground: 12 6% 15%;
-  --accent: 257 22% 94%;
-  /* #EFEDF4 Lavender */
-  --accent-foreground: 12 6% 15%;
-  --muted: 120 17% 92%;
-  --muted-foreground: 25 5% 45%;
-  /* #78716C */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --primary: 358 70% 37%;
+  /* Original Akubrecah Crimson Red (#ba1a1a) */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 358 70% 37%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 40%;
   --card: 0 0% 100%;
-  --card-foreground: 12 6% 15%;
+  --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
-  --popover-foreground: 12 6% 15%;
-  --destructive: 4 49% 54%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --destructive: 358 70% 37%;
   --destructive-foreground: 0 0% 100%;
-  --border: 20 6% 90%;
-  --input: 20 6% 90%;
-  --ring: 4 100% 85%;
+  --border: 214.3 31.8% 90%;
+  --input: 214.3 31.8% 90%;
+  --ring: 358 70% 37%;
   --radius: 2rem;
-  /* 2rem Softly container default */
   scroll-behavior: smooth;
 }
 
 .dark {
-  /* Warm Evening Living Room Mode (preserving Softly pastel warmth) */
-  --secondary-fixed-dim: #2E352F;
-  --on-surface-variant: #A8A29E;
-  --on-secondary: #FDFCF8;
-  --tertiary-fixed: #312E38;
-  --on-primary-container: #292524;
-  --surface-variant: #262322;
-  --success-green: #6EE7B7;
-  --inverse-surface: #FDFCF8;
-  --error-container: #7F1D1D;
-  --primary-fixed: #FFB7B2;
-  --surface-container-high: #2D2928;
-  --primary-container: #FFB7B2;
-  --surface-container-highest: #363230;
-  --on-secondary-container: #FDFCF8;
-  --primary-fixed-dim: #FFB7B2;
-  --on-tertiary-container: #FDFCF8;
-  --error: #F87171;
-  --on-tertiary: #292524;
-  --on-tertiary-fixed: #FDFCF8;
-  --surface-dim: #171514;
-  --on-primary-fixed: #292524;
-  --outline-muted: #2D2928;
-  --on-tertiary-fixed-variant: #D6D3D1;
-  --surface-bright: #242120;
-  --outline-variant: #363230;
-  --tertiary-container: #2B2830;
-  --on-primary-fixed-variant: #292524;
-  --inverse-primary: #FFB7B2;
-  --success-bg: #1F3327;
-  --on-error: #292524;
-  --outline: #78716C;
-  --on-primary: #292524;
-  --tertiary: #2B2830;
-  --on-secondary-fixed: #FDFCF8;
-  --secondary-fixed: #2E352F;
-  --surface-container-low: #211E1D;
-  --surface-tint: #FFB7B2;
-  --surface-container: #262322;
-  --on-background: #FDFCF8;
-  --surface-container-lowest: #1C1917;
-  --surface-card: #1C1917;
-  --primary-hover: #FFC8C4;
-  --on-surface: #FDFCF8;
-  --surface: #171514;
-  --on-error-container: #FECACA;
-  --secondary-container: #2E352F;
-  --on-secondary-fixed-variant: #D6D3D1;
-  --inverse-on-surface: #292524;
+  /* Original High-Contrast Obsidian Dark Mode Tokens */
+  --secondary-fixed-dim: #334155;
+  --on-surface-variant: #cbd5e1;
+  --on-secondary: #ffffff;
+  --tertiary-fixed: #1e293b;
+  --on-primary-container: #ffffff;
+  --surface-variant: #1d202c;
+  --success-green: #22c55e;
+  --inverse-surface: #f8fafc;
+  --error-container: #7f1d1d;
+  --primary-fixed: #7f1d1d;
+  --surface-container-high: #252938;
+  --primary-container: #ba1a1a;
+  --surface-container-highest: #2f3446;
+  --on-secondary-container: #f8fafc;
+  --primary-fixed-dim: #991b1b;
+  --on-tertiary-container: #f8fafc;
+  --error: #ef4444;
+  --on-tertiary: #ffffff;
+  --on-tertiary-fixed: #f8fafc;
+  --surface-dim: #090a0f;
+  --on-primary-fixed: #ffffff;
+  --outline-muted: #222634;
+  --on-tertiary-fixed-variant: #cbd5e1;
+  --surface-bright: #14161f;
+  --outline-variant: #262b38;
+  --tertiary-container: #171a24;
+  --on-primary-fixed-variant: #ffffff;
+  --inverse-primary: #fca5a5;
+  --success-bg: #064e3b;
+  --on-error: #ffffff;
+  --outline: #64748b;
+  --on-primary: #ffffff;
+  --tertiary: #171a24;
+  --on-secondary-fixed: #f8fafc;
+  --secondary-fixed: #252938;
+  --surface-container-low: #171a24;
+  --surface-tint: #ba1a1a;
+  --surface-container: #1d202c;
+  --on-background: #f8fafc;
+  --surface-container-lowest: #12141c;
+  --surface-card: #12141c;
+  --primary-hover: #dc2626;
+  --on-surface: #f8fafc;
+  --surface: #0c0d12;
+  --on-error-container: #fca5a5;
+  --secondary-container: #252938;
+  --on-secondary-fixed-variant: #cbd5e1;
+  --inverse-on-surface: #09090b;
 
-  --background: 20 7% 9%;
-  --foreground: 48 56% 98%;
-  --primary: 4 100% 85%;
-  --primary-foreground: 12 6% 15%;
-  --secondary: 128 7% 19%;
-  --secondary-foreground: 48 56% 98%;
-  --accent: 258 9% 20%;
-  --accent-foreground: 48 56% 98%;
-  --muted: 20 6% 15%;
-  --muted-foreground: 24 5% 64%;
-  --card: 20 10% 10%;
-  --card-foreground: 48 56% 98%;
-  --popover: 20 10% 11%;
-  --popover-foreground: 48 56% 98%;
+  --background: 224 71% 4%;
+  --foreground: 210 40% 98%;
+  --primary: 358 70% 45%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 215 27.9% 16.9%;
+  --secondary-foreground: 210 40% 98%;
+  --accent: 215 27.9% 16.9%;
+  --accent-foreground: 358 70% 60%;
+  --muted: 215 27.9% 14%;
+  --muted-foreground: 215 20.2% 70%;
+  --card: 224 71% 5%;
+  --card-foreground: 210 40% 98%;
+  --popover: 224 45% 8%;
+  --popover-foreground: 210 40% 98%;
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
-  --border: 20 6% 20%;
-  --input: 20 6% 20%;
-  --ring: 4 100% 85%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 22%;
+  --ring: 358 70% 45%;
 }
 
 @layer base {
@@ -168,7 +161,7 @@
   }
 
   body {
-    @apply bg-[#FDFCF8] dark:bg-surface text-[#292524] dark:text-on-surface;
+    @apply bg-surface text-on-surface;
     font-size: 15px;
     font-family: var(--font-outfit);
     -webkit-font-smoothing: antialiased;
@@ -179,8 +172,8 @@
   input,
   textarea,
   select {
-    @apply rounded-full border border-stone-200 dark:border-input bg-stone-50/90 dark:bg-background text-[#292524] dark:text-foreground px-4 py-2.5 text-sm outline-none transition-all focus:border-[#FFB7B2] focus:ring-2 focus:ring-[#FFB7B2]/25 placeholder:text-[#78716C];
-    color: hsl(var(--foreground));
+    @apply rounded-full border border-input bg-surface-container-lowest text-on-surface px-4 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/70;
+    color: var(--on-surface);
   }
 
   textarea {
@@ -197,55 +190,67 @@
   }
 
   h1 {
-    @apply text-4xl md:text-6xl font-medium tracking-[-0.025em] text-[#292524] dark:text-on-surface;
+    @apply text-4xl md:text-6xl font-medium tracking-[-0.025em] text-on-surface;
     font-family: var(--font-outfit);
   }
 
   h2 {
-    @apply text-2xl md:text-4xl font-medium tracking-[-0.025em] text-[#292524] dark:text-on-surface;
+    @apply text-2xl md:text-4xl font-medium tracking-[-0.025em] text-on-surface;
     font-family: var(--font-outfit);
   }
 
   h3 {
-    @apply text-lg md:text-xl font-medium tracking-[-0.015em] text-[#292524] dark:text-on-surface;
+    @apply text-lg md:text-xl font-medium tracking-[-0.015em] text-on-surface;
     font-family: var(--font-outfit);
   }
 
   h4 {
-    @apply text-xs font-medium tracking-wide text-[#78716C];
+    @apply text-xs font-medium tracking-wide text-on-surface-variant;
     font-family: var(--font-outfit);
   }
 }
 
-/* Ensure any button or badge with bg-primary has soft-black #292524 contrast text on Coral #FFB7B2 */
+/* ─────────────────────────────────────────────────────────────────────────────
+   Original Akubrecah Crimson Red & Slate Palette Mapping (Light & Dark Modes)
+   Maps Softly utility classes onto the original brand color system cleanly.
+   ───────────────────────────────────────────────────────────────────────────── */
 .bg-primary {
-  background-color: #FFB7B2 !important;
-  color: #292524 !important;
+  background-color: #ba1a1a !important;
+  color: #ffffff !important;
 }
 
-.bg-primary.text-white,
-.bg-primary .text-white {
-  color: #292524 !important;
+.bg-primary:hover {
+  background-color: #991b1b !important;
+}
+
+.dark .bg-primary:hover {
+  background-color: #dc2626 !important;
 }
 
 .text-primary {
-  color: #C86D67;
+  color: #ba1a1a;
 }
 
 .dark .text-primary {
-  color: #FFB7B2;
+  color: #f87171;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Softly Dark Mode Surface & Typography Contrast Normalization
-   Ensures all Softly light-mode tokens remain crisp and WCAG-readable in .dark
-   ───────────────────────────────────────────────────────────────────────────── */
-.dark .bg-\[\#FDFCF8\] {
+/* Surface & Card Remap */
+.bg-\[\#FDFCF8\] {
   background-color: var(--surface) !important;
 }
 
 .dark .bg-white {
   background-color: var(--surface-container-lowest) !important;
+}
+
+.bg-white\/70,
+.bg-white\/75,
+.bg-white\/80,
+.bg-white\/85,
+.bg-white\/90,
+.bg-white\/95 {
+  background-color: rgba(255, 255, 255, 0.85) !important;
 }
 
 .dark .bg-white\/70,
@@ -254,100 +259,134 @@
 .dark .bg-white\/85,
 .dark .bg-white\/90,
 .dark .bg-white\/95 {
-  background-color: rgba(28, 25, 23, 0.84) !important;
+  background-color: rgba(18, 20, 28, 0.88) !important;
 }
 
-.dark .bg-stone-50,
-.dark .bg-stone-50\/90,
-.dark .bg-stone-100,
-.dark .bg-stone-100\/60,
-.dark .bg-stone-100\/70 {
-  background-color: #242120 !important;
+.bg-stone-50,
+.bg-stone-50\/90,
+.bg-stone-100,
+.bg-stone-100\/60,
+.bg-stone-100\/70 {
+  background-color: var(--surface-container-low) !important;
 }
 
-.dark .bg-\[\#E8EFE8\],
-.dark .bg-\[\#E8EFE8\]\/70,
-.dark .bg-\[\#E8EFE8\]\/75,
-.dark .bg-\[\#E8EFE8\]\/80,
-.dark .bg-\[\#E8EFE8\]\/85,
-.dark .bg-\[\#E8EFE8\]\/90 {
-  background-color: #252D27 !important;
+.bg-\[\#E8EFE8\],
+.bg-\[\#E8EFE8\]\/70,
+.bg-\[\#E8EFE8\]\/75,
+.bg-\[\#E8EFE8\]\/80,
+.bg-\[\#E8EFE8\]\/85,
+.bg-\[\#E8EFE8\]\/90 {
+  background-color: var(--surface-container) !important;
 }
 
-.dark .bg-\[\#EFEDF4\],
-.dark .bg-\[\#EFEDF4\]\/70,
-.dark .bg-\[\#EFEDF4\]\/75,
-.dark .bg-\[\#EFEDF4\]\/80,
-.dark .bg-\[\#EFEDF4\]\/85,
-.dark .bg-\[\#EFEDF4\]\/90 {
-  background-color: #2A2633 !important;
+.bg-\[\#EFEDF4\],
+.bg-\[\#EFEDF4\]\/70,
+.bg-\[\#EFEDF4\]\/75,
+.bg-\[\#EFEDF4\]\/80,
+.bg-\[\#EFEDF4\]\/85,
+.bg-\[\#EFEDF4\]\/90 {
+  background-color: var(--surface-container-low) !important;
+}
+
+/* Subtle Brand Red & Slate Ambient Blobs */
+.bg-\[\#FFE4E1\],
+.bg-\[\#FFE4E1\]\/70 {
+  background-color: rgba(186, 26, 26, 0.08) !important;
 }
 
 .dark .bg-\[\#FFE4E1\],
 .dark .bg-\[\#FFE4E1\]\/70 {
-  background-color: rgba(255, 183, 178, 0.16) !important;
+  background-color: rgba(186, 26, 26, 0.16) !important;
+}
+
+.bg-\[\#E6E6FA\] {
+  background-color: rgba(15, 23, 42, 0.06) !important;
 }
 
 .dark .bg-\[\#E6E6FA\] {
-  background-color: rgba(196, 181, 253, 0.14) !important;
+  background-color: rgba(148, 163, 184, 0.1) !important;
 }
 
-.dark .text-\[\#292524\],
-.dark .text-stone-800,
-.dark .text-stone-900 {
-  color: #FDFCF8 !important;
+/* Typography & Border Remap */
+.text-\[\#292524\],
+.text-stone-800,
+.text-stone-900 {
+  color: var(--on-surface) !important;
 }
 
-.dark .text-\[\#78716C\],
-.dark .text-stone-500,
-.dark .text-stone-600 {
-  color: #C7C2BC !important;
+.text-\[\#78716C\],
+.text-stone-500,
+.text-stone-600 {
+  color: var(--on-surface-variant) !important;
 }
 
-.dark .text-stone-400 {
-  color: #A8A29E !important;
+.text-stone-400 {
+  color: var(--outline) !important;
 }
 
-.dark .border-stone-100,
-.dark .border-stone-200,
-.dark .border-stone-200\/60,
-.dark .border-stone-200\/70,
-.dark .border-stone-200\/80 {
-  border-color: #363230 !important;
+.border-stone-100,
+.border-stone-200,
+.border-stone-200\/60,
+.border-stone-200\/70,
+.border-stone-200\/80 {
+  border-color: var(--outline-variant) !important;
 }
 
-/* High-contrast inverted dark-stone pill buttons in dark mode */
+/* Primary Action Accent: Original Akubrecah Crimson Red (#ba1a1a) with Crisp White Text */
+.bg-\[\#FFB7B2\] {
+  background-color: #ba1a1a !important;
+  color: #ffffff !important;
+}
+
+.bg-\[\#FFB7B2\] span,
+.bg-\[\#FFB7B2\] svg,
+.bg-\[\#FFB7B2\].text-\[\#292524\],
+.bg-\[\#FFB7B2\] .text-\[\#292524\] {
+  color: #ffffff !important;
+}
+
+.text-\[\#FFB7B2\] {
+  color: #ba1a1a !important;
+}
+
+.dark .text-\[\#FFB7B2\] {
+  color: #f87171 !important;
+}
+
+/* Dark Slate Pill CTA Buttons */
+.bg-\[\#292524\] {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+.bg-\[\#292524\] span:not(.bg-\[\#FFB7B2\]),
+.bg-\[\#292524\].text-\[\#FDFCF8\],
+.bg-\[\#292524\] .text-\[\#FDFCF8\] {
+  color: #ffffff !important;
+}
+
 .dark .bg-\[\#292524\] {
-  background-color: #FDFCF8 !important;
-  color: #292524 !important;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
 }
 
-.dark .bg-\[\#292524\] .text-\[\#FDFCF8\],
+.dark .bg-\[\#292524\] span:not(.bg-\[\#FFB7B2\]),
 .dark .bg-\[\#292524\].text-\[\#FDFCF8\],
-.dark .bg-\[\#292524\] span:not(.bg-\[\#FFB7B2\]) {
-  color: #292524 !important;
-}
-
-/* Preserve dark stone ink on Coral #FFB7B2 primary buttons & badges in dark mode */
-.dark .bg-\[\#FFB7B2\],
-.dark .bg-\[\#FFB7B2\].text-\[\#292524\],
-.dark .bg-\[\#FFB7B2\] .text-\[\#292524\],
-.dark .bg-\[\#FFB7B2\] span,
-.dark .bg-\[\#FFB7B2\] svg {
-  color: #292524 !important;
+.dark .bg-\[\#292524\] .text-\[\#FDFCF8\] {
+  color: #0f172a !important;
 }
 
 .dark input,
 .dark textarea,
 .dark select {
-  background-color: #242120;
-  color: #FDFCF8;
-  border-color: #363230;
+  background-color: #171a24;
+  color: #f8fafc;
+  border-color: #262b38;
 }
 
 .dark input::placeholder,
 .dark textarea::placeholder {
-  color: #A8A29E;
+  color: #94a3b8;
 }
 
 @layer utilities {
@@ -371,7 +410,7 @@
   }
 
   .precision-outline {
-    @apply border border-stone-200 dark:border-outline-variant rounded-full transition-all focus-within:border-[#FFB7B2] focus-within:ring-2 focus-within:ring-[#FFB7B2]/25;
+    @apply border border-outline-variant rounded-full transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20;
   }
 
   .shadow-soft {
@@ -426,8 +465,8 @@
 }
 
 .auth-input-focus:focus-within {
-  border-color: #FFB7B2 !important;
-  box-shadow: 0 0 0 4px rgba(255, 183, 178, 0.28) !important;
+  border-color: #ba1a1a !important;
+  box-shadow: 0 0 0 4px rgba(186, 26, 26, 0.16) !important;
 }
 
 .reveal-on-scroll {
