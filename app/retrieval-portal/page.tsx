@@ -59,21 +59,14 @@ function FlagshipPortalContent() {
         <div className="w-full max-w-[1220px] rounded-full bg-white/70 dark:bg-stone-900/75 backdrop-blur-[20px] border border-stone-200/70 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
 
           {/* Brand Mark & Identity */}
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 transition-opacity hover:opacity-90 min-w-0">
-            <span className="w-8 h-8 rounded-full bg-[#FFB7B2] flex items-center justify-center shrink-0 shadow-2xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-white" />
-            </span>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs sm:text-sm font-medium tracking-tight text-on-surface truncate">
-                  Akubrecah<span className="hidden sm:inline"> Cyber Portal</span>
-                </span>
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#E8EFE8] text-[#292524] shrink-0">
-                  Independent
-                </span>
-              </div>
-              <span className="text-[10px] text-on-surface-variant hidden md:inline">
-                Statutory facilitation &amp; document retrieval
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 transition-opacity hover:opacity-90 min-w-0" aria-label="Akubrecah Entertainment">
+            <Logo width={120} height={34} className="h-7 sm:h-8 w-auto shrink-0" />
+            <div className="hidden sm:flex items-center gap-2 min-w-0 border-l border-stone-200/80 pl-2.5">
+              <span className="text-xs font-medium tracking-tight text-on-surface truncate">
+                Cyber Portal
+              </span>
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#E8EFE8] text-[#292524] shrink-0">
+                Independent
               </span>
             </div>
           </Link>

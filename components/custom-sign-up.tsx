@@ -21,6 +21,7 @@ import {
   Smartphone,
 } from "lucide-react"
 import { isSafeRedirectPath } from "@/lib/edge/routing"
+import { Logo } from "@/components/logo"
 
 export function CustomSignUp({ isKraPortal = false }: { isKraPortal?: boolean }) {
   const { isLoaded, signUp, setActive } = useSignUp()
@@ -33,9 +34,9 @@ export function CustomSignUp({ isKraPortal = false }: { isKraPortal?: boolean })
       const host = window.location.hostname.toLowerCase()
       setIsKra(
         isKraPortal ||
-          host.startsWith("kra.") ||
-          host.includes("kra.akubrecah.com") ||
-          searchParams.get("portal") === "kra"
+        host.startsWith("kra.") ||
+        host.includes("kra.akubrecah.com") ||
+        searchParams.get("portal") === "kra"
       )
     }
   }, [searchParams, isKraPortal])
@@ -242,21 +243,14 @@ export function CustomSignUp({ isKraPortal = false }: { isKraPortal?: boolean })
       {/* 1. FLOATING PILL-SHAPED NAV BAR (Matching 'Softly' Website Aesthetic) */}
       <header className="sticky top-3 sm:top-4 z-50 w-full flex justify-center px-4">
         <div className="w-full max-w-6xl h-14 sm:h-16 rounded-full bg-white/70 backdrop-blur-[20px] border border-stone-200/70 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] px-4 sm:px-6 flex items-center justify-between gap-3">
-          {/* LEFT: Circular Coral #FFB7B2 logo with white dot + Outfit Medium brand name */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <span className="w-8 h-8 rounded-full bg-[#FFB7B2] flex items-center justify-center shadow-[0_4px_12px_-2px_rgba(255,183,178,0.6)] transition-transform duration-300 group-hover:scale-105">
-              <span className="w-2.5 h-2.5 rounded-full bg-white" />
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-[15px] font-medium text-[#292524] tracking-tight">
-                Akubrecah
+          {/* LEFT: Akubrecah Brand Logo */}
+          <Link href="/" className="flex items-center gap-2 shrink-0 group hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
+            <Logo width={132} height={38} className="h-8 sm:h-9 w-auto" />
+            {isKra && (
+              <span className="hidden sm:inline text-xs text-[#78716C] font-normal">
+                · Cyber portal
               </span>
-              {isKra && (
-                <span className="text-xs text-[#78716C] font-normal">
-                  · Cyber portal
-                </span>
-              )}
-            </div>
+            )}
           </Link>
 
           {/* CENTER: Nav links in 14px Outfit Medium (hidden below md) */}
@@ -799,11 +793,10 @@ export function CustomSignUp({ isKraPortal = false }: { isKraPortal?: boolean })
       <footer className="border-t border-stone-200/60 bg-[#FDFCF8]">
         <div className="mx-auto max-w-6xl px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#78716C]">
           <div className="flex items-center gap-2.5">
-            <span className="w-6 h-6 rounded-full bg-[#FFB7B2] flex items-center justify-center shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-white" />
-            </span>
-            <span className="font-medium text-[#292524]">Akubrecah</span>
-            <span className="font-cursive text-xl text-[#78716C]">digital living room</span>
+            <Link href="/" className="inline-flex items-center hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
+              <Logo width={118} height={34} className="h-7 w-auto" />
+            </Link>
+            <span className="font-cursive text-xl text-[#78716C] hidden sm:inline">digital living room</span>
             <span>·</span>
             <span>Nairobi, Kenya</span>
           </div>

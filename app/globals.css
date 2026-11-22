@@ -58,22 +58,30 @@
   --on-secondary-fixed-variant: #78716C;
   --inverse-on-surface: #FDFCF8;
 
-  --background: 48 56% 98%; /* #FDFCF8 */
-  --foreground: 12 6% 15%; /* #292524 */
-  --primary: 4 100% 85%; /* #FFB7B2 Peach/Coral */
-  --primary-foreground: 12 6% 15%; /* #292524 Dark Stone */
-  --secondary: 120 17% 92%; /* #E8EFE8 Sage */
+  --background: 48 56% 98%;
+  /* #FDFCF8 */
+  --foreground: 12 6% 15%;
+  /* #292524 */
+  --primary: 4 100% 85%;
+  /* #FFB7B2 Peach/Coral */
+  --primary-foreground: 12 6% 15%;
+  /* #292524 Dark Stone */
+  --secondary: 120 17% 92%;
+  /* #E8EFE8 Sage */
   --secondary-foreground: 12 6% 15%;
-  --accent: 257 22% 94%; /* #EFEDF4 Lavender */
+  --accent: 257 22% 94%;
+  /* #EFEDF4 Lavender */
   --accent-foreground: 12 6% 15%;
   --muted: 120 17% 92%;
-  --muted-foreground: 25 5% 45%; /* #78716C */
+  --muted-foreground: 25 5% 45%;
+  /* #78716C */
   --card: 0 0% 100%;
   --card-foreground: 12 6% 15%;
   --border: 20 6% 90%;
   --input: 20 6% 90%;
   --ring: 4 100% 85%;
-  --radius: 2rem; /* 2rem Softly container default */
+  --radius: 2rem;
+  /* 2rem Softly container default */
   scroll-behavior: smooth;
 }
 
@@ -146,7 +154,10 @@
 }
 
 @layer base {
-  * { @apply border-border; }
+  * {
+    @apply border-border;
+  }
+
   body {
     @apply bg-[#FDFCF8] dark:bg-surface text-[#292524] dark:text-on-surface;
     font-size: 15px;
@@ -155,30 +166,42 @@
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.6;
   }
-  input, textarea, select {
+
+  input,
+  textarea,
+  select {
     @apply rounded-full border border-stone-200 dark:border-input bg-stone-50/90 dark:bg-background text-[#292524] dark:text-foreground px-4 py-2.5 text-sm outline-none transition-all focus:border-[#FFB7B2] focus:ring-2 focus:ring-[#FFB7B2]/25 placeholder:text-[#78716C];
     color: hsl(var(--foreground));
   }
+
   textarea {
     @apply rounded-3xl;
   }
+
   select option {
     background-color: hsl(var(--card));
     color: hsl(var(--card-foreground));
   }
-  button { @apply rounded-full transition-all duration-300; }
+
+  button {
+    @apply rounded-full transition-all duration-300;
+  }
+
   h1 {
     @apply text-4xl md:text-6xl font-medium tracking-[-0.025em] text-[#292524] dark:text-on-surface;
     font-family: var(--font-outfit);
   }
+
   h2 {
     @apply text-2xl md:text-4xl font-medium tracking-[-0.025em] text-[#292524] dark:text-on-surface;
     font-family: var(--font-outfit);
   }
+
   h3 {
     @apply text-lg md:text-xl font-medium tracking-[-0.015em] text-[#292524] dark:text-on-surface;
     font-family: var(--font-outfit);
   }
+
   h4 {
     @apply text-xs font-medium tracking-wide text-[#78716C];
     font-family: var(--font-outfit);
@@ -190,13 +213,16 @@
   background-color: #FFB7B2 !important;
   color: #292524 !important;
 }
+
 .bg-primary.text-white,
 .bg-primary .text-white {
   color: #292524 !important;
 }
+
 .text-primary {
   color: #C86D67;
 }
+
 .dark .text-primary {
   color: #FFB7B2;
 }
@@ -205,33 +231,42 @@
   .font-cursive {
     font-family: var(--font-reenie);
   }
+
   .glass {
     @apply bg-white/75 dark:bg-surface-container-lowest/80 backdrop-blur-[20px] border border-stone-200/60 dark:border-outline-variant;
     box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   }
+
   .glass-card {
     @apply bg-white dark:bg-surface-container-lowest border border-stone-100 dark:border-outline-variant rounded-[2rem];
     box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   }
+
   .glass-panel {
     @apply bg-white/85 dark:bg-surface-container-lowest backdrop-blur-[20px] border border-stone-100 dark:border-outline-variant rounded-[2.5rem];
     box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   }
+
   .precision-outline {
     @apply border border-stone-200 dark:border-outline-variant rounded-full transition-all focus-within:border-[#FFB7B2] focus-within:ring-2 focus-within:ring-[#FFB7B2]/25;
   }
+
   .shadow-soft {
     box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   }
+
   .shadow-primary {
     box-shadow: 0 4px 20px -2px rgba(255, 183, 178, 0.35);
   }
 }
 
 @keyframes floatBlob {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(-10px);
   }
+
   50% {
     transform: translateY(10px);
   }
@@ -242,6 +277,7 @@
     opacity: 0;
     transform: translateY(30px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -256,6 +292,7 @@
   0% {
     transform: translateX(0%);
   }
+
   100% {
     transform: translateX(-50%);
   }
@@ -275,13 +312,23 @@
 }
 
 /* Custom Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--border));
   @apply rounded-sm;
 }
-::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
 
 .btn-primary {
   @apply bg-primary text-white font-medium shadow-xs transition-colors hover:bg-primary/90;
@@ -312,13 +359,17 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
 
 /* ─── Reduced Motion — Accessibility ─── */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -332,6 +383,7 @@
   line-height: 1.75;
   font-size: 0.95rem;
 }
+
 .markdown-reader h1 {
   font-size: 1.875rem;
   font-weight: 700;
@@ -342,6 +394,7 @@
   border-bottom: 1px solid var(--outline-variant);
   padding-bottom: 0.75rem;
 }
+
 .markdown-reader h2 {
   font-size: 1.375rem;
   font-weight: 700;
@@ -352,6 +405,7 @@
   border-bottom: 1px solid var(--outline-variant);
   padding-bottom: 0.5rem;
 }
+
 .markdown-reader h3 {
   font-size: 1.15rem;
   font-weight: 600;
@@ -359,6 +413,7 @@
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
 }
+
 .markdown-reader h4 {
   font-size: 1.05rem;
   font-weight: 700;
@@ -366,21 +421,25 @@
   margin-top: 1rem;
   margin-bottom: 0.5rem;
 }
+
 .markdown-reader p {
   margin-top: 0.75rem;
   margin-bottom: 0.75rem;
   color: var(--on-surface-variant);
   line-height: 1.7;
 }
+
 .markdown-reader a {
   color: var(--primary);
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
 .markdown-reader a:hover {
   opacity: 0.85;
 }
+
 .markdown-reader pre {
   padding: 1.25rem;
   border-radius: 1rem;
@@ -392,6 +451,7 @@
   border: 1px solid var(--outline-variant);
   margin: 1.25rem 0;
 }
+
 .markdown-reader code:not(pre code) {
   padding: 0.2rem 0.4rem;
   border-radius: 0.375rem;
@@ -402,6 +462,7 @@
   font-weight: 600;
   border: 1px solid var(--outline-variant);
 }
+
 .markdown-reader table {
   width: 100%;
   border-collapse: collapse;
@@ -411,11 +472,13 @@
   border: 1px solid var(--outline-variant);
   display: block;
 }
+
 @media (min-width: 640px) {
   .markdown-reader table {
     display: table;
   }
 }
+
 .markdown-reader th {
   background-color: var(--surface-container);
   text-align: left;
@@ -427,15 +490,18 @@
   color: var(--on-surface);
   border-bottom: 1px solid var(--outline-variant);
 }
+
 .markdown-reader td {
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
   color: var(--on-surface-variant);
   border-bottom: 1px solid var(--outline-variant);
 }
+
 .markdown-reader tr:nth-child(even) td {
   background-color: rgba(0, 0, 0, 0.02);
 }
+
 .markdown-reader img {
   max-width: 100%;
   height: auto;
@@ -445,6 +511,7 @@
   margin: 1.5rem auto;
   display: block;
 }
+
 .markdown-reader blockquote {
   border-left: 4px solid var(--primary);
   padding-left: 1rem;
@@ -457,6 +524,7 @@
   border-top-right-radius: 0.75rem;
   border-bottom-right-radius: 0.75rem;
 }
+
 .markdown-reader ul {
   list-style-type: disc;
   list-style-position: inside;
@@ -464,6 +532,7 @@
   color: var(--on-surface-variant);
   padding-left: 0.5rem;
 }
+
 .markdown-reader ol {
   list-style-type: decimal;
   list-style-position: inside;
@@ -471,11 +540,13 @@
   color: var(--on-surface-variant);
   padding-left: 0.5rem;
 }
+
 .markdown-reader hr {
   border: none;
   border-top: 1px solid var(--outline-variant);
   margin: 2rem 0;
 }
+
 .markdown-reader .github-alert {
   padding: 1rem;
   border-radius: 1rem;
@@ -484,6 +555,7 @@
   font-size: 0.875rem;
   line-height: 1.6;
 }
+
 .markdown-reader .alert-title {
   font-weight: 700;
   font-size: 0.75rem;
@@ -491,18 +563,22 @@
   letter-spacing: 0.05em;
   margin-bottom: 0.25rem;
 }
+
 .markdown-reader .alert-note {
   border-color: rgba(59, 130, 246, 0.3);
   background-color: rgba(59, 130, 246, 0.05);
 }
+
 .markdown-reader .alert-tip {
   border-color: rgba(16, 185, 129, 0.3);
   background-color: rgba(16, 185, 129, 0.05);
 }
+
 .markdown-reader .alert-important {
   border-color: rgba(245, 158, 11, 0.3);
   background-color: rgba(245, 158, 11, 0.05);
 }
+
 .markdown-reader .alert-warning {
   border-color: rgba(239, 68, 68, 0.3);
   background-color: rgba(239, 68, 68, 0.05);

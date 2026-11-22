@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { Mail, Lock, KeyRound, ArrowLeft, ArrowRight, Loader2, AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Logo } from "@/components/logo"
 
 export default function ForgotPasswordPage() {
   const { isLoaded, signIn, setActive } = useSignIn()
@@ -88,13 +89,17 @@ export default function ForgotPasswordPage() {
       />
 
       <div className="relative z-10 w-full max-w-md bg-white text-[#292524] border border-stone-100 rounded-[2.5rem] p-7 sm:p-9 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05),0_24px_60px_-22px_rgba(255,183,178,0.32)] space-y-6">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="inline-flex items-center hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
+            <Logo width={128} height={36} className="h-8 w-auto" />
+          </Link>
+          <span className="w-8 h-8 rounded-full bg-[#E8EFE8] flex items-center justify-center text-[#292524]">
+            <KeyRound className="w-4 h-4" />
+          </span>
+        </div>
+
         <div className="space-y-1.5 border-b border-stone-100 pb-5">
-          <div className="flex items-center justify-between">
-            <span className="font-cursive text-2xl sm:text-3xl text-[#78716C]">account recovery</span>
-            <span className="w-8 h-8 rounded-full bg-[#E8EFE8] flex items-center justify-center text-[#292524]">
-              <KeyRound className="w-4 h-4" />
-            </span>
-          </div>
+          <span className="font-cursive text-2xl sm:text-3xl text-[#78716C] block">account recovery</span>
           <h1 className="text-2xl sm:text-3xl font-medium tracking-[-0.025em] text-[#292524]">
             Reset your password
           </h1>

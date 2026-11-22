@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { Logo } from "@/components/logo"
 import { UserButton, useUser } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import {
@@ -289,11 +290,10 @@ function DesktopNavItem({
     return (
       <Link
         href={item.href}
-        className={`px-3 py-1.5 rounded-full text-[14px] font-medium transition-colors flex items-center gap-1.5 ${
-          isActive
-            ? "bg-[#E8EFE8] text-[#292524]"
-            : "text-[#292524] dark:text-stone-200 hover:text-[#78716C] hover:bg-stone-100/60 dark:hover:bg-stone-800/50"
-        }`}
+        className={`px-3 py-1.5 rounded-full text-[14px] font-medium transition-colors flex items-center gap-1.5 ${isActive
+          ? "bg-[#E8EFE8] text-[#292524]"
+          : "text-[#292524] dark:text-stone-200 hover:text-[#78716C] hover:bg-stone-100/60 dark:hover:bg-stone-800/50"
+          }`}
       >
         <span>{item.label}</span>
       </Link>
@@ -308,13 +308,12 @@ function DesktopNavItem({
       onMouseLeave={handleMouseLeave}
     >
       <div
-        className={`flex items-center rounded-full transition-colors ${
-          isActive
-            ? "bg-[#E8EFE8] text-[#292524]"
-            : open
+        className={`flex items-center rounded-full transition-colors ${isActive
+          ? "bg-[#E8EFE8] text-[#292524]"
+          : open
             ? "text-[#292524] bg-stone-100/80 dark:bg-stone-800"
             : "text-[#292524] dark:text-stone-200 hover:text-[#78716C] hover:bg-stone-100/60 dark:hover:bg-stone-800/50"
-        }`}
+          }`}
       >
         <Link
           href={item.href}
@@ -327,9 +326,8 @@ function DesktopNavItem({
             e.stopPropagation()
             setOpen((v) => !v)
           }}
-          className={`pr-2.5 pl-1 py-1.5 focus:outline-none transition-transform duration-200 cursor-pointer ${
-            open ? "rotate-180 text-[#292524]" : "text-[#78716C] hover:text-[#292524]"
-          }`}
+          className={`pr-2.5 pl-1 py-1.5 focus:outline-none transition-transform duration-200 cursor-pointer ${open ? "rotate-180 text-[#292524]" : "text-[#78716C] hover:text-[#292524]"
+            }`}
           aria-label={`Toggle ${item.label} menu`}
           aria-expanded={open}
         >
@@ -457,27 +455,19 @@ export function SiteHeader() {
       {/* Floating Pill-Shaped Nav Bar: 70% white opacity, 20px backdrop-blur, constrained to 100% - 32px on mobile */}
       <header className="sticky top-3 sm:top-4 z-40 w-full flex justify-center pointer-events-none px-4">
         <div
-          className={`pointer-events-auto w-full max-w-[1220px] h-14 sm:h-16 rounded-full bg-white/70 dark:bg-stone-900/75 backdrop-blur-[20px] border border-stone-200/70 dark:border-stone-800 px-4 sm:px-6 flex items-center justify-between gap-3 transition-shadow duration-300 ${
-            scrolled
-              ? "shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]"
-              : "shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]"
-          }`}
+          className={`pointer-events-auto w-full max-w-[1220px] h-14 sm:h-16 rounded-full bg-white/70 dark:bg-stone-900/75 backdrop-blur-[20px] border border-stone-200/70 dark:border-stone-800 px-4 sm:px-6 flex items-center justify-between gap-3 transition-shadow duration-300 ${scrolled
+            ? "shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)]"
+            : "shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]"
+            }`}
         >
-          {/* Small Circular Logo (Coral #FFB7B2 with white dot) + Brand Label */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <span className="w-8 h-8 rounded-full bg-[#FFB7B2] flex items-center justify-center shadow-[0_4px_12px_-2px_rgba(255,183,178,0.6)] transition-transform duration-300 group-hover:scale-105">
-              <span className="w-2.5 h-2.5 rounded-full bg-white" />
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-[15px] font-medium text-[#292524] dark:text-[#FDFCF8] tracking-tight">
-                Akubrecah
+          {/* Akubrecah Brand Logo */}
+          <Link href="/" className="flex items-center gap-2 shrink-0 group hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
+            <Logo width={132} height={38} className="h-8 sm:h-9 w-auto" />
+            {isKra && (
+              <span className="hidden sm:inline text-xs text-[#78716C] font-normal">
+                · Cyber portal
               </span>
-              {isKra && (
-                <span className="text-xs text-[#78716C] font-normal">
-                  · Cyber portal
-                </span>
-              )}
-            </div>
+            )}
           </Link>
 
           {/* Desktop Navigation Links in 14px Outfit Medium */}

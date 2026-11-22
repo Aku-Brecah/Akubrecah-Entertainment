@@ -1,6 +1,7 @@
 import Link from "next/link"
 import type { JSX } from "react"
 import { GooglePreferredSourceButton } from "@/components/google-preferred-source-button"
+import { Logo } from "@/components/logo"
 import { Mail, MapPin } from "lucide-react"
 
 export function SiteFooter(): JSX.Element {
@@ -23,14 +24,9 @@ export function SiteFooter(): JSX.Element {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 pb-10 border-b border-stone-100 dark:border-outline-variant">
           {/* Col 1 & 2: Brand Information */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-flex items-center gap-2.5 group" aria-label="Akubrecah Entertainment">
-              <span className="w-8 h-8 rounded-full bg-[#FFB7B2] flex items-center justify-center shadow-2xs">
-                <span className="w-2.5 h-2.5 rounded-full bg-white" />
-              </span>
-              <span className="text-lg font-medium text-[#292524] dark:text-on-surface tracking-tight">
-                Akubrecah
-              </span>
-              <span className="font-cursive text-2xl text-[#78716C] pl-1">
+            <Link href="/" className="inline-flex items-center gap-3 group hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
+              <Logo width={150} height={42} className="h-9 w-auto" />
+              <span className="font-cursive text-2xl text-[#78716C] hidden sm:inline">
                 digital living room
               </span>
             </Link>

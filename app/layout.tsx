@@ -106,7 +106,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const isVercel = Boolean(
-    process.env.VERCEL || 
+    process.env.VERCEL ||
     process.env.NEXT_PUBLIC_VERCEL_ENV
   );
 
@@ -123,7 +123,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://clerk.akubrecah.com" />
       </head>
       <body className="font-sans" data-theme="default" suppressHydrationWarning={true}>
-        <ClerkProvider 
+        <ClerkProvider
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
           signInUrl="/sign-in"
           signUpUrl="/sign-up"
