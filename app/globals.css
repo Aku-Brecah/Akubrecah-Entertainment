@@ -266,8 +266,8 @@
 }
 
 .auth-input-focus:focus-within {
-  border-color: #ff7a59 !important;
-  box-shadow: 0 0 0 4px rgba(255, 122, 89, 0.18) !important;
+  border-color: #FFB7B2 !important;
+  box-shadow: 0 0 0 4px rgba(255, 183, 178, 0.28) !important;
 }
 
 .reveal-on-scroll {
