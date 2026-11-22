@@ -1,4 +1,3 @@
-import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 interface LogoProps {
@@ -8,14 +7,16 @@ interface LogoProps {
   siteIconOnly?: boolean
 }
 
+const LOGO_ASPECT_RATIO = 885 / 282
+
 /**
  * Akubrecah Brand Logo component.
- * Renders the primary brand logo on every page and swaps automatically
- * between light (/akubrecah-logo.png) and dark (/akubrecah-logo-dark.png) themes.
+ * Uses explicit aspect-ratio dimensions so flexbox parents (even with min-w-0)
+ * can never collapse the logo, and swaps cleanly between light and dark assets.
  */
 export function Logo({
   className,
-  height = 38,
+  height = 36,
   siteIconOnly = false,
 }: LogoProps) {
   if (siteIconOnly) {
@@ -26,48 +27,50 @@ export function Logo({
           "relative inline-flex items-center justify-center shrink-0 rounded-full overflow-hidden shadow-2xs border border-stone-200/70 dark:border-stone-700 bg-white p-0.5 select-none",
           className
         )}
-        style={{ width: size, height: size }}
+        style={{ width: size, height: size, minWidth: size, minHeight: size }}
       >
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src="/logo-circle.png"
           alt="Akubrecah Site Icon"
-          width={288}
-          height={288}
-          priority
-          unoptimized
-          className="h-full w-full object-cover rounded-full"
+          width={size}
+          height={size}
+          decoding="async"
+          className="h-full w-full object-cover rounded-full block"
         />
       </span>
     )
   }
 
   const altText = "Akubrecah Entertainment"
-  const hasExplicitHeightClass = Boolean(className && /\bh-/.test(className))
+  const computedWidth = Math.round(height * LOGO_ASPECT_RATIO)
 
   return (
     <span
       className={cn("inline-flex items-center shrink-0 select-none", className)}
-      style={!hasExplicitHeightClass ? { height } : undefined}
+      style={{ height, width: computedWidth, minWidth: computedWidth }}
     >
       {/* Light mode logo */}
-      <Image
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src="/akubrecah-logo.png"
         alt={altText}
-        width={885}
-        height={282}
-        priority
-        unoptimized
-        className="h-full w-auto max-w-none object-contain dark:hidden"
+        width={computedWidth}
+        height={height}
+        decoding="async"
+        className="block dark:hidden object-contain"
+        style={{ height: `${height}px`, width: `${computedWidth}px` }}
       />
       {/* Dark mode logo */}
-      <Image
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
         src="/akubrecah-logo-dark.png"
         alt={altText}
-        width={885}
-        height={282}
-        priority
-        unoptimized
-        className="h-full w-auto max-w-none object-contain hidden dark:block"
+        width={computedWidth}
+        height={height}
+        decoding="async"
+        className="hidden dark:block object-contain"
+        style={{ height: `${height}px`, width: `${computedWidth}px` }}
       />
     </span>
   )

@@ -60,10 +60,10 @@ function FlagshipPortalContent() {
         <div className="w-full max-w-[1220px] rounded-full bg-white/70 dark:bg-stone-900/75 backdrop-blur-[20px] border border-stone-200/70 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
 
           {/* Brand Mark & Identity */}
-          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 transition-opacity hover:opacity-90 min-w-0" aria-label="Akubrecah Entertainment">
-            <Logo width={120} height={34} className="h-7 sm:h-8 w-auto shrink-0" />
-            <div className="hidden sm:flex items-center gap-2 min-w-0 border-l border-stone-200/80 pl-2.5">
-              <span className="text-xs font-medium tracking-tight text-on-surface truncate">
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 transition-opacity hover:opacity-90 shrink-0" aria-label="Akubrecah Entertainment">
+            <Logo height={34} />
+            <div className="hidden sm:flex items-center gap-2 border-l border-stone-200/80 dark:border-stone-700 pl-2.5">
+              <span className="text-xs font-medium tracking-tight text-on-surface whitespace-nowrap">
                 Cyber Portal
               </span>
               <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#E8EFE8] text-[#292524] shrink-0">
@@ -111,7 +111,12 @@ function FlagshipPortalContent() {
         />
 
         {/* Focused Hero Header */}
-        <div className="relative z-10 text-center space-y-2 max-w-3xl mx-auto px-1">
+        <div className="relative z-10 text-center space-y-2.5 max-w-3xl mx-auto px-1">
+          <div className="flex justify-center pb-1">
+            <Link href="/" className="inline-flex items-center hover:opacity-90 transition-opacity" aria-label="Akubrecah Entertainment">
+              <Logo height={44} />
+            </Link>
+          </div>
           <div className="font-cursive text-2xl sm:text-3xl text-[#78716C]">
             independent cyber facilitation space
           </div>
